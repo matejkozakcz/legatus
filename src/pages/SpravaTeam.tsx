@@ -238,10 +238,12 @@ const SpravaTeam = () => {
                       {roleActions.map((action) => (
                         <button
                           key={action.role}
-                          onClick={() => promoteMutation.mutate({ userId: member.id, newRole: action.role })}
+                          onClick={() => setRoleChange({ member, newRole: action.role, label: action.label })}
                           className={action.variant === "demote" ? "btn btn-ghost btn-sm" : "btn btn-secondary btn-sm"}
                         >
                           {action.label}
+                        </button>
+                      ))}
                         </button>
                       ))}
                     </div>
