@@ -14,8 +14,38 @@ import { PromotionModal } from "@/components/PromotionModal";
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_week");
+  const [promotionRole, setPromotionRole] = useState<string | null>(null);
+  const prevRoleRef = useRef<string | null>(null);
+  const hasCheckedFirstLogin = useRef(false);
+
+  // First login detection
+  useEffect(() => {
+    if (!user || !profile || hasCheckedFirstLogin.current) return;
+    hasCheckedFirstLogin.current = true;
+
+    const key = `legatus_first_login_${user.id}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, "true");
+      fireConfetti();
+    }
+  }, [user, profile]);
+
+  // Promotion detection
+  useEffect(() => {
+    if (!profile) return;
+    const prev = prevRoleRef.current;
+    prevRoleRef.current = profile.role;
+
+    if (prev && prev !== profile.role) {
+      const roleOrder: Record<string, number> = { novacek: 0, garant: 1, vedouci: 2 };
+      if ((roleOrder[profile.role] ?? 0) > (roleOrder[prev] ?? 0)) {
+        fireConfetti();
+        setPromotionRole(profile.role);
+      }
+    }
+  }, [profile?.role]);
 
   const dateRange = useMemo(() => {
     const now = new Date();
