@@ -145,7 +145,7 @@ const SpravaTeam = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
-      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", novacek: "Nováčka" };
+      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", ziskatel: "Získatele", novacek: "Nováčka" };
       toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
       if (variables.newRole !== "novacek") {
         fireConfetti();
