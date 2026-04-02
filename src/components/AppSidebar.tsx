@@ -47,8 +47,8 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar" style={{ padding: "20px 12px" }}>
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
-          <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-8 object-contain flex-shrink-0" />
-          {!collapsed && <span className="font-heading font-bold text-sm tracking-[0.15em] text-white">LEGATUS</span>}
+          <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
+          {!collapsed && <span className="font-heading font-bold text-sm tracking-[0.2em] text-white">LEGATUS</span>}
         </div>
 
         <SidebarGroup>
