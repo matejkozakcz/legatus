@@ -82,9 +82,7 @@ const Dashboard = () => {
             Moje struktura
           </h2>
           {(profile?.role === "vedouci" || profile?.role === "garant") && (
-            <Link to="/tym" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
-              <Pencil className="h-4 w-4" />
-            </Link>
+            
           )}
         </div>
         <div className="legatus-card" style={{ padding: 24 }}>
