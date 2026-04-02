@@ -46,14 +46,27 @@ const SpravaTeam = () => {
   const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
 
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ["team_members", profile?.id],
+    queryKey: ["team_members", profile?.id, profile?.role],
     queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase
+      if (!profile?.id || !profile?.role) return [];
+
+      let query = supabase
         .from("profiles")
         .select("*")
         .eq("is_active", true)
         .neq("id", profile.id);
+
+      if (profile.role === "garant") {
+        // Garant sees only their own Nováčci
+        query = query.eq("garant_id", profile.id);
+      } else if (profile.role === "vedouci") {
+        // Vedoucí sees everyone in their subtree:
+        // Garanté (vedouci_id = me) + Nováčci (vedouci_id = me)
+        query = query.eq("vedouci_id", profile.id);
+      }
+      // Nováček has no team — returns empty (shouldn't reach this page anyway)
+
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []) as Profile[];
     },
@@ -96,6 +109,8 @@ const SpravaTeam = () => {
   const getRoleActions = (member: Profile) => {
     const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
     if (profile?.role === "vedouci") {
+      // Vedoucí can only act on members who belong to their subtree
+      if (member.vedouci_id !== profile.id) return actions;
       if (member.role === "novacek") {
         actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
       }
@@ -104,8 +119,9 @@ const SpravaTeam = () => {
         actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
       }
     }
-    if (profile?.role === "garant" && member.garant_id === profile.id) {
-      if (member.role === "novacek") {
+    if (profile?.role === "garant") {
+      // Garant can only act on their own Nováčci
+      if (member.role === "novacek" && member.garant_id === profile.id) {
         actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
       }
     }
