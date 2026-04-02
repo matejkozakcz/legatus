@@ -83,52 +83,7 @@ const Dashboard = () => {
         </h1>
       </div>
 
-      {/* Moje statistika */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
-              Moje statistika
-            </h2>
-            <Link to="/aktivity" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
-              <Pencil className="h-4 w-4" />
-            </Link>
-          </div>
-          <p className="font-body" style={{ fontSize: 12, color: "#8aadb3" }}>
-            Období od {format(dateRange.from, "d. M. yyyy", { locale: cs })} do{" "}
-            {format(dateRange.to, "d. M. yyyy", { locale: cs })}
-          </p>
-        </div>
-
-        {/* Time filter pills */}
-        <div className="flex gap-2">
-          {filterPills.map((pill) => (
-            <button
-              key={pill.key}
-              onClick={() => setTimeFilter(pill.key)}
-              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              {pill.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} accentColor="#00abbd" />
-          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} accentColor="#7c6fcd" />
-          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} accentColor="#2da44e" />
-          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentColor="#e08a00" />
-        </div>
-
-        <div className="flex justify-end">
-          <Link to="/aktivity" className="btn-text font-body" style={{ fontSize: 13 }}>
-            Zobrazit detailní statistiku →
-          </Link>
-        </div>
-      </section>
-
-      {/* Moje struktura */}
+      {/* Moje struktura — FIRST */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
@@ -142,6 +97,55 @@ const Dashboard = () => {
         </div>
         <div className="legatus-card" style={{ padding: 24 }}>
           <OrgChart currentUserId={profile?.id || ""} />
+        </div>
+      </section>
+
+      {/* Moje statistika — SECOND */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+              Moje statistika
+            </h2>
+            <Link to="/aktivity" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
+              <Pencil className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Time filter pills + date range display */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {filterPills.map((pill) => (
+            <button
+              key={pill.key}
+              onClick={() => setTimeFilter(pill.key)}
+              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
+            >
+              {pill.label}
+            </button>
+          ))}
+          <span className="font-body text-xs text-muted-foreground ml-1">Období od</span>
+          <span className="chip chip-neutral" style={{ cursor: "default" }}>
+            {format(dateRange.from, "d. M. yyyy", { locale: cs })}
+          </span>
+          <span className="font-body text-xs text-muted-foreground">do</span>
+          <span className="chip chip-neutral" style={{ cursor: "default" }}>
+            {format(dateRange.to, "d. M. yyyy", { locale: cs })}
+          </span>
+        </div>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
+          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
+          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
+          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných" plannedLabel="naplánovaných" />
+        </div>
+
+        <div className="flex justify-end">
+          <Link to="/aktivity" className="btn-text font-body" style={{ fontSize: 13 }}>
+            Zobrazit detailní statistiku →
+          </Link>
         </div>
       </section>
     </div>
