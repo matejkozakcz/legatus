@@ -93,20 +93,23 @@ const SpravaTeam = () => {
     },
   });
 
-  const canPromote = (member: Profile) => {
+  const getRoleActions = (member: Profile) => {
+    const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
     if (profile?.role === "vedouci") {
-      if (member.role === "novacek") return "garant";
-      if (member.role === "garant") return "vedouci";
+      if (member.role === "novacek") {
+        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+      }
+      if (member.role === "garant") {
+        actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
+        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
+      }
     }
-    if (profile?.role === "garant" && member.role === "novacek" && member.garant_id === profile.id) {
-      return "garant";
+    if (profile?.role === "garant" && member.garant_id === profile.id) {
+      if (member.role === "novacek") {
+        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+      }
     }
-    return null;
-  };
-
-  const promotionLabel: Record<string, string> = {
-    garant: "Povýšit na Garanta",
-    vedouci: "Povýšit na Vedoucího",
+    return actions;
   };
 
   return (
@@ -148,7 +151,7 @@ const SpravaTeam = () => {
             <div className="grid gap-3">
               {members.map((member) => {
                 const badge = roleBadge[member.role] || roleBadge.novacek;
-                const promotion = canPromote(member);
+                const roleActions = getRoleActions(member);
                 const vedouciName = member.vedouci_id ? profileMap.get(member.vedouci_id)?.full_name : null;
                 const garantName = member.garant_id ? profileMap.get(member.garant_id)?.full_name : null;
                 const initials = member.full_name
@@ -206,14 +209,15 @@ const SpravaTeam = () => {
                       >
                         Deaktivovat
                       </button>
-                      {promotion && (
+                      {roleActions.map((action) => (
                         <button
-                          onClick={() => promoteMutation.mutate({ userId: member.id, newRole: promotion })}
-                          className="btn btn-secondary btn-sm"
+                          key={action.role}
+                          onClick={() => promoteMutation.mutate({ userId: member.id, newRole: action.role })}
+                          className={action.variant === "demote" ? "btn btn-ghost btn-sm" : "btn btn-secondary btn-sm"}
                         >
-                          {promotionLabel[promotion]}
+                          {action.label}
                         </button>
-                      )}
+                      ))}
                     </div>
                   </div>
                 );
