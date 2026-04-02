@@ -1,11 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, BarChart3 } from "lucide-react";
+import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
-const NAV_ITEMS = [
-  { path: "/dashboard", icon: LayoutDashboard, label: "Přehled" },
-  { path: "/tym", icon: Users, label: "Tým" },
-] as const;
 
 export function MobileBottomNav() {
   const location = useLocation();
@@ -16,7 +11,7 @@ export function MobileBottomNav() {
     ? `${profile.first_name?.[0] ?? ""}${profile.last_name?.[0] ?? ""}`.toUpperCase()
     : "?";
 
-  const isAktivityActive = location.pathname === "/aktivity";
+  const isDashboardActive = location.pathname === "/dashboard";
 
   return (
     <div
@@ -35,7 +30,6 @@ export function MobileBottomNav() {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-around",
           height: 64,
           background: "rgba(255,255,255,0.55)",
           backdropFilter: "blur(24px) saturate(1.8)",
@@ -47,26 +41,26 @@ export function MobileBottomNav() {
           pointerEvents: "all",
         }}
       >
-        {/* Left: Dashboard */}
+        {/* Left: Moje aktivity */}
         <NavButton
-          icon={LayoutDashboard}
-          label="Přehled"
-          active={location.pathname === "/dashboard"}
-          onClick={() => navigate("/dashboard")}
+          icon={TrendingUp}
+          label="Moje aktivity"
+          active={location.pathname === "/aktivity"}
+          onClick={() => navigate("/aktivity")}
         />
 
-        {/* Center spacer (for the elevated button) */}
+        {/* Center spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Right: Tým */}
+        {/* Right: Úkoly */}
         <NavButton
-          icon={Users}
-          label="Tým"
-          active={location.pathname === "/tym"}
-          onClick={() => navigate("/tym")}
+          icon={CheckSquare}
+          label="Úkoly"
+          active={location.pathname === "/ukoly"}
+          onClick={() => navigate("/ukoly")}
         />
 
-        {/* Center elevated Aktivity button */}
+        {/* Center elevated Dashboard/Avatar button */}
         <div
           style={{
             position: "absolute",
@@ -74,35 +68,32 @@ export function MobileBottomNav() {
             transform: "translateX(-50%)",
             top: -22,
             pointerEvents: "all",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <button
-            onClick={() => navigate("/aktivity")}
+            onClick={() => navigate("/dashboard")}
             style={{
               width: 60,
               height: 60,
               borderRadius: "50%",
-              border: isAktivityActive
-                ? "3px solid #fc7c71"
-                : "3px solid white",
-              boxShadow: isAktivityActive
-                ? "0 4px 20px rgba(252,124,113,0.45)"
+              border: isDashboardActive ? "3px solid #00abbd" : "3px solid white",
+              boxShadow: isDashboardActive
+                ? "0 4px 20px rgba(0,171,189,0.4)"
                 : "0 4px 20px rgba(0,85,95,0.25)",
               overflow: "hidden",
               cursor: "pointer",
-              background: isAktivityActive ? "#fc7c71" : "#00555f",
+              background: "#00555f",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               transition: "all 0.2s",
-              flexDirection: "column",
-              gap: 2,
             }}
-            aria-label="Aktivity"
+            aria-label="Dashboard"
           >
-            {isAktivityActive ? (
-              <BarChart3 size={26} color="white" />
-            ) : profile?.avatar_url ? (
+            {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt={initials}
@@ -125,14 +116,15 @@ export function MobileBottomNav() {
           <div
             style={{
               textAlign: "center",
-              marginTop: 6,
+              marginTop: 5,
               fontSize: 10,
               fontWeight: 600,
-              color: isAktivityActive ? "#00abbd" : "#8aadb3",
+              color: isDashboardActive ? "#00abbd" : "#8aadb3",
               letterSpacing: "0.02em",
+              fontFamily: "Open Sans, sans-serif",
             }}
           >
-            Aktivity
+            Dashboard
           </div>
         </div>
       </div>
@@ -180,6 +172,7 @@ function NavButton({
           letterSpacing: "0.02em",
           transition: "color 0.2s",
           fontFamily: "Open Sans, sans-serif",
+          whiteSpace: "nowrap",
         }}
       >
         {label}

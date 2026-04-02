@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import MojeAktivity from "./pages/MojeAktivity";
 import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
+import Ukoly from "./pages/Ukoly";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <MemberActivity />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/ukoly"
+              element={
+                <AppLayout>
+                  <Ukoly />
                 </AppLayout>
               }
             />

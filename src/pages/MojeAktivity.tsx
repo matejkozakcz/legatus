@@ -9,6 +9,58 @@ import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+function Counter({
+  value,
+  editable,
+  onDecrement,
+  onIncrement,
+}: {
+  value: number;
+  editable: boolean;
+  onDecrement: () => void;
+  onIncrement: () => void;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#dde8ea", borderRadius: 12, overflow: "hidden",
+    }}>
+      <button
+        disabled={!editable}
+        onClick={editable ? onDecrement : undefined}
+        style={{
+          width: 36, height: 36, border: "none", background: "transparent",
+          cursor: editable ? "pointer" : "default",
+          fontSize: 20, color: "#00555f", fontWeight: 300,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: editable ? 1 : 0.4,
+        }}
+      >
+        −
+      </button>
+      <span style={{
+        minWidth: 32, textAlign: "center",
+        fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "#0c2226",
+      }}>
+        {value}
+      </span>
+      <button
+        disabled={!editable}
+        onClick={editable ? onIncrement : undefined}
+        style={{
+          width: 36, height: 36, border: "none", background: "transparent",
+          cursor: editable ? "pointer" : "default",
+          fontSize: 20, color: "#00555f", fontWeight: 300,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: editable ? 1 : 0.4,
+        }}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 const ACTIVITY_COLUMNS = [
   { key: "fsa_planned", header: "FSA Dom." },
   { key: "fsa_actual", header: "FSA Usc." },
@@ -140,20 +192,41 @@ const MojeAktivity = () => {
   const mobileRecord = records.find((r) => r.week_start === mobileWeekStr);
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
+  // Activities with both planned and actual keys
   const MOBILE_ACTIVITIES = [
-    { key: "fsa_actual" as ActivityKey, label: "Analýzy (FSA)", planned: "fsa_planned", color: "#00abbd" },
-    { key: "poh_actual" as ActivityKey, label: "Pohovory (POH)", planned: "poh_planned", color: "#7c6fcd" },
-    { key: "ser_actual" as ActivityKey, label: "Poradka (SER)", planned: "ser_planned", color: "#2da44e" },
-    { key: "ref_actual" as ActivityKey, label: "Doporučení (REF)", planned: "ref_planned", color: "#e08a00" },
+    {
+      label: "Analýzy",
+      plannedKey: "fsa_planned" as ActivityKey,
+      plannedLabel: "Domluvené",
+      actualKey: "fsa_actual" as ActivityKey,
+      actualLabel: "Proběhlé",
+    },
+    {
+      label: "Poradka",
+      plannedKey: "ser_planned" as ActivityKey,
+      plannedLabel: "Domluvená",
+      actualKey: "ser_actual" as ActivityKey,
+      actualLabel: "Proběhlá",
+    },
+    {
+      label: "Pohovory",
+      plannedKey: "poh_planned" as ActivityKey,
+      plannedLabel: "Domluvené",
+      actualKey: "poh_actual" as ActivityKey,
+      actualLabel: "Proběhlé",
+    },
   ] as const;
 
   if (isMobile) {
+    const rec = mobileRecord as any;
+    const bjValue = (rec?.bj_fsa_actual || 0) + (rec?.bj_ser_actual || 0);
+    const refActual = rec?.ref_actual || 0;
+
     return (
       <div className="mobile-page">
         {/* Header */}
         <div className="mobile-page-header">
           <div className="mobile-page-title">Moje aktivity</div>
-          <div className="mobile-page-subtitle">Zadej výsledky za tento týden</div>
         </div>
 
         {/* Week navigation */}
@@ -161,7 +234,7 @@ const MojeAktivity = () => {
           style={{
             background: "#ffffff",
             borderRadius: 16,
-            padding: "12px 16px",
+            padding: "10px 16px",
             marginBottom: 12,
             border: "1px solid #e1e9eb",
             display: "flex",
@@ -172,114 +245,123 @@ const MojeAktivity = () => {
           <button
             onClick={() => setMobileWeekOffset((o) => o - 1)}
             style={{
-              width: 34, height: 34, borderRadius: 10,
+              width: 32, height: 32, borderRadius: 10,
               background: "#dde8ea", border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
-            <ChevronLeft size={16} color="#00555f" />
+            <ChevronLeft size={15} color="#00555f" />
           </button>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 13, color: "#8aadb3" }}>
+            <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
               {isMobileWeekEditable ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
             </div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14, color: "#0c2226" }}>
-              {format(mobileWeekStart, "d.", { locale: cs })}–{format(mobileWeekEnd, "d. M.", { locale: cs })}
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+              {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
             </div>
           </div>
           <button
             onClick={() => setMobileWeekOffset((o) => Math.min(0, o + 1))}
             disabled={mobileWeekOffset >= 0}
             style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: mobileWeekOffset >= 0 ? "#f0f4f5" : "#dde8ea",
+              width: 32, height: 32, borderRadius: 10,
+              background: "#dde8ea",
               border: "none", cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              opacity: mobileWeekOffset >= 0 ? 0.4 : 1,
+              opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
             }}
           >
-            <ChevronRight size={16} color="#00555f" />
+            <ChevronRight size={15} color="#00555f" />
           </button>
         </div>
 
-        {/* Activity cards with counters */}
-        {MOBILE_ACTIVITIES.map(({ key, label, planned: plannedKey, color }) => {
-          const actualVal = (mobileRecord as any)?.[key] || 0;
-          const plannedVal = (mobileRecord as any)?.[plannedKey] || 0;
+        {/* Analýzy, Poradka, Pohovory — dual counters */}
+        {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel }) => {
+          const plannedVal = rec?.[plannedKey] || 0;
+          const actualVal = rec?.[actualKey] || 0;
           return (
-            <div key={key} className="mobile-activity-card">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14, color: "#0c2226" }}>
-                  {label}
-                </div>
-                {plannedVal > 0 && (
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: `${color}1a`, color }}>
-                    plán: {plannedVal}
-                  </span>
-                )}
+            <div key={label} className="mobile-activity-card">
+              <div style={{
+                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15,
+                color: "#0c2226", textAlign: "center", marginBottom: 14,
+              }}>
+                {label}
               </div>
-              {/* Counter row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 12, color: "#8aadb3", width: 70 }}>Uskutečněno</span>
-                <div style={{ display: "flex", alignItems: "center", background: "#dde8ea", borderRadius: 12, overflow: "hidden" }}>
-                  <button
-                    disabled={!isMobileWeekEditable}
-                    onClick={() => isMobileWeekEditable && handleCellChange(mobileWeekStr, key, Math.max(0, actualVal - 1))}
-                    style={{
-                      width: 36, height: 36, border: "none", background: "transparent",
-                      cursor: isMobileWeekEditable ? "pointer" : "default",
-                      fontSize: 18, color: "#00555f", fontWeight: 300,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    −
-                  </button>
-                  <span
-                    style={{
-                      width: 44, textAlign: "center",
-                      fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#0c2226",
-                    }}
-                  >
-                    {actualVal}
-                  </span>
-                  <button
-                    disabled={!isMobileWeekEditable}
-                    onClick={() => isMobileWeekEditable && handleCellChange(mobileWeekStr, key, actualVal + 1)}
-                    style={{
-                      width: 36, height: 36, border: "none", background: "transparent",
-                      cursor: isMobileWeekEditable ? "pointer" : "default",
-                      fontSize: 18, color: "#00555f", fontWeight: 300,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    +
-                  </button>
+              <div style={{ display: "flex", gap: 12 }}>
+                {/* Planned counter */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+                    {plannedLabel}
+                  </div>
+                  <Counter
+                    value={plannedVal}
+                    editable={isMobileWeekEditable}
+                    onDecrement={() => handleCellChange(mobileWeekStr, plannedKey, Math.max(0, plannedVal - 1))}
+                    onIncrement={() => handleCellChange(mobileWeekStr, plannedKey, plannedVal + 1)}
+                  />
+                </div>
+                {/* Divider */}
+                <div style={{ width: 1, background: "#e1e9eb", alignSelf: "stretch" }} />
+                {/* Actual counter */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+                    {actualLabel}
+                  </div>
+                  <Counter
+                    value={actualVal}
+                    editable={isMobileWeekEditable}
+                    onDecrement={() => handleCellChange(mobileWeekStr, actualKey, Math.max(0, actualVal - 1))}
+                    onIncrement={() => handleCellChange(mobileWeekStr, actualKey, actualVal + 1)}
+                  />
                 </div>
               </div>
             </div>
           );
         })}
 
-        {/* BJ total */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #00555f 0%, #00777e 100%)",
-            borderRadius: 18, padding: 16, marginBottom: 10,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>BJ tento týden</div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 28, color: "white" }}>
-              {((mobileRecord as any)?.bj_fsa_actual || 0) + ((mobileRecord as any)?.bj_ser_actual || 0)}
+        {/* Doporučení + BJ — 2-column grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <div className="mobile-activity-card" style={{ padding: 14 }}>
+            <div style={{
+              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
+              color: "#0c2226", textAlign: "center", marginBottom: 12,
+            }}>
+              Doporučení
+            </div>
+            <Counter
+              value={refActual}
+              editable={isMobileWeekEditable}
+              onDecrement={() => handleCellChange(mobileWeekStr, "ref_actual" as ActivityKey, Math.max(0, refActual - 1))}
+              onIncrement={() => handleCellChange(mobileWeekStr, "ref_actual" as ActivityKey, refActual + 1)}
+            />
+          </div>
+          <div className="mobile-activity-card" style={{ padding: 14 }}>
+            <div style={{
+              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
+              color: "#0c2226", textAlign: "center", marginBottom: 12,
+            }}>
+              BJ
+            </div>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#dde8ea", borderRadius: 12, padding: "8px 0",
+            }}>
+              <span style={{
+                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 22, color: "#00555f",
+              }}>
+                {bjValue}
+              </span>
             </div>
           </div>
-          <BarChart3 size={32} color="rgba(255,255,255,0.3)" />
         </div>
 
-        {/* Autosave note */}
-        <div style={{ textAlign: "center", fontSize: 11, color: "#8aadb3", padding: "8px 0 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d" }} />
+        {/* Autosave */}
+        <div style={{
+          textAlign: "center", fontSize: 11, color: "#8aadb3",
+          padding: "6px 0 12px", display: "flex",
+          alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d", flexShrink: 0 }} />
           Automaticky ukládáno
         </div>
       </div>
