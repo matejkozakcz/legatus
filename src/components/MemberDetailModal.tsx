@@ -20,12 +20,14 @@ interface MemberDetailModalProps {
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
   garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  ziskatel: { label: "Získatel", className: "role-badge role-badge-ziskatel" },
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
 const avatarColors: Record<string, { bg: string; color: string }> = {
   vedouci: { bg: "#e6f0f1", color: "#00555f" },
   garant: { bg: "#e6f7f9", color: "#008fa0" },
+  ziskatel: { bg: "#eeebf7", color: "#7c6fcd" },
   novacek: { bg: "#fff2f1", color: "#e05a50" },
 };
 

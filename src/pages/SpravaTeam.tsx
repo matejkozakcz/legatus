@@ -35,6 +35,7 @@ interface Profile {
 const roleBadge: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
   garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  ziskatel: { label: "Získatel", className: "role-badge role-badge-ziskatel" },
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
@@ -144,7 +145,7 @@ const SpravaTeam = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
-      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", novacek: "Nováčka" };
+      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", ziskatel: "Získatele", novacek: "Nováčka" };
       toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
       if (variables.newRole !== "novacek") {
         fireConfetti();
@@ -174,11 +175,15 @@ const SpravaTeam = () => {
       // Vedoucí can only act on members who belong to their subtree
       if (member.vedouci_id !== profile.id) return actions;
       if (member.role === "novacek") {
+        actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
+      }
+      if (member.role === "ziskatel") {
         actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
       }
       if (member.role === "garant") {
         actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
-        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
+        actions.push({ role: "ziskatel", label: "Ponížit na Získatele", variant: "demote" });
       }
     }
     if (profile?.role === "garant") {
