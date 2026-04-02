@@ -26,6 +26,7 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
