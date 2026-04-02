@@ -7,6 +7,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
+import { fireConfetti } from "@/lib/confetti";
 import { OrgChart } from "@/components/OrgChart";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
@@ -145,6 +146,9 @@ const SpravaTeam = () => {
       queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
       const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", novacek: "Nováčka" };
       toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
+      if (variables.newRole !== "novacek") {
+        fireConfetti();
+      }
       setRoleChange(null);
     },
   });
