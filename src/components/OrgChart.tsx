@@ -207,7 +207,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
       <div className="flex flex-col items-center gap-2">
         {vedouci && (
           <>
-            <NodeCard node={vedouci} isRoot />
+            <NodeCard node={vedouci} />
             <Connector />
           </>
         )}
@@ -224,7 +224,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 overflow-x-auto">
-      <NodeCard node={rootNode} isRoot />
+      <NodeCard node={rootNode} />
 
       {garantNodes.length > 0 && (
         <>
