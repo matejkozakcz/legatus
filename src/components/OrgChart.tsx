@@ -143,6 +143,7 @@ function Connector({ vertical = true }: { vertical?: boolean }) {
 
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
+  const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
