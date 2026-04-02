@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ArrowLeft, BarChart3 } from "lucide-react";
+import { Users, Plus, ArrowLeft, BarChart3, ChevronDown } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -36,6 +36,54 @@ const roleBadge: Record<string, { label: string; className: string }> = {
   garant: { label: "Garant", className: "role-badge role-badge-garant" },
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
+
+function RoleDropdown({
+  actions,
+  onSelect,
+}: {
+  actions: { role: string; label: string; variant: "promote" | "demote" }[];
+  onSelect: (action: { role: string; label: string; variant: "promote" | "demote" }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="btn btn-secondary btn-sm flex items-center gap-1"
+      >
+        Změnit roli <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border bg-white shadow-lg py-1"
+          style={{ borderColor: "#E1E9EB" }}
+        >
+          {actions.map((action) => (
+            <button
+              key={action.role}
+              onClick={() => { onSelect(action); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm font-body hover:bg-gray-50 transition-colors"
+              style={{ color: action.variant === "demote" ? "#e05a50" : "#0A2126" }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const SpravaTeam = () => {
   const { profile } = useAuth();
@@ -235,15 +283,12 @@ const SpravaTeam = () => {
                       >
                         Deaktivovat
                       </button>
-                      {roleActions.map((action) => (
-                        <button
-                          key={action.role}
-                          onClick={() => setRoleChange({ member, newRole: action.role, label: action.label })}
-                          className={action.variant === "demote" ? "btn btn-ghost btn-sm" : "btn btn-secondary btn-sm"}
-                        >
-                          {action.label}
-                        </button>
-                      ))}
+                      {roleActions.length > 0 && (
+                        <RoleDropdown
+                          actions={roleActions}
+                          onSelect={(action) => setRoleChange({ member, newRole: action.role, label: action.label })}
+                        />
+                      )}
                     </div>
                   </div>
                 );
