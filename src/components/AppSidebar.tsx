@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { LayoutDashboard, BarChart3, Users, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
