@@ -190,17 +190,19 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     const vedouciMembers = profiles.filter(
       (p) => p.role === "vedouci" && p.vedouci_id === currentUser.id && p.id !== currentUser.id
     );
-    secondLevelNodes = [...garantNodes, ...vedouciMembers];
-
-    garantNodes.forEach((g) => {
-      novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
-    });
+    // Direct nováčci whose garant is the vedoucí himself (no separate garant)
     directNovacci = profiles.filter(
       (p) =>
         p.role === "novacek" &&
         p.vedouci_id === currentUser.id &&
         (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
     );
+    // All direct reports at the same level: garanti, promoted vedoucí, and direct nováčci
+    secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci];
+
+    garantNodes.forEach((g) => {
+      novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
+    });
   } else if (profile.role === "garant") {
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     rootNode = vedouci || currentUser;
