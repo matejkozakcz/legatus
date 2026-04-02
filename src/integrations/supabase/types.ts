@@ -14,13 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_records: {
+        Row: {
+          bj_fsa_actual: number | null
+          bj_ser_actual: number | null
+          created_at: string | null
+          dop_kl_actual: number | null
+          fsa_actual: number | null
+          fsa_planned: number | null
+          id: string
+          kl_fsa_actual: number | null
+          poh_actual: number | null
+          poh_planned: number | null
+          por_actual: number | null
+          por_planned: number | null
+          ref_actual: number | null
+          ref_planned: number | null
+          ser_actual: number | null
+          ser_planned: number | null
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          bj_fsa_actual?: number | null
+          bj_ser_actual?: number | null
+          created_at?: string | null
+          dop_kl_actual?: number | null
+          fsa_actual?: number | null
+          fsa_planned?: number | null
+          id?: string
+          kl_fsa_actual?: number | null
+          poh_actual?: number | null
+          poh_planned?: number | null
+          por_actual?: number | null
+          por_planned?: number | null
+          ref_actual?: number | null
+          ref_planned?: number | null
+          ser_actual?: number | null
+          ser_planned?: number | null
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          bj_fsa_actual?: number | null
+          bj_ser_actual?: number | null
+          created_at?: string | null
+          dop_kl_actual?: number | null
+          fsa_actual?: number | null
+          fsa_planned?: number | null
+          id?: string
+          kl_fsa_actual?: number | null
+          poh_actual?: number | null
+          poh_planned?: number | null
+          por_actual?: number | null
+          por_planned?: number | null
+          ref_actual?: number | null
+          ref_planned?: number | null
+          ser_actual?: number | null
+          ser_planned?: number | null
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string
+          garant_id: string | null
+          id: string
+          is_active: boolean | null
+          role: string
+          vedouci_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name: string
+          garant_id?: string | null
+          id: string
+          is_active?: boolean | null
+          role?: string
+          vedouci_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string
+          garant_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          vedouci_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_garant_id_fkey"
+            columns: ["garant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_vedouci_id_fkey"
+            columns: ["vedouci_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: { Args: { _user_id: string }; Returns: string }
+      is_in_vedouci_subtree: {
+        Args: { _target_id: string; _vedouci_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
