@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { LayoutDashboard, BarChart3, Users, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +13,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import legatusLogoWhite from "@/assets/legatus-logo-white.png";
-import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
@@ -26,7 +24,6 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -37,24 +34,21 @@ export function AppSidebar() {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users });
   }
 
-  const initials = profile?.full_name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "?";
+  const initials =
+    profile?.full_name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?";
 
   return (
     <Sidebar collapsible="icon" className="border-r-0" style={{ width: collapsed ? undefined : "220px" }}>
       <SidebarContent className="bg-sidebar" style={{ padding: "20px 12px" }}>
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
-          <img src={legatusLogoWhite} alt="Legatus" className="h-8 w-8 object-contain flex-shrink-0" />
-          {!collapsed && (
-            <span className="font-heading font-bold text-sm tracking-[0.15em] text-white">
-              LEGATUS
-            </span>
-          )}
+          <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-8 object-contain flex-shrink-0" />
+          {!collapsed && <span className="font-heading font-bold text-sm tracking-[0.15em] text-white">LEGATUS</span>}
         </div>
 
         <SidebarGroup>
@@ -82,36 +76,30 @@ export function AppSidebar() {
 
       <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
         <div className="flex items-center gap-3">
-          <div
-            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setProfileModalOpen(true)}
-          >
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.full_name}
-                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(255,255,255,0.12)" }}
-              >
-                <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
-              </div>
-            )}
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-heading font-semibold text-white truncate">
-                  {profile?.full_name}
-                </p>
-                {profile?.role && (
-                  <span className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}>
-                    {roleBadgeConfig[profile.role]?.label}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={profile.full_name}
+              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.12)" }}
+            >
+              <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
+            </div>
+          )}
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-heading font-semibold text-white truncate">{profile?.full_name}</p>
+              {profile?.role && (
+                <span className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}>
+                  {roleBadgeConfig[profile.role]?.label}
+                </span>
+              )}
+            </div>
+          )}
           {!collapsed && (
             <button
               onClick={signOut}
@@ -124,8 +112,6 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarFooter>
-
-      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </Sidebar>
   );
 }
