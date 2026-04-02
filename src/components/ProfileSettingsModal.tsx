@@ -64,7 +64,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
     setUploading(true);
     try {
-      const path = `${user.id}/${Date.now()}_${file.name}`;
+      const path = `${user.id}/${Date.now()}_${encodeURIComponent(file.name)}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(path, file, { upsert: true });
