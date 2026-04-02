@@ -173,7 +173,9 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
               >
                 <option value="">Vyberte garanta...</option>
                 {garanti.map((g) => (
-                  <option key={g.id} value={g.id}>{g.full_name}</option>
+                  <option key={g.id} value={g.id}>
+                    {g.full_name}{g.id === profile?.id ? " (Já)" : ""}
+                  </option>
                 ))}
               </select>
             </div>
