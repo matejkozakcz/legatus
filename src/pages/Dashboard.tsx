@@ -133,7 +133,7 @@ const Dashboard = () => {
             {format(new Date(), "EEEE, d. MMMM", { locale: cs })}
           </div>
           <div className="mobile-page-title">
-            Ahoj, {profile?.first_name ?? ""}!
+            Ahoj, {profile?.full_name?.split(" ")[0] ?? ""}!
           </div>
         </div>
 
