@@ -77,20 +77,24 @@ const Dashboard = () => {
     <div className="space-y-8">
       {/* Page heading */}
       <div className="flex items-center gap-3">
-        <LayoutDashboard className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-2xl text-foreground">DASHBOARD</h1>
+        <LayoutDashboard className="h-6 w-6" style={{ color: "#0c2226" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+          DASHBOARD
+        </h1>
       </div>
 
       {/* Moje statistika */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <h2 className="font-heading font-semibold text-lg text-foreground">Moje statistika</h2>
-            <Link to="/aktivity" className="text-muted-foreground hover:text-secondary transition-colors">
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+              Moje statistika
+            </h2>
+            <Link to="/aktivity" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
               <Pencil className="h-4 w-4" />
             </Link>
           </div>
-          <p className="text-sm text-muted-foreground font-body">
+          <p className="font-body" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(dateRange.from, "d. M. yyyy", { locale: cs })} do{" "}
             {format(dateRange.to, "d. M. yyyy", { locale: cs })}
           </p>
@@ -102,11 +106,7 @@ const Dashboard = () => {
             <button
               key={pill.key}
               onClick={() => setTimeFilter(pill.key)}
-              className={`px-4 py-1.5 rounded-pill text-sm font-body font-medium transition-colors ${
-                timeFilter === pill.key
-                  ? "bg-secondary text-secondary-foreground"
-                  : "bg-card text-muted-foreground hover:bg-border"
-              }`}
+              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
             >
               {pill.label}
             </button>
@@ -122,10 +122,7 @@ const Dashboard = () => {
         </div>
 
         <div className="flex justify-end">
-          <Link
-            to="/aktivity"
-            className="text-sm text-secondary hover:text-secondary/80 font-body font-medium transition-colors"
-          >
+          <Link to="/aktivity" className="btn-text font-body" style={{ fontSize: 13 }}>
             Zobrazit detailní statistiku →
           </Link>
         </div>
@@ -134,14 +131,16 @@ const Dashboard = () => {
       {/* Moje struktura */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold text-lg text-foreground">Moje struktura</h2>
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+            Moje struktura
+          </h2>
           {(profile?.role === "vedouci" || profile?.role === "garant") && (
-            <Link to="/tym" className="text-muted-foreground hover:text-secondary transition-colors">
+            <Link to="/tym" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
               <Pencil className="h-4 w-4" />
             </Link>
           )}
         </div>
-        <div className="bg-card rounded-card shadow-card p-6">
+        <div className="legatus-card" style={{ padding: 24 }}>
           <OrgChart currentUserId={profile?.id || ""} />
         </div>
       </section>
