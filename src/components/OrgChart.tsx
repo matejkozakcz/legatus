@@ -42,7 +42,7 @@ const roleLabel: Record<string, string> = {
   novacek: "Nováček",
 };
 
-function NodeCard({ node }: { node: ProfileNode }) {
+function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
