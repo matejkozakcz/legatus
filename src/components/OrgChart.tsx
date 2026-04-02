@@ -15,13 +15,20 @@ interface OrgChartProps {
   currentUserId: string;
 }
 
-const roleBadge: Record<string, { label: string; color: string }> = {
-  vedouci: { label: "Vedoucí", color: "bg-legatus-deep-teal" },
-  garant: { label: "Garant", color: "bg-legatus-teal" },
-  novacek: { label: "Nováček", color: "bg-muted text-foreground" },
+const roleBadgeConfig: Record<string, { label: string; className: string }> = {
+  vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
+  garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
-function NodeCard({ node }: { node: ProfileNode }) {
+// Auto-assign avatar color variant based on role
+const avatarColors: Record<string, { bg: string; color: string }> = {
+  vedouci: { bg: "#e6f0f1", color: "#00555f" },
+  garant: { bg: "#e6f7f9", color: "#008fa0" },
+  novacek: { bg: "#fff2f1", color: "#e05a50" },
+};
+
+function NodeCard({ node, isRoot = false }: { node: ProfileNode; isRoot?: boolean }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -29,23 +36,56 @@ function NodeCard({ node }: { node: ProfileNode }) {
     .toUpperCase()
     .slice(0, 2);
 
-  const badge = roleBadge[node.role] || roleBadge.novacek;
+  const badge = roleBadgeConfig[node.role] || roleBadgeConfig.novacek;
+  const colors = avatarColors[node.role] || avatarColors.novacek;
+  const size = isRoot ? 56 : 48;
 
   return (
     <div className="flex flex-col items-center gap-1.5">
       {node.avatar_url ? (
-        <img src={node.avatar_url} alt={node.full_name} className="w-12 h-12 rounded-full object-cover" />
+        <img
+          src={node.avatar_url}
+          alt={node.full_name}
+          className="rounded-full object-cover"
+          style={{
+            width: size,
+            height: size,
+            boxShadow: isRoot ? "0 4px 16px rgba(0,85,95,0.15)" : undefined,
+          }}
+        />
       ) : (
-        <div className="w-12 h-12 rounded-full bg-border flex items-center justify-center">
-          <span className="text-sm font-heading font-semibold text-foreground">{initials}</span>
+        <div
+          className="rounded-full flex items-center justify-center"
+          style={{
+            width: size,
+            height: size,
+            background: colors.bg,
+            color: colors.color,
+            boxShadow: isRoot ? "0 4px 16px rgba(0,85,95,0.15)" : undefined,
+          }}
+        >
+          <span className="font-heading font-semibold" style={{ fontSize: isRoot ? 18 : 16 }}>
+            {initials}
+          </span>
         </div>
       )}
-      <p className="text-sm font-body font-medium text-foreground text-center">{node.full_name}</p>
-      <span className={`px-2 py-0.5 text-[10px] font-heading font-semibold rounded-pill text-white ${badge.color}`}>
-        {badge.label}
-      </span>
+      <p className="font-heading text-[13px] font-semibold text-center" style={{ color: "#0c2226" }}>
+        {node.full_name}
+      </p>
+      <span className={badge.className}>{badge.label}</span>
     </div>
   );
+}
+
+function Connector({ vertical = true }: { vertical?: boolean }) {
+  if (vertical) {
+    return (
+      <svg width="2" height="24" className="mx-auto">
+        <line x1="1" y1="0" x2="1" y2="24" stroke="#c8d8dc" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  return null;
 }
 
 export function OrgChart({ currentUserId }: OrgChartProps) {
@@ -67,20 +107,23 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="animate-pulse text-muted-foreground font-body">Načítání struktury...</div>
+        <p className="font-body text-[13px]" style={{ color: "#8aadb3" }}>
+          Načítání struktury...
+        </p>
       </div>
     );
   }
 
   if (!profile) return null;
 
-  // Build tree based on role
   const currentUser = profiles.find((p) => p.id === currentUserId);
-  if (!currentUser) return <p className="text-muted-foreground font-body text-sm">Žádná struktura.</p>;
-
-  // For Vedoucí: show self at root, Garanté below, their Nováčci as leaves
-  // For Garant: show their Vedoucí at root, self below, their Nováčci as leaves
-  // For Nováček: show their chain
+  if (!currentUser) {
+    return (
+      <p className="font-body text-[13px]" style={{ color: "#8aadb3" }}>
+        Žádná struktura k zobrazení.
+      </p>
+    );
+  }
 
   let rootNode: ProfileNode = currentUser;
   let garantNodes: ProfileNode[] = [];
@@ -101,21 +144,20 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
       profiles.filter((p) => p.role === "novacek" && p.garant_id === currentUser.id)
     );
   } else {
-    // Nováček: show chain
     const garant = profiles.find((p) => p.id === currentUser.garant_id);
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     return (
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-2">
         {vedouci && (
           <>
-            <NodeCard node={vedouci} />
-            <div className="w-px h-6 bg-border" />
+            <NodeCard node={vedouci} isRoot />
+            <Connector />
           </>
         )}
         {garant && (
           <>
             <NodeCard node={garant} />
-            <div className="w-px h-6 bg-border" />
+            <Connector />
           </>
         )}
         <NodeCard node={currentUser} />
@@ -124,24 +166,22 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 overflow-x-auto">
-      {/* Root */}
-      <NodeCard node={rootNode} />
+    <div className="flex flex-col items-center gap-2 overflow-x-auto">
+      <NodeCard node={rootNode} isRoot />
 
       {garantNodes.length > 0 && (
         <>
-          <div className="w-px h-6 bg-border" />
-          {/* Garanté level */}
-          <div className="flex gap-8 flex-wrap justify-center">
+          <Connector />
+          <div className="flex gap-10 flex-wrap justify-center">
             {garantNodes.map((garant) => {
               const novacci = novacekMap.get(garant.id) || [];
               return (
-                <div key={garant.id} className="flex flex-col items-center gap-4">
+                <div key={garant.id} className="flex flex-col items-center gap-2">
                   <NodeCard node={garant} />
                   {novacci.length > 0 && (
                     <>
-                      <div className="w-px h-4 bg-border" />
-                      <div className="flex gap-4 flex-wrap justify-center">
+                      <Connector />
+                      <div className="flex gap-6 flex-wrap justify-center">
                         {novacci.map((n) => (
                           <NodeCard key={n.id} node={n} />
                         ))}

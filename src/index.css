@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,14 +6,34 @@
 
 @layer base {
   :root {
+    /* Brand */
+    --coral: 5 96% 71%;
+    --coral-hex: #fc7c71;
+    --coral-light: 0 100% 97%;
+    --coral-mid: 4 92% 92%;
+    --coral-dark: 5 70% 60%;
+
+    --teal: 186 100% 37%;
+    --teal-hex: #00abbd;
+    --teal-light: 186 60% 94%;
+    --teal-mid: 186 55% 82%;
+    --teal-dark: 186 100% 31%;
+
+    --deep: 187 100% 19%;
+    --deep-hex: #00555f;
+    --deep-light: 187 25% 92%;
+    --deep-mid: 187 20% 69%;
+    --deep-dark: 187 100% 13%;
+
+    /* Semantic mappings */
     --background: 192 24% 89%;
-    --foreground: 190 50% 9%;
+    --foreground: 190 55% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 190 50% 9%;
+    --card-foreground: 190 55% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 190 50% 9%;
+    --popover-foreground: 190 55% 10%;
 
     --primary: 5 96% 71%;
     --primary-foreground: 0 0% 100%;
@@ -27,15 +47,17 @@
     --accent: 186 100% 37%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 5 70% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 190 20% 80%;
-    --input: 190 20% 80%;
+    --border: 190 18% 91%;
+    --border-mid: 192 18% 82%;
+    --input: 190 18% 91%;
     --ring: 186 100% 37%;
 
     --radius: 0.75rem;
 
+    /* Sidebar */
     --sidebar-background: 187 100% 19%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 5 96% 71%;
@@ -45,17 +67,42 @@
     --sidebar-border: 187 60% 25%;
     --sidebar-ring: 186 100% 37%;
 
-    /* Custom Legatus tokens */
-    --legatus-coral: 5 96% 71%;
-    --legatus-teal: 186 100% 37%;
-    --legatus-deep-teal: 187 100% 19%;
-    --legatus-bg: 192 24% 89%;
-    --legatus-text-secondary: 190 22% 36%;
-    --legatus-text-muted: 190 22% 61%;
-    --legatus-purple: 249 42% 62%;
-    --legatus-green: 138 52% 41%;
-    --legatus-amber: 37 100% 44%;
-    --legatus-card-shadow: 0 12px 48px rgba(0, 85, 95, 0.22);
+    /* Status */
+    --status-ok: 142 71% 45%;
+    --status-ok-bg: 138 76% 97%;
+    --status-warn: 38 92% 50%;
+    --status-warn-bg: 48 100% 96%;
+    --status-error: 5 96% 71%;
+    --status-error-bg: 0 100% 97%;
+    --status-done: 186 100% 37%;
+    --status-done-bg: 186 60% 94%;
+
+    /* Category accents */
+    --accent-analyzy: #00abbd;
+    --accent-pohovory: #7c6fcd;
+    --accent-poradka: #2da44e;
+    --accent-doporuceni: #e08a00;
+
+    /* Shadows (raw values for direct use) */
+    --shadow-xs: 0 1px 2px rgba(0,85,95,0.06);
+    --shadow-sm: 0 2px 8px rgba(0,85,95,0.08);
+    --shadow-md: 0 4px 16px rgba(0,85,95,0.10);
+    --shadow-lg: 0 8px 32px rgba(0,85,95,0.13);
+
+    /* Radius */
+    --r-xs: 6px;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --r-2xl: 28px;
+    --r-full: 9999px;
+
+    /* Text colors (hex for direct use) */
+    --text-primary: #0c2226;
+    --text-secondary: #4a6b70;
+    --text-muted: #8aadb3;
+    --text-inverse: #ffffff;
   }
 
   * {
@@ -63,11 +110,13 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background font-body;
+    color: var(--text-primary);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', sans-serif;
+    line-height: 1.25;
   }
 }
 
@@ -77,5 +126,291 @@
   }
   .font-body {
     font-family: 'Open Sans', sans-serif;
+  }
+}
+
+/* ===== Button Variants ===== */
+@layer components {
+  .btn {
+    @apply font-body font-semibold cursor-pointer border-none;
+    transition: all 0.15s ease;
+  }
+  .btn-sm {
+    padding: 6px 14px;
+    border-radius: var(--r-sm);
+    font-size: 12px;
+  }
+  .btn-md {
+    padding: 10px 20px;
+    border-radius: var(--r-md);
+    font-size: 13px;
+  }
+  .btn-lg {
+    padding: 14px 28px;
+    border-radius: var(--r-md);
+    font-size: 15px;
+  }
+  .btn-primary {
+    background: #fc7c71;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(252,124,113,0.30);
+  }
+  .btn-primary:hover {
+    background: #e05a50;
+    box-shadow: 0 4px 14px rgba(252,124,113,0.38);
+  }
+  .btn-secondary {
+    background: #00abbd;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,171,189,0.25);
+  }
+  .btn-secondary:hover {
+    background: #008fa0;
+  }
+  .btn-deep {
+    background: #00555f;
+    color: #fff;
+  }
+  .btn-deep:hover {
+    background: #003a42;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: #00555f;
+    border: 1.5px solid #c8d8dc;
+  }
+  .btn-ghost:hover {
+    background: #dde8ea;
+    border-color: #99bfc3;
+  }
+  .btn-ghost-coral {
+    background: transparent;
+    color: #e05a50;
+    border: 1.5px solid #fddbd9;
+  }
+  .btn-ghost-coral:hover {
+    background: #fff2f1;
+  }
+  .btn-text {
+    background: transparent;
+    color: #00abbd;
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .btn-text:hover {
+    color: #00555f;
+  }
+  .btn-danger {
+    background: #fff2f1;
+    color: #e05a50;
+    border: 1.5px solid #fddbd9;
+  }
+  .btn-danger:hover {
+    background: #fddbd9;
+  }
+
+  /* ===== Role Badges ===== */
+  .role-badge {
+    @apply font-body;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .role-badge-vedouci {
+    background: #e6f0f1;
+    color: #00555f;
+  }
+  .role-badge-garant {
+    background: #e6f7f9;
+    color: #008fa0;
+  }
+  .role-badge-novacek {
+    background: #dde8ea;
+    color: #4a6b70;
+  }
+
+  /* ===== Status Badges ===== */
+  .badge-ok {
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+  .badge-warn {
+    background: #fffbeb;
+    color: #b45309;
+  }
+  .badge-error {
+    background: #fff2f1;
+    color: #e05a50;
+  }
+  .badge-done {
+    background: #e6f7f9;
+    color: #008fa0;
+  }
+  .badge-neutral {
+    background: #dde8ea;
+    color: #4a6b70;
+  }
+
+  /* ===== Chips ===== */
+  .chip {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    @apply font-body;
+  }
+  .chip-teal {
+    background: #e6f7f9;
+    color: #008fa0;
+  }
+  .chip-teal-active {
+    background: #00abbd;
+    color: #ffffff;
+  }
+  .chip-coral {
+    background: #fff2f1;
+    color: #e05a50;
+  }
+  .chip-deep {
+    background: #e6f0f1;
+    color: #00555f;
+  }
+  .chip-neutral {
+    background: #dde8ea;
+    color: #4a6b70;
+    border: 1px solid #e2eaec;
+  }
+
+  /* ===== Cards ===== */
+  .legatus-card {
+    background: #ffffff;
+    border-radius: var(--r-lg);
+    border: 1px solid #e2eaec;
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
+  }
+  .legatus-card-sm {
+    padding: 16px;
+    border-radius: var(--r-md);
+  }
+  .legatus-modal {
+    border-radius: var(--r-2xl);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* ===== Stat Card ===== */
+  .stat-card {
+    background: #ffffff;
+    border-radius: var(--r-lg);
+    border: 1px solid #e2eaec;
+    box-shadow: var(--shadow-sm);
+    padding: 20px 24px;
+  }
+
+  /* ===== Nav Items ===== */
+  .nav-item {
+    font-size: 13px;
+    font-weight: 500;
+    @apply font-body;
+    color: rgba(255,255,255,0.65);
+    padding: 9px 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.9);
+  }
+  .nav-item.active {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  /* ===== Activity Table ===== */
+  .activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .activity-table th {
+    @apply font-body;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8aadb3;
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 2px solid #e2eaec;
+    white-space: nowrap;
+  }
+  .activity-table td {
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid #e2eaec;
+    color: #0c2226;
+  }
+  .activity-table tr.past td {
+    color: #8aadb3;
+    background: #f8fbfc;
+  }
+  .activity-table tr.current td {
+    background: #ffffff;
+    font-weight: 500;
+  }
+  .activity-table tr.summary td {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    background: #e6f7f9;
+    color: #00555f;
+  }
+  .activity-table td input[type="number"] {
+    width: 52px;
+    text-align: center;
+    border: 1.5px solid #e2eaec;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 13px;
+    color: #0c2226;
+    background: #ffffff;
+  }
+  .activity-table td input[type="number"]:focus {
+    border-color: #00abbd;
+    box-shadow: 0 0 0 2px rgba(0,171,189,0.12);
+    outline: none;
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-track {
+    background: #e2eaec;
+    border-radius: 9999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Toast ===== */
+  .legatus-toast {
+    background: #00555f;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,85,95,0.22);
   }
 }

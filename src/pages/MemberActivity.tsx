@@ -98,32 +98,30 @@ const MemberActivity = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <Link to="/tym" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/tym" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <BarChart3 className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-2xl text-foreground">
+        <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
           {memberProfile?.full_name || "Načítání..."} — Moje aktivity
         </h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} accentVar="--legatus-teal" />
-        <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} accentVar="--legatus-purple" />
-        <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} accentVar="--legatus-green" />
-        <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentVar="--legatus-amber" />
+        <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} accentColor="#00abbd" />
+        <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} accentColor="#7c6fcd" />
+        <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} accentColor="#2da44e" />
+        <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentColor="#e08a00" />
       </div>
 
-      <section className="bg-card rounded-card shadow-card overflow-hidden">
+      <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm font-body">
+          <table className="activity-table">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-3 py-3 text-left font-semibold text-foreground whitespace-nowrap">Týden</th>
+              <tr>
+                <th className="text-left">Týden</th>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <th key={col.key} className="px-2 py-3 text-center font-semibold text-foreground whitespace-nowrap text-xs">
-                    {col.header}
-                  </th>
+                  <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
             </thead>
@@ -133,24 +131,20 @@ const MemberActivity = () => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 return (
-                  <tr key={weekStr} className="border-b border-border">
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-foreground">
+                  <tr key={weekStr} className="past">
+                    <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key} className="px-1 py-2 text-center text-muted-foreground">
-                        {(record as any)?.[col.key] || 0}
-                      </td>
+                      <td key={col.key}>{(record as any)?.[col.key] || 0}</td>
                     ))}
                   </tr>
                 );
               })}
-              <tr className="bg-muted/50 font-bold">
-                <td className="px-3 py-2 text-sm text-foreground">Celkem</td>
+              <tr className="summary">
+                <td className="text-left">Celkem</td>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <td key={col.key} className="px-1 py-2 text-center text-sm text-foreground">
-                    {columnSums[col.key]}
-                  </td>
+                  <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
             </tbody>

@@ -133,46 +133,42 @@ const MojeAktivity = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <BarChart3 className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-2xl text-foreground">MOJE AKTIVITY</h1>
+        <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>MOJE AKTIVITY</h1>
       </div>
 
       {/* Stats */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold text-lg text-foreground">Moje statistika</h2>
-          <Pencil className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>Moje statistika</h2>
+          <Pencil className="h-4 w-4" style={{ color: "#8aadb3" }} />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-4 py-1.5 rounded-pill text-sm font-body font-medium bg-secondary text-secondary-foreground">
-            Tento měsíc
-          </span>
-          <span className="text-sm text-muted-foreground font-body ml-4">
+          <span className="chip chip-teal-active">Tento měsíc</span>
+          <span className="font-body ml-4" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} accentVar="--legatus-teal" />
-          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} accentVar="--legatus-purple" />
-          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} accentVar="--legatus-green" />
-          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentVar="--legatus-amber" />
+          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} accentColor="#00abbd" />
+          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} accentColor="#7c6fcd" />
+          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} accentColor="#2da44e" />
+          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentColor="#e08a00" />
         </div>
       </section>
 
       {/* Activity table */}
-      <section className="bg-card rounded-card shadow-card overflow-hidden">
+      <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm font-body">
+          <table className="activity-table">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-3 py-3 text-left font-semibold text-foreground whitespace-nowrap">Týden</th>
+              <tr>
+                <th className="text-left">Týden</th>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <th key={col.key} className="px-2 py-3 text-center font-semibold text-foreground whitespace-nowrap text-xs">
-                    {col.header}
-                  </th>
+                  <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
             </thead>
@@ -182,43 +178,37 @@ const MojeAktivity = () => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 const isCurrentWeek = isSameWeek(weekStart, now, { weekStartsOn: 1 });
-                const isFuture = isAfter(weekStart, now) && !isCurrentWeek;
+                const isPast = !isCurrentWeek && !isAfter(weekStart, now);
                 const isEditable = isCurrentWeek;
 
                 return (
-                  <tr key={weekStr} className={`border-b border-border ${isCurrentWeek ? "bg-secondary/30" : ""}`}>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-foreground">
+                  <tr key={weekStr} className={isCurrentWeek ? "current" : isPast ? "past" : ""}>
+                    <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key} className="px-1 py-1 text-center">
+                      <td key={col.key}>
                         {isEditable ? (
                           <input
                             type="number"
                             min={0}
                             defaultValue={(record as any)?.[col.key] || 0}
-                            className="w-12 h-8 text-center text-sm rounded-sm border border-input bg-background font-body focus:outline-none focus:ring-1 focus:ring-ring"
                             onBlur={(e) =>
                               handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)
                             }
                           />
                         ) : (
-                          <span className={isFuture ? "text-muted-foreground/50" : "text-muted-foreground"}>
-                            {(record as any)?.[col.key] || 0}
-                          </span>
+                          (record as any)?.[col.key] || 0
                         )}
                       </td>
                     ))}
                   </tr>
                 );
               })}
-              {/* Summary row */}
-              <tr className="bg-muted/50 font-bold">
-                <td className="px-3 py-2 text-sm text-foreground">Celkem</td>
+              <tr className="summary">
+                <td className="text-left">Celkem</td>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <td key={col.key} className="px-1 py-2 text-center text-sm text-foreground">
-                    {columnSums[col.key]}
-                  </td>
+                  <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
             </tbody>

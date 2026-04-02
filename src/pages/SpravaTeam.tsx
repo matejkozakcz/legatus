@@ -31,10 +31,10 @@ interface Profile {
   created_at: string | null;
 }
 
-const roleBadge: Record<string, { label: string; color: string }> = {
-  vedouci: { label: "Vedoucí", color: "bg-legatus-deep-teal text-white" },
-  garant: { label: "Garant", color: "bg-legatus-teal text-white" },
-  novacek: { label: "Nováček", color: "bg-muted text-foreground" },
+const roleBadge: Record<string, { label: string; className: string }> = {
+  vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
+  garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
 const SpravaTeam = () => {
@@ -113,13 +113,10 @@ const SpravaTeam = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-foreground" />
-          <h1 className="font-heading font-bold text-2xl text-foreground">SPRÁVA TÝMU</h1>
+          <Users className="h-6 w-6" style={{ color: "#0c2226" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>SPRÁVA TÝMU</h1>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-input bg-primary text-primary-foreground font-heading font-semibold text-sm hover:opacity-90 transition-opacity"
-        >
+        <button onClick={() => setAddOpen(true)} className="btn btn-primary btn-md flex items-center gap-2">
           <Plus className="h-4 w-4" /> Přidat člena
         </button>
       </div>
@@ -130,9 +127,7 @@ const SpravaTeam = () => {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-pill text-sm font-body font-medium transition-colors ${
-              tab === t ? "bg-secondary text-secondary-foreground" : "bg-card text-muted-foreground hover:bg-border"
-            }`}
+            className={`chip ${tab === t ? "chip-teal-active" : "chip-neutral"}`}
           >
             {t === "seznam" ? "Seznam" : "Org chart"}
           </button>
@@ -179,7 +174,7 @@ const SpravaTeam = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-body font-medium text-foreground">{member.full_name}</p>
-                        <span className={`px-2 py-0.5 text-[10px] font-heading font-semibold rounded-pill ${badge.color}`}>
+                        <span className={badge.className}>
                           {badge.label}
                         </span>
                       </div>
