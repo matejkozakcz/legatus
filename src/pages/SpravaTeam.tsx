@@ -31,10 +31,10 @@ interface Profile {
   created_at: string | null;
 }
 
-const roleBadge: Record<string, { label: string; color: string }> = {
-  vedouci: { label: "Vedoucí", color: "bg-legatus-deep-teal text-white" },
-  garant: { label: "Garant", color: "bg-legatus-teal text-white" },
-  novacek: { label: "Nováček", color: "bg-muted text-foreground" },
+const roleBadge: Record<string, { label: string; className: string }> = {
+  vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
+  garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
 const SpravaTeam = () => {
