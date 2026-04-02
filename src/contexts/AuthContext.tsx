@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, retries = 2): Promise<void> => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -39,7 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !data) {
-      // User is deactivated or profile doesn't exist
+      // Retry on transient RLS/timing failures
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 500));
+        return fetchProfile(userId, retries - 1);
+      }
+      // After retries, user is likely deactivated
       await supabase.auth.signOut();
       setProfile(null);
       return;
