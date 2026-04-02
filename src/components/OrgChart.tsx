@@ -23,23 +23,17 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
-// Auto-assign avatar color variant based on role
 const avatarColors: Record<string, { bg: string; color: string }> = {
   vedouci: { bg: "#e6f0f1", color: "#00555f" },
   garant: { bg: "#e6f7f9", color: "#008fa0" },
   novacek: { bg: "#fff2f1", color: "#e05a50" },
 };
 
-const statusColors: Record<string, { bg: string; shadow: string }> = {
-  active: { bg: "#3FC55D", shadow: "rgba(63, 197, 93, 0.25)" },
-  teal: { bg: "#45AABD", shadow: "rgba(69, 170, 189, 0.25)" },
-  orange: { bg: "#F39E0A", shadow: "rgba(243, 158, 10, 0.25)" },
-};
-
-const roleLabel: Record<string, string> = {
-  vedouci: "Vedoucí",
-  garant: "Garant",
-  novacek: "Nováček",
+// Status dot color per role (maps to SVG spec: green=garant, teal=vedouci, orange=novacek)
+const statusDotColor: Record<string, { bg: string; glow: string }> = {
+  vedouci: { bg: "#45AABD", glow: "rgba(69, 170, 189, 0.25)" },
+  garant:  { bg: "#3FC55D", glow: "rgba(63, 197, 93, 0.25)" },
+  novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
 
 function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }) {
@@ -51,7 +45,7 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
     .slice(0, 2);
 
   const colors = avatarColors[node.role] || avatarColors.novacek;
-  const status = statusColors.active;
+  const dot = statusDotColor[node.role] || { bg: "#89ADB4", glow: "rgba(137,173,180,0.25)" };
 
   return (
     <div
@@ -59,24 +53,26 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
       onClick={onClick}
       style={{
         width: 160,
-        height: 105,
+        minHeight: 105,
         background: "#F6F8F9",
         border: "1px solid #E1E9EB",
         borderRadius: 12,
         boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        paddingTop: 10,
+        paddingBottom: 14,
       }}
     >
-      {/* Status dot */}
+      {/* Status dot — top-left per Figma SVG spec */}
       <div
         className="absolute"
         style={{
-          top: 8,
-          right: 8,
+          top: 12,
+          left: 12,
           width: 7,
           height: 7,
           borderRadius: "50%",
-          background: status.bg,
-          boxShadow: `0 0 0 4px ${status.shadow}`,
+          background: dot.bg,
+          boxShadow: `0 0 0 4px ${dot.glow}`,
         }}
       />
 
@@ -90,7 +86,8 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
             style={{
               width: 56,
               height: 56,
-              border: "1px solid #fff",
+              border: "2px solid white",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
             }}
           />
         ) : (
@@ -101,7 +98,8 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
               height: 56,
               background: colors.bg,
               color: colors.color,
-              border: "1px solid #fff",
+              border: "2px solid white",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
             }}
           >
             <span className="font-heading font-semibold" style={{ fontSize: 18 }}>
@@ -113,18 +111,18 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
 
       {/* Name */}
       <p
-        className="font-heading text-center leading-tight"
-        style={{ fontSize: 13, fontWeight: 600, color: "#0A2126", marginTop: 8 }}
+        className="font-heading font-semibold text-center leading-tight"
+        style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}
       >
         {node.full_name}
       </p>
 
       {/* Role */}
       <p
-        className="text-center"
+        className="font-body text-center"
         style={{ fontSize: 11, color: "#89ADB4", marginTop: 2 }}
       >
-        {roleLabel[node.role] || node.role}
+        {roleBadgeConfig[node.role]?.label || node.role}
       </p>
     </div>
   );
@@ -180,31 +178,39 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   }
 
   let rootNode: ProfileNode = currentUser;
-  let garantNodes: ProfileNode[] = [];
+  // All direct reports at second level: garanti + vedoucí who belong to this team
+  let secondLevelNodes: ProfileNode[] = [];
   let novacekMap: Map<string, ProfileNode[]> = new Map();
   let directNovacci: ProfileNode[] = [];
 
   if (profile.role === "vedouci") {
     rootNode = currentUser;
-    garantNodes = profiles.filter((p) => p.role === "garant" && p.vedouci_id === currentUser.id);
-    // Nováčci under each garant
+    const garantNodes = profiles.filter((p) => p.role === "garant" && p.vedouci_id === currentUser.id);
+    // Also include vedoucí members promoted from within this team (different from currentUser)
+    const vedouciMembers = profiles.filter(
+      (p) => p.role === "vedouci" && p.vedouci_id === currentUser.id && p.id !== currentUser.id
+    );
+    secondLevelNodes = [...garantNodes, ...vedouciMembers];
+
     garantNodes.forEach((g) => {
       novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
     });
-    // Nováčci directly under vedoucí (garant_id = vedouci_id, or no garant among garanti)
     directNovacci = profiles.filter(
-      (p) => p.role === "novacek" && p.vedouci_id === currentUser.id && 
-      (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
+      (p) =>
+        p.role === "novacek" &&
+        p.vedouci_id === currentUser.id &&
+        (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
     );
   } else if (profile.role === "garant") {
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     rootNode = vedouci || currentUser;
-    garantNodes = [currentUser];
+    secondLevelNodes = [currentUser];
     novacekMap.set(
       currentUser.id,
       profiles.filter((p) => p.role === "novacek" && p.garant_id === currentUser.id)
     );
   } else {
+    // Nováček view: show chain upwards
     const garant = profiles.find((p) => p.id === currentUser.garant_id);
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     return (
@@ -232,48 +238,51 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 overflow-x-auto">
-      <NodeCard node={rootNode} onClick={() => setSelectedMember(rootNode)} />
+    <>
+      <div className="flex flex-col items-center gap-2 overflow-x-auto py-2">
+        <NodeCard node={rootNode} onClick={() => setSelectedMember(rootNode)} />
 
-      {garantNodes.length > 0 && (
-        <>
-          <Connector />
-          <div className="flex gap-10 flex-wrap justify-center">
-            {garantNodes.map((garant) => {
-              const novacci = novacekMap.get(garant.id) || [];
-              return (
-                <div key={garant.id} className="flex flex-col items-center gap-2">
-                  <NodeCard node={garant} onClick={() => setSelectedMember(garant)} />
-                  {novacci.length > 0 && (
-                    <>
-                      <Connector />
-                      <div className="flex gap-6 flex-wrap justify-center">
-                        {novacci.map((n) => (
-                          <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-      {directNovacci.length > 0 && (
-        <>
-          {garantNodes.length === 0 && <Connector />}
-          <div className="flex gap-6 flex-wrap justify-center mt-2">
-            {directNovacci.map((n) => (
-              <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
-            ))}
-          </div>
-        </>
-      )}
+        {secondLevelNodes.length > 0 && (
+          <>
+            <Connector />
+            <div className="flex gap-6 flex-wrap justify-center">
+              {secondLevelNodes.map((node) => {
+                const novacci = novacekMap.get(node.id) || [];
+                return (
+                  <div key={node.id} className="flex flex-col items-center gap-2">
+                    <NodeCard node={node} onClick={() => setSelectedMember(node)} />
+                    {novacci.length > 0 && (
+                      <>
+                        <Connector />
+                        <div className="flex gap-6 flex-wrap justify-center">
+                          {novacci.map((n) => (
+                            <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {directNovacci.length > 0 && (
+          <>
+            {secondLevelNodes.length === 0 && <Connector />}
+            <div className="flex gap-6 flex-wrap justify-center mt-2">
+              {directNovacci.map((n) => (
+                <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {selectedMember && (
         <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
       )}
-    </div>
+    </>
   );
 }
