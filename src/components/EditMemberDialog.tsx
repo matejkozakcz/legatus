@@ -19,6 +19,7 @@ interface Profile {
   role: string;
   avatar_url: string | null;
   ziskatel_id?: string | null;
+  osobni_id?: string | null;
 }
 
 interface EditMemberDialogProps {
@@ -38,8 +39,11 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
   const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
   const [ziskatelId, setZiskatelId] = useState("");
+  const [osobniId, setOsobniId] = useState("");
 
   const isVedouci = profile?.role === "vedouci";
+  const isGarant = profile?.role === "garant";
+  const canEditOsobniId = isVedouci || isGarant;
 
   // Fetch potential získatelé (everyone in vedoucí's subtree)
   const { data: potentialZiskatele = [] } = useQuery({
@@ -67,6 +71,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
     if (member) {
       setFullName(member.full_name);
       setZiskatelId(member.ziskatel_id || "");
+      setOsobniId(member.osobni_id || "");
     }
   }, [member]);
 
@@ -76,6 +81,9 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
       const updateData: Record<string, unknown> = { full_name: fullName };
       if (isVedouci && ziskatelId) {
         updateData.ziskatel_id = ziskatelId;
+      }
+      if (canEditOsobniId) {
+        updateData.osobni_id = osobniId.trim() || null;
       }
       const { error } = await supabase
         .from("profiles")
@@ -97,6 +105,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
   const handleClose = () => {
     setFullName("");
     setZiskatelId("");
+    setOsobniId("");
     onClose();
   };
 
@@ -132,6 +141,24 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
                 ))}
               </select>
             </div>
+          )}
+
+          {canEditOsobniId && (
+            <>
+              <div className="border-t border-border pt-4">
+                <label className="text-sm font-body font-medium text-foreground mb-1 block">
+                  Osobní ID
+                </label>
+                <Input
+                  value={osobniId}
+                  onChange={(e) => setOsobniId(e.target.value)}
+                  placeholder="např. 122258"
+                />
+                <p className="text-xs text-muted-foreground mt-1 font-body">
+                  Osobní ID z Partners platformy. Po přidělení dojde k automatickému povýšení na Získatele.
+                </p>
+              </div>
+            </>
           )}
         </div>
         <DialogFooter>

@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ArrowLeft, BarChart3, ChevronDown } from "lucide-react";
+import { Users, Plus, ArrowLeft, BarChart3, ChevronDown, TrendingUp } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -30,6 +30,22 @@ interface Profile {
   garant_id: string | null;
   is_active: boolean | null;
   created_at: string | null;
+  osobni_id?: string | null;
+}
+
+interface PromotionRequest {
+  id: string;
+  user_id: string;
+  requested_role: string;
+  status: string;
+  cumulative_bj: number | null;
+  direct_ziskatels: number | null;
+  member?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+    role: string;
+  };
 }
 
 const roleBadge: Record<string, { label: string; className: string }> = {
@@ -96,6 +112,60 @@ const SpravaTeam = () => {
   const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
   const [roleChange, setRoleChange] = useState<{ member: Profile; newRole: string; label: string } | null>(null);
 
+  // --- Promotion requests ---
+  const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
+    queryKey: ["promotion_requests", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id || profile.role !== "vedouci") return [];
+      // Fetch pending requests for members in this vedouci's team
+      const { data, error } = await supabase
+        .from("promotion_requests")
+        .select("id, user_id, requested_role, status, cumulative_bj, direct_ziskatels")
+        .eq("status", "pending");
+      if (error) throw error;
+      return (data || []) as PromotionRequest[];
+    },
+    enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async ({ requestId, userId, newRole }: { requestId: string; userId: string; newRole: string }) => {
+      const { error: roleError } = await supabase
+        .from("profiles")
+        .update({ role: newRole })
+        .eq("id", userId);
+      if (roleError) throw roleError;
+      const { error: reqError } = await supabase
+        .from("promotion_requests")
+        .update({ status: "approved", reviewed_by: profile!.id, reviewed_at: new Date().toISOString() })
+        .eq("id", requestId);
+      if (reqError) throw reqError;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
+      const label = roleBadge[vars.newRole]?.label || vars.newRole;
+      toast.success(`Povýšení na ${label} schváleno`);
+      fireConfetti();
+    },
+    onError: () => toast.error("Nepodařilo se schválit povýšení"),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from("promotion_requests")
+        .update({ status: "rejected", reviewed_by: profile!.id, reviewed_at: new Date().toISOString() })
+        .eq("id", requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
+      toast.success("Žádost zamítnuta");
+    },
+    onError: () => toast.error("Nepodařilo se zamítnout žádost"),
+  });
+
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members", profile?.id, profile?.role],
     queryFn: async () => {
@@ -127,6 +197,69 @@ const SpravaTeam = () => {
   // Get all profiles for name lookup
   const profileMap = new Map(members.map((m) => [m.id, m]));
   if (profile) profileMap.set(profile.id, profile as unknown as Profile);
+
+  // Enrich pending requests with member data from profileMap
+  const enrichedRequests: PromotionRequest[] = pendingRequests
+    .filter((req) => profileMap.has(req.user_id))
+    .map((req) => ({
+      ...req,
+      member: profileMap.get(req.user_id) as PromotionRequest["member"],
+    }));
+
+  // Auto-check promotion conditions for all Získatels in the team
+  const checkPromotions = useCallback(async () => {
+    if (profile?.role !== "vedouci" || members.length === 0) return;
+    const ziskatels = members.filter((m) => m.role === "ziskatel");
+    if (ziskatels.length === 0) return;
+    const ziskatelIds = ziskatels.map((m) => m.id);
+
+    // Fetch cumulative BJ for all ziskatels
+    const { data: bjData } = await supabase
+      .from("activity_records")
+      .select("user_id, bj")
+      .in("user_id", ziskatelIds);
+
+    const bjByUser = new Map<string, number>();
+    (bjData || []).forEach((r: any) => {
+      bjByUser.set(r.user_id, (bjByUser.get(r.user_id) || 0) + (r.bj || 0));
+    });
+
+    // Count direct Získatels per candidate (ziskatel_id = candidate.id AND role = 'ziskatel')
+    const { data: directData } = await supabase
+      .from("profiles")
+      .select("ziskatel_id")
+      .in("ziskatel_id", ziskatelIds)
+      .eq("role", "ziskatel")
+      .eq("is_active", true);
+
+    const directByUser = new Map<string, number>();
+    (directData || []).forEach((r: any) => {
+      if (r.ziskatel_id) directByUser.set(r.ziskatel_id, (directByUser.get(r.ziskatel_id) || 0) + 1);
+    });
+
+    for (const candidate of ziskatels) {
+      const cumulativeBj = bjByUser.get(candidate.id) || 0;
+      const directZiskatels = directByUser.get(candidate.id) || 0;
+
+      if (cumulativeBj > 1000) {
+        await supabase.from("promotion_requests").upsert(
+          { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj },
+          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+        );
+      }
+      if (directZiskatels >= 10) {
+        await supabase.from("promotion_requests").upsert(
+          { user_id: candidate.id, requested_role: "vedouci", status: "pending", direct_ziskatels: directZiskatels },
+          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+        );
+      }
+    }
+    refetchRequests();
+  }, [profile, members, refetchRequests]);
+
+  useEffect(() => {
+    if (!isLoading && members.length > 0) checkPromotions();
+  }, [isLoading, members.length]);
 
   const promoteMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
@@ -172,24 +305,17 @@ const SpravaTeam = () => {
   const getRoleActions = (member: Profile) => {
     const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
     if (profile?.role === "vedouci") {
-      // Vedoucí can only act on members who belong to their subtree
       if (member.vedouci_id !== profile.id) return actions;
+      // novacek → ziskatel: fallback (normálně přes Osobní ID trigger)
       if (member.role === "novacek") {
         actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
       }
+      // Demotions only — garant/vedouci promotions jdou přes approval flow
       if (member.role === "ziskatel") {
-        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
         actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
       }
       if (member.role === "garant") {
-        actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
         actions.push({ role: "ziskatel", label: "Ponížit na Získatele", variant: "demote" });
-      }
-    }
-    if (profile?.role === "garant") {
-      // Garant can only act on their own Nováčci
-      if (member.role === "novacek" && member.garant_id === profile.id) {
-        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
       }
     }
     return actions;
@@ -219,6 +345,66 @@ const SpravaTeam = () => {
           </button>
         ))}
       </div>
+
+      {/* Čekající povýšení — only for vedoucí when there are pending requests */}
+      {profile?.role === "vedouci" && enrichedRequests.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" style={{ color: "#00abbd" }} />
+            <h2 className="font-heading font-semibold" style={{ fontSize: 16, color: "#0c2226" }}>
+              Čekající povýšení
+            </h2>
+          </div>
+          <div className="grid gap-3">
+            {enrichedRequests.map((req) => {
+              if (!req.member) return null;
+              const currentBadge = roleBadge[req.member.role] || roleBadge.novacek;
+              const targetBadge = roleBadge[req.requested_role] || roleBadge.novacek;
+              const initials = req.member.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+              return (
+                <div key={req.id} className="legatus-card legatus-card-sm flex items-center gap-4 flex-wrap"
+                  style={{ borderLeft: "3px solid #00abbd" }}>
+                  {req.member.avatar_url ? (
+                    <img src={req.member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center">
+                      <span className="text-xs font-heading font-semibold">{initials}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body font-medium text-foreground">{req.member.full_name}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className={currentBadge.className}>{currentBadge.label}</span>
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <span className={targetBadge.className}>{targetBadge.label}</span>
+                      <span className="text-xs font-body" style={{ color: "#8aadb3" }}>
+                        {req.cumulative_bj != null && `Kumulativní BJ: ${req.cumulative_bj}`}
+                        {req.direct_ziskatels != null && `Přímých Získatelů: ${req.direct_ziskatels}`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => approveMutation.mutate({ requestId: req.id, userId: req.user_id, newRole: req.requested_role })}
+                      className="btn btn-primary btn-sm"
+                      disabled={approveMutation.isPending}
+                    >
+                      Schválit
+                    </button>
+                    <button
+                      onClick={() => rejectMutation.mutate(req.id)}
+                      className="btn btn-ghost btn-sm"
+                      disabled={rejectMutation.isPending}
+                    >
+                      Zamítnout
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {tab === "seznam" ? (
         <div className="space-y-3">
