@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,17 +106,42 @@ function Connector() {
   );
 }
 
-/** Recursively render a node and all its descendants (always expanded) */
+function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: number; onClick: () => void }) {
+  const Icon = expanded ? Minus : Plus;
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="flex items-center justify-center rounded-full transition-all hover:scale-110"
+      style={{
+        width: 36, height: 36,
+        background: expanded ? "#d1e8ec" : "#E1E9EB",
+        border: "1px solid #c8d8dc",
+        cursor: "pointer",
+      }}
+      title={expanded ? "Sbalit" : `Zobrazit ${count} podřízených`}
+    >
+      <Icon className="h-4 w-4" style={{ color: "#00555f" }} />
+    </button>
+  );
+}
+
 function TreeNode({
   node,
   childrenMap,
+  collapsedIds,
+  toggleCollapse,
+  isRoot,
   onSelect,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
+  collapsedIds: Set<string>;
+  toggleCollapse: (id: string) => void;
+  isRoot?: boolean;
   onSelect: (node: ProfileNode) => void;
 }) {
   const children = childrenMap.get(node.id) || [];
+  const isCollapsed = collapsedIds.has(node.id);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -123,16 +149,30 @@ function TreeNode({
       {children.length > 0 && (
         <>
           <Connector />
-          <div className="flex gap-6 flex-wrap justify-center">
-            {children.map((child) => (
-              <TreeNode
-                key={child.id}
-                node={child}
-                childrenMap={childrenMap}
-                onSelect={onSelect}
-              />
-            ))}
-          </div>
+          {isCollapsed ? (
+            <ToggleButton expanded={false} count={children.length} onClick={() => toggleCollapse(node.id)} />
+          ) : (
+            <>
+              <div className="flex gap-6 flex-wrap justify-center">
+                {children.map((child) => (
+                  <TreeNode
+                    key={child.id}
+                    node={child}
+                    childrenMap={childrenMap}
+                    collapsedIds={collapsedIds}
+                    toggleCollapse={toggleCollapse}
+                    onSelect={onSelect}
+                  />
+                ))}
+              </div>
+              {!isRoot && (
+                <>
+                  <Connector />
+                  <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
+                </>
+              )}
+            </>
+          )}
         </>
       )}
     </div>
@@ -142,7 +182,16 @@ function TreeNode({
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
   const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
+  const toggleCollapse = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
     queryFn: async () => {
@@ -194,6 +243,9 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
           <TreeNode
             node={currentUser}
             childrenMap={childrenMap}
+            collapsedIds={collapsedIds}
+            toggleCollapse={toggleCollapse}
+            isRoot
             onSelect={setSelectedMember}
           />
         </div>
