@@ -98,6 +98,7 @@ export type Database = {
           is_active: boolean | null
           role: string
           vedouci_id: string | null
+          ziskatel_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -108,6 +109,7 @@ export type Database = {
           is_active?: boolean | null
           role?: string
           vedouci_id?: string | null
+          ziskatel_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -118,6 +120,7 @@ export type Database = {
           is_active?: boolean | null
           role?: string
           vedouci_id?: string | null
+          ziskatel_id?: string | null
         }
         Relationships: [
           {
@@ -130,6 +133,13 @@ export type Database = {
           {
             foreignKeyName: "profiles_vedouci_id_fkey"
             columns: ["vedouci_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_ziskatel_id_fkey"
+            columns: ["ziskatel_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
