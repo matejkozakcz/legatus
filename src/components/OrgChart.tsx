@@ -201,6 +201,16 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
           </div>
         </>
       )}
+      {directNovacci.length > 0 && (
+        <>
+          {garantNodes.length === 0 && <Connector />}
+          <div className="flex gap-6 flex-wrap justify-center mt-2">
+            {directNovacci.map((n) => (
+              <NodeCard key={n.id} node={n} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
