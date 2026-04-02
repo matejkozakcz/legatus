@@ -93,6 +93,7 @@ const MemberActivity = () => {
     ACTIVITY_COLUMNS.forEach((col) => {
       sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
     });
+    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
     return sums;
   }, [records]);
 
