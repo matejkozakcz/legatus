@@ -2,19 +2,41 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Pencil } from "lucide-react";
-import { Link } from "react-router-dom";
+import { LayoutDashboard } from "lucide-react";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
+function MobileStatCard({
+  label,
+  actual,
+  planned,
+  sublabel,
+}: {
+  label: string;
+  actual: number;
+  planned: number;
+  sublabel: string;
+}) {
+  return (
+    <div className="mobile-stat-card">
+      <div className="mobile-stat-label">{label}</div>
+      <div className="mobile-stat-value">{actual}</div>
+      <div className="mobile-stat-sub">{planned}</div>
+      <div className="mobile-stat-sublabel">{sublabel}</div>
+    </div>
+  );
+}
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
+  const isMobile = useIsMobile();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_week");
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
@@ -96,6 +118,83 @@ const Dashboard = () => {
     { key: "last_week", label: "Minulý týden" },
     { key: "this_month", label: "Tento měsíc" },
   ];
+
+  const totalBj = useMemo(
+    () => records.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
+    [records]
+  );
+
+  if (isMobile) {
+    return (
+      <div className="mobile-page">
+        {/* Mobile greeting header */}
+        <div className="mobile-page-header">
+          <div style={{ fontSize: 14, color: "#8aadb3" }}>
+            {format(new Date(), "EEEE, d. MMMM", { locale: cs })}
+          </div>
+          <div className="mobile-page-title">
+            Ahoj, {profile?.first_name ?? ""}!
+          </div>
+        </div>
+
+        {/* BJ card */}
+        <div className="mobile-bj-card">
+          <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>BJ za vybrané období</div>
+          <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 36 }}>
+            {totalBj}
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.7 }}>bodů</div>
+          <div className="progress-track" style={{ marginTop: 12 }}>
+            <div
+              className="progress-fill"
+              style={{
+                background: "#fc7c71",
+                width: `${Math.min(100, (totalBj / 100) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Time filter chips */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+          {filterPills.map((pill) => (
+            <button
+              key={pill.key}
+              onClick={() => setTimeFilter(pill.key)}
+              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
+              style={{ flexShrink: 0 }}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 2×2 stat grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          <MobileStatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} sublabel="proběhlých" />
+          <MobileStatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} sublabel="proběhlých" />
+          <MobileStatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} sublabel="proběhlých" />
+          <MobileStatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} sublabel="vybraných" />
+        </div>
+
+        {/* Struktura */}
+        <div style={{ marginBottom: 16 }}>
+          <div className="mobile-page-title" style={{ fontSize: 18, marginBottom: 12 }}>
+            Moje struktura
+          </div>
+          <div className="legatus-card" style={{ padding: 16, overflowX: "auto" }}>
+            <OrgChart currentUserId={profile?.id || ""} />
+          </div>
+        </div>
+
+        <PromotionModal
+          open={!!promotionRole}
+          onClose={() => setPromotionRole(null)}
+          newRole={promotionRole || ""}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

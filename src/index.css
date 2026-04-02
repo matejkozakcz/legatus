@@ -417,4 +417,92 @@
     font-weight: 500;
     box-shadow: 0 8px 32px rgba(0,85,95,0.22);
   }
+
+  /* ===== Mobile page wrapper ===== */
+  .mobile-page {
+    padding: 16px 16px 0;
+  }
+  .mobile-page-header {
+    padding: 12px 0 16px;
+  }
+  .mobile-page-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: #0c2226;
+    line-height: 1.2;
+  }
+  .mobile-page-subtitle {
+    font-size: 13px;
+    color: #8aadb3;
+    margin-top: 2px;
+  }
+
+  /* ===== Mobile stat card ===== */
+  .mobile-stat-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 14px;
+    border: 1px solid #e1e9eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .mobile-stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fc7c71;
+  }
+  .mobile-stat-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #00555f;
+    line-height: 1.1;
+    margin-top: 4px;
+  }
+  .mobile-stat-sub {
+    font-size: 13px;
+    color: #00abbd;
+    font-weight: 600;
+  }
+  .mobile-stat-sublabel {
+    font-size: 10px;
+    color: #8aadb3;
+    margin-top: 2px;
+  }
+
+  /* ===== Mobile BJ card ===== */
+  .mobile-bj-card {
+    background: linear-gradient(135deg, #00555f 0%, #00777e 100%);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 12px;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,85,95,0.25);
+  }
+
+  /* ===== Mobile activity card ===== */
+  .mobile-activity-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid #e1e9eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* ===== Mobile member card ===== */
+  .mobile-member-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid #e1e9eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
 }
