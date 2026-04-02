@@ -81,9 +81,11 @@ Deno.serve(async (req) => {
     }
 
     // Update profile with hierarchy info
+    const updateData: Record<string, unknown> = { vedouci_id, garant_id };
+    if (ziskatel_id) updateData.ziskatel_id = ziskatel_id;
     const { error: profileError } = await adminClient
       .from("profiles")
-      .update({ vedouci_id, garant_id })
+      .update(updateData)
       .eq("id", newUser.user.id);
 
     if (profileError) {
