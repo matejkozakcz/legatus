@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { MemberDetailModal } from "./MemberDetailModal";
 
 interface ProfileNode {
   id: string;
@@ -40,7 +42,7 @@ const roleLabel: Record<string, string> = {
   novacek: "Nováček",
 };
 
-function NodeCard({ node }: { node: ProfileNode }) {
+function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -53,7 +55,8 @@ function NodeCard({ node }: { node: ProfileNode }) {
 
   return (
     <div
-      className="relative flex flex-col items-center"
+      className="relative flex flex-col items-center cursor-pointer transition-shadow hover:shadow-md"
+      onClick={onClick}
       style={{
         width: 160,
         height: 105,
@@ -140,6 +143,7 @@ function Connector({ vertical = true }: { vertical?: boolean }) {
 
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
+  const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
@@ -204,27 +208,32 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     const garant = profiles.find((p) => p.id === currentUser.garant_id);
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     return (
-      <div className="flex flex-col items-center gap-2">
-        {vedouci && (
-          <>
-            <NodeCard node={vedouci} />
-            <Connector />
-          </>
+      <>
+        <div className="flex flex-col items-center gap-2">
+          {vedouci && (
+            <>
+              <NodeCard node={vedouci} onClick={() => setSelectedMember(vedouci)} />
+              <Connector />
+            </>
+          )}
+          {garant && (
+            <>
+              <NodeCard node={garant} onClick={() => setSelectedMember(garant)} />
+              <Connector />
+            </>
+          )}
+          <NodeCard node={currentUser} onClick={() => setSelectedMember(currentUser)} />
+        </div>
+        {selectedMember && (
+          <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
         )}
-        {garant && (
-          <>
-            <NodeCard node={garant} />
-            <Connector />
-          </>
-        )}
-        <NodeCard node={currentUser} />
-      </div>
+      </>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-2 overflow-x-auto">
-      <NodeCard node={rootNode} />
+      <NodeCard node={rootNode} onClick={() => setSelectedMember(rootNode)} />
 
       {garantNodes.length > 0 && (
         <>
@@ -234,13 +243,13 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
               const novacci = novacekMap.get(garant.id) || [];
               return (
                 <div key={garant.id} className="flex flex-col items-center gap-2">
-                  <NodeCard node={garant} />
+                  <NodeCard node={garant} onClick={() => setSelectedMember(garant)} />
                   {novacci.length > 0 && (
                     <>
                       <Connector />
                       <div className="flex gap-6 flex-wrap justify-center">
                         {novacci.map((n) => (
-                          <NodeCard key={n.id} node={n} />
+                          <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
                         ))}
                       </div>
                     </>
@@ -256,10 +265,14 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
           {garantNodes.length === 0 && <Connector />}
           <div className="flex gap-6 flex-wrap justify-center mt-2">
             {directNovacci.map((n) => (
-              <NodeCard key={n.id} node={n} />
+              <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
             ))}
           </div>
         </>
+      )}
+
+      {selectedMember && (
+        <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
       )}
     </div>
   );
