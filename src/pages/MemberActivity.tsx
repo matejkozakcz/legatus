@@ -98,11 +98,11 @@ const MemberActivity = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <Link to="/tym" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/tym" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <BarChart3 className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-2xl text-foreground">
+        <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
           {memberProfile?.full_name || "Načítání..."} — Moje aktivity
         </h1>
       </div>
