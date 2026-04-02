@@ -1,0 +1,24 @@
+{
+  "name": "Legatus",
+  "short_name": "Legatus",
+  "description": "Legatus — správa sítě a aktivit",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#00555f",
+  "theme_color": "#00555f",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
