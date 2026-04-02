@@ -28,7 +28,19 @@ const avatarColors: Record<string, { bg: string; color: string }> = {
   novacek: { bg: "#fff2f1", color: "#e05a50" },
 };
 
-function NodeCard({ node, isRoot = false }: { node: ProfileNode; isRoot?: boolean }) {
+const statusColors: Record<string, { bg: string; shadow: string }> = {
+  active: { bg: "#3FC55D", shadow: "rgba(63, 197, 93, 0.25)" },
+  teal: { bg: "#45AABD", shadow: "rgba(69, 170, 189, 0.25)" },
+  orange: { bg: "#F39E0A", shadow: "rgba(243, 158, 10, 0.25)" },
+};
+
+const roleLabel: Record<string, string> = {
+  vedouci: "Vedoucí",
+  garant: "Garant",
+  novacek: "Nováček",
+};
+
+function NodeCard({ node }: { node: ProfileNode }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -36,43 +48,81 @@ function NodeCard({ node, isRoot = false }: { node: ProfileNode; isRoot?: boolea
     .toUpperCase()
     .slice(0, 2);
 
-  const badge = roleBadgeConfig[node.role] || roleBadgeConfig.novacek;
   const colors = avatarColors[node.role] || avatarColors.novacek;
-  const size = isRoot ? 56 : 48;
+  const status = statusColors.active;
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      {node.avatar_url ? (
-        <img
-          src={node.avatar_url}
-          alt={node.full_name}
-          className="rounded-full object-cover"
-          style={{
-            width: size,
-            height: size,
-            boxShadow: isRoot ? "0 4px 16px rgba(0,85,95,0.15)" : undefined,
-          }}
-        />
-      ) : (
-        <div
-          className="rounded-full flex items-center justify-center"
-          style={{
-            width: size,
-            height: size,
-            background: colors.bg,
-            color: colors.color,
-            boxShadow: isRoot ? "0 4px 16px rgba(0,85,95,0.15)" : undefined,
-          }}
-        >
-          <span className="font-heading font-semibold" style={{ fontSize: isRoot ? 18 : 16 }}>
-            {initials}
-          </span>
-        </div>
-      )}
-      <p className="font-heading text-[13px] font-semibold text-center" style={{ color: "#0c2226" }}>
+    <div
+      className="relative flex flex-col items-center"
+      style={{
+        width: 160,
+        height: 105,
+        background: "#F6F8F9",
+        border: "1px solid #E1E9EB",
+        borderRadius: 12,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+      }}
+    >
+      {/* Status dot */}
+      <div
+        className="absolute"
+        style={{
+          top: 8,
+          right: 8,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: status.bg,
+          boxShadow: `0 0 0 4px ${status.shadow}`,
+        }}
+      />
+
+      {/* Avatar */}
+      <div style={{ marginTop: 5 }}>
+        {node.avatar_url ? (
+          <img
+            src={node.avatar_url}
+            alt={node.full_name}
+            className="rounded-full object-cover"
+            style={{
+              width: 56,
+              height: 56,
+              border: "1px solid #fff",
+            }}
+          />
+        ) : (
+          <div
+            className="rounded-full flex items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              background: colors.bg,
+              color: colors.color,
+              border: "1px solid #fff",
+            }}
+          >
+            <span className="font-heading font-semibold" style={{ fontSize: 18 }}>
+              {initials}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Name */}
+      <p
+        className="font-heading text-center leading-tight"
+        style={{ fontSize: 13, fontWeight: 600, color: "#0A2126", marginTop: 8 }}
+      >
         {node.full_name}
       </p>
-      <span className={badge.className}>{badge.label}</span>
+
+      {/* Role */}
+      <p
+        className="text-center"
+        style={{ fontSize: 11, color: "#89ADB4", marginTop: 2 }}
+      >
+        {roleLabel[node.role] || node.role}
+      </p>
     </div>
   );
 }
