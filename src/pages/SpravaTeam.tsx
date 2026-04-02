@@ -174,7 +174,7 @@ const SpravaTeam = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-body font-medium text-foreground">{member.full_name}</p>
-                        <span className={`px-2 py-0.5 text-[10px] font-heading font-semibold rounded-pill ${badge.color}`}>
+                        <span className={badge.className}>
                           {badge.label}
                         </span>
                       </div>
