@@ -88,12 +88,15 @@ const MojeAktivity = () => {
         clearTimeout(debounceTimers.current[timerKey]);
       }
       debounceTimers.current[timerKey] = setTimeout(() => {
-        const existing = records.find((r) => r.week_start === weekStart);
-        upsertMutation.mutate({
+      const existing = records.find((r) => r.week_start === weekStart);
+        const updated = {
           week_start: weekStart,
           ...(existing || {}),
           [key]: value,
-        });
+        };
+        // Auto-calculate BJ = BJ FSA + BJ SER
+        updated.bj = (updated.bj_fsa_actual || 0) + (updated.bj_ser_actual || 0);
+        upsertMutation.mutate(updated);
       }, 500);
     },
     [records, upsertMutation],
