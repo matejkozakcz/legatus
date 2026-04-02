@@ -8,7 +8,7 @@ export function MobileBottomNav() {
   const { profile } = useAuth();
 
   const initials = profile
-    ? `${profile.first_name?.[0] ?? ""}${profile.last_name?.[0] ?? ""}`.toUpperCase()
+    ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
   const isDashboardActive = location.pathname === "/dashboard";
