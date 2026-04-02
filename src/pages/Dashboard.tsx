@@ -81,9 +81,6 @@ const Dashboard = () => {
           <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
             Moje struktura
           </h2>
-          {(profile?.role === "vedouci" || profile?.role === "garant") && (
-            
-          )}
         </div>
         <div className="legatus-card" style={{ padding: 24 }}>
           <OrgChart currentUserId={profile?.id || ""} />
