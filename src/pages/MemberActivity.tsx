@@ -149,7 +149,7 @@ const MemberActivity = () => {
               })}
               <tr className="summary">
                 <td className="text-left">Celkem</td>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
