@@ -307,6 +307,7 @@ const SpravaTeam = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
   );
 };
 
