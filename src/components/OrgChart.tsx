@@ -243,6 +243,9 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
           <TreeNode
             node={currentUser}
             childrenMap={childrenMap}
+            collapsedIds={collapsedIds}
+            toggleCollapse={toggleCollapse}
+            isRoot
             onSelect={setSelectedMember}
           />
         </div>
