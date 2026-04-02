@@ -134,7 +134,7 @@ const MojeAktivity = () => {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>MOJE AKTIVITY</h1>
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>Moje aktivity</h1>
       </div>
 
       {/* Stats */}

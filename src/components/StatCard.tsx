@@ -36,7 +36,7 @@ export function StatCard({ label, actual, planned, accentColor }: StatCardProps)
           </span>
         )}
         {exceeded && (
-          <span className="inline-flex items-center gap-0.5 text-[11px] font-body font-semibold rounded-pill px-2 py-0.5 mb-1"
+          <span className="inline-flex items-center gap-0.5 text-[11px] font-body font-semibold rounded-full px-2 py-0.5 mb-1"
             style={{ background: "#f0fdf4", color: "#16a34a" }}
           >
             <ArrowUp className="h-3 w-3" />+{diff}

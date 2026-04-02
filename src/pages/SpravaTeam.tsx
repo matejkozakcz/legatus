@@ -137,12 +137,12 @@ const SpravaTeam = () => {
       {tab === "seznam" ? (
         <div className="space-y-3">
           {isLoading ? (
-            <div className="bg-card rounded-card shadow-card p-8 text-center">
-              <p className="text-muted-foreground font-body animate-pulse">Načítání členů...</p>
+            <div className="legatus-card p-8 text-center">
+              <p className="font-body animate-pulse" style={{ color: "#8aadb3" }}>Načítání členů...</p>
             </div>
           ) : members.length === 0 ? (
-            <div className="bg-card rounded-card shadow-card p-8 text-center">
-              <p className="text-muted-foreground font-body">Zatím nemáte žádné členy v týmu.</p>
+            <div className="legatus-card p-8 text-center">
+              <p className="font-body" style={{ color: "#8aadb3" }}>Zatím nemáte žádné členy v týmu.</p>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -161,7 +161,7 @@ const SpravaTeam = () => {
                 return (
                   <div
                     key={member.id}
-                    className="bg-card rounded-panel shadow-card p-4 flex items-center gap-4 flex-wrap"
+                    className="legatus-card legatus-card-sm flex items-center gap-4 flex-wrap"
                   >
                     {member.avatar_url ? (
                       <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -190,26 +190,26 @@ const SpravaTeam = () => {
                     <div className="flex gap-2 flex-wrap">
                       <Link
                         to={`/tym/${member.id}/aktivity`}
-                        className="px-3 py-1.5 rounded-input text-xs font-body font-medium bg-secondary/20 text-secondary hover:bg-secondary/30 transition-colors"
+                        className="btn btn-ghost btn-sm"
                       >
                         Zobrazit aktivity
                       </Link>
                       <button
                         onClick={() => setEditMember(member)}
-                        className="px-3 py-1.5 rounded-input text-xs font-body font-medium bg-muted text-foreground hover:bg-border transition-colors"
+                        className="btn btn-ghost btn-sm"
                       >
                         Upravit
                       </button>
                       <button
                         onClick={() => setDeactivateMember(member)}
-                        className="px-3 py-1.5 rounded-input text-xs font-body font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                        className="btn btn-danger btn-sm"
                       >
                         Deaktivovat
                       </button>
                       {promotion && (
                         <button
                           onClick={() => promoteMutation.mutate({ userId: member.id, newRole: promotion })}
-                          className="px-3 py-1.5 rounded-input text-xs font-body font-medium bg-legatus-teal/10 text-legatus-teal hover:bg-legatus-teal/20 transition-colors"
+                          className="btn btn-secondary btn-sm"
                         >
                           {promotionLabel[promotion]}
                         </button>
@@ -222,7 +222,7 @@ const SpravaTeam = () => {
           )}
         </div>
       ) : (
-        <div className="bg-card rounded-card shadow-card p-6">
+        <div className="legatus-card">
           <OrgChart currentUserId={profile?.id || ""} />
         </div>
       )}
@@ -241,15 +241,15 @@ const SpravaTeam = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeactivateMember(null)}>
+            <button className="btn btn-ghost btn-md" onClick={() => setDeactivateMember(null)}>
               Zrušit
-            </Button>
-            <Button
-              className="bg-primary text-primary-foreground"
+            </button>
+            <button
+              className="btn btn-danger btn-md"
               onClick={() => deactivateMember && deactivateMutation.mutate(deactivateMember.id)}
             >
               Deaktivovat
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

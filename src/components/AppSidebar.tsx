@@ -107,10 +107,11 @@ export function AppSidebar() {
           {!collapsed && (
             <button
               onClick={signOut}
-              className="text-white/50 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-[12px] font-body"
               title="Odhlásit"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+              <span>Odhlásit</span>
             </button>
           )}
         </div>
