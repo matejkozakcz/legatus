@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { LayoutDashboard, BarChart3, Users, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -24,6 +26,7 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -43,77 +46,86 @@ export function AppSidebar() {
       .slice(0, 2) || "?";
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0" style={{ width: collapsed ? undefined : "220px" }}>
-      <SidebarContent className="bg-sidebar" style={{ padding: "20px 12px" }}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-6">
-          <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
-          {!collapsed && (
-            <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">LEGATUS</span>
-          )}
-        </div>
+    <>
+      <Sidebar collapsible="icon" className="border-r-0" style={{ width: collapsed ? undefined : "220px" }}>
+        <SidebarContent className="bg-sidebar" style={{ padding: "20px 12px" }}>
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-6">
+            <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
+            {!collapsed && (
+              <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">LEGATUS</span>
+            )}
+          </div>
 
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/dashboard"}
-                      className="nav-item"
-                      activeClassName="active"
-                    >
-                      <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/dashboard"}
+                        className="nav-item"
+                        activeClassName="active"
+                      >
+                        <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-      <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
-        <div className="flex items-center gap-3">
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={profile.full_name}
-              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
+        <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
+          <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(255,255,255,0.12)" }}
+              className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setProfileModalOpen(true)}
             >
-              <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
-            </div>
-          )}
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-heading font-semibold text-white truncate">{profile?.full_name}</p>
-              {profile?.role && (
-                <span className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}>
-                  {roleBadgeConfig[profile.role]?.label}
-                </span>
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name}
+                  className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.12)" }}
+                >
+                  <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
+                </div>
+              )}
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-heading font-semibold text-white truncate">{profile?.full_name}</p>
+                  {profile?.role && (
+                    <span className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}>
+                      {roleBadgeConfig[profile.role]?.label}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          {!collapsed && (
-            <button
-              onClick={signOut}
-              className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-[12px] font-body"
-              title="Odhlásit"
-            >
-              <LogOut className="h-4 w-4 flex-shrink-0" />
-              <span>Odhlásit</span>
-            </button>
-          )}
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+            {!collapsed && (
+              <button
+                onClick={signOut}
+                className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-[12px] font-body"
+                title="Odhlásit"
+              >
+                <LogOut className="h-4 w-4 flex-shrink-0" />
+                <span>Odhlásit</span>
+              </button>
+            )}
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+
+      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+    </>
   );
 }
