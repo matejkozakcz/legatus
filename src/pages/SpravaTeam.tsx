@@ -80,17 +80,24 @@ const SpravaTeam = () => {
 
   const promoteMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+      const updateData: Record<string, unknown> = { role: newRole };
+      // When promoting to vedoucí, clear parent references — they become independent
+      if (newRole === "vedouci") {
+        updateData.vedouci_id = null;
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ role: newRole })
+        .update(updateData)
         .eq("id", userId);
       if (error) throw error;
       return newRole;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
       const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", novacek: "Nováčka" };
       toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
+      setRoleChange(null);
     },
   });
 
