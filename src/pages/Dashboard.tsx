@@ -94,9 +94,6 @@ const Dashboard = () => {
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
               Moje aktivity
             </h2>
-            <Link to="/aktivity" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
-              <Pencil className="h-4 w-4" />
-            </Link>
           </div>
         </div>
 
@@ -151,12 +148,6 @@ const Dashboard = () => {
             actualLabel="vybraných"
             plannedLabel="naplánovaných"
           />
-        </div>
-
-        <div className="flex justify-end">
-          <Link to="/aktivity" className="btn-text font-body" style={{ fontSize: 13 }}>
-            Zobrazit detailní statistiku →
-          </Link>
         </div>
       </section>
     </div>
