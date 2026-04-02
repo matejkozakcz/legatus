@@ -163,16 +163,14 @@ const MojeAktivity = () => {
       </section>
 
       {/* Activity table */}
-      <section className="bg-card rounded-card shadow-card overflow-hidden">
+      <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm font-body">
+          <table className="activity-table">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-3 py-3 text-left font-semibold text-foreground whitespace-nowrap">Týden</th>
+              <tr>
+                <th className="text-left">Týden</th>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <th key={col.key} className="px-2 py-3 text-center font-semibold text-foreground whitespace-nowrap text-xs">
-                    {col.header}
-                  </th>
+                  <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
             </thead>
@@ -182,43 +180,37 @@ const MojeAktivity = () => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 const isCurrentWeek = isSameWeek(weekStart, now, { weekStartsOn: 1 });
-                const isFuture = isAfter(weekStart, now) && !isCurrentWeek;
+                const isPast = !isCurrentWeek && !isAfter(weekStart, now);
                 const isEditable = isCurrentWeek;
 
                 return (
-                  <tr key={weekStr} className={`border-b border-border ${isCurrentWeek ? "bg-secondary/30" : ""}`}>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-foreground">
+                  <tr key={weekStr} className={isCurrentWeek ? "current" : isPast ? "past" : ""}>
+                    <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key} className="px-1 py-1 text-center">
+                      <td key={col.key}>
                         {isEditable ? (
                           <input
                             type="number"
                             min={0}
                             defaultValue={(record as any)?.[col.key] || 0}
-                            className="w-12 h-8 text-center text-sm rounded-sm border border-input bg-background font-body focus:outline-none focus:ring-1 focus:ring-ring"
                             onBlur={(e) =>
                               handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)
                             }
                           />
                         ) : (
-                          <span className={isFuture ? "text-muted-foreground/50" : "text-muted-foreground"}>
-                            {(record as any)?.[col.key] || 0}
-                          </span>
+                          (record as any)?.[col.key] || 0
                         )}
                       </td>
                     ))}
                   </tr>
                 );
               })}
-              {/* Summary row */}
-              <tr className="bg-muted/50 font-bold">
-                <td className="px-3 py-2 text-sm text-foreground">Celkem</td>
+              <tr className="summary">
+                <td className="text-left">Celkem</td>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <td key={col.key} className="px-1 py-2 text-center text-sm text-foreground">
-                    {columnSums[col.key]}
-                  </td>
+                  <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
             </tbody>
