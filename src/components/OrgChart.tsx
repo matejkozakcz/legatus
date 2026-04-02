@@ -198,7 +198,9 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
         (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
     );
     // All direct reports at the same level: garanti, promoted vedoucí, and direct nováčci
-    secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci];
+    secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci].filter(
+      (n) => n.id !== rootNode.id
+    );
 
     garantNodes.forEach((g) => {
       novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
