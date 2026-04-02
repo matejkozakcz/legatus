@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { LayoutDashboard, BarChart3, Users, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
