@@ -48,7 +48,9 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6">
           <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
-          {!collapsed && <span className="font-heading font-bold text-sm tracking-[0.4em] text-white">LEGATUS</span>}
+          {!collapsed && (
+            <span className="font-heading font-semi-bold text-sm tracking-[0.4em] text-white">LEGATUS</span>
+          )}
         </div>
 
         <SidebarGroup>
