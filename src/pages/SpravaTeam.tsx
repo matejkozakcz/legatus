@@ -151,7 +151,7 @@ const SpravaTeam = () => {
             <div className="grid gap-3">
               {members.map((member) => {
                 const badge = roleBadge[member.role] || roleBadge.novacek;
-                const promotion = canPromote(member);
+                const roleActions = getRoleActions(member);
                 const vedouciName = member.vedouci_id ? profileMap.get(member.vedouci_id)?.full_name : null;
                 const garantName = member.garant_id ? profileMap.get(member.garant_id)?.full_name : null;
                 const initials = member.full_name
