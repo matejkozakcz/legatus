@@ -84,10 +84,12 @@ const SpravaTeam = () => {
         .update({ role: newRole })
         .eq("id", userId);
       if (error) throw error;
+      return newRole;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Člen byl povýšen.");
+      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", novacek: "Nováčka" };
+      toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
     },
   });
 
