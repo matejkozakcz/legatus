@@ -191,7 +191,7 @@ const MojeAktivity = () => {
             <thead>
               <tr>
                 <th className="text-left">Týden</th>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
