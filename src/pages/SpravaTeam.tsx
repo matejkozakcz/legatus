@@ -113,13 +113,10 @@ const SpravaTeam = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-foreground" />
-          <h1 className="font-heading font-bold text-2xl text-foreground">SPRÁVA TÝMU</h1>
+          <Users className="h-6 w-6" style={{ color: "#0c2226" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>SPRÁVA TÝMU</h1>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-input bg-primary text-primary-foreground font-heading font-semibold text-sm hover:opacity-90 transition-opacity"
-        >
+        <button onClick={() => setAddOpen(true)} className="btn btn-primary btn-md flex items-center gap-2">
           <Plus className="h-4 w-4" /> Přidat člena
         </button>
       </div>
@@ -130,9 +127,7 @@ const SpravaTeam = () => {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-pill text-sm font-body font-medium transition-colors ${
-              tab === t ? "bg-secondary text-secondary-foreground" : "bg-card text-muted-foreground hover:bg-border"
-            }`}
+            className={`chip ${tab === t ? "chip-teal-active" : "chip-neutral"}`}
           >
             {t === "seznam" ? "Seznam" : "Org chart"}
           </button>
