@@ -137,9 +137,12 @@ const MemberActivity = () => {
                     <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
-                    {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key}>{(record as any)?.[col.key] || 0}</td>
-                    ))}
+                    {ACTIVITY_COLUMNS.map((col) => {
+                      const val = col.key === "bj"
+                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
+                        : (record as any)?.[col.key] || 0;
+                      return <td key={col.key}>{val}</td>;
+                    })}
                   </tr>
                 );
               })}

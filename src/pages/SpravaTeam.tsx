@@ -241,7 +241,7 @@ const SpravaTeam = () => {
       const cumulativeBj = bjByUser.get(candidate.id) || 0;
       const directZiskatels = directByUser.get(candidate.id) || 0;
 
-      if (cumulativeBj > 1000) {
+      if (cumulativeBj >= 1000) {
         await supabase.from("promotion_requests").upsert(
           { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj },
           { onConflict: "user_id,requested_role", ignoreDuplicates: true }
