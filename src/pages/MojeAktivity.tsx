@@ -133,22 +133,20 @@ const MojeAktivity = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <BarChart3 className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-2xl text-foreground">MOJE AKTIVITY</h1>
+        <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>MOJE AKTIVITY</h1>
       </div>
 
       {/* Stats */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold text-lg text-foreground">Moje statistika</h2>
-          <Pencil className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>Moje statistika</h2>
+          <Pencil className="h-4 w-4" style={{ color: "#8aadb3" }} />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-4 py-1.5 rounded-pill text-sm font-body font-medium bg-secondary text-secondary-foreground">
-            Tento měsíc
-          </span>
-          <span className="text-sm text-muted-foreground font-body ml-4">
+          <span className="chip chip-teal-active">Tento měsíc</span>
+          <span className="font-body ml-4" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
           </span>
