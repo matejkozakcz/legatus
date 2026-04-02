@@ -29,6 +29,7 @@ const ACTIVITY_COLUMNS = [
   { key: "dop_kl_actual", header: "DOP KL" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
+  { key: "bj", header: "BJ" },
 ] as const;
 
 const MemberActivity = () => {
