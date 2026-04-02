@@ -182,6 +182,12 @@ const Dashboard = () => {
           />
         </div>
       </section>
+
+      <PromotionModal
+        open={!!promotionRole}
+        onClose={() => setPromotionRole(null)}
+        newRole={promotionRole || ""}
+      />
     </div>
   );
 };
