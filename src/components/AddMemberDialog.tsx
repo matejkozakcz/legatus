@@ -191,8 +191,8 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
             <Input
               value={
                 profile?.role === "vedouci"
-                  ? profile?.full_name || ""
-                  : "(automaticky přiřazen)"
+                  ? `${profile?.full_name || ""} (Já)`
+                  : vedouciProfile?.full_name || "(načítání...)"
               }
               disabled
               className="bg-muted"
