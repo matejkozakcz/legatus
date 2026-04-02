@@ -208,21 +208,26 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     const garant = profiles.find((p) => p.id === currentUser.garant_id);
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     return (
-      <div className="flex flex-col items-center gap-2">
-        {vedouci && (
-          <>
-            <NodeCard node={vedouci} />
-            <Connector />
-          </>
+      <>
+        <div className="flex flex-col items-center gap-2">
+          {vedouci && (
+            <>
+              <NodeCard node={vedouci} onClick={() => setSelectedMember(vedouci)} />
+              <Connector />
+            </>
+          )}
+          {garant && (
+            <>
+              <NodeCard node={garant} onClick={() => setSelectedMember(garant)} />
+              <Connector />
+            </>
+          )}
+          <NodeCard node={currentUser} onClick={() => setSelectedMember(currentUser)} />
+        </div>
+        {selectedMember && (
+          <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
         )}
-        {garant && (
-          <>
-            <NodeCard node={garant} />
-            <Connector />
-          </>
-        )}
-        <NodeCard node={currentUser} />
-      </div>
+      </>
     );
   }
 
