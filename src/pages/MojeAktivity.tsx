@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,15 @@ function Counter({
   onDecrement: () => void;
   onIncrement: () => void;
 }) {
+  const [pressed, setPressed] = useState<"minus" | "plus" | null>(null);
+
+  const handlePress = (side: "minus" | "plus", action: () => void) => {
+    if (!editable) return;
+    setPressed(side);
+    action();
+    setTimeout(() => setPressed(null), 150);
+  };
+
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",
@@ -27,13 +36,19 @@ function Counter({
     }}>
       <button
         disabled={!editable}
-        onClick={editable ? onDecrement : undefined}
+        onPointerDown={() => handlePress("minus", onDecrement)}
         style={{
-          width: 36, height: 36, border: "none", background: "transparent",
+          width: 36, height: 36, border: "none",
+          background: pressed === "minus" ? "#b8cfd4" : "transparent",
           cursor: editable ? "pointer" : "default",
-          fontSize: 20, color: "#00555f", fontWeight: 300,
+          fontSize: 20,
+          color: pressed === "minus" ? "#fc7c71" : "#00555f",
+          fontWeight: 300,
           display: "flex", alignItems: "center", justifyContent: "center",
           opacity: editable ? 1 : 0.4,
+          transition: "background 0.1s, color 0.1s",
+          WebkitTapHighlightColor: "transparent",
+          userSelect: "none",
         }}
       >
         −
@@ -41,18 +56,27 @@ function Counter({
       <span style={{
         minWidth: 32, textAlign: "center",
         fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "#0c2226",
+        transition: "transform 0.1s",
+        transform: pressed ? "scale(1.15)" : "scale(1)",
+        display: "inline-block",
       }}>
         {value}
       </span>
       <button
         disabled={!editable}
-        onClick={editable ? onIncrement : undefined}
+        onPointerDown={() => handlePress("plus", onIncrement)}
         style={{
-          width: 36, height: 36, border: "none", background: "transparent",
+          width: 36, height: 36, border: "none",
+          background: pressed === "plus" ? "#b8cfd4" : "transparent",
           cursor: editable ? "pointer" : "default",
-          fontSize: 20, color: "#00555f", fontWeight: 300,
+          fontSize: 20,
+          color: pressed === "plus" ? "#fc7c71" : "#00555f",
+          fontWeight: 300,
           display: "flex", alignItems: "center", justifyContent: "center",
           opacity: editable ? 1 : 0.4,
+          transition: "background 0.1s, color 0.1s",
+          WebkitTapHighlightColor: "transparent",
+          userSelect: "none",
         }}
       >
         +
@@ -92,6 +116,9 @@ const MojeAktivity = () => {
   const now = new Date();
   // Mobile week navigation state
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
+  // Optimistic local values for instant UI feedback (mobile only)
+  const [localValues, setLocalValues] = useState<Record<string, number>>({});
+  const localValuesRef = useRef<Record<string, number>>({});
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
@@ -192,6 +219,41 @@ const MojeAktivity = () => {
   const mobileRecord = records.find((r) => r.week_start === mobileWeekStr);
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
+  // Sync local values from server whenever week changes or records arrive
+  useEffect(() => {
+    const rec = mobileRecord as any;
+    const fresh: Record<string, number> = {
+      fsa_planned: rec?.fsa_planned || 0,
+      fsa_actual:  rec?.fsa_actual  || 0,
+      ser_planned: rec?.ser_planned || 0,
+      ser_actual:  rec?.ser_actual  || 0,
+      poh_planned: rec?.poh_planned || 0,
+      poh_actual:  rec?.poh_actual  || 0,
+      ref_actual:  rec?.ref_actual  || 0,
+    };
+    localValuesRef.current = fresh;
+    setLocalValues(fresh);
+  }, [mobileWeekStr, mobileRecord]);
+
+  // Mobile change: instant local update + debounced server save
+  const handleMobileChange = useCallback(
+    (key: string, newVal: number) => {
+      const updated = { ...localValuesRef.current, [key]: newVal };
+      localValuesRef.current = updated;
+      setLocalValues({ ...updated });
+
+      const timerKey = "mobile-save-" + mobileWeekStr;
+      if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
+      debounceTimers.current[timerKey] = setTimeout(() => {
+        const existing = records.find((r) => r.week_start === mobileWeekStr);
+        const record: any = { ...(existing || {}), week_start: mobileWeekStr, ...localValuesRef.current };
+        record.bj = (record.bj_fsa_actual || 0) + (record.bj_ser_actual || 0);
+        upsertMutation.mutate(record);
+      }, 800);
+    },
+    [mobileWeekStr, records, upsertMutation]
+  );
+
   // Activities with both planned and actual keys
   const MOBILE_ACTIVITIES = [
     {
@@ -218,9 +280,8 @@ const MojeAktivity = () => {
   ] as const;
 
   if (isMobile) {
-    const rec = mobileRecord as any;
-    const bjValue = (rec?.bj_fsa_actual || 0) + (rec?.bj_ser_actual || 0);
-    const refActual = rec?.ref_actual || 0;
+    const bjValue = (localValues.bj_fsa_actual || 0) + (localValues.bj_ser_actual || 0);
+    const refActual = localValues.ref_actual || 0;
 
     return (
       <div className="mobile-page">
@@ -277,8 +338,8 @@ const MojeAktivity = () => {
 
         {/* Analýzy, Poradka, Pohovory — dual counters */}
         {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel }) => {
-          const plannedVal = rec?.[plannedKey] || 0;
-          const actualVal = rec?.[actualKey] || 0;
+          const plannedVal = localValues[plannedKey] || 0;
+          const actualVal = localValues[actualKey] || 0;
           return (
             <div key={label} className="mobile-activity-card">
               <div style={{
@@ -296,8 +357,8 @@ const MojeAktivity = () => {
                   <Counter
                     value={plannedVal}
                     editable={isMobileWeekEditable}
-                    onDecrement={() => handleCellChange(mobileWeekStr, plannedKey, Math.max(0, plannedVal - 1))}
-                    onIncrement={() => handleCellChange(mobileWeekStr, plannedKey, plannedVal + 1)}
+                    onDecrement={() => handleMobileChange(plannedKey, Math.max(0, plannedVal - 1))}
+                    onIncrement={() => handleMobileChange(plannedKey, plannedVal + 1)}
                   />
                 </div>
                 {/* Divider */}
@@ -310,8 +371,8 @@ const MojeAktivity = () => {
                   <Counter
                     value={actualVal}
                     editable={isMobileWeekEditable}
-                    onDecrement={() => handleCellChange(mobileWeekStr, actualKey, Math.max(0, actualVal - 1))}
-                    onIncrement={() => handleCellChange(mobileWeekStr, actualKey, actualVal + 1)}
+                    onDecrement={() => handleMobileChange(actualKey, Math.max(0, actualVal - 1))}
+                    onIncrement={() => handleMobileChange(actualKey, actualVal + 1)}
                   />
                 </div>
               </div>
@@ -331,8 +392,8 @@ const MojeAktivity = () => {
             <Counter
               value={refActual}
               editable={isMobileWeekEditable}
-              onDecrement={() => handleCellChange(mobileWeekStr, "ref_actual" as ActivityKey, Math.max(0, refActual - 1))}
-              onIncrement={() => handleCellChange(mobileWeekStr, "ref_actual" as ActivityKey, refActual + 1)}
+              onDecrement={() => handleMobileChange("ref_actual", Math.max(0, refActual - 1))}
+              onIncrement={() => handleMobileChange("ref_actual", refActual + 1)}
             />
           </div>
           <div className="mobile-activity-card" style={{ padding: 14 }}>
