@@ -283,7 +283,30 @@ const SpravaTeam = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Role change confirmation */}
+      <Dialog open={!!roleChange} onOpenChange={() => setRoleChange(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading">Změna role</DialogTitle>
+            <DialogDescription className="font-body">
+              Opravdu chceš změnit roli člena {roleChange?.member.full_name}?{" "}
+              Akce: <strong>{roleChange?.label}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button className="btn btn-ghost btn-md" onClick={() => setRoleChange(null)}>
+              Zrušit
+            </button>
+            <button
+              className="btn btn-primary btn-md"
+              onClick={() => roleChange && promoteMutation.mutate({ userId: roleChange.member.id, newRole: roleChange.newRole })}
+            >
+              Potvrdit
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
   );
 };
 
