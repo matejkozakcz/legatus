@@ -102,6 +102,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
       setGeneratedPassword(password);
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
       toast.success("Člen byl úspěšně přidán.");
+      fireConfetti();
     } catch (err: any) {
       toast.error(err.message || "Nepodařilo se vytvořit uživatele.");
     }

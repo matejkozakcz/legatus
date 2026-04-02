@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, format } fr
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
+import { fireConfetti } from "@/lib/confetti";
+import { PromotionModal } from "@/components/PromotionModal";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
