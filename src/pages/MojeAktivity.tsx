@@ -23,10 +23,13 @@ const ACTIVITY_COLUMNS = [
   { key: "dop_kl_actual", header: "DOP KL" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
-  { key: "bj", header: "BJ" },
 ] as const;
 
 type ActivityKey = (typeof ACTIVITY_COLUMNS)[number]["key"];
+
+const BJ_COLUMN = { key: "bj" as const, header: "BJ" };
+
+const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, BJ_COLUMN] as const;
 
 const MojeAktivity = () => {
   const { profile } = useAuth();
@@ -87,12 +90,15 @@ const MojeAktivity = () => {
         clearTimeout(debounceTimers.current[timerKey]);
       }
       debounceTimers.current[timerKey] = setTimeout(() => {
-        const existing = records.find((r) => r.week_start === weekStart);
-        upsertMutation.mutate({
+      const existing = records.find((r) => r.week_start === weekStart);
+        const updated = {
           week_start: weekStart,
           ...(existing || {}),
           [key]: value,
-        });
+        };
+        // Auto-calculate BJ = BJ FSA + BJ SER
+        updated.bj = (updated.bj_fsa_actual || 0) + (updated.bj_ser_actual || 0);
+        upsertMutation.mutate(updated);
       }, 500);
     },
     [records, upsertMutation],
@@ -115,6 +121,8 @@ const MojeAktivity = () => {
     ACTIVITY_COLUMNS.forEach((col) => {
       sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
     });
+    // BJ total is always sum of BJ FSA + BJ SER
+    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
     return sums;
   }, [records]);
 
@@ -183,7 +191,7 @@ const MojeAktivity = () => {
             <thead>
               <tr>
                 <th className="text-left">Týden</th>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
@@ -202,26 +210,32 @@ const MojeAktivity = () => {
                     <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
-                    {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key}>
-                        {isEditable ? (
-                          <input
-                            type="number"
-                            min={0}
-                            defaultValue={(record as any)?.[col.key] || 0}
-                            onBlur={(e) => handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)}
-                          />
-                        ) : (
-                          (record as any)?.[col.key] || 0
-                        )}
-                      </td>
-                    ))}
+                    {ALL_DISPLAY_COLUMNS.map((col) => {
+                      const isBjTotal = col.key === "bj";
+                      const cellValue = isBjTotal
+                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
+                        : (record as any)?.[col.key] || 0;
+                      return (
+                        <td key={col.key}>
+                          {isEditable && !isBjTotal ? (
+                            <input
+                              type="number"
+                              min={0}
+                              defaultValue={cellValue}
+                              onBlur={(e) => handleCellChange(weekStr, col.key as ActivityKey, parseInt(e.target.value) || 0)}
+                            />
+                          ) : (
+                            cellValue
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
               <tr className="summary">
                 <td className="text-left">Celkem</td>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>

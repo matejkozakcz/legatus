@@ -29,8 +29,9 @@ const ACTIVITY_COLUMNS = [
   { key: "dop_kl_actual", header: "DOP KL" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
-  { key: "bj", header: "BJ" },
 ] as const;
+
+const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ" }] as const;
 
 const MemberActivity = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -93,6 +94,7 @@ const MemberActivity = () => {
     ACTIVITY_COLUMNS.forEach((col) => {
       sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
     });
+    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
     return sums;
   }, [records]);
 
@@ -121,7 +123,7 @@ const MemberActivity = () => {
             <thead>
               <tr>
                 <th className="text-left">Týden</th>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
@@ -136,15 +138,18 @@ const MemberActivity = () => {
                     <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
-                    {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key}>{(record as any)?.[col.key] || 0}</td>
-                    ))}
+                    {ALL_DISPLAY_COLUMNS.map((col) => {
+                      const val = col.key === "bj"
+                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
+                        : (record as any)?.[col.key] || 0;
+                      return <td key={col.key}>{val}</td>;
+                    })}
                   </tr>
                 );
               })}
               <tr className="summary">
                 <td className="text-left">Celkem</td>
-                {ACTIVITY_COLUMNS.map((col) => (
+                {ALL_DISPLAY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
