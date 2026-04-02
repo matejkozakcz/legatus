@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MemberDetailModal } from "./MemberDetailModal";
-import { Plus } from "lucide-react";
 
 interface ProfileNode {
   id: string;
@@ -98,24 +97,6 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
   );
 }
 
-function ExpandButton({ count, onClick }: { count: number; onClick: () => void }) {
-  return (
-    <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className="flex items-center justify-center rounded-full transition-all hover:scale-110"
-      style={{
-        width: 36, height: 36,
-        background: "#E1E9EB",
-        border: "1px solid #c8d8dc",
-        cursor: "pointer",
-      }}
-      title={`Zobrazit ${count} podřízených`}
-    >
-      <Plus className="h-4 w-4" style={{ color: "#00555f" }} />
-    </button>
-  );
-}
-
 function Connector() {
   return (
     <svg width="2" height="24" className="mx-auto flex-shrink-0">
@@ -124,21 +105,17 @@ function Connector() {
   );
 }
 
+/** Recursively render a node and all its descendants (always expanded) */
 function TreeNode({
   node,
   childrenMap,
-  expandedIds,
-  toggleExpand,
   onSelect,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
-  expandedIds: Set<string>;
-  toggleExpand: (id: string) => void;
   onSelect: (node: ProfileNode) => void;
 }) {
   const children = childrenMap.get(node.id) || [];
-  const isExpanded = expandedIds.has(node.id);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -146,22 +123,16 @@ function TreeNode({
       {children.length > 0 && (
         <>
           <Connector />
-          {isExpanded ? (
-            <div className="flex gap-6 flex-wrap justify-center">
-              {children.map((child) => (
-                <TreeNode
-                  key={child.id}
-                  node={child}
-                  childrenMap={childrenMap}
-                  expandedIds={expandedIds}
-                  toggleExpand={toggleExpand}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          ) : (
-            <ExpandButton count={children.length} onClick={() => toggleExpand(node.id)} />
-          )}
+          <div className="flex gap-6 flex-wrap justify-center">
+            {children.map((child) => (
+              <TreeNode
+                key={child.id}
+                node={child}
+                childrenMap={childrenMap}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>
@@ -171,16 +142,6 @@ function TreeNode({
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
   const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
@@ -195,7 +156,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     enabled: !!currentUserId,
   });
 
-  // Build children map based on ziskatel_id (who acquired whom)
+  // Build children map based on ziskatel_id
   const childrenMap = useMemo(() => {
     const map = new Map<string, ProfileNode[]>();
     profiles.forEach((p) => {
@@ -225,28 +186,14 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     );
   }
 
-  // Find root: walk up ziskatel_id chain from current user
-  let rootNode = currentUser;
-  const visited = new Set<string>();
-  while (rootNode.ziskatel_id && !visited.has(rootNode.id)) {
-    visited.add(rootNode.id);
-    const parent = profiles.find((p) => p.id === rootNode.ziskatel_id);
-    if (parent) rootNode = parent;
-    else break;
-  }
-
+  // Root = current user; show them and their entire subtree
   return (
     <>
-      <div
-        className="overflow-auto"
-        style={{ maxHeight: 520 }}
-      >
+      <div className="overflow-auto" style={{ maxHeight: 520 }}>
         <div className="flex flex-col items-center gap-2 py-4 px-4 min-w-fit">
           <TreeNode
-            node={rootNode}
+            node={currentUser}
             childrenMap={childrenMap}
-            expandedIds={expandedIds}
-            toggleExpand={toggleExpand}
             onSelect={setSelectedMember}
           />
         </div>

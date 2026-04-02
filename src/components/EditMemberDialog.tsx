@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -17,6 +18,7 @@ interface Profile {
   full_name: string;
   role: string;
   avatar_url: string | null;
+  ziskatel_id?: string | null;
 }
 
 interface EditMemberDialogProps {
@@ -31,25 +33,58 @@ const roleBadge: Record<string, string> = {
 };
 
 export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const [fullName, setFullName] = useState(member?.full_name || "");
+  const [fullName, setFullName] = useState("");
+  const [ziskatelId, setZiskatelId] = useState("");
 
-  // Reset when member changes
-  if (member && fullName !== member.full_name && fullName === "") {
-    setFullName(member.full_name);
-  }
+  const isVedouci = profile?.role === "vedouci";
+
+  // Fetch potential získatelé (everyone in vedoucí's subtree)
+  const { data: potentialZiskatele = [] } = useQuery({
+    queryKey: ["potential_ziskatele", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true)
+        .eq("vedouci_id", profile.id);
+      if (error) throw error;
+      // Include self
+      const list = (data || []) as { id: string; full_name: string; role: string }[];
+      if (!list.some((p) => p.id === profile.id)) {
+        list.unshift({ id: profile.id, full_name: profile.full_name, role: "vedouci" });
+      }
+      return list;
+    },
+    enabled: !!member && isVedouci,
+  });
+
+  // Reset form when member changes
+  useEffect(() => {
+    if (member) {
+      setFullName(member.full_name);
+      setZiskatelId(member.ziskatel_id || "");
+    }
+  }, [member]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!member) return;
+      const updateData: Record<string, unknown> = { full_name: fullName };
+      if (isVedouci && ziskatelId) {
+        updateData.ziskatel_id = ziskatelId;
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update(updateData)
         .eq("id", member.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
       toast.success("Profil byl aktualizován.");
       onClose();
     },
@@ -60,6 +95,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
 
   const handleClose = () => {
     setFullName("");
+    setZiskatelId("");
     onClose();
   };
 
@@ -76,10 +112,26 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
           </div>
           <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Role</label>
-            <div className="flex items-center gap-2">
-              <Input value={roleBadge[member?.role || "novacek"]} disabled className="bg-muted" />
-            </div>
+            <Input value={roleBadge[member?.role || "novacek"]} disabled className="bg-muted" />
           </div>
+          {isVedouci && (
+            <div>
+              <label className="text-sm font-body font-medium text-foreground mb-1 block">Získatel</label>
+              <select
+                value={ziskatelId}
+                onChange={(e) => setZiskatelId(e.target.value)}
+                className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Bez získatele</option>
+                {potentialZiskatele.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name} ({roleBadge[p.role] || p.role})
+                    {p.id === profile?.id ? " (Já)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={handleClose}>Zrušit</Button>
