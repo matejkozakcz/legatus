@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activity_records: {
         Row: {
+          bj: number
           bj_fsa_actual: number | null
           bj_ser_actual: number | null
           created_at: string | null
@@ -37,6 +38,7 @@ export type Database = {
           week_start: string
         }
         Insert: {
+          bj?: number
           bj_fsa_actual?: number | null
           bj_ser_actual?: number | null
           created_at?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           week_start: string
         }
         Update: {
+          bj?: number
           bj_fsa_actual?: number | null
           bj_ser_actual?: number | null
           created_at?: string | null
@@ -96,6 +99,7 @@ export type Database = {
           garant_id: string | null
           id: string
           is_active: boolean | null
+          osobni_id: string | null
           role: string
           vedouci_id: string | null
           ziskatel_id: string | null
@@ -107,6 +111,7 @@ export type Database = {
           garant_id?: string | null
           id: string
           is_active?: boolean | null
+          osobni_id?: string | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
@@ -118,6 +123,7 @@ export type Database = {
           garant_id?: string | null
           id?: string
           is_active?: boolean | null
+          osobni_id?: string | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
@@ -140,6 +146,57 @@ export type Database = {
           {
             foreignKeyName: "profiles_ziskatel_id_fkey"
             columns: ["ziskatel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_requests: {
+        Row: {
+          cumulative_bj: number | null
+          direct_ziskatels: number | null
+          id: string
+          requested_at: string
+          requested_role: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          cumulative_bj?: number | null
+          direct_ziskatels?: number | null
+          id?: string
+          requested_at?: string
+          requested_role: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          cumulative_bj?: number | null
+          direct_ziskatels?: number | null
+          id?: string
+          requested_at?: string
+          requested_role?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_requests_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
