@@ -1,0 +1,188 @@
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+interface AddMemberDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [selectedGarant, setSelectedGarant] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+
+  // Get garanté for Vedoucí to select from
+  const { data: garanti = [] } = useQuery({
+    queryKey: ["garanti", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id || profile.role !== "vedouci") return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "garant")
+        .eq("vedouci_id", profile.id)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setSubmitting(true);
+
+    try {
+      const password = Math.random().toString(36).slice(-10) + "A1!";
+
+      const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
+      const garantId = profile.role === "garant" ? profile.id : selectedGarant;
+
+      if (!garantId) {
+        toast.error("Vyberte garanta.");
+        setSubmitting(false);
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke("create-user", {
+        body: {
+          email,
+          password,
+          full_name: fullName,
+          role: "novacek",
+          vedouci_id: vedouciId,
+          garant_id: garantId,
+        },
+      });
+
+      if (error) throw error;
+
+      setGeneratedPassword(password);
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+      toast.success("Člen byl úspěšně přidán.");
+    } catch (err: any) {
+      toast.error(err.message || "Nepodařilo se vytvořit uživatele.");
+    }
+    setSubmitting(false);
+  };
+
+  const handleClose = () => {
+    setFullName("");
+    setEmail("");
+    setSelectedGarant("");
+    setGeneratedPassword(null);
+    onOpenChange(false);
+  };
+
+  if (generatedPassword) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading">Člen byl vytvořen</DialogTitle>
+            <DialogDescription className="font-body">
+              Vygenerované heslo (zobrazen pouze jednou):
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted p-3 rounded-input font-mono text-sm text-foreground select-all">
+            {generatedPassword}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Heslo zkopírováno."); }}>
+              Kopírovat heslo
+            </Button>
+            <Button variant="ghost" onClick={handleClose}>Zavřít</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-heading">Přidat člena</DialogTitle>
+          <DialogDescription className="font-body">
+            Nový člen bude přidán jako Nováček.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">Celé jméno</label>
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Jan Novák" />
+          </div>
+          <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">E-mail</label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="jan@email.cz" />
+          </div>
+
+          <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">Role</label>
+            <Input value="Nováček" disabled className="bg-muted" />
+          </div>
+
+          {profile?.role === "vedouci" ? (
+            <div>
+              <label className="text-sm font-body font-medium text-foreground mb-1 block">Garant</label>
+              <select
+                value={selectedGarant}
+                onChange={(e) => setSelectedGarant(e.target.value)}
+                required
+                className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Vyberte garanta...</option>
+                {garanti.map((g) => (
+                  <option key={g.id} value={g.id}>{g.full_name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="text-sm font-body font-medium text-foreground mb-1 block">Garant</label>
+              <Input value={profile?.full_name || ""} disabled className="bg-muted" />
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">Vedoucí</label>
+            <Input
+              value={
+                profile?.role === "vedouci"
+                  ? profile?.full_name || ""
+                  : "(automaticky přiřazen)"
+              }
+              disabled
+              className="bg-muted"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={handleClose}>Zrušit</Button>
+            <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground">
+              {submitting ? "Vytvářím..." : "Vytvořit"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
