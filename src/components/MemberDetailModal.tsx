@@ -27,6 +27,7 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 const avatarColors: Record<string, { bg: string; color: string }> = {
   vedouci: { bg: "#e6f0f1", color: "#00555f" },
   garant: { bg: "#e6f7f9", color: "#008fa0" },
+  ziskatel: { bg: "#eeebf7", color: "#7c6fcd" },
   novacek: { bg: "#fff2f1", color: "#e05a50" },
 };
 

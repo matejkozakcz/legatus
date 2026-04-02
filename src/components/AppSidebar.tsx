@@ -19,6 +19,7 @@ import legatusLogoWhite from "@/assets/legatus-logo-white.png";
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
   garant: { label: "Garant", className: "role-badge role-badge-garant" },
+  ziskatel: { label: "Získatel", className: "role-badge role-badge-ziskatel" },
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 

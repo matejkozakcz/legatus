@@ -36,6 +36,7 @@ const avatarColors: Record<string, { bg: string; color: string }> = {
 const statusDotColor: Record<string, { bg: string; glow: string }> = {
   vedouci: { bg: "#45AABD", glow: "rgba(69, 170, 189, 0.25)" },
   garant: { bg: "#3FC55D", glow: "rgba(63, 197, 93, 0.25)" },
+  ziskatel: { bg: "#7c6fcd", glow: "rgba(124, 111, 205, 0.25)" },
   novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
 
