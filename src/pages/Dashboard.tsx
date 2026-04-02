@@ -26,10 +26,33 @@ function MobileStatCard({
 }) {
   return (
     <div className="mobile-stat-card">
+      {/* Coral label */}
       <div className="mobile-stat-label">{label}</div>
-      <div className="mobile-stat-value">{actual}</div>
-      <div className="mobile-stat-sub">{planned}</div>
-      <div className="mobile-stat-sublabel">{sublabel}</div>
+
+      {/* actual  z  planned — baseline aligned, same as desktop StatCard */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+        <span style={{
+          fontFamily: "Poppins, sans-serif",
+          fontWeight: 700,
+          fontSize: 30,
+          color: "#00555f",
+          lineHeight: 1,
+        }}>
+          {actual}
+        </span>
+        <span style={{
+          fontFamily: "Poppins, sans-serif",
+          fontWeight: 600,
+          fontSize: 26,   /* double the original 13px "sub" size */
+          color: "#00abbd",
+          lineHeight: 1,
+        }}>
+          z {planned}
+        </span>
+      </div>
+
+      {/* sublabel */}
+      <div className="mobile-stat-sublabel" style={{ marginTop: 4 }}>{sublabel}</div>
     </div>
   );
 }
