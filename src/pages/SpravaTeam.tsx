@@ -258,6 +258,10 @@ const SpravaTeam = () => {
                       <div className="flex gap-4 text-xs text-muted-foreground font-body mt-0.5">
                         {vedouciName && <span>Vedoucí: {vedouciName}</span>}
                         {garantName && <span>Garant: {garantName}</span>}
+                        {(() => {
+                          const ziskatelName = (member as any).ziskatel_id ? profileMap.get((member as any).ziskatel_id)?.full_name : null;
+                          return ziskatelName ? <span>Získatel: {ziskatelName}</span> : null;
+                        })()}
                         {member.created_at && (
                           <span>Přidán: {format(new Date(member.created_at), "d. M. yyyy", { locale: cs })}</span>
                         )}

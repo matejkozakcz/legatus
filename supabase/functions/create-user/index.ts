@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, full_name, role, vedouci_id, garant_id } = await req.json();
+    const { email, password, full_name, role, vedouci_id, garant_id, ziskatel_id } = await req.json();
 
     if (!email || !password || !full_name || !role || !vedouci_id || !garant_id) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -81,9 +81,11 @@ Deno.serve(async (req) => {
     }
 
     // Update profile with hierarchy info
+    const updateData: Record<string, unknown> = { vedouci_id, garant_id };
+    if (ziskatel_id) updateData.ziskatel_id = ziskatel_id;
     const { error: profileError } = await adminClient
       .from("profiles")
-      .update({ vedouci_id, garant_id })
+      .update(updateData)
       .eq("id", newUser.user.id);
 
     if (profileError) {
