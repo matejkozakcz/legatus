@@ -22,6 +22,7 @@ interface OrgChartProps {
 const roleBadgeConfig: Record<string, { label: string }> = {
   vedouci: { label: "Vedoucí" },
   garant: { label: "Garant" },
+  ziskatel: { label: "Získatel" },
   novacek: { label: "Nováček" },
 };
 
