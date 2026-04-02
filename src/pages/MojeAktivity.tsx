@@ -210,7 +210,7 @@ const MojeAktivity = () => {
                     <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
-                    {ACTIVITY_COLUMNS.map((col) => {
+                    {ALL_DISPLAY_COLUMNS.map((col) => {
                       const isBjTotal = col.key === "bj";
                       const cellValue = isBjTotal
                         ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
