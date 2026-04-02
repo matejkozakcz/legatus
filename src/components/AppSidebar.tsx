@@ -34,7 +34,7 @@ export function AppSidebar() {
     { title: "Moje aktivity", url: "/aktivity", icon: BarChart3 },
   ];
 
-  if (profile?.role === "vedouci" || profile?.role === "garant") {
+  if (profile?.role === "vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users });
   }
 
