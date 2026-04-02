@@ -529,8 +529,8 @@ const SpravaTeam = () => {
       </Dialog>
 
       {/* Role change confirmation */}
-      <Dialog open={!!roleChange} onOpenChange={() => setRoleChange(null)}>
-        <DialogContent>
+      <Dialog open={!!roleChange} onOpenChange={(open) => { if (!open) setRoleChange(null); }}>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-heading">Změna role</DialogTitle>
             <DialogDescription className="font-body">
@@ -539,15 +539,21 @@ const SpravaTeam = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <button className="btn btn-ghost btn-md" onClick={() => setRoleChange(null)}>
+            <Button type="button" variant="ghost" onClick={() => setRoleChange(null)}>
               Zrušit
-            </button>
-            <button
-              className="btn btn-primary btn-md"
-              onClick={() => roleChange && promoteMutation.mutate({ userId: roleChange.member.id, newRole: roleChange.newRole })}
+            </Button>
+            <Button
+              type="button"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                if (roleChange) {
+                  promoteMutation.mutate({ userId: roleChange.member.id, newRole: roleChange.newRole });
+                }
+              }}
+              disabled={promoteMutation.isPending}
             >
               Potvrdit
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
