@@ -233,7 +233,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 overflow-x-auto">
-      <NodeCard node={rootNode} />
+      <NodeCard node={rootNode} onClick={() => setSelectedMember(rootNode)} />
 
       {garantNodes.length > 0 && (
         <>
@@ -243,13 +243,13 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
               const novacci = novacekMap.get(garant.id) || [];
               return (
                 <div key={garant.id} className="flex flex-col items-center gap-2">
-                  <NodeCard node={garant} />
+                  <NodeCard node={garant} onClick={() => setSelectedMember(garant)} />
                   {novacci.length > 0 && (
                     <>
                       <Connector />
                       <div className="flex gap-6 flex-wrap justify-center">
                         {novacci.map((n) => (
-                          <NodeCard key={n.id} node={n} />
+                          <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
                         ))}
                       </div>
                     </>
@@ -265,10 +265,14 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
           {garantNodes.length === 0 && <Connector />}
           <div className="flex gap-6 flex-wrap justify-center mt-2">
             {directNovacci.map((n) => (
-              <NodeCard key={n.id} node={n} />
+              <NodeCard key={n.id} node={n} onClick={() => setSelectedMember(n)} />
             ))}
           </div>
         </>
+      )}
+
+      {selectedMember && (
+        <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
       )}
     </div>
   );
