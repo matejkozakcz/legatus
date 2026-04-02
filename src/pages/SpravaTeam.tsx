@@ -93,20 +93,23 @@ const SpravaTeam = () => {
     },
   });
 
-  const canPromote = (member: Profile) => {
+  const getRoleActions = (member: Profile) => {
+    const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
     if (profile?.role === "vedouci") {
-      if (member.role === "novacek") return "garant";
-      if (member.role === "garant") return "vedouci";
+      if (member.role === "novacek") {
+        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+      }
+      if (member.role === "garant") {
+        actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
+        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
+      }
     }
-    if (profile?.role === "garant" && member.role === "novacek" && member.garant_id === profile.id) {
-      return "garant";
+    if (profile?.role === "garant" && member.garant_id === profile.id) {
+      if (member.role === "novacek") {
+        actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+      }
     }
-    return null;
-  };
-
-  const promotionLabel: Record<string, string> = {
-    garant: "Povýšit na Garanta",
-    vedouci: "Povýšit na Vedoucího",
+    return actions;
   };
 
   return (
