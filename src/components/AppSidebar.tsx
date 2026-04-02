@@ -14,6 +14,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import legatusLogoWhite from "@/assets/legatus-logo-white.png";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
