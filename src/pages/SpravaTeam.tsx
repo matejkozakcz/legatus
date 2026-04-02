@@ -44,6 +44,7 @@ const SpravaTeam = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
+  const [roleChange, setRoleChange] = useState<{ member: Profile; newRole: string; label: string } | null>(null);
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members", profile?.id, profile?.role],
