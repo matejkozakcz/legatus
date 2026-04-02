@@ -4,14 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
-import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  subWeeks,
-  format,
-} from "date-fns";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
@@ -57,8 +50,7 @@ const Dashboard = () => {
   });
 
   const stats = useMemo(() => {
-    const sum = (key: string) =>
-      records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
+    const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
     return {
       fsa: { actual: sum("fsa_actual"), planned: sum("fsa_planned") },
       poh: { actual: sum("poh_actual"), planned: sum("poh_planned") },
@@ -100,12 +92,12 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Moje statistika — SECOND */}
+      {/* Moje aktivity — SECOND */}
       <section className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
-              Moje statistika
+              Moje aktivity
             </h2>
             <Link to="/aktivity" style={{ color: "#8aadb3" }} className="hover:opacity-70 transition-opacity">
               <Pencil className="h-4 w-4" />
@@ -136,10 +128,34 @@ const Dashboard = () => {
 
         {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
-          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných" plannedLabel="naplánovaných" />
+          <StatCard
+            label="Analýzy"
+            actual={stats.fsa.actual}
+            planned={stats.fsa.planned}
+            actualLabel="proběhlých"
+            plannedLabel="domluvenných"
+          />
+          <StatCard
+            label="Pohovory"
+            actual={stats.poh.actual}
+            planned={stats.poh.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Poradka"
+            actual={stats.ser.actual}
+            planned={stats.ser.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Doporučení"
+            actual={stats.ref.actual}
+            planned={stats.ref.planned}
+            actualLabel="vybraných"
+            plannedLabel="naplánovaných"
+          />
         </div>
 
         <div className="flex justify-end">

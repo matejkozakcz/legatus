@@ -3,16 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, Pencil } from "lucide-react";
-import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  addWeeks,
-  format,
-  isSameWeek,
-  isAfter,
-} from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, format, isSameWeek, isAfter } from "date-fns";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
@@ -77,10 +68,7 @@ const MojeAktivity = () => {
       if (!profile?.id) throw new Error("No user");
       const { error } = await supabase
         .from("activity_records")
-        .upsert(
-          { user_id: profile.id, ...record },
-          { onConflict: "user_id,week_start" }
-        );
+        .upsert({ user_id: profile.id, ...record }, { onConflict: "user_id,week_start" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,13 +94,12 @@ const MojeAktivity = () => {
         });
       }, 500);
     },
-    [records, upsertMutation]
+    [records, upsertMutation],
   );
 
   // Stats for the month
   const stats = useMemo(() => {
-    const sum = (key: string) =>
-      records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
+    const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
     return {
       fsa: { actual: sum("fsa_actual"), planned: sum("fsa_planned") },
       poh: { actual: sum("poh_actual"), planned: sum("poh_planned") },
@@ -134,13 +121,17 @@ const MojeAktivity = () => {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>Moje aktivity</h1>
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+          Moje aktivity
+        </h1>
       </div>
 
       {/* Stats */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>Moje statistika</h2>
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+            Moje aktivity
+          </h2>
           <Pencil className="h-4 w-4" style={{ color: "#8aadb3" }} />
         </div>
 
@@ -153,10 +144,34 @@ const MojeAktivity = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
-          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných" plannedLabel="naplánovaných" />
+          <StatCard
+            label="Analýzy"
+            actual={stats.fsa.actual}
+            planned={stats.fsa.planned}
+            actualLabel="proběhlých"
+            plannedLabel="domluvenných"
+          />
+          <StatCard
+            label="Pohovory"
+            actual={stats.poh.actual}
+            planned={stats.poh.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Poradka"
+            actual={stats.ser.actual}
+            planned={stats.ser.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Doporučení"
+            actual={stats.ref.actual}
+            planned={stats.ref.planned}
+            actualLabel="vybraných"
+            plannedLabel="naplánovaných"
+          />
         </div>
       </section>
 
@@ -193,9 +208,7 @@ const MojeAktivity = () => {
                             type="number"
                             min={0}
                             defaultValue={(record as any)?.[col.key] || 0}
-                            onBlur={(e) =>
-                              handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)
-                            }
+                            onBlur={(e) => handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)}
                           />
                         ) : (
                           (record as any)?.[col.key] || 0
