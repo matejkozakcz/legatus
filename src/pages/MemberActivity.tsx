@@ -114,16 +114,14 @@ const MemberActivity = () => {
         <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} accentColor="#e08a00" />
       </div>
 
-      <section className="bg-card rounded-card shadow-card overflow-hidden">
+      <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm font-body">
+          <table className="activity-table">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-3 py-3 text-left font-semibold text-foreground whitespace-nowrap">Týden</th>
+              <tr>
+                <th className="text-left">Týden</th>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <th key={col.key} className="px-2 py-3 text-center font-semibold text-foreground whitespace-nowrap text-xs">
-                    {col.header}
-                  </th>
+                  <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
             </thead>
@@ -133,24 +131,20 @@ const MemberActivity = () => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 return (
-                  <tr key={weekStr} className="border-b border-border">
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-foreground">
+                  <tr key={weekStr} className="past">
+                    <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key} className="px-1 py-2 text-center text-muted-foreground">
-                        {(record as any)?.[col.key] || 0}
-                      </td>
+                      <td key={col.key}>{(record as any)?.[col.key] || 0}</td>
                     ))}
                   </tr>
                 );
               })}
-              <tr className="bg-muted/50 font-bold">
-                <td className="px-3 py-2 text-sm text-foreground">Celkem</td>
+              <tr className="summary">
+                <td className="text-left">Celkem</td>
                 {ACTIVITY_COLUMNS.map((col) => (
-                  <td key={col.key} className="px-1 py-2 text-center text-sm text-foreground">
-                    {columnSums[col.key]}
-                  </td>
+                  <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
             </tbody>
