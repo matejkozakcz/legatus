@@ -244,8 +244,6 @@ const SpravaTeam = () => {
                           {action.label}
                         </button>
                       ))}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 );
