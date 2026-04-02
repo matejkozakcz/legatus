@@ -28,7 +28,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const [submitting, setSubmitting] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
-  // Get garanté for Vedoucí to select from
+  // Get garanté for Vedoucí to select from (include self)
   const { data: garanti = [] } = useQuery({
     queryKey: ["garanti", profile?.id],
     queryFn: async () => {
@@ -40,9 +40,31 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         .eq("vedouci_id", profile.id)
         .eq("is_active", true);
       if (error) throw error;
-      return data || [];
+      // Include the Vedoucí themselves as a garant option
+      const list = data || [];
+      const selfInList = list.some((g) => g.id === profile.id);
+      if (!selfInList) {
+        list.unshift({ id: profile.id, full_name: profile.full_name });
+      }
+      return list;
     },
     enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  // Get vedoucí name for Garant users
+  const { data: vedouciProfile } = useQuery({
+    queryKey: ["vedouci_profile", profile?.vedouci_id],
+    queryFn: async () => {
+      if (!profile?.vedouci_id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("id", profile.vedouci_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.vedouci_id && profile?.role === "garant",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
