@@ -198,19 +198,26 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
         (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
     );
     // All direct reports at the same level: garanti, promoted vedoucí, and direct nováčci
-    secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci];
+    secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci].filter(
+      (n) => n.id !== rootNode.id
+    );
 
     garantNodes.forEach((g) => {
       novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
     });
   } else if (profile.role === "garant") {
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
-    rootNode = vedouci || currentUser;
-    secondLevelNodes = [currentUser];
-    novacekMap.set(
-      currentUser.id,
-      profiles.filter((p) => p.role === "novacek" && p.garant_id === currentUser.id)
-    );
+    if (vedouci && vedouci.id !== currentUser.id) {
+      rootNode = vedouci;
+      secondLevelNodes = [currentUser];
+    } else {
+      rootNode = currentUser;
+      secondLevelNodes = [];
+    }
+    const myNovacci = profiles.filter((p) => p.role === "novacek" && p.garant_id === currentUser.id);
+    if (myNovacci.length > 0) {
+      novacekMap.set(currentUser.id, myNovacci);
+    }
   } else {
     // Nováček view: show chain upwards
     const garant = profiles.find((p) => p.id === currentUser.garant_id);
