@@ -128,13 +128,20 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   let rootNode: ProfileNode = currentUser;
   let garantNodes: ProfileNode[] = [];
   let novacekMap: Map<string, ProfileNode[]> = new Map();
+  let directNovacci: ProfileNode[] = [];
 
   if (profile.role === "vedouci") {
     rootNode = currentUser;
     garantNodes = profiles.filter((p) => p.role === "garant" && p.vedouci_id === currentUser.id);
+    // Nováčci under each garant
     garantNodes.forEach((g) => {
       novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
     });
+    // Nováčci directly under vedoucí (garant_id = vedouci_id, or no garant among garanti)
+    directNovacci = profiles.filter(
+      (p) => p.role === "novacek" && p.vedouci_id === currentUser.id && 
+      (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
+    );
   } else if (profile.role === "garant") {
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
     rootNode = vedouci || currentUser;
