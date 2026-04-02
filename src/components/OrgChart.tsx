@@ -190,20 +190,25 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     const vedouciMembers = profiles.filter(
       (p) => p.role === "vedouci" && p.vedouci_id === currentUser.id && p.id !== currentUser.id
     );
-    // Direct nováčci whose garant is the vedoucí himself (no separate garant)
-    directNovacci = profiles.filter(
-      (p) =>
-        p.role === "novacek" &&
-        p.vedouci_id === currentUser.id &&
-        (p.garant_id === currentUser.id || !garantNodes.some((g) => g.id === p.garant_id))
+    // All nováčci in the subtree
+    const allNovacci = profiles.filter(
+      (p) => p.role === "novacek" && p.vedouci_id === currentUser.id
     );
-    // All direct reports at the same level: garanti, promoted vedoucí, and direct nováčci
+    // Nováčci assigned to a specific garant go under that garant
+    const garantIds = new Set(garantNodes.map((g) => g.id));
+    // Direct nováčci: those whose garant_id is not one of the garanti (or is the vedoucí, or null)
+    directNovacci = allNovacci.filter(
+      (p) => !p.garant_id || p.garant_id === currentUser.id || !garantIds.has(p.garant_id)
+    );
+    // Second level: garanti + promoted vedoucí + direct nováčci
     secondLevelNodes = [...garantNodes, ...vedouciMembers, ...directNovacci].filter(
       (n) => n.id !== rootNode.id
     );
 
+    // Map nováčci under their garant
     garantNodes.forEach((g) => {
-      novacekMap.set(g.id, profiles.filter((p) => p.role === "novacek" && p.garant_id === g.id));
+      const novacci = allNovacci.filter((p) => p.garant_id === g.id);
+      if (novacci.length > 0) novacekMap.set(g.id, novacci);
     });
   } else if (profile.role === "garant") {
     const vedouci = profiles.find((p) => p.id === currentUser.vedouci_id);
