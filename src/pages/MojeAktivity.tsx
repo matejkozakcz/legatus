@@ -206,20 +206,26 @@ const MojeAktivity = () => {
                     <td className="text-left whitespace-nowrap font-medium">
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
-                    {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key}>
-                        {isEditable ? (
-                          <input
-                            type="number"
-                            min={0}
-                            defaultValue={(record as any)?.[col.key] || 0}
-                            onBlur={(e) => handleCellChange(weekStr, col.key, parseInt(e.target.value) || 0)}
-                          />
-                        ) : (
-                          (record as any)?.[col.key] || 0
-                        )}
-                      </td>
-                    ))}
+                    {ACTIVITY_COLUMNS.map((col) => {
+                      const isBjTotal = col.key === "bj";
+                      const cellValue = isBjTotal
+                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
+                        : (record as any)?.[col.key] || 0;
+                      return (
+                        <td key={col.key}>
+                          {isEditable && !isBjTotal ? (
+                            <input
+                              type="number"
+                              min={0}
+                              defaultValue={cellValue}
+                              onBlur={(e) => handleCellChange(weekStr, col.key as ActivityKey, parseInt(e.target.value) || 0)}
+                            />
+                          ) : (
+                            cellValue
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
