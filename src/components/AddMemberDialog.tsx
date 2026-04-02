@@ -182,7 +182,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           ) : (
             <div>
               <label className="text-sm font-body font-medium text-foreground mb-1 block">Garant</label>
-              <Input value={profile?.full_name || ""} disabled className="bg-muted" />
+              <Input value={`${profile?.full_name || ""} (Já)`} disabled className="bg-muted" />
             </div>
           )}
 
