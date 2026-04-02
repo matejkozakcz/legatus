@@ -506,8 +506,8 @@ const SpravaTeam = () => {
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
 
       {/* Deactivate confirmation */}
-      <Dialog open={!!deactivateMember} onOpenChange={() => setDeactivateMember(null)}>
-        <DialogContent>
+      <Dialog open={!!deactivateMember} onOpenChange={(open) => { if (!open) setDeactivateMember(null); }}>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-heading">Deaktivovat člena</DialogTitle>
             <DialogDescription className="font-body">
@@ -515,15 +515,17 @@ const SpravaTeam = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <button className="btn btn-ghost btn-md" onClick={() => setDeactivateMember(null)}>
+            <Button type="button" variant="ghost" onClick={() => setDeactivateMember(null)}>
               Zrušit
-            </button>
-            <button
-              className="btn btn-danger btn-md"
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
               onClick={() => deactivateMember && deactivateMutation.mutate(deactivateMember.id)}
+              disabled={deactivateMutation.isPending}
             >
               Deaktivovat
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
