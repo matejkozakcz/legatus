@@ -175,11 +175,15 @@ const SpravaTeam = () => {
       // Vedoucí can only act on members who belong to their subtree
       if (member.vedouci_id !== profile.id) return actions;
       if (member.role === "novacek") {
+        actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
+      }
+      if (member.role === "ziskatel") {
         actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
+        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
       }
       if (member.role === "garant") {
         actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
-        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
+        actions.push({ role: "ziskatel", label: "Ponížit na Získatele", variant: "demote" });
       }
     }
     if (profile?.role === "garant") {
