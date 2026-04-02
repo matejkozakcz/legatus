@@ -55,7 +55,8 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
 
   return (
     <div
-      className="relative flex flex-col items-center"
+      className="relative flex flex-col items-center cursor-pointer transition-shadow hover:shadow-md"
+      onClick={onClick}
       style={{
         width: 160,
         height: 105,
