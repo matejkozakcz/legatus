@@ -1,0 +1,1 @@
+ALTER TABLE public.promotion_requests ADD CONSTRAINT promotion_requests_user_role_unique UNIQUE (user_id, requested_role);
