@@ -11,7 +11,7 @@ import {
   getProductionPeriodMonth,
 } from "@/lib/productionPeriod";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
-import { Plus, X, Loader2, Pencil, Trash2, Briefcase } from "lucide-react";
+import { Plus, X, Loader2, Pencil, Trash2, Briefcase, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
