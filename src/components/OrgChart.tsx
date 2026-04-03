@@ -187,11 +187,36 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
   const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
 
+  const { data: profiles = [], isLoading } = useQuery({
+    queryKey: ["team_profiles", currentUserId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, avatar_url, vedouci_id, garant_id, ziskatel_id")
+        .eq("is_active", true);
+      if (error) throw error;
+      return (data || []) as ProfileNode[];
+    },
+    enabled: !!currentUserId,
+  });
+
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, ProfileNode[]>();
+    profiles.forEach((p) => {
+      if (p.ziskatel_id) {
+        const siblings = map.get(p.ziskatel_id) || [];
+        siblings.push(p);
+        map.set(p.ziskatel_id, siblings);
+      }
+    });
+    return map;
+  }, [profiles]);
+
   // Compute default collapsed: all nodes at depth >= 2 that have children
   const defaultCollapsed = useMemo(() => {
     const set = new Set<string>();
-    const currentUser = profiles.find((p) => p.id === currentUserId);
-    if (!currentUser) return set;
+    const root = profiles.find((p) => p.id === currentUserId);
+    if (!root) return set;
 
     function walk(nodeId: string, depth: number) {
       const kids = childrenMap.get(nodeId) || [];
@@ -200,7 +225,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
       }
       kids.forEach((k) => walk(k.id, depth + 1));
     }
-    walk(currentUser.id, 0);
+    walk(root.id, 0);
     return set;
   }, [profiles, childrenMap, currentUserId]);
 
@@ -208,12 +233,10 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   const [initialized, setInitialized] = useState(false);
 
   // Initialize collapsed state once data loads
-  useMemo(() => {
-    if (profiles.length > 0 && !initialized) {
-      setCollapsedIds(defaultCollapsed);
-      setInitialized(true);
-    }
-  }, [profiles, defaultCollapsed, initialized]);
+  if (profiles.length > 0 && !initialized) {
+    setCollapsedIds(defaultCollapsed);
+    setInitialized(true);
+  }
 
   const toggleCollapse = (id: string) => {
     setCollapsedIds((prev) => {
