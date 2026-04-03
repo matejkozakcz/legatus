@@ -777,22 +777,22 @@ const Dashboard = () => {
       </div>
 
       <section className="space-y-4">
-        <div className="flex gap-6" style={{ alignItems: "stretch" }}>
+        <div className="flex gap-6" style={{ alignItems: "start" }}>
           {/* Stav byznysu — 1/4 */}
-          <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+          <div ref={stavByznysuRef} style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Stav byznysu
             </h2>
-            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center", flex: 1 }}>
+            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
               {renderStavByznysu()}
             </div>
           </div>
           {/* Moje struktura — 3/5 */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: stavCardHeight > 0 ? stavCardHeight : "auto" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Moje struktura
             </h2>
-            <div className="legatus-card" style={{ padding: 24, flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div className="legatus-card" style={{ padding: 24, flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0 }}>
               <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
                 <OrgChart currentUserId={profile?.id || ""} />
               </div>
