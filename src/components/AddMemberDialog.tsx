@@ -78,11 +78,11 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
       // Fetch all active members under this vedoucí
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role")
+        .select("id, full_name, role, garant_id")
         .eq("is_active", true)
         .eq("vedouci_id", vedouciId);
       if (error) throw error;
-      const list = (data || []) as { id: string; full_name: string; role: string }[];
+      const list = (data || []) as { id: string; full_name: string; role: string; garant_id: string | null }[];
 
       if (profile.role === "vedouci") {
         // Vedoucí can assign to self or anyone in subtree
