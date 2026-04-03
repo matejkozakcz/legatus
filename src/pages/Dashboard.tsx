@@ -247,7 +247,7 @@ const Dashboard = () => {
     const prev = prevRoleRef.current;
     prevRoleRef.current = profile.role;
     if (prev && prev !== profile.role) {
-      const roleOrder: Record<string, number> = { novacek: 0, ziskatel: 1, garant: 2, vedouci: 3 };
+      const roleOrder: Record<string, number> = { novacek: 0, ziskatel: 1, garant: 2, budouci_vedouci: 3, vedouci: 4 };
       if ((roleOrder[profile.role] ?? 0) > (roleOrder[prev] ?? 0)) {
         fireConfetti();
         setPromotionRole(profile.role);
