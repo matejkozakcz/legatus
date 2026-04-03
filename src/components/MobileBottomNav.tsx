@@ -219,9 +219,7 @@ export function MobileBottomNav() {
           </div>
         </div>
       </div>
-
-      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
-    </>
+    </div>
   );
 }
 
