@@ -150,6 +150,7 @@ export type Database = {
           garant_id: string | null
           id: string
           is_active: boolean | null
+          monthly_bj_goal: number | null
           osobni_id: string | null
           role: string
           vedouci_id: string | null
@@ -162,6 +163,7 @@ export type Database = {
           garant_id?: string | null
           id: string
           is_active?: boolean | null
+          monthly_bj_goal?: number | null
           osobni_id?: string | null
           role?: string
           vedouci_id?: string | null
@@ -174,6 +176,7 @@ export type Database = {
           garant_id?: string | null
           id?: string
           is_active?: boolean | null
+          monthly_bj_goal?: number | null
           osobni_id?: string | null
           role?: string
           vedouci_id?: string | null

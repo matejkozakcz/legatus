@@ -12,6 +12,7 @@ interface Profile {
   garant_id: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  monthly_bj_goal: number | null;
 }
 
 interface AuthContextType {

@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN monthly_bj_goal integer DEFAULT 0;

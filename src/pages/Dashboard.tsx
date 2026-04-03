@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, Minus, Bell } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, Minus, Bell, Pencil, Check } from "lucide-react";
+import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
@@ -292,9 +293,9 @@ const Dashboard = () => {
     };
   }, [records]);
 
-  // ── Mobile-only queries ─────────────────────────────────────────────────────
+  // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
-  // All-time cumulative BJ
+  // All-time cumulative BJ (for Získatel gauge)
   const { data: allBjData = [] } = useQuery({
     queryKey: ["bj_all_time", profile?.id],
     queryFn: async () => {
@@ -305,12 +306,83 @@ const Dashboard = () => {
         .eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id && isMobile,
+    enabled: !!profile?.id,
   });
   const totalBjAllTime = useMemo(
     () => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
     [allBjData]
   );
+
+  // Garant: count direct subordinates (garant_id = me)
+  const { data: garantDirectCount = 0 } = useQuery({
+    queryKey: ["garant_direct_count", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("garant_id", profile.id)
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!profile?.id && profile?.role === "garant",
+  });
+
+  // Garant: count all people in structure (ziskatel_id chain)
+  const { data: garantStructureCount = 0 } = useQuery({
+    queryKey: ["garant_structure_count", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      // Fetch all active profiles where garant_id = me (all under garant)
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("garant_id", profile.id)
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!profile?.id && profile?.role === "garant",
+  });
+
+  // Vedoucí: monthly BJ for entire subtree
+  const periodStart = getProductionPeriodStart(now);
+  const periodEnd = getProductionPeriodEnd(now);
+
+  const { data: vedouciMonthlyBj = 0 } = useQuery({
+    queryKey: ["vedouci_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from("activity_records")
+        .select("bj")
+        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
+        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
+      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+    },
+    enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  // Vedoucí: monthly_bj_goal from profile
+  const monthlyBjGoal = profile?.monthly_bj_goal || 0;
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInputValue, setGoalInputValue] = useState("");
+
+  const updateGoalMutation = useMutation({
+    mutationFn: async (newGoal: number) => {
+      if (!profile?.id) throw new Error("No user");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ monthly_bj_goal: newGoal } as any)
+        .eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingGoal(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      // Refetch profile in auth context
+      window.location.reload();
+    },
+  });
 
   // Mobile week record query
   const { data: mobileWeekRecords = [] } = useQuery({
@@ -583,6 +655,110 @@ const Dashboard = () => {
   }
 
   // ── DESKTOP render ──────────────────────────────────────────────────────────
+  const role = profile?.role ?? "novacek";
+
+  const renderStavByznysu = () => {
+    if (role === "novacek") {
+      return (
+        <>
+          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+        </>
+      );
+    }
+    if (role === "ziskatel") {
+      return (
+        <>
+          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="historický výkon" />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+              {totalBjAllTime}
+            </span>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
+              z 1 000 BJ
+            </span>
+            <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
+              Historické BJ
+            </span>
+          </div>
+        </>
+      );
+    }
+    if (role === "garant") {
+      return (
+        <>
+          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel="aktivní nováčci" />
+          <GaugeIndicator value={garantStructureCount} max={10} label="Lidé ve struktuře" sublabel="celkem aktivních" />
+        </>
+      );
+    }
+    // vedouci
+    return (
+      <>
+        <div style={{ position: "relative" }}>
+          <GaugeIndicator value={vedouciMonthlyBj} max={monthlyBjGoal || 100} label="BJ tento měsíc" sublabel="vs. měsíční cíl" />
+          {!editingGoal ? (
+            <button
+              onClick={() => { setGoalInputValue(String(monthlyBjGoal || "")); setEditingGoal(true); }}
+              style={{
+                position: "absolute", top: 4, right: 4,
+                width: 28, height: 28, borderRadius: 8,
+                background: "#e6f7f9", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+              title="Nastavit cíl"
+            >
+              <Pencil size={14} color="#00abbd" />
+            </button>
+          ) : (
+            <div style={{
+              position: "absolute", top: 4, right: 4,
+              display: "flex", alignItems: "center", gap: 4,
+            }}>
+              <input
+                type="number"
+                value={goalInputValue}
+                onChange={(e) => setGoalInputValue(e.target.value)}
+                style={{
+                  width: 64, height: 28, borderRadius: 6,
+                  border: "1.5px solid #00abbd", padding: "0 6px",
+                  fontFamily: "Poppins, sans-serif", fontSize: 13, fontWeight: 600,
+                  color: "#00555f", outline: "none",
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") updateGoalMutation.mutate(Number(goalInputValue) || 0);
+                  if (e.key === "Escape") setEditingGoal(false);
+                }}
+              />
+              <button
+                onClick={() => updateGoalMutation.mutate(Number(goalInputValue) || 0)}
+                style={{
+                  width: 28, height: 28, borderRadius: 8,
+                  background: "#00abbd", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <Check size={14} color="white" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
+          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+            {vedouciMonthlyBj}
+          </span>
+          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
+            z {monthlyBjGoal || "—"} BJ
+          </span>
+          <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
+            Aktuální stav / plán
+          </span>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
@@ -593,11 +769,25 @@ const Dashboard = () => {
       </div>
 
       <section className="space-y-4">
-        <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
-          Moje struktura
-        </h2>
-        <div className="legatus-card" style={{ padding: 24 }}>
-          <OrgChart currentUserId={profile?.id || ""} />
+        <div className="flex gap-6">
+          {/* Stav byznysu — 2/5 */}
+          <div style={{ width: "40%", flexShrink: 0 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+              Stav byznysu
+            </h2>
+            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
+              {renderStavByznysu()}
+            </div>
+          </div>
+          {/* Moje struktura — 3/5 */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+              Moje struktura
+            </h2>
+            <div className="legatus-card" style={{ padding: 24 }}>
+              <OrgChart currentUserId={profile?.id || ""} />
+            </div>
+          </div>
         </div>
       </section>
 
