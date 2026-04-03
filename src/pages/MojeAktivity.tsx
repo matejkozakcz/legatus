@@ -225,6 +225,7 @@ const MojeAktivity = () => {
       poh_planned: rec?.poh_planned || 0,
       poh_actual:  rec?.poh_actual  || 0,
       ref_actual:  rec?.ref_actual  || 0,
+      bj:          rec?.bj          || 0,
     };
     localValuesRef.current = fresh;
     setLocalValues(fresh);
