@@ -770,8 +770,8 @@ const Dashboard = () => {
 
       <section className="space-y-4">
         <div className="flex gap-6">
-          {/* Stav byznysu — 2/5 */}
-          <div style={{ width: "40%", flexShrink: 0 }}>
+          {/* Stav byznysu — 1/4 */}
+          <div style={{ width: "25%", flexShrink: 0 }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Stav byznysu
             </h2>
