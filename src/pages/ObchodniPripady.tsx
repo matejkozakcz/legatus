@@ -554,9 +554,10 @@ export default function ObchodniPripady() {
       </div>
 
       {/* Statistiky */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Analýzy (FSA)", value: stats.fsa, sub: "schůzek" },
+          { label: "Pohovory", value: stats.poh, sub: "schůzek" },
           { label: "Servisy (SER)", value: stats.ser, sub: "schůzek" },
           { label: "Podepsané BJ", value: stats.bj % 1 === 0 ? stats.bj : stats.bj.toFixed(1), sub: "bodů" },
           { label: "Doporučení", value: stats.ref, sub: "kontaktů" },
