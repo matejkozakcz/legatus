@@ -1,33 +1,99 @@
 
 
-## Plan: Editable weekly stat cards on mobile Dashboard
+## Plan: Push notifikace s deadliny
 
-### What changes
+### Přehled
 
-The mobile Dashboard will get a week navigator (moved from Moje aktivity concept) replacing the "Můj tým" card. The 4 stat cards (Analýzy, Pohovory, Poradka, Doporučení) will show **weekly** data and have +/- buttons on the right side for editing the "actual" values directly.
+Nadřízený (Vedoucí, Garant, Získatel) bude moci ze stránky **Správa týmu** poslat push notifikaci svému přímému podřízenému — buď vlastní zprávou, nebo ze šablony. Notifikace se odešle ihned a automaticky se připomene den před deadlinem.
 
-### File: `src/pages/Dashboard.tsx`
+### Jak to bude fungovat
 
-1. **Add mutation imports** — `useMutation`, `useQueryClient` from react-query, `addWeeks`, `isSameWeek` from date-fns, `ChevronLeft`, `ChevronRight` icons, `toast` from sonner.
+1. Na kartě člena týmu se objeví ikona zvonečku → otevře dialog pro vytvoření upozornění
+2. V dialogu uživatel vybere šablonu (Osobní databáze, Analýza trhu, FSA...) nebo napíše vlastní zprávu + nastaví datum deadlinu
+3. Notifikace se odešle ihned jako push + automaticky se naplánuje připomenutí den před deadlinem
+4. Příjemce uvidí push notifikaci na telefonu (vyžaduje povolení notifikací)
 
-2. **Add week navigation state** — `mobileWeekOffset` state (same pattern as MojeAktivity), compute `mobileWeekStart`, `mobileWeekEnd`, `mobileWeekStr`.
+### Databáze
 
-3. **Replace month queries with week query** — Instead of `monthRecords` (period range), fetch the single week's `activity_record` for the selected week. Add `localValues` state for optimistic updates.
+**Nová tabulka `notifications`:**
+- `id` (uuid, PK)
+- `sender_id` (uuid, ref profiles) — kdo posílá
+- `recipient_id` (uuid, ref profiles) — komu
+- `title` (text) — název úkolu / šablony
+- `message` (text) — vlastní zpráva
+- `deadline` (date) — do kdy
+- `reminder_sent` (boolean, default false) — zda bylo odesláno připomenutí
+- `read` (boolean, default false)
+- `created_at` (timestamptz)
 
-4. **Add upsert mutation** — Same debounced upsert pattern as MojeAktivity to save changes to `activity_records`.
+**Nová tabulka `push_subscriptions`:**
+- `id` (uuid, PK)
+- `user_id` (uuid, ref profiles)
+- `subscription` (jsonb) — Web Push subscription objekt
+- `created_at` (timestamptz)
 
-5. **Remove "Můj tým" card** — Delete the entire team card section (lines 342-395) and related queries (`teamMembers`, `pendingPromos`).
+**RLS:**
+- Sender může INSERT jen pro své přímé podřízené
+- Recipient může SELECT + UPDATE (read) své notifikace
+- Push subscriptions: user může CRUD jen vlastní
 
-6. **Add week navigator UI** — Place it where "Můj tým" was (after the BJ card). Left/right chevron buttons + date range label, same style as MojeAktivity.
+### Push notifikace (Web Push API)
 
-7. **Redesign MobileStatCard** — New layout: left side shows label + actual/planned numbers, right side has vertically stacked + and - buttons. The buttons call `handleMobileChange` to update the "actual" value for the current week.
+1. **Service Worker** (`sw.js`) — přidat handler pro `push` event, který zobrazí systémovou notifikaci
+2. **VAPID klíče** — vygenerovat a uložit jako secret (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+3. **Registrace na klientu** — po přihlášení požádat o povolení notifikací, uložit subscription do `push_subscriptions`
+4. **Edge Function `send-push`** — přijme notification ID, načte subscription příjemce a odešle push přes Web Push protokol
 
-8. **Update stat grid** — Cards now use `localValues` from the current week (e.g., `fsa_actual`, `fsa_planned`) instead of `monthStats`. Only editable when viewing the current week.
+### Připomenutí den předem
 
-### Technical details
+**Edge Function `check-reminders`** — spouštěná přes pg_cron každou hodinu:
+- Najde notifikace kde `deadline = CURRENT_DATE + 1` a `reminder_sent = false`
+- Odešle push notifikaci s textem "Zítra je deadline: {title}"
+- Nastaví `reminder_sent = true`
 
-- The +/- buttons modify `fsa_actual`, `poh_actual`, `ser_actual`, `ref_actual` for the selected week
-- Planned values remain read-only on Dashboard (edited in Moje aktivity)
-- Debounced save (800ms) after each change, same as MojeAktivity
-- `localValues` + `localValuesRef` pattern for instant UI feedback
+### Šablony
+
+Předdefinované šablony v kódu (ne v DB):
+- Osobní databáze kontaktů
+- Analýza trhu
+- FSA schůzka
+- Pohovor
+- Servisní schůzka
+
+Každá šablona má předvyplněný název a výchozí zprávu. Uživatel může text upravit.
+
+### UI změny
+
+**Stránka Správa týmu** — na kartu každého podřízeného přidat ikonu zvonečku
+
+**Dialog „Nové upozornění":**
+- Výběr šablony (dropdown) nebo vlastní zpráva
+- Pole: Název, Zpráva, Deadline (date picker)
+- Tlačítko Odeslat
+
+**Dashboard / Bottom nav** — badge s počtem nepřečtených notifikací
+
+**Nová sekce na Dashboardu** — seznam nadcházejících deadlinů (příjemcovy notifikace)
+
+### Soubory k vytvoření/úpravě
+
+| Soubor | Změna |
+|--------|-------|
+| `supabase/migrations/` | Nové tabulky notifications, push_subscriptions |
+| `supabase/functions/send-push/index.ts` | Edge Function pro odeslání push |
+| `supabase/functions/check-reminders/index.ts` | Cron job pro připomenutí |
+| `public/sw.js` | Push event handler |
+| `src/main.tsx` | Registrace push subscription po přihlášení |
+| `src/components/CreateNotificationDialog.tsx` | Dialog pro vytvoření upozornění |
+| `src/pages/SpravaTeam.tsx` | Ikona zvonečku na kartách členů |
+| `src/pages/Dashboard.tsx` | Sekce s deadliny + badge |
+| `src/components/MobileBottomNav.tsx` | Badge nepřečtených |
+
+### Technické detaily
+
+- Web Push API vyžaduje VAPID klíče — budou vygenerovány a uloženy jako secrets
+- VAPID_PUBLIC_KEY bude v kódu (veřejný), VAPID_PRIVATE_KEY jako secret v Edge Functions
+- Push subscription se ukládá při prvním přihlášení (browser prompt)
+- `check-reminders` cron job poběží každou hodinu (`0 * * * *`)
+- Ihned po vytvoření notifikace se volá `send-push` Edge Function
 
