@@ -7,7 +7,8 @@ import {
   format, parseISO,
 } from "date-fns";
 import { cs } from "date-fns/locale";
-import { getProductionPeriodStart, getProductionPeriodEnd } from "@/lib/productionPeriod";
+import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
+import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { Plus, X, Loader2, Pencil, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -381,10 +382,15 @@ export default function ObchodniPripady() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const now = new Date();
+  const currentPeriod = getProductionPeriodMonth(now);
 
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_period");
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeeting, setEditMeeting] = useState<Meeting | null>(null);
+
+  const periodRange = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
 
   const dateRange = useMemo(() => {
     switch (timeFilter) {
@@ -397,9 +403,9 @@ export default function ObchodniPripady() {
         };
       case "this_period":
       default:
-        return { from: getProductionPeriodStart(now), to: getProductionPeriodEnd(now) };
+        return { from: periodRange.start, to: periodRange.end };
     }
-  }, [timeFilter]);
+  }, [timeFilter, periodRange]);
 
   // ── Data ──
   const { data: meetings = [], isLoading } = useQuery<Meeting[]>({
@@ -555,6 +561,17 @@ export default function ObchodniPripady() {
 
       {/* Filtry */}
       <div className="flex items-center gap-2 flex-wrap">
+        {!isMobile && (
+          <ProductionMonthPicker
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onChange={(y, m) => {
+              setSelectedYear(y);
+              setSelectedMonth(m);
+              setTimeFilter("this_period");
+            }}
+          />
+        )}
         {filterPills.map((pill) => (
           <button
             key={pill.key}

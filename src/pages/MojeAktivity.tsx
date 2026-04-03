@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, isSameWeek, isAfter } from "date-fns";
-import { getProductionPeriodStart, getProductionPeriodEnd } from "@/lib/productionPeriod";
+import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
+import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
@@ -140,13 +141,17 @@ const MojeAktivity = () => {
   const queryClient = useQueryClient();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const now = new Date();
+  const currentPeriod = getProductionPeriodMonth(now);
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   // Mobile week navigation state
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   // Optimistic local values for instant UI feedback (mobile only)
   const [localValues, setLocalValues] = useState<Record<string, number>>({});
   const localValuesRef = useRef<Record<string, number>>({});
-  const monthStart = getProductionPeriodStart(now);
-  const monthEnd = getProductionPeriodEnd(now);
+  const periodRange = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
+  const monthStart = periodRange.start;
+  const monthEnd = periodRange.end;
 
   // Get weeks in current production period
   const weeks = useMemo(() => {
@@ -157,7 +162,7 @@ const MojeAktivity = () => {
       weekStart = addWeeks(weekStart, 1);
     }
     return result;
-  }, []);
+  }, [monthStart, monthEnd]);
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["activity_records", profile?.id, "period", format(monthStart, "yyyy-MM-dd")],
@@ -551,8 +556,12 @@ const MojeAktivity = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="chip chip-teal-active">Toto období</span>
-          <span className="font-body ml-4" style={{ fontSize: 12, color: "#8aadb3" }}>
+          <ProductionMonthPicker
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+          />
+          <span className="font-body ml-2" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
           </span>
