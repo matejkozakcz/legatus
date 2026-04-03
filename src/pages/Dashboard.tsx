@@ -780,18 +780,18 @@ const Dashboard = () => {
       </div>
 
       <section className="space-y-4">
-        <div className="flex gap-6" style={{ alignItems: "start" }}>
+        <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 520 }}>
           {/* Stav byznysu — 1/4 */}
-          <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column", height: stavCardHeight > 0 ? stavCardHeight : "auto" }}>
+          <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Stav byznysu
             </h2>
-            <div ref={stavByznysuRef} className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center", flex: 1, overflowY: "auto" }}>
+            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center", flex: 1, overflowY: "auto" }}>
               {renderStavByznysu()}
             </div>
           </div>
           {/* Moje struktura — 3/5 */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: stavCardHeight > 0 ? stavCardHeight : "auto" }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Moje struktura
             </h2>
