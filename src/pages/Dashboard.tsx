@@ -36,22 +36,34 @@ function DeadlinesSection({ userId }: { userId?: string }) {
   });
 
   const markRead = async (id: string) => {
-    await supabase.from("notifications" as any).update({ read: true }).eq("id", id);
+    await supabase
+      .from("notifications" as any)
+      .update({ read: true })
+      .eq("id", id);
   };
 
   if (notifications.length === 0) return null;
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        marginBottom: 10, paddingTop: 8,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 10,
+          paddingTop: 8,
+        }}
+      >
         <Bell size={18} color="#00abbd" />
-        <span style={{
-          fontFamily: "Poppins, sans-serif", fontWeight: 700,
-          fontSize: 16, color: "#0c2226",
-        }}>
+        <span
+          style={{
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 700,
+            fontSize: 16,
+            color: "#0c2226",
+          }}
+        >
           Upozornění
         </span>
       </div>
@@ -72,32 +84,47 @@ function DeadlinesSection({ userId }: { userId?: string }) {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{
-                  fontFamily: "Poppins, sans-serif", fontWeight: 600,
-                  fontSize: 14, color: "#0c2226",
-                }}>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    color: "#0c2226",
+                  }}
+                >
                   {n.title}
                 </span>
-                <span style={{
-                  fontSize: 12, fontWeight: 600,
-                  color: isOverdue ? "#fc7c71" : "#00abbd",
-                }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: isOverdue ? "#fc7c71" : "#00abbd",
+                  }}
+                >
                   {n.deadline}
                 </span>
               </div>
               {n.message && (
-                <div style={{
-                  fontSize: 13, color: "#8aadb3", marginTop: 4,
-                  fontFamily: "Open Sans, sans-serif",
-                }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#8aadb3",
+                    marginTop: 4,
+                    fontFamily: "Open Sans, sans-serif",
+                  }}
+                >
                   {n.message}
                 </div>
               )}
               {!n.read && (
-                <div style={{
-                  fontSize: 11, color: "#00abbd", marginTop: 6,
-                  fontFamily: "Open Sans, sans-serif",
-                }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#00abbd",
+                    marginTop: 6,
+                    fontFamily: "Open Sans, sans-serif",
+                  }}
+                >
                   Klepni pro označení jako přečtené
                 </div>
               )}
@@ -138,43 +165,73 @@ function MobileStatCard({
   };
 
   return (
-    <div className="mobile-stat-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div
+      className="mobile-stat-card"
+      style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+    >
       <div style={{ flex: 1 }}>
         <div className="mobile-stat-label">{label}</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 6 }}>
-          <span style={{
-            fontFamily: "Poppins, sans-serif", fontWeight: 800,
-            fontSize: 36, color: "#00555f", lineHeight: 1,
-          }}>
+          <span
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 800,
+              fontSize: 36,
+              color: "#00555f",
+              lineHeight: 1,
+            }}
+          >
             {actual}
           </span>
-          <span style={{
-            fontFamily: "Poppins, sans-serif", fontWeight: 500,
-            fontSize: 22, color: "#b8cfd4", lineHeight: 1,
-          }}>
+          <span
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 500,
+              fontSize: 22,
+              color: "#b8cfd4",
+              lineHeight: 1,
+            }}
+          >
             /
           </span>
-          <span style={{
-            fontFamily: "Poppins, sans-serif", fontWeight: 700,
-            fontSize: 28, color: "#00abbd", lineHeight: 1,
-          }}>
+          <span
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 700,
+              fontSize: 28,
+              color: "#00abbd",
+              lineHeight: 1,
+            }}
+          >
             {planned}
           </span>
         </div>
-        <div className="mobile-stat-sublabel" style={{ marginTop: 5 }}>{sublabel}</div>
+        <div className="mobile-stat-sublabel" style={{ marginTop: 5 }}>
+          {sublabel}
+        </div>
       </div>
       {/* +/- buttons stacked vertically */}
-      <div style={{
-        display: "flex", flexDirection: "column", gap: 6, marginLeft: 10,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          marginLeft: 10,
+        }}
+      >
         <button
           disabled={!editable}
           onPointerDown={() => handlePress("plus", onIncrement)}
           style={{
-            width: 34, height: 34, borderRadius: 10,
+            width: 34,
+            height: 34,
+            borderRadius: 10,
             background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
-            border: "none", cursor: editable ? "pointer" : "default",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "none",
+            cursor: editable ? "pointer" : "default",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             opacity: editable ? 1 : 0.35,
             transition: "background 0.1s",
             WebkitTapHighlightColor: "transparent",
@@ -186,10 +243,15 @@ function MobileStatCard({
           disabled={!editable}
           onPointerDown={() => handlePress("minus", onDecrement)}
           style={{
-            width: 34, height: 34, borderRadius: 10,
+            width: 34,
+            height: 34,
+            borderRadius: 10,
             background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
-            border: "none", cursor: editable ? "pointer" : "default",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "none",
+            cursor: editable ? "pointer" : "default",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             opacity: editable ? 1 : 0.35,
             transition: "background 0.1s",
             WebkitTapHighlightColor: "transparent",
@@ -220,7 +282,7 @@ const Dashboard = () => {
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
-    [mobileWeekOffset]
+    [mobileWeekOffset],
   );
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const mobileWeekStr = format(mobileWeekStart, "yyyy-MM-dd");
@@ -241,8 +303,6 @@ const Dashboard = () => {
     }
   }, [user, profile]);
 
-
-
   useEffect(() => {
     if (!profile) return;
     const prev = prevRoleRef.current;
@@ -262,7 +322,10 @@ const Dashboard = () => {
       case "this_week":
         return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
       case "last_week":
-        return { from: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }), to: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }) };
+        return {
+          from: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
+          to: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
+        };
       case "this_month":
         return { from: getProductionPeriodStart(now), to: getProductionPeriodEnd(now) };
     }
@@ -301,18 +364,12 @@ const Dashboard = () => {
     queryKey: ["bj_all_time", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data } = await supabase
-        .from("activity_records")
-        .select("bj")
-        .eq("user_id", profile.id);
+      const { data } = await supabase.from("activity_records").select("bj").eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id && (profile?.role !== "vedouci"),
+    enabled: !!profile?.id && profile?.role !== "vedouci",
   });
-  const totalBjAllTime = useMemo(
-    () => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
-    [allBjData]
-  );
+  const totalBjAllTime = useMemo(() => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0), [allBjData]);
 
   // Garant: count direct subordinates (garant_id = me)
   const { data: garantDirectCount = 0 } = useQuery({
@@ -452,13 +509,13 @@ const Dashboard = () => {
         upsertMutation.mutate(record);
       }, 800);
     },
-    [mobileWeekStr, mobileRecord, upsertMutation]
+    [mobileWeekStr, mobileRecord, upsertMutation],
   );
 
   // ── Desktop filter pills ────────────────────────────────────────────────────
   const filterPills: { key: TimeFilter; label: string }[] = [
-    { key: "this_week",  label: "Tento týden" },
-    { key: "last_week",  label: "Minulý týden" },
+    { key: "this_week", label: "Tento týden" },
+    { key: "last_week", label: "Minulý týden" },
     { key: "this_month", label: "Tento měsíc" },
   ];
 
@@ -472,81 +529,126 @@ const Dashboard = () => {
     const bjGoal = 1000;
     const bjProgress = Math.min(100, (totalBjAllTime / bjGoal) * 100);
     const bjRemaining = Math.max(0, bjGoal - totalBjAllTime);
-    const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Budoucího vedoucího" : role === "budouci_vedouci" ? "Vedoucího" : null;
+    const nextRoleLabel =
+      role === "ziskatel"
+        ? "Garanta"
+        : role === "garant"
+          ? "Budoucího vedoucího"
+          : role === "budouci_vedouci"
+            ? "Vedoucího"
+            : null;
 
     return (
       <div className="mobile-page">
-
         {/* ── HEADER ── */}
         <div style={{ paddingTop: 16, paddingBottom: 16 }}>
-          <div style={{
-            fontFamily: "Open Sans, sans-serif", fontSize: 22,
-            fontWeight: 400, color: "#0c2226", lineHeight: 1.2,
-          }}>
+          <div
+            style={{
+              fontFamily: "Open Sans, sans-serif",
+              fontSize: 22,
+              fontWeight: 400,
+              color: "#0c2226",
+              lineHeight: 1.2,
+            }}
+          >
             Ahoj,
           </div>
-          <div style={{
-            fontFamily: "Poppins, sans-serif", fontSize: 34,
-            fontWeight: 800, color: "#0c2226", lineHeight: 1.1,
-            display: "flex", alignItems: "center", gap: 8,
-          }}>
-            {firstName}! <span role="img" aria-label="wave">👋</span>
+          <div
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontSize: 34,
+              fontWeight: 800,
+              color: "#0c2226",
+              lineHeight: 1.1,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {firstName}!{" "}
+            <span role="img" aria-label="wave">
+              👋
+            </span>
           </div>
-          <div style={{
-            fontFamily: "Poppins, sans-serif", fontSize: 16,
-            fontWeight: 700, color: "#0c2226", marginTop: 10,
-          }}>
+          <div
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#0c2226",
+              marginTop: 10,
+            }}
+          >
             Zbývá {daysRemaining} dní a takhle vypadá tvůj byznys:
           </div>
         </div>
 
         {/* ── KUMULATIVNÍ BJ CARD ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
-          borderRadius: 20, padding: "20px 20px 18px",
-          marginBottom: 12, color: "white",
-          boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
-        }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
+            borderRadius: 20,
+            padding: "20px 20px 18px",
+            marginBottom: 12,
+            color: "white",
+            boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
+          }}
+        >
           <div style={{ fontSize: 13, opacity: 0.72, marginBottom: 10, fontFamily: "Open Sans, sans-serif" }}>
             Kumulativní BJ (celkem)
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{
-              fontFamily: "Poppins, sans-serif", fontWeight: 800,
-              fontSize: 52, lineHeight: 1, color: "white",
-            }}>
+            <span
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 800,
+                fontSize: 52,
+                lineHeight: 1,
+                color: "white",
+              }}
+            >
               {totalBjAllTime}
             </span>
             <span style={{ fontSize: 20, fontWeight: 600, opacity: 0.75 }}>BJ</span>
           </div>
 
           {/* Progress bar */}
-          <div style={{
-            height: 8, background: "rgba(255,255,255,0.18)",
-            borderRadius: 4, overflow: "hidden", marginTop: 16,
-          }}>
-            <div style={{
-              height: "100%", background: "#fc7c71",
-              borderRadius: 4, width: `${bjProgress}%`,
-              transition: "width 0.6s ease",
-            }} />
+          <div
+            style={{
+              height: 8,
+              background: "rgba(255,255,255,0.18)",
+              borderRadius: 4,
+              overflow: "hidden",
+              marginTop: 16,
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                background: "#fc7c71",
+                borderRadius: 4,
+                width: `${bjProgress}%`,
+                transition: "width 0.6s ease",
+              }}
+            />
           </div>
 
           {nextRoleLabel && (
-            <div style={{
-              display: "flex", justifyContent: "space-between",
-              marginTop: 7, fontSize: 12, opacity: 0.8,
-              fontFamily: "Open Sans, sans-serif",
-            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: 7,
+                fontSize: 12,
+                opacity: 0.8,
+                fontFamily: "Open Sans, sans-serif",
+              }}
+            >
               <span>Do {nextRoleLabel} zbývá</span>
               <span style={{ fontWeight: 700 }}>{bjRemaining} BJ</span>
             </div>
           )}
-          {!nextRoleLabel && (
-            <div style={{ marginTop: 7, fontSize: 12, opacity: 0.8 }}>
-              Vedoucí ✓
-            </div>
-          )}
+          {!nextRoleLabel && <div style={{ marginTop: 7, fontSize: 12, opacity: 0.8 }}>Vedoucí ✓</div>}
         </div>
 
         {/* ── 2×2 STAT GRID (this week, editable) ── */}
@@ -558,7 +660,9 @@ const Dashboard = () => {
             sublabel="proběhlých / doml."
             editable={isMobileWeekEditable}
             onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))}
+            onDecrement={() =>
+              handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))
+            }
           />
           <MobileStatCard
             label="Pohovory"
@@ -567,7 +671,9 @@ const Dashboard = () => {
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
             onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))}
+            onDecrement={() =>
+              handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))
+            }
           />
           <MobileStatCard
             label="Poradka"
@@ -576,7 +682,9 @@ const Dashboard = () => {
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
             onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))}
+            onDecrement={() =>
+              handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))
+            }
           />
           <MobileStatCard
             label="Doporučení"
@@ -585,27 +693,37 @@ const Dashboard = () => {
             sublabel="vybraných / naplán."
             editable={isMobileWeekEditable}
             onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))}
+            onDecrement={() =>
+              handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))
+            }
           />
         </div>
 
         {/* ── WEEK NAVIGATOR ── */}
-        <div style={{
-          background: "#ffffff",
-          borderRadius: 16,
-          padding: "10px 16px",
-          marginBottom: 12,
-          border: "1px solid #e1e9eb",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 16,
+            padding: "10px 16px",
+            marginBottom: 12,
+            border: "1px solid #e1e9eb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <button
             onClick={() => setMobileWeekOffset((o) => o - 1)}
             style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: "#dde8ea", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: "#dde8ea",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <ChevronLeft size={15} color="#00555f" />
@@ -622,10 +740,15 @@ const Dashboard = () => {
             onClick={() => setMobileWeekOffset((o) => Math.min(0, o + 1))}
             disabled={mobileWeekOffset >= 0}
             style={{
-              width: 32, height: 32, borderRadius: 10,
+              width: 32,
+              height: 32,
+              borderRadius: 10,
               background: "#dde8ea",
-              border: "none", cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "none",
+              cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
             }}
           >
@@ -634,11 +757,18 @@ const Dashboard = () => {
         </div>
 
         {/* Autosave indicator */}
-        <div style={{
-          textAlign: "center", fontSize: 11, color: "#8aadb3",
-          padding: "6px 0 12px", display: "flex",
-          alignItems: "center", justifyContent: "center", gap: 5,
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 11,
+            color: "#8aadb3",
+            padding: "6px 0 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 5,
+          }}
+        >
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d", flexShrink: 0 }} />
           Automaticky ukládáno
         </div>
@@ -646,11 +776,7 @@ const Dashboard = () => {
         {/* Upcoming deadlines */}
         <DeadlinesSection userId={profile?.id} />
 
-        <PromotionModal
-          open={!!promotionRole}
-          onClose={() => setPromotionRole(null)}
-          newRole={promotionRole || ""}
-        />
+        <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
       </div>
     );
   }
@@ -671,8 +797,25 @@ const Dashboard = () => {
       return (
         <>
           <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="historický výkon" />
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
-            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              padding: "12px 0",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 800,
+                fontSize: 42,
+                color: "#00555f",
+                lineHeight: 1,
+              }}
+            >
               {totalBjAllTime}
             </span>
             <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
@@ -688,7 +831,12 @@ const Dashboard = () => {
     if (role === "garant") {
       return (
         <>
-          <GaugeIndicator value={garantStructureCount} max={2} label="Lidé ve struktuře" sublabel="pro povýšení na BV" />
+          <GaugeIndicator
+            value={garantStructureCount}
+            max={2}
+            label="Lidé ve struktuře"
+            sublabel="pro povýšení na BV"
+          />
           <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="osobní výkon" />
         </>
       );
@@ -697,7 +845,12 @@ const Dashboard = () => {
       return (
         <>
           <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel={`z 3 pro Vedoucího`} />
-          <GaugeIndicator value={garantStructureCount} max={5} label="Lidé ve struktuře" sublabel={`z 5 pro Vedoucího`} />
+          <GaugeIndicator
+            value={garantStructureCount}
+            max={5}
+            label="Lidé ve struktuře"
+            sublabel={`z 5 pro Vedoucího`}
+          />
         </>
       );
     }
@@ -705,34 +858,62 @@ const Dashboard = () => {
     return (
       <>
         <div style={{ position: "relative" }}>
-          <GaugeIndicator value={vedouciMonthlyBj} max={monthlyBjGoal || 100} label="BJ tento měsíc" sublabel="vs. měsíční cíl" />
+          <GaugeIndicator
+            value={vedouciMonthlyBj}
+            max={monthlyBjGoal || 100}
+            label="BJ tento měsíc"
+            sublabel="vs. měsíční cíl"
+          />
           {!editingGoal ? (
             <button
-              onClick={() => { setGoalInputValue(String(monthlyBjGoal || "")); setEditingGoal(true); }}
+              onClick={() => {
+                setGoalInputValue(String(monthlyBjGoal || ""));
+                setEditingGoal(true);
+              }}
               style={{
-                position: "absolute", top: 4, right: 4,
-                width: 28, height: 28, borderRadius: 8,
-                background: "#e6f7f9", border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "absolute",
+                top: 4,
+                right: 4,
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "#e6f7f9",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
               title="Nastavit cíl"
             >
               <Pencil size={14} color="#00abbd" />
             </button>
           ) : (
-            <div style={{
-              position: "absolute", top: 4, right: 4,
-              display: "flex", alignItems: "center", gap: 4,
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
               <input
                 type="number"
                 value={goalInputValue}
                 onChange={(e) => setGoalInputValue(e.target.value)}
                 style={{
-                  width: 64, height: 28, borderRadius: 6,
-                  border: "1.5px solid #00abbd", padding: "0 6px",
-                  fontFamily: "Poppins, sans-serif", fontSize: 13, fontWeight: 600,
-                  color: "#00555f", outline: "none",
+                  width: 64,
+                  height: 28,
+                  borderRadius: 6,
+                  border: "1.5px solid #00abbd",
+                  padding: "0 6px",
+                  fontFamily: "Poppins, sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#00555f",
+                  outline: "none",
                 }}
                 autoFocus
                 onKeyDown={(e) => {
@@ -743,9 +924,15 @@ const Dashboard = () => {
               <button
                 onClick={() => updateGoalMutation.mutate(Number(goalInputValue) || 0)}
                 style={{
-                  width: 28, height: 28, borderRadius: 8,
-                  background: "#00abbd", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "#00abbd",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
                 <Check size={14} color="white" />
@@ -753,8 +940,25 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
-          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            padding: "12px 0",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 800,
+              fontSize: 42,
+              color: "#00555f",
+              lineHeight: 1,
+            }}
+          >
             {vedouciMonthlyBj}
           </span>
           <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
@@ -778,13 +982,24 @@ const Dashboard = () => {
       </div>
 
       <section className="space-y-4">
-        <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 520 }}>
+        <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 450 }}>
           {/* Stav byznysu — 1/4 */}
           <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Stav byznysu
             </h2>
-            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center", flex: 1, overflowY: "auto" }}>
+            <div
+              className="legatus-card"
+              style={{
+                padding: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 20,
+                alignItems: "center",
+                flex: 1,
+                overflowY: "auto",
+              }}
+            >
               {renderStavByznysu()}
             </div>
           </div>
@@ -793,7 +1008,17 @@ const Dashboard = () => {
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Moje struktura
             </h2>
-            <div className="legatus-card" style={{ padding: 24, flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <div
+              className="legatus-card"
+              style={{
+                padding: 24,
+                flex: 1,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+              }}
+            >
               <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
                 <OrgChart currentUserId={profile?.id || ""} />
               </div>
@@ -828,20 +1053,40 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Analýzy"     actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých"  plannedLabel="domluvenných"   />
-          <StatCard label="Pohovory"    actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých"  plannedLabel="naplánovaných"  />
-          <StatCard label="Poradka"     actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých"  plannedLabel="naplánovaných"  />
-          <StatCard label="Doporučení"  actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných"   plannedLabel="naplánovaných"  />
+          <StatCard
+            label="Analýzy"
+            actual={stats.fsa.actual}
+            planned={stats.fsa.planned}
+            actualLabel="proběhlých"
+            plannedLabel="domluvenných"
+          />
+          <StatCard
+            label="Pohovory"
+            actual={stats.poh.actual}
+            planned={stats.poh.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Poradka"
+            actual={stats.ser.actual}
+            planned={stats.ser.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Doporučení"
+            actual={stats.ref.actual}
+            planned={stats.ref.planned}
+            actualLabel="vybraných"
+            plannedLabel="naplánovaných"
+          />
         </div>
       </section>
 
       <DeadlinesSection userId={profile?.id} />
 
-      <PromotionModal
-        open={!!promotionRole}
-        onClose={() => setPromotionRole(null)}
-        newRole={promotionRole || ""}
-      />
+      <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
     </div>
   );
 };
