@@ -545,7 +545,7 @@ const Dashboard = () => {
     const role = profile?.role ?? "novacek";
 
     return (
-      <div className="mobile-page">
+      <div className="mobile-page" style={{ paddingBottom: 160 }}>
         {/* ── HEADER ── */}
         <div style={{ paddingTop: 16, paddingBottom: 16 }}>
           <div
