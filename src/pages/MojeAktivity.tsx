@@ -556,8 +556,12 @@ const MojeAktivity = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="chip chip-teal-active">Toto období</span>
-          <span className="font-body ml-4" style={{ fontSize: 12, color: "#8aadb3" }}>
+          <ProductionMonthPicker
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+          />
+          <span className="font-body ml-2" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
           </span>
