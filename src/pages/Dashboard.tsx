@@ -359,7 +359,7 @@ const Dashboard = () => {
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
-  // All-time cumulative BJ (for Získatel gauge)
+  // All-time cumulative BJ (for promotion progress gauge)
   const { data: allBjData = [] } = useQuery({
     queryKey: ["bj_all_time", profile?.id],
     queryFn: async () => {
@@ -367,7 +367,7 @@ const Dashboard = () => {
       const { data } = await supabase.from("activity_records").select("bj").eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id && profile?.role !== "vedouci",
+    enabled: !!profile?.id && profile?.role !== "vedouci" && profile?.role !== "novacek",
   });
   const totalBjAllTime = useMemo(() => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0), [allBjData]);
 
