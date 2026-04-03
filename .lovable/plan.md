@@ -1,67 +1,95 @@
 
 
-## Plán: Self-registrace s onboardingem
+## Plán: Restrukturalizace výstupů schůzek
 
 ### Přehled
 
-Login stránka dostane tlačítko "Vytvořit účet" pro email/heslo registraci. OAuth (Google/Apple) automaticky vytvoří účet, pokud neexistuje (to už funguje přes `handle_new_user` trigger). Po první registraci se nový uživatel místo přesměrování na dashboard dostane do onboarding modalu, kde vyplní své údaje.
+Kompletní přepracování struktury schůzek v Obchodních případech. Místo jednoho pole BJ a doporučení bude každá schůzka mít vnořené výstupy: Poradko, Pohovor, Doporučení — podle typu schůzky.
 
-### Databáze
+### Nová logika schůzek
 
-**Migrace** — přidat sloupec `ziskatel_name` (text, nullable) do `profiles` pro případ, kdy Získatel není v systému:
+```text
+FSA (Analýza)
+├── Zrušená? → pokud ano, konec (bez termínu)
+├── Potenciál BJ (nepovinné číslo)
+├── Poradko (nepovinný toggle)
+│   ├── Podepsané BJ (povinné, ≥0)
+│   ├── Pohovor (nepovinný toggle)
+│   │   ├── Jde dál / Nejde dál
+│   │   └── Doporučení (≥0)
+│   └── Doporučení (≥0)
+└── Pohovor (nepovinný toggle, nezávislý na Poradku)
+│   ├── Jde dál / Nejde dál
+│   └── Doporučení (≥0)
+└── Doporučení (≥0, úroveň schůzky)
 
-```sql
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ziskatel_name text;
+SER (Servis)
+├── Zrušená? → pokud ano, konec (bez termínu)
+├── Poradko (nepovinný toggle)
+│   ├── Podepsané BJ (povinné, ≥0)
+│   ├── Pohovor (nepovinný toggle)
+│   │   ├── Jde dál / Nejde dál
+│   │   └── Doporučení (≥0)
+│   └── Doporučení (≥0)
+├── Pohovor (nepovinný toggle)
+│   ├── Jde dál / Nejde dál
+│   └── Doporučení (≥0)
+└── Doporučení (≥0, úroveň schůzky)
 ```
 
-Dále přidat sloupec `onboarding_completed` (boolean, default false):
+### 1. Databáze — migrace `client_meetings`
 
-```sql
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_completed boolean DEFAULT false;
-```
+Přidat nové sloupce, zachovat existující data:
 
-### Změny
+| Sloupec | Typ | Default | Popis |
+|---|---|---|---|
+| `cancelled` | boolean | false | Schůzka zrušena |
+| `potencial_bj` | numeric | null | Potenciál BJ (pouze FSA) |
+| `has_poradko` | boolean | false | Obsahuje Poradko |
+| `podepsane_bj` | numeric | 0 | Podepsané BJ z Poradka |
+| `poradko_doporuceni` | integer | 0 | Doporučení z Poradka |
+| `has_poradko_pohovor` | boolean | false | Pohovor v rámci Poradka |
+| `poradko_pohovor_jde_dal` | boolean | null | Jde dál (Poradko→Pohovor) |
+| `poradko_pohovor_doporuceni` | integer | 0 | Doporučení (Poradko→Pohovor) |
+| `has_pohovor` | boolean | false | Přímý Pohovor |
+| `pohovor_jde_dal` | boolean | null | Jde dál (přímý Pohovor) |
+| `pohovor_doporuceni` | integer | 0 | Doporučení (přímý Pohovor) |
 
-| Krok | Soubor | Co |
-|------|--------|----|
-| 1 | DB migrace | Přidat `ziskatel_name` a `onboarding_completed` do profiles |
-| 2 | `src/pages/Login.tsx` | Přidat tlačítko "Vytvořit účet" — přepne formulář do režimu registrace (email + heslo + potvrzení hesla), volá `supabase.auth.signUp()` |
-| 3 | `src/components/OnboardingModal.tsx` | Nový komponent — modal se stejným vizuálem jako login karta (bílý, rounded 28px). Obsahuje: avatar upload (kruhový, kliknutelný), jméno + příjmení vedle sebe, PersonPicker pro Vedoucího (vyhledávání mezi všemi vedoucími), PersonPicker pro Získatele + textový input jako fallback |
-| 4 | `src/contexts/AuthContext.tsx` | Rozšířit `Profile` interface o `onboarding_completed` a `ziskatel_name`. Přidat `needsOnboarding` boolean do kontextu (true pokud profil existuje ale `onboarding_completed === false`) a `refetchProfile` funkci |
-| 5 | `src/pages/Login.tsx` | Po přihlášení/registraci: pokud `needsOnboarding`, zobrazit `OnboardingModal` místo redirect na dashboard |
-| 6 | RLS | Přidat SELECT policy na profiles pro čtení vedoucích (role='vedouci') všemi authenticated uživateli — potřeba pro PersonPicker v onboardingu |
+Stávající `bj` → zůstane jako celkové BJ (= podepsane_bj, pro zpětnou kompatibilitu).
+Stávající `ref_count` → celkový součet doporučení (= sum všech doporučení).
+Stávající `vizi_spoluprace` → bude nahrazeno has_pohovor + pohovor_jde_dal (sloupec zachováme ale nebudeme používat).
 
-### Onboarding modal — detail
+**Migrace dat:** Existující záznamy s `bj > 0` dostanou `has_poradko = true`, `podepsane_bj = bj`. Záznamy s `vizi_spoluprace = true` dostanou `has_pohovor = true`, `pohovor_jde_dal = true`.
 
-- Vizuálně jako login karta (bílé pozadí, border-radius 28px, shadow)
-- Zobrazí se jako overlay nad login pozadím
-- **Avatar**: kruhový placeholder s ikonou Camera, klik otevře file picker, upload do `avatars` bucketu
-- **Jméno / Příjmení**: dva inputy vedle sebe, povinné
-- **Vedoucí**: PersonPicker, načte všechny profily s `role = 'vedouci'` a `is_active = true`
-- **Získatel**: PersonPicker se všemi lidmi pod vybraným vedoucím. Pod ním checkbox/odkaz "Získatel není v systému" → zobrazí textový input `ziskatel_name` místo pickeru, vedoucí se automaticky stane získatelem
-- **Tlačítko "Dokončit"**: uloží `full_name`, `vedouci_id`, `garant_id` (= vedoucí), `ziskatel_id` nebo `ziskatel_name`, `avatar_url`, `onboarding_completed = true`
+### 2. Aktualizace sync triggeru
 
-### RLS pro onboarding
+Funkce `sync_activity_from_meetings` se upraví:
+- `bj` = SUM(`podepsane_bj`) — podepsané BJ z poradek
+- `ref_actual` = SUM všech doporučení (meeting + poradko + pohovor + poradko_pohovor)
+- Zrušené schůzky se nezapočítávají do statistik
 
-Nová SELECT policy na profiles:
-```sql
-CREATE POLICY "Authenticated can view vedouci profiles"
-ON public.profiles FOR SELECT TO authenticated
-USING (role = 'vedouci' AND is_active = true);
-```
+### 3. UI — Formulář (MeetingModal)
 
-Nová SELECT policy pro čtení členů pod vedoucím (pro získatel picker):
-```sql
-CREATE POLICY "Authenticated can view members under vedouci"
-ON public.profiles FOR SELECT TO authenticated
-USING (is_active = true AND vedouci_id IS NOT NULL);
-```
+Přepracování formuláře:
+1. **Horní řádek:** Datum + Typ (FSA/SER) — beze změny
+2. **Toggle "Zrušená"** — pokud zapnuto, datum se skryje a zbytek formuláře také
+3. **Potenciál BJ** (jen u FSA) — číselné pole
+4. **Sekce Poradko** (toggle) → rozbalí: Podepsané BJ (povinné), toggle Pohovor, Doporučení
+5. **Sekce Pohovor** (toggle, nezávislý) → rozbalí: Jde dál/Nejde dál, Doporučení
+6. **Doporučení** (úroveň schůzky) — vždy viditelné
+7. **Poznámka** — beze změny
 
-### Technické detaily
+### 4. UI — Statistiky a seznam
 
-- Registrace přes `supabase.auth.signUp({ email, password })` — trigger `handle_new_user` automaticky vytvoří profil s `role = 'novacek'`, `is_active = true`, `onboarding_completed = false`
-- OAuth registrace funguje stejně — trigger vytvoří profil, onboarding se zobrazí díky `onboarding_completed = false`
-- Avatar upload používá stejný pattern jako `ProfileSettingsModal` — upload do `avatars` bucketu, public URL
-- Garant se při onboardingu nastaví automaticky na vedoucího (nováček nemá ještě garanta, vedoucí ho přiřadí později)
-- Auto-confirm email: bude potřeba zapnout, jinak uživatel nemůže pokračovat bez verifikace emailu
+- Statistiky: FSA count, SER count, Podepsané BJ celkem, Doporučení celkem, Zrušené
+- Mobilní karty a desktop tabulka: zobrazí nové pole (Potenciál BJ, Podepsané BJ, Pohovor status, počet doporučení souhrnně)
+- Zrušené schůzky zobrazeny šedě s přeškrtnutím
+
+### 5. Oprava TypeScript chyby
+
+Současný build error (`as any` cast na `client_meetings`) se vyřeší po regeneraci typů z migrace. Odstraní se `as any` a použijí se správné typy.
+
+### Soubory k úpravě
+- **Migrace SQL** — nové sloupce + data migration + aktualizace sync funkce
+- `src/pages/ObchodniPripady.tsx` — typy, formulář, statistiky, tabulka, karty
 
