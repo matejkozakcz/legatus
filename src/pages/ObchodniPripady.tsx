@@ -784,6 +784,7 @@ export default function ObchodniPripady() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </>
       ) : (
