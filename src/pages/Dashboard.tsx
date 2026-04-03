@@ -12,6 +12,7 @@ import { OrgChart } from "@/components/OrgChart";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toVocative } from "@/lib/vocative";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
@@ -252,7 +253,7 @@ const Dashboard = () => {
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
-    const firstName = profile?.full_name?.split(" ")[0] ?? "";
+    const firstName = toVocative(profile?.full_name?.split(" ")[0] ?? "");
     const daysRemaining = daysRemainingInPeriod(now);
 
     // BJ goal toward next promotion
