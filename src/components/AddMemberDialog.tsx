@@ -244,7 +244,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
               <option value="">Vyberte získatele...</option>
               {ziskatelCandidates.map((z) => (
                 <option key={z.id} value={z.id}>
-                  {z.full_name}{z.id === profile?.id ? " (Já)" : ""} — {roleBadgeConfig[z.role]?.label || z.role}
+                  {z.full_name}{z.id === profile?.id ? " (Já)" : ""} — {roleLabels[z.role] || z.role}
                 </option>
               ))}
             </select>
