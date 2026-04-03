@@ -100,13 +100,12 @@ const ACTIVITY_COLUMNS = [
   { key: "dop_kl_actual", header: "DOP KL" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
+  { key: "bj", header: "BJ" },
 ] as const;
 
 type ActivityKey = (typeof ACTIVITY_COLUMNS)[number]["key"];
 
-const BJ_COLUMN = { key: "bj" as const, header: "BJ" };
-
-const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, BJ_COLUMN] as const;
+const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 
 const MojeAktivity = () => {
   const { profile } = useAuth();
@@ -179,8 +178,6 @@ const MojeAktivity = () => {
           ...(existing || {}),
           [key]: value,
         };
-        // Auto-calculate BJ = BJ FSA + BJ SER
-        updated.bj = (updated.bj_fsa_actual || 0) + (updated.bj_ser_actual || 0);
         upsertMutation.mutate(updated);
       }, 500);
     },
@@ -204,8 +201,6 @@ const MojeAktivity = () => {
     ACTIVITY_COLUMNS.forEach((col) => {
       sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
     });
-    // BJ total is always sum of BJ FSA + BJ SER
-    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
     return sums;
   }, [records]);
 
@@ -230,6 +225,7 @@ const MojeAktivity = () => {
       poh_planned: rec?.poh_planned || 0,
       poh_actual:  rec?.poh_actual  || 0,
       ref_actual:  rec?.ref_actual  || 0,
+      bj:          rec?.bj          || 0,
     };
     localValuesRef.current = fresh;
     setLocalValues(fresh);
@@ -247,7 +243,6 @@ const MojeAktivity = () => {
       debounceTimers.current[timerKey] = setTimeout(() => {
         const existing = records.find((r) => r.week_start === mobileWeekStr);
         const record: any = { ...(existing || {}), week_start: mobileWeekStr, ...localValuesRef.current };
-        record.bj = (record.bj_fsa_actual || 0) + (record.bj_ser_actual || 0);
         upsertMutation.mutate(record);
       }, 800);
     },
@@ -280,7 +275,7 @@ const MojeAktivity = () => {
   ] as const;
 
   if (isMobile) {
-    const bjValue = (localValues.bj_fsa_actual || 0) + (localValues.bj_ser_actual || 0);
+    const bjValue = localValues.bj || 0;
     const refActual = localValues.ref_actual || 0;
 
     return (
@@ -403,16 +398,12 @@ const MojeAktivity = () => {
             }}>
               BJ
             </div>
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#dde8ea", borderRadius: 12, padding: "8px 0",
-            }}>
-              <span style={{
-                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 22, color: "#00555f",
-              }}>
-                {bjValue}
-              </span>
-            </div>
+            <Counter
+              value={bjValue}
+              editable={isMobileWeekEditable}
+              onDecrement={() => handleMobileChange("bj", Math.max(0, bjValue - 1))}
+              onIncrement={() => handleMobileChange("bj", bjValue + 1)}
+            />
           </div>
         </div>
 
@@ -514,13 +505,10 @@ const MojeAktivity = () => {
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
-                      const isBjTotal = col.key === "bj";
-                      const cellValue = isBjTotal
-                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
-                        : (record as any)?.[col.key] || 0;
+                      const cellValue = (record as any)?.[col.key] || 0;
                       return (
                         <td key={col.key}>
-                          {isEditable && !isBjTotal ? (
+                          {isEditable ? (
                             <input
                               type="number"
                               min={0}
