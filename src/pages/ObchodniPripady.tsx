@@ -357,6 +357,17 @@ function totalRefs(m: Meeting): number {
   return (m.ref_count || 0) + (m.poradko_doporuceni || 0) + (m.pohovor_doporuceni || 0) + (m.poradko_pohovor_doporuceni || 0);
 }
 
+function meetingTypeLabel(t: MeetingType): string {
+  return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
+}
+
+function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
+  if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
+  if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
+  if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
+  return { background: "#fef3f2", color: "#c0392b" };
+}
+
 // ─── Hlavní komponenta ────────────────────────────────────────────────────────
 
 export default function ObchodniPripady() {
