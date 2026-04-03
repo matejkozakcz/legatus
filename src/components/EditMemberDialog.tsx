@@ -251,19 +251,16 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
           {isVedouci && (
             <div>
               <label className="text-sm font-body font-medium text-foreground mb-1 block">Získatel</label>
-              <select
+              <PersonPicker
                 value={ziskatelId}
-                onChange={(e) => setZiskatelId(e.target.value)}
-                className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Bez získatele</option>
-                {potentialZiskatele.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.full_name} ({roleBadge[p.role] || p.role})
-                    {p.id === profile?.id ? " (Já)" : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={setZiskatelId}
+                options={potentialZiskatele.map((p) => ({
+                  id: p.id,
+                  label: `${p.full_name} (${roleBadge[p.role] || p.role})${p.id === profile?.id ? " (Já)" : ""}`,
+                }))}
+                placeholder="Hledat získatele..."
+                emptyLabel="Bez získatele"
+              />
             </div>
           )}
 
