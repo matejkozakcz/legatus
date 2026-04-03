@@ -40,9 +40,10 @@ const Login = () => {
     <div
       className="relative min-h-screen overflow-hidden flex items-center justify-center"
       style={{
-        backgroundImage: `url(${loginBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+    backgroundImage: `url(${loginBg})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundColor: "#E1E9EB",
       }}
     >
 
