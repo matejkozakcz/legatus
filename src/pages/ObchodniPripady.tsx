@@ -216,10 +216,15 @@ function MeetingModal({
 
         {!form.cancelled && (
           <>
-            {/* Potenciál BJ — jen FSA */}
+            {/* Potenciál BJ + Doporučení — jen FSA, vedle sebe */}
             {form.meeting_type === "FSA" && (
-              <div className="mb-4">
-                <NumberInput label="Potenciál BJ" value={form.potencial_bj} onChange={(v) => set({ potencial_bj: v })} step={0.5} />
+              <div className="mb-4 flex gap-3">
+                <div className="flex-1">
+                  <NumberInput label="Potenciál BJ" value={form.potencial_bj} onChange={(v) => set({ potencial_bj: v })} step={0.5} />
+                </div>
+                <div className="flex-1">
+                  <NumberInput label="Doporučení" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+                </div>
               </div>
             )}
 
@@ -234,6 +239,24 @@ function MeetingModal({
                 <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
                 {form.has_poradko && (
                   <div className="mt-3 space-y-3 pl-1">
+                    {/* Status: Proběhlé / Zrušené */}
+                    <div className="flex gap-2">
+                      {(["probehle", "zrusene"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => set({ poradko_status: form.poradko_status === s ? null : s })}
+                          className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
+                            form.poradko_status === s
+                              ? "border-transparent text-white"
+                              : "border-input bg-background text-muted-foreground"
+                          }`}
+                          style={form.poradko_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}}
+                        >
+                          {s === "probehle" ? "Proběhlé" : "Zrušené"}
+                        </button>
+                      ))}
+                    </div>
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground mb-1">Datum poradenství</label>
                       <input
@@ -243,32 +266,14 @@ function MeetingModal({
                         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
-                    <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
-                    <div className="p-2 rounded-lg bg-muted/50">
-                      <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
-                      {form.has_poradko_pohovor && (
-                        <div className="mt-2 space-y-2 pl-1">
-                          <div className="flex gap-2">
-                            {[true, false].map((val) => (
-                              <button
-                                key={String(val)}
-                                type="button"
-                                onClick={() => set({ poradko_pohovor_jde_dal: val })}
-                                className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
-                                  form.poradko_pohovor_jde_dal === val
-                                    ? "border-transparent text-white"
-                                    : "border-input bg-background text-muted-foreground"
-                                }`}
-                                style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
-                              >
-                                {val ? "Jde dál" : "Nejde dál"}
-                              </button>
-                            ))}
-                          </div>
-                          <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
-                        </div>
-                      )}
+                    {/* Podepsané BJ + Doporučení vedle sebe */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                      </div>
+                      <div className="flex-1">
+                        <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
+                      </div>
                     </div>
                   </div>
                 )}
