@@ -371,35 +371,36 @@ const Dashboard = () => {
   });
   const totalBjAllTime = useMemo(() => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0), [allBjData]);
 
-  // Garant: count direct subordinates (garant_id = me)
-  const { data: garantDirectCount = 0 } = useQuery({
-    queryKey: ["garant_direct_count", profile?.id],
+  // Direct subordinates count (for Garant and BV promotion progress)
+  const { data: directSubordinateCount = 0 } = useQuery({
+    queryKey: ["direct_subordinate_count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("garant_id", profile.id)
+        .eq("vedouci_id", profile.id)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "garant",
+    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
   });
 
-  // Garant: count all people in structure (ziskatel_id chain)
-  const { data: garantStructureCount = 0 } = useQuery({
-    queryKey: ["garant_structure_count", profile?.id],
+  // Total structure count (people under me via garant_id or vedouci_id)
+  const { data: structureCount = 0 } = useQuery({
+    queryKey: ["structure_count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      // Fetch all active profiles where garant_id = me (all under garant)
+      // Count people where garant_id = me OR vedouci_id = me
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("garant_id", profile.id)
-        .eq("is_active", true);
+        .or(`garant_id.eq.${profile.id},vedouci_id.eq.${profile.id}`)
+        .eq("is_active", true)
+        .neq("id", profile.id);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "garant",
+    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
   });
 
   // Vedoucí: monthly BJ for entire subtree
