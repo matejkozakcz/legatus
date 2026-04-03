@@ -34,6 +34,7 @@ interface Meeting {
   has_poradko: boolean;
   podepsane_bj: number;
   poradko_doporuceni: number;
+  poradko_status: string | null;
   has_poradko_pohovor: boolean;
   poradko_pohovor_jde_dal: boolean | null;
   poradko_pohovor_doporuceni: number;
@@ -45,6 +46,8 @@ interface Meeting {
   pohovor_date: string | null;
 }
 
+type PoradkoStatus = "probehle" | "zrusene" | null;
+
 interface MeetingForm {
   date: string;
   meeting_type: MeetingType;
@@ -54,9 +57,7 @@ interface MeetingForm {
   podepsane_bj: string;
   poradko_doporuceni: string;
   poradko_date: string;
-  has_poradko_pohovor: boolean;
-  poradko_pohovor_jde_dal: boolean | null;
-  poradko_pohovor_doporuceni: string;
+  poradko_status: PoradkoStatus;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: string;
@@ -75,9 +76,7 @@ const defaultForm = (): MeetingForm => ({
   podepsane_bj: "",
   poradko_doporuceni: "0",
   poradko_date: "",
-  has_poradko_pohovor: false,
-  poradko_pohovor_jde_dal: null,
-  poradko_pohovor_doporuceni: "0",
+  poradko_status: null,
   has_pohovor: false,
   pohovor_jde_dal: null,
   pohovor_doporuceni: "0",
