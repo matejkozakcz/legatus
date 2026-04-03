@@ -213,19 +213,16 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           {profile?.role === "vedouci" ? (
             <div>
               <label className="text-sm font-body font-medium text-foreground mb-1 block">Garant</label>
-              <select
+              <PersonPicker
                 value={selectedGarant}
-                onChange={(e) => setSelectedGarant(e.target.value)}
+                onChange={setSelectedGarant}
+                options={garanti.map((g) => ({
+                  id: g.id,
+                  label: `${g.full_name}${g.id === profile?.id ? " (Já)" : ""}`,
+                }))}
+                placeholder="Vyberte garanta..."
                 required
-                className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Vyberte garanta...</option>
-                {garanti.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.full_name}{g.id === profile?.id ? " (Já)" : ""}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           ) : (
             <div>
