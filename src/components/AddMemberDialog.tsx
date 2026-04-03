@@ -108,9 +108,15 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
 
       const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
       const garantId = profile.role === "garant" ? profile.id : selectedGarant;
+      const ziskatelId = selectedZiskatel || profile.id;
 
       if (!garantId) {
         toast.error("Vyberte garanta.");
+        setSubmitting(false);
+        return;
+      }
+      if (!ziskatelId) {
+        toast.error("Vyberte získatele.");
         setSubmitting(false);
         return;
       }
