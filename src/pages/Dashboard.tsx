@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard } from "lucide-react";
-import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
+import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
@@ -13,77 +13,99 @@ import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
+import { toast } from "sonner";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
-// ─── Mobile sub-components ────────────────────────────────────────────────────
+// ─── Mobile editable stat card ────────────────────────────────────────────────
 
 function MobileStatCard({
   label,
   actual,
   planned,
   sublabel,
+  editable,
+  onIncrement,
+  onDecrement,
 }: {
   label: string;
   actual: number;
   planned: number;
   sublabel: string;
+  editable: boolean;
+  onIncrement: () => void;
+  onDecrement: () => void;
 }) {
+  const [pressed, setPressed] = useState<"plus" | "minus" | null>(null);
+
+  const handlePress = (side: "plus" | "minus", action: () => void) => {
+    if (!editable) return;
+    setPressed(side);
+    action();
+    setTimeout(() => setPressed(null), 150);
+  };
+
   return (
-    <div className="mobile-stat-card">
-      <div className="mobile-stat-label">{label}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 6 }}>
-        <span style={{
-          fontFamily: "Poppins, sans-serif", fontWeight: 800,
-          fontSize: 36, color: "#00555f", lineHeight: 1,
-        }}>
-          {actual}
-        </span>
-        <span style={{
-          fontFamily: "Poppins, sans-serif", fontWeight: 500,
-          fontSize: 22, color: "#b8cfd4", lineHeight: 1,
-        }}>
-          /
-        </span>
-        <span style={{
-          fontFamily: "Poppins, sans-serif", fontWeight: 700,
-          fontSize: 28, color: "#00abbd", lineHeight: 1,
-        }}>
-          {planned}
-        </span>
+    <div className="mobile-stat-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ flex: 1 }}>
+        <div className="mobile-stat-label">{label}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 6 }}>
+          <span style={{
+            fontFamily: "Poppins, sans-serif", fontWeight: 800,
+            fontSize: 36, color: "#00555f", lineHeight: 1,
+          }}>
+            {actual}
+          </span>
+          <span style={{
+            fontFamily: "Poppins, sans-serif", fontWeight: 500,
+            fontSize: 22, color: "#b8cfd4", lineHeight: 1,
+          }}>
+            /
+          </span>
+          <span style={{
+            fontFamily: "Poppins, sans-serif", fontWeight: 700,
+            fontSize: 28, color: "#00abbd", lineHeight: 1,
+          }}>
+            {planned}
+          </span>
+        </div>
+        <div className="mobile-stat-sublabel" style={{ marginTop: 5 }}>{sublabel}</div>
       </div>
-      <div className="mobile-stat-sublabel" style={{ marginTop: 5 }}>{sublabel}</div>
-    </div>
-  );
-}
-
-const ROLE_AVATAR_COLORS: Record<string, { bg: string; text: string }> = {
-  vedouci: { bg: "#00555f", text: "#ffffff" },
-  garant:  { bg: "#00abbd", text: "#ffffff" },
-  ziskatel:{ bg: "#7c6fcd", text: "#ffffff" },
-  novacek: { bg: "#dde8ea", text: "#4a6b70" },
-};
-
-function AvatarCircle({ member, index }: { member: any; index: number }) {
-  const initials = (member.full_name ?? "?")
-    .split(" ").map((n: string) => n[0] ?? "").join("").slice(0, 2).toUpperCase();
-  const colors = ROLE_AVATAR_COLORS[member.role] ?? ROLE_AVATAR_COLORS.novacek;
-  return (
-    <div style={{
-      width: 36, height: 36, borderRadius: "50%",
-      background: colors.bg, color: colors.text,
-      fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 12,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      border: "2.5px solid white",
-      marginLeft: index === 0 ? 0 : -10,
-      zIndex: 10 - index,
-      position: "relative",
-      overflow: "hidden",
-      flexShrink: 0,
-    }}>
-      {member.avatar_url
-        ? <img src={member.avatar_url} alt={initials} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : initials}
+      {/* +/- buttons stacked vertically */}
+      <div style={{
+        display: "flex", flexDirection: "column", gap: 6, marginLeft: 10,
+      }}>
+        <button
+          disabled={!editable}
+          onPointerDown={() => handlePress("plus", onIncrement)}
+          style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
+            border: "none", cursor: editable ? "pointer" : "default",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: editable ? 1 : 0.35,
+            transition: "background 0.1s",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <Plus size={16} color="#00555f" strokeWidth={2.5} />
+        </button>
+        <button
+          disabled={!editable}
+          onPointerDown={() => handlePress("minus", onDecrement)}
+          style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
+            border: "none", cursor: editable ? "pointer" : "default",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: editable ? 1 : 0.35,
+            transition: "background 0.1s",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <Minus size={16} color="#00555f" strokeWidth={2.5} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -94,11 +116,27 @@ const Dashboard = () => {
   const { profile, user } = useAuth();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_week");
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const now = new Date();
+
+  // Mobile week navigation
+  const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
+  const mobileWeekStart = useMemo(
+    () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
+    [mobileWeekOffset]
+  );
+  const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
+  const mobileWeekStr = format(mobileWeekStart, "yyyy-MM-dd");
+  const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
+
+  // Local values for optimistic updates
+  const [localValues, setLocalValues] = useState<Record<string, number>>({});
+  const localValuesRef = useRef<Record<string, number>>({});
 
   // First login confetti
   useEffect(() => {
@@ -183,66 +221,75 @@ const Dashboard = () => {
     [allBjData]
   );
 
-  // This period stats (for mobile grid)
-  const monthRange = useMemo(() => ({
-    from: getProductionPeriodStart(now),
-    to: getProductionPeriodEnd(now),
-  }), []);
-
-  const { data: monthRecords = [] } = useQuery({
-    queryKey: ["activity_records_month", profile?.id, format(now, "yyyy-MM")],
+  // Mobile week record query
+  const { data: mobileWeekRecords = [] } = useQuery({
+    queryKey: ["activity_records", profile?.id, mobileWeekStr],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data } = await supabase
         .from("activity_records")
         .select("*")
         .eq("user_id", profile.id)
-        .gte("week_start", format(monthRange.from, "yyyy-MM-dd"))
-        .lte("week_start", format(monthRange.to, "yyyy-MM-dd"));
+        .eq("week_start", mobileWeekStr);
       return data || [];
     },
     enabled: !!profile?.id && isMobile,
   });
 
-  const monthStats = useMemo(() => {
-    const sum = (key: string) => monthRecords.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
-    return {
-      fsa: { actual: sum("fsa_actual"), planned: sum("fsa_planned") },
-      poh: { actual: sum("poh_actual"), planned: sum("poh_planned") },
-      ser: { actual: sum("ser_actual"), planned: sum("ser_planned") },
-      ref: { actual: sum("ref_actual"), planned: sum("ref_planned") },
+  const mobileRecord = mobileWeekRecords[0] as any;
+
+  // Sync local values from server
+  useEffect(() => {
+    const rec = mobileRecord;
+    const fresh: Record<string, number> = {
+      fsa_actual: rec?.fsa_actual || 0,
+      fsa_planned: rec?.fsa_planned || 0,
+      poh_actual: rec?.poh_actual || 0,
+      poh_planned: rec?.poh_planned || 0,
+      ser_actual: rec?.ser_actual || 0,
+      ser_planned: rec?.ser_planned || 0,
+      ref_actual: rec?.ref_actual || 0,
+      ref_planned: rec?.ref_planned || 0,
     };
-  }, [monthRecords]);
+    localValuesRef.current = fresh;
+    setLocalValues(fresh);
+  }, [mobileWeekStr, mobileRecord]);
 
-  // Direct team members
-  const { data: teamMembers = [] } = useQuery({
-    queryKey: ["team_members_direct", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, avatar_url")
-        .eq("ziskatel_id", profile.id);
-      return data || [];
+  // Upsert mutation
+  const upsertMutation = useMutation({
+    mutationFn: async (record: { week_start: string; [key: string]: any }) => {
+      if (!profile?.id) throw new Error("No user");
+      const { error } = await supabase
+        .from("activity_records")
+        .upsert({ user_id: profile.id, ...record }, { onConflict: "user_id,week_start" });
+      if (error) throw error;
     },
-    enabled: !!profile?.id && isMobile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activity_records"] });
+      queryClient.invalidateQueries({ queryKey: ["bj_all_time"] });
+    },
+    onError: () => {
+      toast.error("Nepodařilo se uložit změny.");
+    },
   });
 
-  // Pending promotion requests for team
-  const { data: pendingPromos = [] } = useQuery({
-    queryKey: ["pending_promos_team", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id || teamMembers.length === 0) return [];
-      const ids = teamMembers.map((m: any) => m.id);
-      const { data } = await supabase
-        .from("promotion_requests")
-        .select("id")
-        .in("user_id", ids)
-        .eq("status", "pending");
-      return data || [];
+  // Mobile change handler
+  const handleMobileChange = useCallback(
+    (key: string, newVal: number) => {
+      const updated = { ...localValuesRef.current, [key]: newVal };
+      localValuesRef.current = updated;
+      setLocalValues({ ...updated });
+
+      const timerKey = "dashboard-save-" + mobileWeekStr;
+      if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
+      debounceTimers.current[timerKey] = setTimeout(() => {
+        const existing = mobileRecord;
+        const record: any = { ...(existing || {}), week_start: mobileWeekStr, ...localValuesRef.current };
+        upsertMutation.mutate(record);
+      }, 800);
     },
-    enabled: !!profile?.id && isMobile && teamMembers.length > 0,
-  });
+    [mobileWeekStr, mobileRecord, upsertMutation]
+  );
 
   // ── Desktop filter pills ────────────────────────────────────────────────────
   const filterPills: { key: TimeFilter; label: string }[] = [
@@ -258,7 +305,7 @@ const Dashboard = () => {
 
     // BJ goal toward next promotion
     const role = profile?.role ?? "novacek";
-    const bjGoal = 1000; // BJ needed for Garant
+    const bjGoal = 1000;
     const bjProgress = Math.min(100, (totalBjAllTime / bjGoal) * 100);
     const bjRemaining = Math.max(0, bjGoal - totalBjAllTime);
     const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Vedoucího" : null;
@@ -321,7 +368,6 @@ const Dashboard = () => {
             }} />
           </div>
 
-          {/* Bar labels */}
           {nextRoleLabel && (
             <div style={{
               display: "flex", justifyContent: "space-between",
@@ -339,87 +385,98 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* ── MŮJ TÝM CARD ── */}
-        <div className="mobile-activity-card" style={{ marginBottom: 12 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
-            textTransform: "uppercase" as const, color: "#fc7c71", marginBottom: 12,
-          }}>
-            Můj tým
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {/* Overlapping avatars */}
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {teamMembers.length === 0 ? (
-                <span style={{ fontSize: 13, color: "#8aadb3" }}>Zatím žádní členové</span>
-              ) : (
-                <>
-                  {teamMembers.slice(0, 3).map((m: any, i: number) => (
-                    <AvatarCircle key={m.id} member={m} index={i} />
-                  ))}
-                  {teamMembers.length > 3 && (
-                    <div style={{
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: "#00abbd", color: "white",
-                      fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 12,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      border: "2.5px solid white",
-                      marginLeft: -10, zIndex: 0, position: "relative", flexShrink: 0,
-                    }}>
-                      +{teamMembers.length - 3}
-                    </div>
-                  )}
-                </>
-              )}
+        {/* ── WEEK NAVIGATOR ── */}
+        <div style={{
+          background: "#ffffff",
+          borderRadius: 16,
+          padding: "10px 16px",
+          marginBottom: 12,
+          border: "1px solid #e1e9eb",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <button
+            onClick={() => setMobileWeekOffset((o) => o - 1)}
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: "#dde8ea", border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ChevronLeft size={15} color="#00555f" />
+          </button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
+              {isMobileWeekEditable ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
             </div>
-
-            {/* Zobrazit link */}
-            <button
-              onClick={() => navigate("/tym")}
-              style={{
-                border: "none", background: "transparent",
-                color: "#00abbd", fontWeight: 700, fontSize: 14,
-                cursor: "pointer", fontFamily: "Poppins, sans-serif",
-                padding: 0,
-              }}
-            >
-              Zobrazit →
-            </button>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+              {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
+            </div>
           </div>
-
-          <div style={{ fontSize: 12, color: "#8aadb3", marginTop: 8, fontFamily: "Open Sans, sans-serif" }}>
-            {teamMembers.length} členů
-            {pendingPromos.length > 0 && ` · ${pendingPromos.length} čekají na schválení`}
-          </div>
+          <button
+            onClick={() => setMobileWeekOffset((o) => Math.min(0, o + 1))}
+            disabled={mobileWeekOffset >= 0}
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: "#dde8ea",
+              border: "none", cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
+            }}
+          >
+            <ChevronRight size={15} color="#00555f" />
+          </button>
         </div>
 
-        {/* ── 2×2 STAT GRID (tento měsíc) ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {/* ── 2×2 STAT GRID (this week, editable) ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
           <MobileStatCard
             label="Analýzy"
-            actual={monthStats.fsa.actual}
-            planned={monthStats.fsa.planned}
+            actual={localValues.fsa_actual || 0}
+            planned={localValues.fsa_planned || 0}
             sublabel="proběhlých / doml."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))}
           />
           <MobileStatCard
             label="Pohovory"
-            actual={monthStats.poh.actual}
-            planned={monthStats.poh.planned}
+            actual={localValues.poh_actual || 0}
+            planned={localValues.poh_planned || 0}
             sublabel="proběhlých / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))}
           />
           <MobileStatCard
             label="Poradka"
-            actual={monthStats.ser.actual}
-            planned={monthStats.ser.planned}
+            actual={localValues.ser_actual || 0}
+            planned={localValues.ser_planned || 0}
             sublabel="proběhlých / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))}
           />
           <MobileStatCard
             label="Doporučení"
-            actual={monthStats.ref.actual}
-            planned={monthStats.ref.planned}
+            actual={localValues.ref_actual || 0}
+            planned={localValues.ref_planned || 0}
             sublabel="vybraných / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))}
           />
+        </div>
+
+        {/* Autosave indicator */}
+        <div style={{
+          textAlign: "center", fontSize: 11, color: "#8aadb3",
+          padding: "6px 0 12px", display: "flex",
+          alignItems: "center", justifyContent: "center", gap: 5,
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d", flexShrink: 0 }} />
+          Automaticky ukládáno
         </div>
 
         <PromotionModal
@@ -431,7 +488,7 @@ const Dashboard = () => {
     );
   }
 
-  // ── DESKTOP render (unchanged) ──────────────────────────────────────────────
+  // ── DESKTOP render ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
