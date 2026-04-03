@@ -40,6 +40,7 @@ interface PromotionRequest {
   status: string;
   cumulative_bj: number | null;
   direct_ziskatels: number | null;
+  total_ziskatels?: number; // computed client-side for vedouci requests
   member?: {
     id: string;
     full_name: string;
@@ -198,62 +199,95 @@ const SpravaTeam = () => {
   const profileMap = new Map(members.map((m) => [m.id, m]));
   if (profile) profileMap.set(profile.id, profile as unknown as Profile);
 
-  // Enrich pending requests with member data from profileMap
+  // Enrich pending requests with member data + computed total_ziskatels for vedouci requests
   const enrichedRequests: PromotionRequest[] = pendingRequests
     .filter((req) => profileMap.has(req.user_id))
     .map((req) => ({
       ...req,
       member: profileMap.get(req.user_id) as PromotionRequest["member"],
+      // For vedouci requests, cumulative_bj was repurposed to store totalZiskatels
+      total_ziskatels: req.requested_role === "vedouci" ? (req.cumulative_bj ?? undefined) : undefined,
     }));
 
-  // Auto-check promotion conditions for all Získatels in the team
+  // Auto-check promotion conditions for the team
   const checkPromotions = useCallback(async () => {
     if (profile?.role !== "vedouci" || members.length === 0) return;
+
+    // ── Získatel → Garant: BJ >= 1 000 ────────────────────────────────────────
     const ziskatels = members.filter((m) => m.role === "ziskatel");
-    if (ziskatels.length === 0) return;
-    const ziskatelIds = ziskatels.map((m) => m.id);
+    if (ziskatels.length > 0) {
+      const ziskatelIds = ziskatels.map((m) => m.id);
+      const { data: bjData } = await supabase
+        .from("activity_records")
+        .select("user_id, bj")
+        .in("user_id", ziskatelIds);
 
-    // Fetch cumulative BJ for all ziskatels
-    const { data: bjData } = await supabase
-      .from("activity_records")
-      .select("user_id, bj")
-      .in("user_id", ziskatelIds);
+      const bjByUser = new Map<string, number>();
+      (bjData || []).forEach((r: any) => {
+        bjByUser.set(r.user_id, (bjByUser.get(r.user_id) || 0) + (r.bj || 0));
+      });
 
-    const bjByUser = new Map<string, number>();
-    (bjData || []).forEach((r: any) => {
-      bjByUser.set(r.user_id, (bjByUser.get(r.user_id) || 0) + (r.bj || 0));
-    });
-
-    // Count direct Získatels per candidate (ziskatel_id = candidate.id AND role = 'ziskatel')
-    const { data: directData } = await supabase
-      .from("profiles")
-      .select("ziskatel_id")
-      .in("ziskatel_id", ziskatelIds)
-      .eq("role", "ziskatel")
-      .eq("is_active", true);
-
-    const directByUser = new Map<string, number>();
-    (directData || []).forEach((r: any) => {
-      if (r.ziskatel_id) directByUser.set(r.ziskatel_id, (directByUser.get(r.ziskatel_id) || 0) + 1);
-    });
-
-    for (const candidate of ziskatels) {
-      const cumulativeBj = bjByUser.get(candidate.id) || 0;
-      const directZiskatels = directByUser.get(candidate.id) || 0;
-
-      if (cumulativeBj >= 1000) {
-        await supabase.from("promotion_requests").upsert(
-          { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj },
-          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-        );
-      }
-      if (directZiskatels >= 10) {
-        await supabase.from("promotion_requests").upsert(
-          { user_id: candidate.id, requested_role: "vedouci", status: "pending", direct_ziskatels: directZiskatels },
-          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-        );
+      for (const candidate of ziskatels) {
+        const cumulativeBj = bjByUser.get(candidate.id) || 0;
+        if (cumulativeBj >= 1000) {
+          await supabase.from("promotion_requests").upsert(
+            { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj },
+            { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+          );
+        }
       }
     }
+
+    // ── Garant → Vedoucí: celkem >= 10 Získatelů ve struktuře + min. 3 přímí ─
+    const garanty = members.filter((m) => m.role === "garant");
+    if (garanty.length > 0) {
+      const memberMap = new Map(members.map((m) => [m.id, m]));
+
+      // Build parent→children map by ziskatel_id
+      const childrenMap = new Map<string, string[]>();
+      members.forEach((m) => {
+        const parentId = (m as any).ziskatel_id;
+        if (parentId) {
+          if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+          childrenMap.get(parentId)!.push(m.id);
+        }
+      });
+
+      // BFS: count ALL Získatelé in the subtree of rootId
+      const countTotalZiskatels = (rootId: string): number => {
+        let total = 0;
+        const queue = [...(childrenMap.get(rootId) || [])];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          const m = memberMap.get(id);
+          if (m?.role === "ziskatel") total++;
+          queue.push(...(childrenMap.get(id) || []));
+        }
+        return total;
+      };
+
+      for (const candidate of garanty) {
+        // Direct Získatelé = children with role ziskatel
+        const directZiskatels = (childrenMap.get(candidate.id) || [])
+          .filter((id) => memberMap.get(id)?.role === "ziskatel").length;
+
+        const totalZiskatels = countTotalZiskatels(candidate.id);
+
+        if (totalZiskatels >= 10 && directZiskatels >= 3) {
+          await supabase.from("promotion_requests").upsert(
+            {
+              user_id: candidate.id,
+              requested_role: "vedouci",
+              status: "pending",
+              direct_ziskatels: directZiskatels,
+              cumulative_bj: totalZiskatels, // reuse field to store total count
+            },
+            { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+          );
+        }
+      }
+    }
+
     refetchRequests();
   }, [profile, members, refetchRequests]);
 
@@ -378,8 +412,10 @@ const SpravaTeam = () => {
                       <span className="text-xs text-muted-foreground">→</span>
                       <span className={targetBadge.className}>{targetBadge.label}</span>
                       <span className="text-xs font-body" style={{ color: "#8aadb3" }}>
-                        {req.cumulative_bj != null && `Kumulativní BJ: ${req.cumulative_bj}`}
-                        {req.direct_ziskatels != null && `Přímých Získatelů: ${req.direct_ziskatels}`}
+                        {req.requested_role === "garant" && req.cumulative_bj != null &&
+                          `Kumulativní BJ: ${req.cumulative_bj}`}
+                        {req.requested_role === "vedouci" && req.direct_ziskatels != null &&
+                          `${req.direct_ziskatels} přímých · ${req.total_ziskatels ?? "?"} celkem Získatelů`}
                       </span>
                     </div>
                   </div>
