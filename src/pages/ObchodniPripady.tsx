@@ -34,6 +34,7 @@ interface Meeting {
   has_poradko: boolean;
   podepsane_bj: number;
   poradko_doporuceni: number;
+  poradko_status: string | null;
   has_poradko_pohovor: boolean;
   poradko_pohovor_jde_dal: boolean | null;
   poradko_pohovor_doporuceni: number;
@@ -45,6 +46,8 @@ interface Meeting {
   pohovor_date: string | null;
 }
 
+type PoradkoStatus = "probehle" | "zrusene" | null;
+
 interface MeetingForm {
   date: string;
   meeting_type: MeetingType;
@@ -54,9 +57,7 @@ interface MeetingForm {
   podepsane_bj: string;
   poradko_doporuceni: string;
   poradko_date: string;
-  has_poradko_pohovor: boolean;
-  poradko_pohovor_jde_dal: boolean | null;
-  poradko_pohovor_doporuceni: string;
+  poradko_status: PoradkoStatus;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: string;
@@ -75,9 +76,7 @@ const defaultForm = (): MeetingForm => ({
   podepsane_bj: "",
   poradko_doporuceni: "0",
   poradko_date: "",
-  has_poradko_pohovor: false,
-  poradko_pohovor_jde_dal: null,
-  poradko_pohovor_doporuceni: "0",
+  poradko_status: null,
   has_pohovor: false,
   pohovor_jde_dal: null,
   pohovor_doporuceni: "0",
@@ -217,10 +216,15 @@ function MeetingModal({
 
         {!form.cancelled && (
           <>
-            {/* Potenciál BJ — jen FSA */}
+            {/* Potenciál BJ + Doporučení — jen FSA, vedle sebe */}
             {form.meeting_type === "FSA" && (
-              <div className="mb-4">
-                <NumberInput label="Potenciál BJ" value={form.potencial_bj} onChange={(v) => set({ potencial_bj: v })} step={0.5} />
+              <div className="mb-4 flex gap-3">
+                <div className="flex-1">
+                  <NumberInput label="Potenciál BJ" value={form.potencial_bj} onChange={(v) => set({ potencial_bj: v })} step={0.5} />
+                </div>
+                <div className="flex-1">
+                  <NumberInput label="Doporučení" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+                </div>
               </div>
             )}
 
@@ -235,6 +239,24 @@ function MeetingModal({
                 <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
                 {form.has_poradko && (
                   <div className="mt-3 space-y-3 pl-1">
+                    {/* Status: Proběhlé / Zrušené */}
+                    <div className="flex gap-2">
+                      {(["probehle", "zrusene"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => set({ poradko_status: form.poradko_status === s ? null : s })}
+                          className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
+                            form.poradko_status === s
+                              ? "border-transparent text-white"
+                              : "border-input bg-background text-muted-foreground"
+                          }`}
+                          style={form.poradko_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}}
+                        >
+                          {s === "probehle" ? "Proběhlé" : "Zrušené"}
+                        </button>
+                      ))}
+                    </div>
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground mb-1">Datum poradenství</label>
                       <input
@@ -244,32 +266,14 @@ function MeetingModal({
                         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
-                    <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
-                    <div className="p-2 rounded-lg bg-muted/50">
-                      <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
-                      {form.has_poradko_pohovor && (
-                        <div className="mt-2 space-y-2 pl-1">
-                          <div className="flex gap-2">
-                            {[true, false].map((val) => (
-                              <button
-                                key={String(val)}
-                                type="button"
-                                onClick={() => set({ poradko_pohovor_jde_dal: val })}
-                                className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
-                                  form.poradko_pohovor_jde_dal === val
-                                    ? "border-transparent text-white"
-                                    : "border-input bg-background text-muted-foreground"
-                                }`}
-                                style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
-                              >
-                                {val ? "Jde dál" : "Nejde dál"}
-                              </button>
-                            ))}
-                          </div>
-                          <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
-                        </div>
-                      )}
+                    {/* Podepsané BJ + Doporučení vedle sebe */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                      </div>
+                      <div className="flex-1">
+                        <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -312,10 +316,12 @@ function MeetingModal({
               )}
             </div>
 
-            {/* Doporučení (úroveň schůzky) */}
-            <div className="mb-4">
-              <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
-            </div>
+            {/* Doporučení (úroveň schůzky) — jen u non-FSA typů (FSA má doporučení vedle Potenciál BJ) */}
+            {form.meeting_type !== "FSA" && (
+              <div className="mb-4">
+                <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+              </div>
+            )}
           </>
         )}
 
@@ -420,7 +426,7 @@ export default function ObchodniPripady() {
       fsa: active.filter((m) => m.meeting_type === "FSA").length,
       poh: active.filter((m) => m.meeting_type === "POH").length,
       ser: active.filter((m) => m.meeting_type === "SER").length,
-      bj: active.reduce((s, m) => s + (m.podepsane_bj || 0), 0),
+      bj: active.filter((m) => m.poradko_status === "probehle").reduce((s, m) => s + (m.podepsane_bj || 0), 0),
       ref: active.reduce((s, m) => s + totalRefs(m), 0),
       cancelled: meetings.filter((m) => m.cancelled).length,
     };
@@ -440,15 +446,16 @@ export default function ObchodniPripady() {
         podepsane_bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
         poradko_doporuceni: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseInt(form.poradko_doporuceni) || 0) : 0,
         poradko_date: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_date ? form.poradko_date : null,
-        has_poradko_pohovor: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor,
-        poradko_pohovor_jde_dal: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor ? form.poradko_pohovor_jde_dal : null,
-        poradko_pohovor_doporuceni: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor ? (parseInt(form.poradko_pohovor_doporuceni) || 0) : 0,
+        poradko_status: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? form.poradko_status : null,
+        has_poradko_pohovor: false,
+        poradko_pohovor_jde_dal: null,
+        poradko_pohovor_doporuceni: 0,
         has_pohovor: !form.cancelled && form.has_pohovor,
         pohovor_jde_dal: !form.cancelled && form.has_pohovor ? form.pohovor_jde_dal : null,
         pohovor_doporuceni: !form.cancelled && form.has_pohovor ? (parseInt(form.pohovor_doporuceni) || 0) : 0,
         pohovor_date: !form.cancelled && form.has_pohovor && form.pohovor_date ? form.pohovor_date : null,
-        // Keep legacy fields in sync
-        bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
+        // Legacy fields
+        bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_status === "probehle" ? (parseFloat(form.podepsane_bj) || 0) : 0,
         ref_count: !form.cancelled ? (parseInt(form.ref_count) || 0) : 0,
         vizi_spoluprace: !form.cancelled && form.has_pohovor && form.pohovor_jde_dal === true,
         poznamka: form.poznamka.trim() || null,
@@ -508,9 +515,7 @@ export default function ObchodniPripady() {
         podepsane_bj: String(editMeeting.podepsane_bj || ""),
         poradko_doporuceni: String(editMeeting.poradko_doporuceni || 0),
         poradko_date: editMeeting.poradko_date || "",
-        has_poradko_pohovor: editMeeting.has_poradko_pohovor,
-        poradko_pohovor_jde_dal: editMeeting.poradko_pohovor_jde_dal,
-        poradko_pohovor_doporuceni: String(editMeeting.poradko_pohovor_doporuceni || 0),
+        poradko_status: (editMeeting.poradko_status as PoradkoStatus) || null,
         has_pohovor: editMeeting.has_pohovor,
         pohovor_jde_dal: editMeeting.pohovor_jde_dal,
         pohovor_doporuceni: String(editMeeting.pohovor_doporuceni || 0),
