@@ -38,7 +38,7 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
 
     // Save to database
     const { error } = await supabase
-      .from("push_subscriptions")
+      .from("push_subscriptions" as any)
       .upsert(
         {
           user_id: userId,
