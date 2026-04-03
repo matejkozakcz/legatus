@@ -100,13 +100,12 @@ const ACTIVITY_COLUMNS = [
   { key: "dop_kl_actual", header: "DOP KL" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
+  { key: "bj", header: "BJ" },
 ] as const;
 
 type ActivityKey = (typeof ACTIVITY_COLUMNS)[number]["key"];
 
-const BJ_COLUMN = { key: "bj" as const, header: "BJ" };
-
-const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, BJ_COLUMN] as const;
+const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 
 const MojeAktivity = () => {
   const { profile } = useAuth();
