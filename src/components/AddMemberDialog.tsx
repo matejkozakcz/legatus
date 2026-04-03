@@ -233,19 +233,16 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
 
           <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Získatel (pod koho bude patřit)</label>
-            <select
+            <PersonPicker
               value={selectedZiskatel}
-              onChange={(e) => setSelectedZiskatel(e.target.value)}
+              onChange={setSelectedZiskatel}
+              options={ziskatelCandidates.map((z) => ({
+                id: z.id,
+                label: `${z.full_name}${z.id === profile?.id ? " (Já)" : ""} — ${roleLabels[z.role] || z.role}`,
+              }))}
+              placeholder="Vyberte získatele..."
               required
-              className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Vyberte získatele...</option>
-              {ziskatelCandidates.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.full_name}{z.id === profile?.id ? " (Já)" : ""} — {roleLabels[z.role] || z.role}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>

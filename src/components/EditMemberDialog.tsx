@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import { ChevronDown } from "lucide-react";
+import { PersonPicker } from "@/components/PersonPicker";
 import {
   Dialog,
   DialogContent,
