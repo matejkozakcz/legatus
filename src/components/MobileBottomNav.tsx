@@ -216,7 +216,7 @@ export function MobileBottomNav() {
                 transition: "color 0.25s",
               }}
             >
-              {godMode ? "Admin ⚡" : "Profil"}
+              {godMode ? "Admin ⚡" : "Dashboard"}
             </div>
           </div>
         </div>
