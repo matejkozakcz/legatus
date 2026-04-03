@@ -471,7 +471,7 @@ const Dashboard = () => {
     const bjGoal = 1000;
     const bjProgress = Math.min(100, (totalBjAllTime / bjGoal) * 100);
     const bjRemaining = Math.max(0, bjGoal - totalBjAllTime);
-    const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Vedoucího" : null;
+    const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Budoucího vedoucího" : role === "budouci_vedouci" ? "Vedoucího" : null;
 
     return (
       <div className="mobile-page">
