@@ -275,7 +275,7 @@ const MojeAktivity = () => {
   ] as const;
 
   if (isMobile) {
-    const bjValue = (localValues.bj_fsa_actual || 0) + (localValues.bj_ser_actual || 0);
+    const bjValue = localValues.bj || 0;
     const refActual = localValues.ref_actual || 0;
 
     return (
