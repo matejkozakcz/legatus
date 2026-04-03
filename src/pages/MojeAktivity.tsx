@@ -573,9 +573,10 @@ const MojeAktivity = () => {
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
                       const cellValue = (record as any)?.[col.key] || 0;
+                      const isSynced = AUTO_SYNCED_KEYS.has(col.key);
                       return (
-                        <td key={col.key}>
-                          {isEditable ? (
+                        <td key={col.key} style={isSynced ? { color: "#8aadb3", fontStyle: "italic" } : undefined}>
+                          {isEditable && !isSynced ? (
                             <input
                               type="number"
                               min={0}
