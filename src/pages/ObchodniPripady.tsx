@@ -609,12 +609,11 @@ export default function ObchodniPripady() {
                   <span
                     className="text-xs font-semibold px-2 py-0.5 rounded-full"
                     style={{
-                      background: m.cancelled ? "#e5e7eb" : m.meeting_type === "FSA" ? "#e0f5f7" : "#fef3f2",
-                      color: m.cancelled ? "#6b7280" : m.meeting_type === "FSA" ? "#00737f" : "#c0392b",
+                      ...meetingTypeBadgeStyle(m.meeting_type, m.cancelled),
                       textDecoration: m.cancelled ? "line-through" : undefined,
                     }}
                   >
-                    {m.meeting_type === "FSA" ? "Analýza" : "Servis"}
+                    {meetingTypeLabel(m.meeting_type)}
                   </span>
                   {!m.cancelled && (
                     <span className="font-body text-sm text-muted-foreground">
