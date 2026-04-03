@@ -214,8 +214,6 @@ const Dashboard = () => {
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
-  const stavByznysuRef = useRef<HTMLDivElement>(null);
-  const [stavCardHeight, setStavCardHeight] = useState(0);
   const now = new Date();
 
   // Mobile week navigation
