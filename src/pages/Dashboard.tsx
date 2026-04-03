@@ -617,8 +617,8 @@ const Dashboard = () => {
         >
           {role === "novacek" ? (
             <>
-              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
-              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
             </>
           ) : role === "vedouci" ? (
             <>
@@ -627,12 +627,14 @@ const Dashboard = () => {
                 max={monthlyBjGoal || 100}
                 label="Týmové BJ"
                 sublabel="vs. měsíční cíl"
+                dark
               />
               <GaugeIndicator
                 value={personalMonthlyBj}
                 max={monthlyBjGoal || 100}
                 label="Osobní BJ"
                 sublabel="tento měsíc"
+                dark
               />
             </>
           ) : (
@@ -642,6 +644,7 @@ const Dashboard = () => {
                 max={monthlyBjGoal || 100}
                 label="Osobní BJ"
                 sublabel="tento měsíc"
+                dark
               />
               {role === "ziskatel" ? (
                 <GaugeIndicator
@@ -649,6 +652,7 @@ const Dashboard = () => {
                   max={1000}
                   label="Progress k Garantovi"
                   sublabel={`${Math.max(0, 1000 - totalBjAllTime)} BJ zbývá`}
+                  dark
                 />
               ) : role === "garant" ? (
                 <GaugeIndicator
@@ -656,6 +660,7 @@ const Dashboard = () => {
                   max={5}
                   label="Progress k BV"
                   sublabel={`${structureCount} z 5 lidí`}
+                  dark
                 />
               ) : (
                 <GaugeIndicator
@@ -663,6 +668,7 @@ const Dashboard = () => {
                   max={10}
                   label="Progress k Vedoucímu"
                   sublabel={`${structureCount} z 10 lidí`}
+                  dark
                 />
               )}
             </>
