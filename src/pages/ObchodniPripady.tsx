@@ -633,30 +633,43 @@ export default function ObchodniPripady() {
 
   // ── Render ──
   return (
-    <div className={isMobile ? "mobile-page space-y-4" : "space-y-8"}>
+    <div className={isMobile ? "mobile-page" : "space-y-8"} style={isMobile ? { paddingBottom: 140 } : undefined}>
       {isMobile ? (
         <>
-          {/* Mobile: Add button above period bar */}
-          <div style={{ paddingTop: 16 }}>
+          {/* Mobile header with safe-area */}
+          <div style={{ padding: "0 0 12px" }}>
+            <div className="flex items-center gap-3" style={{ marginBottom: 12 }}>
+              <Briefcase className="h-5 w-5" style={{ color: "#0c2226" }} />
+              <h1 className="font-heading font-bold" style={{ fontSize: 22, color: "#0c2226" }}>
+                Obchodní případy
+              </h1>
+            </div>
             <button onClick={openAdd} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
               <Plus className="h-4 w-4" />
               Nová schůzka
             </button>
           </div>
 
-          {/* Mobile: Period navigation bar */}
+          {/* Fixed period bar above bottom nav */}
           <div
+            ref={mobilePickerRef}
             style={{
-              background: "#ffffff",
+              position: "fixed",
+              bottom: 100,
+              left: 16,
+              right: 16,
+              zIndex: 40,
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(20px) saturate(1.8)",
+              WebkitBackdropFilter: "blur(20px) saturate(1.8)",
               borderRadius: 16,
               padding: "10px 16px",
-              border: "1px solid #e1e9eb",
+              border: "1px solid rgba(225,233,235,0.8)",
+              boxShadow: "0 -2px 16px rgba(0,0,0,0.06)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              position: "relative",
             }}
-            ref={mobilePickerRef}
           >
             <button
               onClick={() => {
@@ -703,18 +716,18 @@ export default function ObchodniPripady() {
               <ChevronRight size={15} color="#00555f" />
             </button>
 
-            {/* Inline month picker dropdown */}
+            {/* Inline month picker dropdown — opens upward */}
             {mobilePickerOpen && (
               <div
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 6px)",
+                  bottom: "calc(100% + 6px)",
                   left: 0, right: 0,
                   zIndex: 50,
                   background: "#fff",
                   borderRadius: 14,
                   border: "1px solid #e1e9eb",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                  boxShadow: "0 -8px 24px rgba(0,0,0,0.08)",
                   overflow: "hidden",
                 }}
               >
