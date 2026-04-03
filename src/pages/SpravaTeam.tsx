@@ -113,6 +113,7 @@ const SpravaTeam = () => {
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
   const [roleChange, setRoleChange] = useState<{ member: Profile; newRole: string; label: string } | null>(null);
+  const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
