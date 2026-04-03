@@ -150,6 +150,7 @@ export type Database = {
           garant_id: string | null
           id: string
           is_active: boolean | null
+          is_admin: boolean
           monthly_bj_goal: number | null
           onboarding_completed: boolean | null
           osobni_id: string | null
@@ -165,6 +166,7 @@ export type Database = {
           garant_id?: string | null
           id: string
           is_active?: boolean | null
+          is_admin?: boolean
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           garant_id?: string | null
           id?: string
           is_active?: boolean | null
+          is_admin?: boolean
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
@@ -298,6 +301,7 @@ export type Database = {
     }
     Functions: {
       get_user_role: { Args: { _user_id: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       is_in_vedouci_subtree: {
         Args: { _target_id: string; _vedouci_id: string }
         Returns: boolean
