@@ -133,15 +133,15 @@ function TreeNode({
   childrenMap,
   collapsedIds,
   toggleCollapse,
-  isRoot,
   onSelect,
+  depth = 0,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
   collapsedIds: Set<string>;
   toggleCollapse: (id: string) => void;
-  isRoot?: boolean;
   onSelect: (node: ProfileNode) => void;
+  depth?: number;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -156,6 +156,12 @@ function TreeNode({
             <ToggleButton expanded={false} count={children.length} onClick={() => toggleCollapse(node.id)} />
           ) : (
             <>
+              {depth > 0 && (
+                <>
+                  <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
+                  <Connector />
+                </>
+              )}
               <div className="flex gap-6 flex-wrap justify-center">
                 {children.map((child) => (
                   <TreeNode
@@ -165,15 +171,10 @@ function TreeNode({
                     collapsedIds={collapsedIds}
                     toggleCollapse={toggleCollapse}
                     onSelect={onSelect}
+                    depth={depth + 1}
                   />
                 ))}
               </div>
-              {!isRoot && (
-                <>
-                  <Connector />
-                  <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
-                </>
-              )}
             </>
           )}
         </>
