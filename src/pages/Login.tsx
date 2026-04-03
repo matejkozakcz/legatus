@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { lovable } from "@/integrations/lovable/index";
 import { Eye, EyeOff } from "lucide-react";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 import loginBg from "@/assets/login-bg.svg";
@@ -12,6 +13,20 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  const handleOAuth = async (provider: "google" | "apple") => {
+    setError("");
+    setOauthLoading(true);
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setError("Přihlášení se nezdařilo. Zkuste to znovu.");
+    }
+    if (result.redirected) return;
+    setOauthLoading(false);
+  };
 
   if (loading) {
     return (
