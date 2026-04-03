@@ -505,13 +505,10 @@ const MojeAktivity = () => {
                       {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
-                      const isBjTotal = col.key === "bj";
-                      const cellValue = isBjTotal
-                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
-                        : (record as any)?.[col.key] || 0;
+                      const cellValue = (record as any)?.[col.key] || 0;
                       return (
                         <td key={col.key}>
-                          {isEditable && !isBjTotal ? (
+                          {isEditable ? (
                             <input
                               type="number"
                               min={0}
