@@ -549,6 +549,14 @@ const SpravaTeam = () => {
       {/* Dialogs */}
       <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
+      {notifyMember && (
+        <CreateNotificationDialog
+          open={!!notifyMember}
+          onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
+          recipientId={notifyMember.id}
+          recipientName={notifyMember.full_name}
+        />
+      )}
 
       {/* Deactivate confirmation */}
       <Dialog open={!!deactivateMember} onOpenChange={(open) => { if (!open) setDeactivateMember(null); }}>
