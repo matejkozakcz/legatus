@@ -8,7 +8,12 @@ export function MobileBottomNav() {
   const { profile } = useAuth();
 
   const initials = profile
-    ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    ? profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "?";
 
   const isDashboardActive = location.pathname === "/dashboard";
@@ -20,8 +25,8 @@ export function MobileBottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: "0 20px 28px",
-        paddingBottom: "calc(28px + env(safe-area-inset-bottom, 0px))",
+        padding: "0 20px 14px",
+        paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
         zIndex: 100,
         pointerEvents: "none",
       }}
@@ -80,9 +85,7 @@ export function MobileBottomNav() {
               height: 60,
               borderRadius: "50%",
               border: isDashboardActive ? "3px solid #00abbd" : "3px solid white",
-              boxShadow: isDashboardActive
-                ? "0 4px 20px rgba(0,171,189,0.4)"
-                : "0 4px 20px rgba(0,85,95,0.25)",
+              boxShadow: isDashboardActive ? "0 4px 20px rgba(0,171,189,0.4)" : "0 4px 20px rgba(0,85,95,0.25)",
               overflow: "hidden",
               cursor: "pointer",
               background: "#00555f",
@@ -159,11 +162,7 @@ function NavButton({
         flex: 1,
       }}
     >
-      <Icon
-        size={22}
-        color={active ? "#00abbd" : "#8aadb3"}
-        style={{ transition: "color 0.2s" }}
-      />
+      <Icon size={22} color={active ? "#00abbd" : "#8aadb3"} style={{ transition: "color 0.2s" }} />
       <span
         style={{
           fontSize: 10,
