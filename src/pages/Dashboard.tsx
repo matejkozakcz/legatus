@@ -359,7 +359,7 @@ const Dashboard = () => {
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
-  // All-time cumulative BJ (for Získatel gauge)
+  // All-time cumulative BJ (for promotion progress gauge)
   const { data: allBjData = [] } = useQuery({
     queryKey: ["bj_all_time", profile?.id],
     queryFn: async () => {
@@ -367,45 +367,47 @@ const Dashboard = () => {
       const { data } = await supabase.from("activity_records").select("bj").eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id && profile?.role !== "vedouci",
+    enabled: !!profile?.id && profile?.role !== "vedouci" && profile?.role !== "novacek",
   });
   const totalBjAllTime = useMemo(() => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0), [allBjData]);
 
-  // Garant: count direct subordinates (garant_id = me)
-  const { data: garantDirectCount = 0 } = useQuery({
-    queryKey: ["garant_direct_count", profile?.id],
+  // Direct subordinates count (for Garant and BV promotion progress)
+  const { data: directSubordinateCount = 0 } = useQuery({
+    queryKey: ["direct_subordinate_count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("garant_id", profile.id)
+        .eq("vedouci_id", profile.id)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "garant",
+    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
   });
 
-  // Garant: count all people in structure (ziskatel_id chain)
-  const { data: garantStructureCount = 0 } = useQuery({
-    queryKey: ["garant_structure_count", profile?.id],
+  // Total structure count (people under me via garant_id or vedouci_id)
+  const { data: structureCount = 0 } = useQuery({
+    queryKey: ["structure_count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      // Fetch all active profiles where garant_id = me (all under garant)
+      // Count people where garant_id = me OR vedouci_id = me
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("garant_id", profile.id)
-        .eq("is_active", true);
+        .or(`garant_id.eq.${profile.id},vedouci_id.eq.${profile.id}`)
+        .eq("is_active", true)
+        .neq("id", profile.id);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "garant",
+    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
   });
 
   // Vedoucí: monthly BJ for entire subtree
   const periodStart = getProductionPeriodStart(now);
   const periodEnd = getProductionPeriodEnd(now);
 
+  // Vedoucí: monthly BJ for entire subtree (team)
   const { data: vedouciMonthlyBj = 0 } = useQuery({
     queryKey: ["vedouci_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -418,6 +420,22 @@ const Dashboard = () => {
       return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
     },
     enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  // Personal monthly BJ (current production period)
+  const { data: personalMonthlyBj = 0 } = useQuery({
+    queryKey: ["personal_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from("activity_records")
+        .select("bj")
+        .eq("user_id", profile.id)
+        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
+        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
+      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+    },
+    enabled: !!profile?.id,
   });
 
   // Vedoucí: monthly_bj_goal from profile
@@ -793,181 +811,145 @@ const Dashboard = () => {
         </>
       );
     }
-    if (role === "ziskatel") {
+
+    if (role === "vedouci") {
       return (
         <>
-          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="historický výkon" />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              padding: "12px 0",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 800,
-                fontSize: 42,
-                color: "#00555f",
-                lineHeight: 1,
-              }}
-            >
-              {totalBjAllTime}
-            </span>
-            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
-              z 1 000 BJ
-            </span>
-            <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
-              Historické BJ
-            </span>
-          </div>
-        </>
-      );
-    }
-    if (role === "garant") {
-      return (
-        <>
-          <GaugeIndicator
-            value={garantStructureCount}
-            max={2}
-            label="Lidé ve struktuře"
-            sublabel="pro povýšení na BV"
-          />
-          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="osobní výkon" />
-        </>
-      );
-    }
-    if (role === "budouci_vedouci") {
-      return (
-        <>
-          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel={`z 3 pro Vedoucího`} />
-          <GaugeIndicator
-            value={garantStructureCount}
-            max={5}
-            label="Lidé ve struktuře"
-            sublabel={`z 5 pro Vedoucího`}
-          />
-        </>
-      );
-    }
-    // vedouci
-    return (
-      <>
-        <div style={{ position: "relative" }}>
-          <GaugeIndicator
-            value={vedouciMonthlyBj}
-            max={monthlyBjGoal || 100}
-            label="BJ tento měsíc"
-            sublabel="vs. měsíční cíl"
-          />
-          {!editingGoal ? (
-            <button
-              onClick={() => {
-                setGoalInputValue(String(monthlyBjGoal || ""));
-                setEditingGoal(true);
-              }}
-              style={{
-                position: "absolute",
-                top: 4,
-                right: 4,
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: "#e6f7f9",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              title="Nastavit cíl"
-            >
-              <Pencil size={14} color="#00abbd" />
-            </button>
-          ) : (
-            <div
-              style={{
-                position: "absolute",
-                top: 4,
-                right: 4,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <input
-                type="number"
-                value={goalInputValue}
-                onChange={(e) => setGoalInputValue(e.target.value)}
-                style={{
-                  width: 64,
-                  height: 28,
-                  borderRadius: 6,
-                  border: "1.5px solid #00abbd",
-                  padding: "0 6px",
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#00555f",
-                  outline: "none",
-                }}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") updateGoalMutation.mutate(Number(goalInputValue) || 0);
-                  if (e.key === "Escape") setEditingGoal(false);
-                }}
-              />
+          <div style={{ position: "relative" }}>
+            <GaugeIndicator
+              value={vedouciMonthlyBj}
+              max={monthlyBjGoal || 100}
+              label="Týmové BJ"
+              sublabel="vs. měsíční cíl"
+            />
+            {!editingGoal ? (
               <button
-                onClick={() => updateGoalMutation.mutate(Number(goalInputValue) || 0)}
+                onClick={() => {
+                  setGoalInputValue(String(monthlyBjGoal || ""));
+                  setEditingGoal(true);
+                }}
                 style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
                   width: 28,
                   height: 28,
                   borderRadius: 8,
-                  background: "#00abbd",
+                  background: "#e6f7f9",
                   border: "none",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
+                title="Nastavit cíl"
               >
-                <Check size={14} color="white" />
+                <Pencil size={14} color="#00abbd" />
               </button>
-            </div>
-          )}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-            padding: "12px 0",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 800,
-              fontSize: 42,
-              color: "#00555f",
-              lineHeight: 1,
-            }}
-          >
-            {vedouciMonthlyBj}
-          </span>
-          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
-            z {monthlyBjGoal || "—"} BJ
-          </span>
-          <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
-            Aktuální stav / plán
-          </span>
-        </div>
+            ) : (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <input
+                  type="number"
+                  value={goalInputValue}
+                  onChange={(e) => setGoalInputValue(e.target.value)}
+                  style={{
+                    width: 64,
+                    height: 28,
+                    borderRadius: 6,
+                    border: "1.5px solid #00abbd",
+                    padding: "0 6px",
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#00555f",
+                    outline: "none",
+                  }}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") updateGoalMutation.mutate(Number(goalInputValue) || 0);
+                    if (e.key === "Escape") setEditingGoal(false);
+                  }}
+                />
+                <button
+                  onClick={() => updateGoalMutation.mutate(Number(goalInputValue) || 0)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: "#00abbd",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Check size={14} color="white" />
+                </button>
+              </div>
+            )}
+          </div>
+          <GaugeIndicator
+            value={personalMonthlyBj}
+            max={monthlyBjGoal || 100}
+            label="Osobní BJ"
+            sublabel="tento měsíc"
+          />
+        </>
+      );
+    }
+
+    // Získatel, Garant, Budoucí vedoucí — Gauge 1: Osobní BJ, Gauge 2: Progress k cíli
+    const promotionGauge = (() => {
+      if (role === "ziskatel") {
+        return (
+          <GaugeIndicator
+            value={totalBjAllTime}
+            max={1000}
+            label="Progress k Garantovi"
+            sublabel={`${Math.max(0, 1000 - totalBjAllTime)} BJ zbývá`}
+          />
+        );
+      }
+      if (role === "garant") {
+        return (
+          <GaugeIndicator
+            value={structureCount}
+            max={5}
+            label="Progress k BV"
+            sublabel={`${structureCount} z 5 lidí ve struktuře`}
+          />
+        );
+      }
+      // budouci_vedouci
+      return (
+        <GaugeIndicator
+          value={structureCount}
+          max={10}
+          label="Progress k Vedoucímu"
+          sublabel={`${structureCount} z 10 lidí ve struktuře`}
+        />
+      );
+    })();
+
+    return (
+      <>
+        <GaugeIndicator
+          value={personalMonthlyBj}
+          max={monthlyBjGoal || 100}
+          label="Osobní BJ"
+          sublabel="tento měsíc"
+        />
+        {promotionGauge}
       </>
     );
   };
