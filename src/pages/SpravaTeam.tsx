@@ -407,9 +407,6 @@ const SpravaTeam = () => {
           <Users className="h-6 w-6" style={{ color: "#0c2226" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>SPRÁVA TÝMU</h1>
         </div>
-        <button onClick={() => setAddOpen(true)} className="btn btn-primary btn-md flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Přidat člena
-        </button>
       </div>
 
       {/* Tabs */}
@@ -525,7 +522,6 @@ const SpravaTeam = () => {
       )}
 
       {/* Dialogs */}
-      <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
       {notifyMember && (
         <CreateNotificationDialog
