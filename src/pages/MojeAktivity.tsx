@@ -618,7 +618,7 @@ const MojeAktivity = () => {
                 const record = records.find((r) => r.week_start === weekStr);
                 const isCurrentWeek = isSameWeek(weekStart, now, { weekStartsOn: 1 });
                 const isPast = !isCurrentWeek && !isAfter(weekStart, now);
-                const isEditable = isCurrentWeek;
+                const isEditable = true;
 
                 return (
                   <tr key={weekStr} className={isCurrentWeek ? "current" : isPast ? "past" : ""}>
