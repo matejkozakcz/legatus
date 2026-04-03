@@ -3,8 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import legatusLogo from "@/assets/legatus-logo-light.png";
-import loginBg from "@/src/assets/login-bg.svg";
-
+import loginBg from "@/assets/login-bg.svg";
 
 const Login = () => {
   const { session, loading, signIn } = useAuth();
