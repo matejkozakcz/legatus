@@ -243,7 +243,22 @@ const Dashboard = () => {
     }
   }, [user, profile]);
 
-  // Promotion detection
+  // Measure Stav byznysu card height
+  useEffect(() => {
+    const el = stavByznysuRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setStavCardHeight(entry.contentRect.height + entry.target.getBoundingClientRect().top - entry.target.getBoundingClientRect().top + entry.contentRect.height);
+    });
+    // Simpler: just measure offsetHeight
+    const measure = () => setStavCardHeight(el.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+
   useEffect(() => {
     if (!profile) return;
     const prev = prevRoleRef.current;
