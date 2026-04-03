@@ -155,3 +155,18 @@ export function daysRemainingInPeriod(date: Date = new Date()): number {
     Math.round((endDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   );
 }
+
+/** Returns the start and end dates of the production period for a specific year/month (0-indexed). */
+export function getProductionPeriodForMonth(year: number, month: number): { start: Date; end: Date } {
+  const end = periodEndForMonth(year, month);
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const prevEnd = periodEndForMonth(prevYear, prevMonth);
+  const start = addDays(prevEnd, 1);
+  return { start, end };
+}
+
+/** Returns { year, month } of the production period containing `date`. */
+export function getProductionPeriodMonth(date: Date = new Date()): { year: number; month: number } {
+  return getPeriodMonth(date);
+}
