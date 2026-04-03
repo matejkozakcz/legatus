@@ -247,10 +247,6 @@ const Dashboard = () => {
   useEffect(() => {
     const el = stavByznysuRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setStavCardHeight(entry.contentRect.height + entry.target.getBoundingClientRect().top - entry.target.getBoundingClientRect().top + entry.contentRect.height);
-    });
-    // Simpler: just measure offsetHeight
     const measure = () => setStavCardHeight(el.offsetHeight);
     measure();
     const observer = new ResizeObserver(measure);
