@@ -479,6 +479,9 @@ const Dashboard = () => {
           Automaticky ukládáno
         </div>
 
+        {/* Upcoming deadlines */}
+        <DeadlinesSection userId={profile?.id} />
+
         <PromotionModal
           open={!!promotionRole}
           onClose={() => setPromotionRole(null)}
