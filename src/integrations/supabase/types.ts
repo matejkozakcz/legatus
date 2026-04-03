@@ -151,10 +151,12 @@ export type Database = {
           id: string
           is_active: boolean | null
           monthly_bj_goal: number | null
+          onboarding_completed: boolean | null
           osobni_id: string | null
           role: string
           vedouci_id: string | null
           ziskatel_id: string | null
+          ziskatel_name: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -164,10 +166,12 @@ export type Database = {
           id: string
           is_active?: boolean | null
           monthly_bj_goal?: number | null
+          onboarding_completed?: boolean | null
           osobni_id?: string | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
+          ziskatel_name?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -177,10 +181,12 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           monthly_bj_goal?: number | null
+          onboarding_completed?: boolean | null
           osobni_id?: string | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
+          ziskatel_name?: string | null
         }
         Relationships: [
           {
