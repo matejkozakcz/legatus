@@ -594,7 +594,7 @@ const Dashboard = () => {
           style={{
             background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
             borderRadius: 20,
-            padding: "20px 12px 18px",
+            padding: "16px 12px 14px",
             marginBottom: 12,
             color: "white",
             boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
@@ -605,60 +605,78 @@ const Dashboard = () => {
         >
           {role === "novacek" ? (
             <>
-              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
-              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              </div>
             </>
           ) : role === "vedouci" ? (
             <>
-              <GaugeIndicator
-                value={vedouciMonthlyBj}
-                max={monthlyBjGoal || 100}
-                label="Týmové BJ"
-                sublabel="vs. měsíční cíl"
-                dark
-              />
-              <GaugeIndicator
-                value={personalMonthlyBj}
-                max={monthlyBjGoal || 100}
-                label="Osobní BJ"
-                sublabel="tento měsíc"
-                dark
-              />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>Týmové BJ</span>
+                <GaugeIndicator
+                  value={vedouciMonthlyBj}
+                  max={monthlyBjGoal || 100}
+                  label=""
+                  sublabel="vs. měsíční cíl"
+                  dark
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>Osobní BJ</span>
+                <GaugeIndicator
+                  value={personalMonthlyBj}
+                  max={monthlyBjGoal || 100}
+                  label=""
+                  sublabel="tento měsíc"
+                  dark
+                />
+              </div>
             </>
           ) : (
             <>
-              <GaugeIndicator
-                value={personalMonthlyBj}
-                max={monthlyBjGoal || 100}
-                label="Osobní BJ"
-                sublabel="tento měsíc"
-                dark
-              />
-              {role === "ziskatel" ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>Osobní BJ</span>
                 <GaugeIndicator
-                  value={totalBjAllTime}
-                  max={1000}
-                  label="Progress k Garantovi"
-                  sublabel={`${Math.max(0, 1000 - totalBjAllTime)} BJ zbývá`}
+                  value={personalMonthlyBj}
+                  max={monthlyBjGoal || 100}
+                  label=""
+                  sublabel="tento měsíc"
                   dark
                 />
-              ) : role === "garant" ? (
-                <GaugeIndicator
-                  value={structureCount}
-                  max={5}
-                  label="Progress k BV"
-                  sublabel={`${structureCount} z 5 lidí`}
-                  dark
-                />
-              ) : (
-                <GaugeIndicator
-                  value={structureCount}
-                  max={10}
-                  label="Progress k Vedoucímu"
-                  sublabel={`${structureCount} z 10 lidí`}
-                  dark
-                />
-              )}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>
+                  {role === "ziskatel" ? "Progress k Garantovi" : role === "garant" ? "Progress k BV" : "Progress k Vedoucímu"}
+                </span>
+                {role === "ziskatel" ? (
+                  <GaugeIndicator
+                    value={totalBjAllTime}
+                    max={1000}
+                    label=""
+                    sublabel={`${Math.max(0, 1000 - totalBjAllTime)} BJ zbývá`}
+                    dark
+                  />
+                ) : role === "garant" ? (
+                  <GaugeIndicator
+                    value={structureCount}
+                    max={5}
+                    label=""
+                    sublabel={`${structureCount} z 5 lidí`}
+                    dark
+                  />
+                ) : (
+                  <GaugeIndicator
+                    value={structureCount}
+                    max={10}
+                    label=""
+                    sublabel={`${structureCount} z 10 lidí`}
+                    dark
+                  />
+                )}
+              </div>
             </>
           )}
         </div>

@@ -1,16 +1,14 @@
-import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, godMode } = useAuth();
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -48,7 +46,6 @@ export function MobileBottomNav() {
       : "0 4px 20px rgba(0,85,95,0.25)";
 
   return (
-    <>
       <div
         style={{
           position: "fixed",
@@ -110,7 +107,7 @@ export function MobileBottomNav() {
           >
             <div style={{ position: "relative" }}>
               <button
-                onClick={() => setProfileModalOpen(true)}
+                onClick={() => navigate("/dashboard")}
                 style={{
                   width: 60,
                   height: 60,
@@ -127,7 +124,7 @@ export function MobileBottomNav() {
                   WebkitTapHighlightColor: "transparent",
                   userSelect: "none",
                 }}
-                aria-label="Nastavení profilu"
+                aria-label="Dashboard"
               >
                 {profile?.avatar_url ? (
                   <img
@@ -216,14 +213,11 @@ export function MobileBottomNav() {
                 transition: "color 0.25s",
               }}
             >
-              {godMode ? "Admin ⚡" : "Profil"}
+              {godMode ? "Admin ⚡" : "Dashboard"}
             </div>
           </div>
         </div>
       </div>
-
-      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
-    </>
   );
 }
 
