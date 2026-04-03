@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard } from "lucide-react";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, format } from "date-fns";
+import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
+import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
@@ -131,7 +132,7 @@ const Dashboard = () => {
       case "last_week":
         return { from: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }), to: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }) };
       case "this_month":
-        return { from: startOfMonth(now), to: endOfMonth(now) };
+        return { from: getProductionPeriodStart(now), to: getProductionPeriodEnd(now) };
     }
   }, [timeFilter]);
 
@@ -181,10 +182,10 @@ const Dashboard = () => {
     [allBjData]
   );
 
-  // This month stats (for mobile grid — always "this month")
+  // This period stats (for mobile grid)
   const monthRange = useMemo(() => ({
-    from: startOfMonth(now),
-    to: endOfMonth(now),
+    from: getProductionPeriodStart(now),
+    to: getProductionPeriodEnd(now),
   }), []);
 
   const { data: monthRecords = [] } = useQuery({
@@ -252,7 +253,7 @@ const Dashboard = () => {
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = profile?.full_name?.split(" ")[0] ?? "";
-    const daysRemaining = endOfMonth(now).getDate() - now.getDate();
+    const daysRemaining = daysRemainingInPeriod(now);
 
     // BJ goal toward next promotion
     const role = profile?.role ?? "novacek";

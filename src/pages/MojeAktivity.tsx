@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks, format, isSameWeek, isAfter } from "date-fns";
+import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, isSameWeek, isAfter } from "date-fns";
+import { getProductionPeriodStart, getProductionPeriodEnd } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
@@ -118,10 +119,10 @@ const MojeAktivity = () => {
   // Optimistic local values for instant UI feedback (mobile only)
   const [localValues, setLocalValues] = useState<Record<string, number>>({});
   const localValuesRef = useRef<Record<string, number>>({});
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  const monthStart = getProductionPeriodStart(now);
+  const monthEnd = getProductionPeriodEnd(now);
 
-  // Get weeks in current month
+  // Get weeks in current production period
   const weeks = useMemo(() => {
     const result: Date[] = [];
     let weekStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -133,7 +134,7 @@ const MojeAktivity = () => {
   }, []);
 
   const { data: records = [], isLoading } = useQuery({
-    queryKey: ["activity_records", profile?.id, "month", format(monthStart, "yyyy-MM")],
+    queryKey: ["activity_records", profile?.id, "period", format(monthStart, "yyyy-MM-dd")],
     queryFn: async () => {
       if (!profile?.id) return [];
       const firstWeek = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -439,7 +440,7 @@ const MojeAktivity = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="chip chip-teal-active">Tento měsíc</span>
+          <span className="chip chip-teal-active">Toto období</span>
           <span className="font-body ml-4" style={{ fontSize: 12, color: "#8aadb3" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
