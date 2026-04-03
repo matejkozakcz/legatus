@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { TrendingUp, CheckSquare } from "lucide-react";
+import { TrendingUp, CheckSquare, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,9 +75,17 @@ export function MobileBottomNav() {
           {/* Left: Přehled aktivit */}
           <NavButton
             icon={TrendingUp}
-            label="Přehled aktivit"
+            label="Aktivity"
             active={location.pathname === "/aktivity"}
             onClick={() => navigate("/aktivity")}
+          />
+
+          {/* Left 2: Obchodní případy */}
+          <NavButton
+            icon={Briefcase}
+            label="Obchod"
+            active={location.pathname === "/obchodni-pripady"}
+            onClick={() => navigate("/obchodni-pripady")}
           />
 
           {/* Center spacer */}
