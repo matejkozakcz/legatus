@@ -14,7 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
-type MeetingType = "FSA" | "SER";
+type MeetingType = "FSA" | "POH" | "SER";
 type TimeFilter = "this_week" | "last_week" | "this_period";
 
 interface Meeting {
