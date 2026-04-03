@@ -129,7 +129,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           role: "novacek",
           vedouci_id: vedouciId,
           garant_id: garantId,
-          ziskatel_id: profile.id, // whoever creates the member is the získatel
+          ziskatel_id: ziskatelId,
         },
       });
 
