@@ -168,46 +168,55 @@ function MeetingModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* Zrušená */}
+        {/* Název případu */}
         <div className="mb-4">
-          <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Název případu</label>
+          <input
+            type="text"
+            value={form.case_name}
+            onChange={(e) => set({ case_name: e.target.value })}
+            placeholder="Nepovinné…"
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* Datum */}
+        {!form.cancelled && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set({ date: e.target.value })}
+              className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        )}
+
+        {/* Typ schůzky */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
+          <div className="flex gap-2">
+            {(["FSA", "POH", "SER"] as MeetingType[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => set({ meeting_type: t })}
+                className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${
+                  form.meeting_type === t
+                    ? "border-transparent text-white"
+                    : "border-input bg-background text-muted-foreground hover:border-ring"
+                }`}
+                style={form.meeting_type === t ? { background: "#00abbd" } : {}}
+              >
+                {t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis"}
+              </button>
+            ))}
+          </div>
         </div>
 
         {!form.cancelled && (
           <>
-            {/* Datum */}
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => set({ date: e.target.value })}
-                className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-
-            {/* Typ schůzky */}
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
-              <div className="flex gap-2">
-                {(["FSA", "SER"] as MeetingType[]).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => set({ meeting_type: t })}
-                    className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${
-                      form.meeting_type === t
-                        ? "border-transparent text-white"
-                        : "border-input bg-background text-muted-foreground hover:border-ring"
-                    }`}
-                    style={form.meeting_type === t ? { background: "#00abbd" } : {}}
-                  >
-                    {t === "FSA" ? "Analýza" : "Servis"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Potenciál BJ — jen FSA */}
             {form.meeting_type === "FSA" && (
               <div className="mb-4">
@@ -215,47 +224,72 @@ function MeetingModal({
               </div>
             )}
 
-            {/* ── Sekce Poradko ── */}
-            <div className="mb-4 p-3 rounded-xl border border-input">
-              <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
-              {form.has_poradko && (
-                <div className="mt-3 space-y-3 pl-1">
-                  <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
-                  <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
-                  <div className="p-2 rounded-lg bg-muted/50">
-                    <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
-                    {form.has_poradko_pohovor && (
-                      <div className="mt-2 space-y-2 pl-1">
-                        <div className="flex gap-2">
-                          {[true, false].map((val) => (
-                            <button
-                              key={String(val)}
-                              type="button"
-                              onClick={() => set({ poradko_pohovor_jde_dal: val })}
-                              className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
-                                form.poradko_pohovor_jde_dal === val
-                                  ? "border-transparent text-white"
-                                  : "border-input bg-background text-muted-foreground"
-                              }`}
-                              style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
-                            >
-                              {val ? "Jde dál" : "Nejde dál"}
-                            </button>
-                          ))}
-                        </div>
-                        <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+            {/* Zrušená — between Potenciál BJ and Poradenství */}
+            <div className="mb-4">
+              <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
             </div>
+
+            {/* ── Sekce Poradko ── */}
+            {form.meeting_type !== "POH" && (
+              <div className="mb-4 p-3 rounded-xl border border-input">
+                <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
+                {form.has_poradko && (
+                  <div className="mt-3 space-y-3 pl-1">
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Datum poradenství</label>
+                      <input
+                        type="date"
+                        value={form.poradko_date}
+                        onChange={(e) => set({ poradko_date: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                    <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                    <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
+                    <div className="p-2 rounded-lg bg-muted/50">
+                      <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
+                      {form.has_poradko_pohovor && (
+                        <div className="mt-2 space-y-2 pl-1">
+                          <div className="flex gap-2">
+                            {[true, false].map((val) => (
+                              <button
+                                key={String(val)}
+                                type="button"
+                                onClick={() => set({ poradko_pohovor_jde_dal: val })}
+                                className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
+                                  form.poradko_pohovor_jde_dal === val
+                                    ? "border-transparent text-white"
+                                    : "border-input bg-background text-muted-foreground"
+                                }`}
+                                style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
+                              >
+                                {val ? "Jde dál" : "Nejde dál"}
+                              </button>
+                            ))}
+                          </div>
+                          <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Sekce Pohovor (přímý) ── */}
             <div className="mb-4 p-3 rounded-xl border border-input">
               <Toggle checked={form.has_pohovor} onChange={(v) => set({ has_pohovor: v })} label="Pohovor" />
               {form.has_pohovor && (
                 <div className="mt-3 space-y-3 pl-1">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Datum pohovoru</label>
+                    <input
+                      type="date"
+                      value={form.pohovor_date}
+                      onChange={(e) => set({ pohovor_date: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     {[true, false].map((val) => (
                       <button
@@ -283,6 +317,13 @@ function MeetingModal({
               <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
             </div>
           </>
+        )}
+
+        {/* If cancelled, show toggle here too so user can uncancel */}
+        {form.cancelled && (
+          <div className="mb-4">
+            <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
+          </div>
         )}
 
         {/* Poznámka — vždy viditelná */}
