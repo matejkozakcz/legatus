@@ -35,7 +35,9 @@ const Login = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#e1e9eb" }}>
-        <div className="font-heading text-xl" style={{ color: "#ffffff" }}>Načítání...</div>
+        <div className="font-heading text-xl" style={{ color: "#ffffff" }}>
+          Načítání...
+        </div>
       </div>
     );
   }
@@ -97,7 +99,7 @@ const Login = () => {
         backgroundImage: `url(${loginBg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundColor: "#E1E9EB",
+        backgroundColor: "#00555F",
       }}
     >
       <div
@@ -110,10 +112,7 @@ const Login = () => {
         }}
       >
         <img src={legatusLogo} alt="Legatus" className="h-16 mb-2" />
-        <h1
-          className="font-heading font-bold text-lg mb-8"
-          style={{ letterSpacing: "0.15em", color: "#0c2226" }}
-        >
+        <h1 className="font-heading font-bold text-lg mb-8" style={{ letterSpacing: "0.15em", color: "#0c2226" }}>
           LEGATUS
         </h1>
 
@@ -236,8 +235,12 @@ const Login = () => {
             className="w-full btn btn-primary btn-lg disabled:opacity-50 font-heading font-semibold"
           >
             {submitting
-              ? (isSignUp ? "Registrace..." : "Přihlašování...")
-              : (isSignUp ? "Vytvořit účet" : "Přihlásit se")}
+              ? isSignUp
+                ? "Registrace..."
+                : "Přihlašování..."
+              : isSignUp
+                ? "Vytvořit účet"
+                : "Přihlásit se"}
           </button>
         </form>
 
@@ -258,7 +261,9 @@ const Login = () => {
         {/* Divider */}
         <div className="w-full flex items-center gap-3 my-5">
           <div className="flex-1 h-px" style={{ background: "#e2eaec" }} />
-          <span className="font-body text-xs" style={{ color: "#8aadb3" }}>nebo</span>
+          <span className="font-body text-xs" style={{ color: "#8aadb3" }}>
+            nebo
+          </span>
           <div className="flex-1 h-px" style={{ background: "#e2eaec" }} />
         </div>
 
@@ -278,7 +283,24 @@ const Login = () => {
               color: "#0c2226",
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path
+                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"
+                fill="#4285F4"
+              />
+              <path
+                d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"
+                fill="#34A853"
+              />
+              <path
+                d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"
+                fill="#EA4335"
+              />
+            </svg>
             Pokračovat přes Google
           </button>
 
@@ -296,7 +318,9 @@ const Login = () => {
               color: "#ffffff",
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="white"><path d="M13.545 8.82c-.022-2.26 1.845-3.345 1.929-3.396-1.05-1.536-2.685-1.746-3.266-1.77-1.39-.141-2.714.819-3.42.819-.705 0-1.796-.798-2.951-.777-1.518.022-2.917.883-3.698 2.243-1.577 2.736-.404 6.79 1.133 9.012.751 1.087 1.648 2.307 2.826 2.264 1.133-.046 1.562-.733 2.932-.733 1.37 0 1.755.733 2.953.71 1.22-.022 1.996-1.108 2.742-2.197.864-1.26 1.22-2.48 1.242-2.544-.027-.012-2.383-.915-2.408-3.63h.006Zm-2.26-6.672c.624-.757 1.045-1.808.93-2.856-.9.037-1.99.6-2.636 1.356-.58.67-1.087 1.74-.951 2.767 1.004.078 2.028-.51 2.657-1.267Z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="white">
+              <path d="M13.545 8.82c-.022-2.26 1.845-3.345 1.929-3.396-1.05-1.536-2.685-1.746-3.266-1.77-1.39-.141-2.714.819-3.42.819-.705 0-1.796-.798-2.951-.777-1.518.022-2.917.883-3.698 2.243-1.577 2.736-.404 6.79 1.133 9.012.751 1.087 1.648 2.307 2.826 2.264 1.133-.046 1.562-.733 2.932-.733 1.37 0 1.755.733 2.953.71 1.22-.022 1.996-1.108 2.742-2.197.864-1.26 1.22-2.48 1.242-2.544-.027-.012-2.383-.915-2.408-3.63h.006Zm-2.26-6.672c.624-.757 1.045-1.808.93-2.856-.9.037-1.99.6-2.636 1.356-.58.67-1.087 1.74-.951 2.767 1.004.078 2.028-.51 2.657-1.267Z" />
+            </svg>
             Pokračovat přes Apple
           </button>
         </div>
