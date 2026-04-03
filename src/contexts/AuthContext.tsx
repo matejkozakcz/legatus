@@ -63,17 +63,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          // Fetch profile first, then set loading to false
+          fetchProfile(session.user.id).then(() => {
+            if (!initialSessionHandled) {
+              initialSessionHandled = true;
+              setLoading(false);
+            }
+          });
           setTimeout(() => registerPushSubscription(session.user.id), 2000);
         } else {
           setProfile(null);
+          if (!initialSessionHandled) {
+            initialSessionHandled = true;
+            setLoading(false);
+          }
         }
-        setLoading(false);
       }
     );
 
@@ -81,9 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id).then(() => {
+          if (!initialSessionHandled) {
+            initialSessionHandled = true;
+            setLoading(false);
+          }
+        });
+      } else if (!initialSessionHandled) {
+        initialSessionHandled = true;
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
