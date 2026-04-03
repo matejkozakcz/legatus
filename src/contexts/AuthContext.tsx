@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 interface Profile {
   id: string;
   full_name: string;
-  role: "vedouci" | "garant" | "ziskatel" | "novacek";
+  role: "vedouci" | "budouci_vedouci" | "garant" | "ziskatel" | "novacek";
   vedouci_id: string | null;
   garant_id: string | null;
   avatar_url: string | null;

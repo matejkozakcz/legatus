@@ -35,6 +35,7 @@ interface EditMemberDialogProps {
 
 const roleBadge: Record<string, string> = {
   vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
   ziskatel: "Získatel",
   novacek: "Nováček",
