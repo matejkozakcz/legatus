@@ -1,8 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPushSubscription } from "@/lib/pushSubscription";
-import { useNavigate } from "react-router-dom";
 
 interface Profile {
   id: string;
@@ -10,9 +9,12 @@ interface Profile {
   role: "vedouci" | "budouci_vedouci" | "garant" | "ziskatel" | "novacek";
   vedouci_id: string | null;
   garant_id: string | null;
+  ziskatel_id: string | null;
   avatar_url: string | null;
   is_active: boolean;
   monthly_bj_goal: number | null;
+  onboarding_completed: boolean | null;
+  ziskatel_name: string | null;
 }
 
 interface AuthContextType {
@@ -20,8 +22,10 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  needsOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refetchProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string, retries = 2): Promise<void> => {
+  const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -41,18 +45,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !data) {
-      // Retry on transient RLS/timing failures
       if (retries > 0) {
         await new Promise((r) => setTimeout(r, 500));
         return fetchProfile(userId, retries - 1);
       }
-      // After retries, user is likely deactivated
       await supabase.auth.signOut();
       setProfile(null);
       return;
     }
     setProfile(data as Profile);
-  };
+  }, []);
+
+  const refetchProfile = useCallback(async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -60,9 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Use setTimeout to avoid deadlock with Supabase auth
           setTimeout(() => fetchProfile(session.user.id), 0);
-          // Register push subscription after login
           setTimeout(() => registerPushSubscription(session.user.id), 2000);
         } else {
           setProfile(null);
@@ -81,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchProfile]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -95,8 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  const needsOnboarding = !!profile && profile.onboarding_completed === false;
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, signIn, signOut, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   );
