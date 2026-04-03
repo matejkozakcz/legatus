@@ -307,6 +307,7 @@ const Dashboard = () => {
       return data || [];
     },
     enabled: !!profile?.id && (profile?.role !== "vedouci"),
+  });
   const totalBjAllTime = useMemo(
     () => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
     [allBjData]
