@@ -8,7 +8,7 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, godMode } = useAuth();
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
