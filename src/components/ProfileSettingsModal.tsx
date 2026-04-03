@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2 } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,7 @@ const AppleIcon = () => (
 );
 
 export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -438,6 +438,47 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               <p className="text-xs text-destructive">{passwordError}</p>
             )}
           </div>
+        )}
+
+        {/* SECTION — God Mode (admin only) */}
+        {isAdmin && (
+          <>
+            <div className="border-t border-border mb-5" />
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Zap
+                  className="h-4 w-4"
+                  style={{ color: godMode ? "#e05a50" : "#8aadb3" }}
+                />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#0c2226" }}>
+                    God Mode
+                  </p>
+                  <p className="text-xs" style={{ color: "#8aadb3" }}>
+                    {godMode ? "Admin pohled aktivní" : "Zobrazuji vlastní data"}
+                  </p>
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={godMode}
+                onClick={toggleGodMode}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                style={{
+                  background: godMode ? "#e05a50" : "#d1dfe2",
+                }}
+              >
+                <span
+                  className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                  style={{
+                    transform: godMode ? "translateX(1.375rem)" : "translateX(0.25rem)",
+                  }}
+                />
+              </button>
+            </div>
+          </>
         )}
 
         {/* Save button */}

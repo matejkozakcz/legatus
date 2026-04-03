@@ -1,16 +1,16 @@
-import { useRef } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, isAdmin, godMode, toggleGodMode } = useAuth();
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const didLongPress = useRef(false);
+  const { profile, godMode } = useAuth();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -38,35 +38,6 @@ export function MobileBottomNav() {
     : "?";
 
   const isDashboardActive = location.pathname === "/dashboard";
-
-  // Long-press 600 ms → toggle godMode (pouze admin)
-  const handlePressStart = () => {
-    if (!isAdmin) return;
-    didLongPress.current = false;
-    longPressTimer.current = setTimeout(() => {
-      didLongPress.current = true;
-      toggleGodMode();
-    }, 600);
-  };
-
-  const handlePressEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (!didLongPress.current) {
-      navigate("/dashboard");
-    }
-    didLongPress.current = false;
-  };
-
-  const handlePressCancel = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    didLongPress.current = false;
-  };
 
   // Godmode styl: coral místo teal
   const avatarBorder = godMode ? "3px solid #fc7c71" : isDashboardActive ? "3px solid #00abbd" : "3px solid white";
@@ -138,10 +109,7 @@ export function MobileBottomNav() {
         >
           <div style={{ position: "relative" }}>
             <button
-              onPointerDown={handlePressStart}
-              onPointerUp={handlePressEnd}
-              onPointerLeave={handlePressCancel}
-              onPointerCancel={handlePressCancel}
+              onClick={() => setProfileModalOpen(true)}
               style={{
                 width: 60,
                 height: 60,
@@ -158,7 +126,7 @@ export function MobileBottomNav() {
                 WebkitTapHighlightColor: "transparent",
                 userSelect: "none",
               }}
-              aria-label="Dashboard"
+              aria-label="Nastavení profilu"
             >
               {profile?.avatar_url ? (
                 <img
@@ -236,16 +204,21 @@ export function MobileBottomNav() {
             marginTop: 5,
             fontSize: 10,
             fontWeight: 600,
-            color: godMode ? "#fc7c71" : isDashboardActive ? "#00abbd" : "#8aadb3",
+            color: godMode ? "#fc7c71" : "#8aadb3",
             letterSpacing: "0.02em",
             fontFamily: "Open Sans, sans-serif",
             transition: "color 0.25s",
           }}>
-            {godMode ? "Admin ⚡" : "Dashboard"}
+            {godMode ? "Admin ⚡" : "Profil"}
           </div>
         </div>
       </div>
     </div>
+
+    <ProfileSettingsModal
+      open={profileModalOpen}
+      onClose={() => setProfileModalOpen(false)}
+    />
   );
 }
 
