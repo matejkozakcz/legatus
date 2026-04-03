@@ -186,7 +186,34 @@ function TreeNode({
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
   const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
+
+  // Compute default collapsed: all nodes at depth >= 2 that have children
+  const defaultCollapsed = useMemo(() => {
+    const set = new Set<string>();
+    const currentUser = profiles.find((p) => p.id === currentUserId);
+    if (!currentUser) return set;
+
+    function walk(nodeId: string, depth: number) {
+      const kids = childrenMap.get(nodeId) || [];
+      if (depth >= 2 && kids.length > 0) {
+        set.add(nodeId);
+      }
+      kids.forEach((k) => walk(k.id, depth + 1));
+    }
+    walk(currentUser.id, 0);
+    return set;
+  }, [profiles, childrenMap, currentUserId]);
+
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize collapsed state once data loads
+  useMemo(() => {
+    if (profiles.length > 0 && !initialized) {
+      setCollapsedIds(defaultCollapsed);
+      setInitialized(true);
+    }
+  }, [profiles, defaultCollapsed, initialized]);
 
   const toggleCollapse = (id: string) => {
     setCollapsedIds((prev) => {
@@ -196,31 +223,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
       return next;
     });
   };
-  const { data: profiles = [], isLoading } = useQuery({
-    queryKey: ["team_profiles", currentUserId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, avatar_url, vedouci_id, garant_id, ziskatel_id")
-        .eq("is_active", true);
-      if (error) throw error;
-      return (data || []) as ProfileNode[];
-    },
-    enabled: !!currentUserId,
-  });
-
-  // Build children map based on ziskatel_id
-  const childrenMap = useMemo(() => {
-    const map = new Map<string, ProfileNode[]>();
-    profiles.forEach((p) => {
-      if (p.ziskatel_id) {
-        const siblings = map.get(p.ziskatel_id) || [];
-        siblings.push(p);
-        map.set(p.ziskatel_id, siblings);
-      }
-    });
-    return map;
-  }, [profiles]);
 
   if (isLoading) {
     return (
@@ -239,7 +241,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     );
   }
 
-  // Root = current user; show them and their entire subtree
   return (
     <>
       <div className="overflow-auto" style={{ maxHeight: 520 }}>
@@ -249,8 +250,8 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
             childrenMap={childrenMap}
             collapsedIds={collapsedIds}
             toggleCollapse={toggleCollapse}
-            isRoot
             onSelect={setSelectedMember}
+            depth={0}
           />
         </div>
       </div>
