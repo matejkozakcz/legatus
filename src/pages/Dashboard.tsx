@@ -634,6 +634,8 @@ const Dashboard = () => {
         </div>
       </section>
 
+      <DeadlinesSection userId={profile?.id} />
+
       <PromotionModal
         open={!!promotionRole}
         onClose={() => setPromotionRole(null)}
