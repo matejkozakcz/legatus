@@ -110,7 +110,7 @@ export function MobileBottomNav() {
           >
             <div style={{ position: "relative" }}>
               <button
-                onClick={() => setProfileModalOpen(true)}
+                onClick={() => navigate("/dashboard")}
                 style={{
                   width: 60,
                   height: 60,
@@ -127,7 +127,7 @@ export function MobileBottomNav() {
                   WebkitTapHighlightColor: "transparent",
                   userSelect: "none",
                 }}
-                aria-label="Nastavení profilu"
+                aria-label="Dashboard"
               >
                 {profile?.avatar_url ? (
                   <img
