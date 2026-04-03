@@ -61,6 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           // Use setTimeout to avoid deadlock with Supabase auth
           setTimeout(() => fetchProfile(session.user.id), 0);
+          // Register push subscription after login
+          setTimeout(() => registerPushSubscription(session.user.id), 2000);
         } else {
           setProfile(null);
         }
