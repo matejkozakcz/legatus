@@ -542,19 +542,7 @@ const Dashboard = () => {
     const firstName = toVocative(profile?.full_name?.split(" ")[0] ?? "");
     const daysRemaining = daysRemainingInPeriod(now);
 
-    // BJ goal toward next promotion
     const role = profile?.role ?? "novacek";
-    const bjGoal = 1000;
-    const bjProgress = Math.min(100, (totalBjAllTime / bjGoal) * 100);
-    const bjRemaining = Math.max(0, bjGoal - totalBjAllTime);
-    const nextRoleLabel =
-      role === "ziskatel"
-        ? "Garanta"
-        : role === "garant"
-          ? "Budoucího vedoucího"
-          : role === "budouci_vedouci"
-            ? "Vedoucího"
-            : null;
 
     return (
       <div className="mobile-page">
