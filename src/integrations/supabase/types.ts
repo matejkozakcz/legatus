@@ -94,10 +94,21 @@ export type Database = {
       client_meetings: {
         Row: {
           bj: number
+          cancelled: boolean
           created_at: string
           date: string
+          has_pohovor: boolean
+          has_poradko: boolean
+          has_poradko_pohovor: boolean
           id: string
           meeting_type: string
+          podepsane_bj: number
+          pohovor_doporuceni: number
+          pohovor_jde_dal: boolean | null
+          poradko_doporuceni: number
+          poradko_pohovor_doporuceni: number
+          poradko_pohovor_jde_dal: boolean | null
+          potencial_bj: number | null
           poznamka: string | null
           ref_count: number
           updated_at: string
@@ -107,10 +118,21 @@ export type Database = {
         }
         Insert: {
           bj?: number
+          cancelled?: boolean
           created_at?: string
           date: string
+          has_pohovor?: boolean
+          has_poradko?: boolean
+          has_poradko_pohovor?: boolean
           id?: string
           meeting_type: string
+          podepsane_bj?: number
+          pohovor_doporuceni?: number
+          pohovor_jde_dal?: boolean | null
+          poradko_doporuceni?: number
+          poradko_pohovor_doporuceni?: number
+          poradko_pohovor_jde_dal?: boolean | null
+          potencial_bj?: number | null
           poznamka?: string | null
           ref_count?: number
           updated_at?: string
@@ -120,10 +142,21 @@ export type Database = {
         }
         Update: {
           bj?: number
+          cancelled?: boolean
           created_at?: string
           date?: string
+          has_pohovor?: boolean
+          has_poradko?: boolean
+          has_poradko_pohovor?: boolean
           id?: string
           meeting_type?: string
+          podepsane_bj?: number
+          pohovor_doporuceni?: number
+          pohovor_jde_dal?: boolean | null
+          poradko_doporuceni?: number
+          poradko_pohovor_doporuceni?: number
+          poradko_pohovor_jde_dal?: boolean | null
+          potencial_bj?: number | null
           poznamka?: string | null
           ref_count?: number
           updated_at?: string
