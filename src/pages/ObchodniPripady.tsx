@@ -317,7 +317,7 @@ export default function ObchodniPripady() {
   return (
     <div className={isMobile ? "mobile-page space-y-6" : "space-y-8"}>
       {/* Záhlaví */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" style={isMobile ? { paddingTop: 16 } : undefined}>
         <div className="flex items-center gap-3">
           <Briefcase className="h-6 w-6" style={{ color: "#0c2226" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
