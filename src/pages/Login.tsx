@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import legatusLogo from "@/assets/legatus-logo-light.png";
-import loginBg from "@/assets/login-bg.svg";
+const loginBg = "/login-bg.svg";
 
 const Login = () => {
   const { session, loading, needsOnboarding, signIn } = useAuth();
