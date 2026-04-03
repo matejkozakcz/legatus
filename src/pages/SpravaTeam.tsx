@@ -502,6 +502,13 @@ const SpravaTeam = () => {
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => setNotifyMember(member)}
+                        className="btn btn-ghost btn-sm"
+                        title="Odeslat upozornění"
+                      >
+                        <Bell className="h-4 w-4" />
+                      </button>
                       <Link
                         to={`/tym/${member.id}/aktivity`}
                         className="btn btn-ghost btn-sm"
