@@ -149,6 +149,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     setFullName("");
     setEmail("");
     setSelectedGarant("");
+    setSelectedZiskatel("");
     setGeneratedPassword(null);
     onOpenChange(false);
   };
