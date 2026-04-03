@@ -31,21 +31,31 @@ function Counter({
   };
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: "#dde8ea", borderRadius: 12, overflow: "hidden",
-    }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#dde8ea",
+        borderRadius: 12,
+        overflow: "hidden",
+      }}
+    >
       <button
         disabled={!editable}
         onPointerDown={() => handlePress("minus", onDecrement)}
         style={{
-          width: 36, height: 36, border: "none",
+          width: 36,
+          height: 36,
+          border: "none",
           background: pressed === "minus" ? "#b8cfd4" : "transparent",
           cursor: editable ? "pointer" : "default",
           fontSize: 20,
           color: pressed === "minus" ? "#fc7c71" : "#00555f",
           fontWeight: 300,
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           opacity: editable ? 1 : 0.4,
           transition: "background 0.1s, color 0.1s",
           WebkitTapHighlightColor: "transparent",
@@ -54,26 +64,36 @@ function Counter({
       >
         −
       </button>
-      <span style={{
-        minWidth: 32, textAlign: "center",
-        fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "#0c2226",
-        transition: "transform 0.1s",
-        transform: pressed ? "scale(1.15)" : "scale(1)",
-        display: "inline-block",
-      }}>
+      <span
+        style={{
+          minWidth: 32,
+          textAlign: "center",
+          fontFamily: "Poppins, sans-serif",
+          fontWeight: 700,
+          fontSize: 17,
+          color: "#0c2226",
+          transition: "transform 0.1s",
+          transform: pressed ? "scale(1.15)" : "scale(1)",
+          display: "inline-block",
+        }}
+      >
         {value}
       </span>
       <button
         disabled={!editable}
         onPointerDown={() => handlePress("plus", onIncrement)}
         style={{
-          width: 36, height: 36, border: "none",
+          width: 36,
+          height: 36,
+          border: "none",
           background: pressed === "plus" ? "#b8cfd4" : "transparent",
           cursor: editable ? "pointer" : "default",
           fontSize: 20,
           color: pressed === "plus" ? "#fc7c71" : "#00555f",
           fontWeight: 300,
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           opacity: editable ? 1 : 0.4,
           transition: "background 0.1s, color 0.1s",
           WebkitTapHighlightColor: "transparent",
@@ -173,7 +193,7 @@ const MojeAktivity = () => {
         clearTimeout(debounceTimers.current[timerKey]);
       }
       debounceTimers.current[timerKey] = setTimeout(() => {
-      const existing = records.find((r) => r.week_start === weekStart);
+        const existing = records.find((r) => r.week_start === weekStart);
         const updated = {
           week_start: weekStart,
           ...(existing || {}),
@@ -208,7 +228,7 @@ const MojeAktivity = () => {
   // Mobile-specific data
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
-    [mobileWeekOffset]
+    [mobileWeekOffset],
   );
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const mobileWeekStr = format(mobileWeekStart, "yyyy-MM-dd");
@@ -220,13 +240,13 @@ const MojeAktivity = () => {
     const rec = mobileRecord as any;
     const fresh: Record<string, number> = {
       fsa_planned: rec?.fsa_planned || 0,
-      fsa_actual:  rec?.fsa_actual  || 0,
+      fsa_actual: rec?.fsa_actual || 0,
       ser_planned: rec?.ser_planned || 0,
-      ser_actual:  rec?.ser_actual  || 0,
+      ser_actual: rec?.ser_actual || 0,
       poh_planned: rec?.poh_planned || 0,
-      poh_actual:  rec?.poh_actual  || 0,
-      ref_actual:  rec?.ref_actual  || 0,
-      bj:          rec?.bj          || 0,
+      poh_actual: rec?.poh_actual || 0,
+      ref_actual: rec?.ref_actual || 0,
+      bj: rec?.bj || 0,
     };
     localValuesRef.current = fresh;
     setLocalValues(fresh);
@@ -247,7 +267,7 @@ const MojeAktivity = () => {
         upsertMutation.mutate(record);
       }, 800);
     },
-    [mobileWeekStr, records, upsertMutation]
+    [mobileWeekStr, records, upsertMutation],
   );
 
   // Activities with both planned and actual keys
@@ -302,9 +322,15 @@ const MojeAktivity = () => {
           <button
             onClick={() => setMobileWeekOffset((o) => o - 1)}
             style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: "#dde8ea", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: "#dde8ea",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <ChevronLeft size={15} color="#00555f" />
@@ -321,10 +347,15 @@ const MojeAktivity = () => {
             onClick={() => setMobileWeekOffset((o) => Math.min(0, o + 1))}
             disabled={mobileWeekOffset >= 0}
             style={{
-              width: 32, height: 32, borderRadius: 10,
+              width: 32,
+              height: 32,
+              borderRadius: 10,
               background: "#dde8ea",
-              border: "none", cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "none",
+              cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
             }}
           >
@@ -338,16 +369,24 @@ const MojeAktivity = () => {
           const actualVal = localValues[actualKey] || 0;
           return (
             <div key={label} className="mobile-activity-card">
-              <div style={{
-                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15,
-                color: "#0c2226", textAlign: "center", marginBottom: 14,
-              }}>
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: "#0c2226",
+                  textAlign: "center",
+                  marginBottom: 14,
+                }}
+              >
                 {label}
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 {/* Planned counter */}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+                  <div
+                    style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
+                  >
                     {plannedLabel}
                   </div>
                   <Counter
@@ -361,7 +400,9 @@ const MojeAktivity = () => {
                 <div style={{ width: 1, background: "#e1e9eb", alignSelf: "stretch" }} />
                 {/* Actual counter */}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+                  <div
+                    style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
+                  >
                     {actualLabel}
                   </div>
                   <Counter
@@ -379,10 +420,16 @@ const MojeAktivity = () => {
         {/* Doporučení + BJ — 2-column grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
           <div className="mobile-activity-card" style={{ padding: 14 }}>
-            <div style={{
-              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
-              color: "#0c2226", textAlign: "center", marginBottom: 12,
-            }}>
+            <div
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                color: "#0c2226",
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
               Doporučení
             </div>
             <Counter
@@ -393,10 +440,16 @@ const MojeAktivity = () => {
             />
           </div>
           <div className="mobile-activity-card" style={{ padding: 14 }}>
-            <div style={{
-              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
-              color: "#0c2226", textAlign: "center", marginBottom: 12,
-            }}>
+            <div
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                color: "#0c2226",
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
               BJ
             </div>
             <Counter
@@ -409,11 +462,18 @@ const MojeAktivity = () => {
         </div>
 
         {/* Autosave */}
-        <div style={{
-          textAlign: "center", fontSize: 11, color: "#8aadb3",
-          padding: "6px 0 12px", display: "flex",
-          alignItems: "center", justifyContent: "center", gap: 5,
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 11,
+            color: "#8aadb3",
+            padding: "6px 0 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 5,
+          }}
+        >
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d", flexShrink: 0 }} />
           Automaticky ukládáno
         </div>
@@ -426,7 +486,7 @@ const MojeAktivity = () => {
       <div className="flex items-center gap-3">
         <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
         <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
-          Moje aktivity
+          Přehled aktivit
         </h1>
       </div>
 
@@ -434,7 +494,7 @@ const MojeAktivity = () => {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
-            Moje aktivity
+            Přehled aktivit
           </h2>
           <Pencil className="h-4 w-4" style={{ color: "#8aadb3" }} />
         </div>
@@ -514,7 +574,9 @@ const MojeAktivity = () => {
                               type="number"
                               min={0}
                               defaultValue={cellValue}
-                              onBlur={(e) => handleCellChange(weekStr, col.key as ActivityKey, parseInt(e.target.value) || 0)}
+                              onBlur={(e) =>
+                                handleCellChange(weekStr, col.key as ActivityKey, parseInt(e.target.value) || 0)
+                              }
                             />
                           ) : (
                             cellValue

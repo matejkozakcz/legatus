@@ -44,182 +44,185 @@ export function MobileBottomNav() {
   const avatarShadow = godMode
     ? "0 4px 20px rgba(252,124,113,0.5)"
     : isDashboardActive
-    ? "0 4px 20px rgba(0,171,189,0.4)"
-    : "0 4px 20px rgba(0,85,95,0.25)";
+      ? "0 4px 20px rgba(0,171,189,0.4)"
+      : "0 4px 20px rgba(0,85,95,0.25)";
 
   return (
     <>
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: "0 20px 18px",
-        paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))",
-        zIndex: 100,
-        pointerEvents: "none",
-      }}
-    >
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          height: 64,
-          background: "rgba(255,255,255,0.55)",
-          backdropFilter: "blur(24px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-          borderRadius: 40,
-          border: "1px solid rgba(255,255,255,0.7)",
-          boxShadow: "0 8px 32px rgba(0,85,95,0.12), 0 2px 8px rgba(0,0,0,0.06)",
-          position: "relative",
-          pointerEvents: "all",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: "0 20px 18px",
+          paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))",
+          zIndex: 100,
+          pointerEvents: "none",
         }}
       >
-        {/* Left: Moje aktivity */}
-        <NavButton
-          icon={TrendingUp}
-          label="Moje aktivity"
-          active={location.pathname === "/aktivity"}
-          onClick={() => navigate("/aktivity")}
-        />
-
-        {/* Center spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Right: Úkoly */}
-        <NavButton
-          icon={CheckSquare}
-          label="Úkoly"
-          active={location.pathname === "/ukoly"}
-          onClick={() => navigate("/ukoly")}
-        />
-
-        {/* Center elevated Dashboard/Avatar button */}
         <div
           style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            top: -22,
-            pointerEvents: "all",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
+            height: 64,
+            background: "rgba(255,255,255,0.55)",
+            backdropFilter: "blur(24px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+            borderRadius: 40,
+            border: "1px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 8px 32px rgba(0,85,95,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            position: "relative",
+            pointerEvents: "all",
           }}
         >
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={() => setProfileModalOpen(true)}
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: "50%",
-                border: avatarBorder,
-                boxShadow: avatarShadow,
-                overflow: "hidden",
-                cursor: "pointer",
-                background: godMode ? "#fc7c71" : "#00555f",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.25s",
-                WebkitTapHighlightColor: "transparent",
-                userSelect: "none",
-              }}
-              aria-label="Nastavení profilu"
-            >
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={initials}
+          {/* Left: Přehled aktivit */}
+          <NavButton
+            icon={TrendingUp}
+            label="Přehlet aktivit"
+            active={location.pathname === "/aktivity"}
+            onClick={() => navigate("/aktivity")}
+          />
+
+          {/* Center spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Right: Úkoly */}
+          <NavButton
+            icon={CheckSquare}
+            label="Úkoly"
+            active={location.pathname === "/ukoly"}
+            onClick={() => navigate("/ukoly")}
+          />
+
+          {/* Center elevated Dashboard/Avatar button */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              top: -22,
+              pointerEvents: "all",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setProfileModalOpen(true)}
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  border: avatarBorder,
+                  boxShadow: avatarShadow,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  background: godMode ? "#fc7c71" : "#00555f",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.25s",
+                  WebkitTapHighlightColor: "transparent",
+                  userSelect: "none",
+                }}
+                aria-label="Nastavení profilu"
+              >
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={initials}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      opacity: godMode ? 0.75 : 1,
+                      transition: "opacity 0.25s",
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 18,
+                      color: "white",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {initials}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification badge — top right */}
+              {unreadCount > 0 && (
+                <div
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    opacity: godMode ? 0.75 : 1,
-                    transition: "opacity 0.25s",
-                  }}
-                />
-              ) : (
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 700,
-                    fontSize: 18,
-                    color: "white",
-                    lineHeight: 1,
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    background: "#fc7c71",
+                    border: "2px solid white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {initials}
-                </span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: "white", lineHeight: 1 }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                </div>
               )}
-            </button>
 
-            {/* Notification badge — top right */}
-            {unreadCount > 0 && (
-              <div style={{
-                position: "absolute",
-                top: -2,
-                right: -2,
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                background: "#fc7c71",
-                border: "2px solid white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                <span style={{ fontSize: 9, fontWeight: 800, color: "white", lineHeight: 1 }}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              </div>
-            )}
+              {/* Godmode indicator — bottom right */}
+              {godMode && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    right: -2,
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    background: "white",
+                    border: "1.5px solid #fc7c71",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 9,
+                    lineHeight: 1,
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  ⚡
+                </div>
+              )}
+            </div>
 
-            {/* Godmode indicator — bottom right */}
-            {godMode && (
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                right: -2,
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                background: "white",
-                border: "1.5px solid #fc7c71",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 9,
-                lineHeight: 1,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-              }}>
-                ⚡
-              </div>
-            )}
-          </div>
-
-          <div style={{
-            textAlign: "center",
-            marginTop: 5,
-            fontSize: 10,
-            fontWeight: 600,
-            color: godMode ? "#fc7c71" : "#8aadb3",
-            letterSpacing: "0.02em",
-            fontFamily: "Open Sans, sans-serif",
-            transition: "color 0.25s",
-          }}>
-            {godMode ? "Admin ⚡" : "Profil"}
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: 5,
+                fontSize: 10,
+                fontWeight: 600,
+                color: godMode ? "#fc7c71" : "#8aadb3",
+                letterSpacing: "0.02em",
+                fontFamily: "Open Sans, sans-serif",
+                transition: "color 0.25s",
+              }}
+            >
+              {godMode ? "Admin ⚡" : "Profil"}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <ProfileSettingsModal
-      open={profileModalOpen}
-      onClose={() => setProfileModalOpen(false)}
-    />
+      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </>
   );
 }
@@ -252,15 +255,17 @@ function NavButton({
       }}
     >
       <Icon size={22} color={active ? "#00abbd" : "#8aadb3"} style={{ transition: "color 0.2s" }} />
-      <span style={{
-        fontSize: 10,
-        fontWeight: 600,
-        color: active ? "#00abbd" : "#8aadb3",
-        letterSpacing: "0.02em",
-        transition: "color 0.2s",
-        fontFamily: "Open Sans, sans-serif",
-        whiteSpace: "nowrap",
-      }}>
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          color: active ? "#00abbd" : "#8aadb3",
+          letterSpacing: "0.02em",
+          transition: "color 0.2s",
+          fontFamily: "Open Sans, sans-serif",
+          whiteSpace: "nowrap",
+        }}
+      >
         {label}
       </span>
     </button>

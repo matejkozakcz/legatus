@@ -31,7 +31,7 @@ export function AppSidebar() {
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Moje aktivity", url: "/aktivity", icon: BarChart3 },
+    { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
   ];
 
   if (profile?.role === "vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
@@ -54,7 +54,9 @@ export function AppSidebar() {
           <div className="flex items-center gap-3 mb-6">
             <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
             {!collapsed && (
-              <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">LEGATUS</span>
+              <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">
+                LEGATUS
+              </span>
             )}
           </div>
 
