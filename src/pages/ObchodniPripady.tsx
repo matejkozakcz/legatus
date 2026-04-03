@@ -663,18 +663,23 @@ export default function ObchodniPripady() {
               <Plus className="h-4 w-4" />
               Nová schůzka
             </button>
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(20px) saturate(1.8)",
-              WebkitBackdropFilter: "blur(20px) saturate(1.8)",
-              borderRadius: 16,
-              padding: "10px 16px",
-              border: "1px solid rgba(225,233,235,0.8)",
-              boxShadow: "0 -2px 16px rgba(0,0,0,0.06)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+
+            {/* Period bar */}
+            <div
+              ref={mobilePickerRef}
+              style={{
+                background: "rgba(255,255,255,0.92)",
+                backdropFilter: "blur(20px) saturate(1.8)",
+                WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+                borderRadius: 16,
+                padding: "10px 16px",
+                border: "1px solid rgba(225,233,235,0.8)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                position: "relative",
+              }}
+            >
             <button
               onClick={() => {
                 if (selectedMonth === 0) {
