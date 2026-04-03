@@ -382,10 +382,15 @@ export default function ObchodniPripady() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const now = new Date();
+  const currentPeriod = getProductionPeriodMonth(now);
 
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_period");
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeeting, setEditMeeting] = useState<Meeting | null>(null);
+
+  const periodRange = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
 
   const dateRange = useMemo(() => {
     switch (timeFilter) {
@@ -398,9 +403,9 @@ export default function ObchodniPripady() {
         };
       case "this_period":
       default:
-        return { from: getProductionPeriodStart(now), to: getProductionPeriodEnd(now) };
+        return { from: periodRange.start, to: periodRange.end };
     }
-  }, [timeFilter]);
+  }, [timeFilter, periodRange]);
 
   // ── Data ──
   const { data: meetings = [], isLoading } = useQuery<Meeting[]>({
