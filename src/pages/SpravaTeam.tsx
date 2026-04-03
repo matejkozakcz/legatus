@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ArrowLeft, BarChart3, ChevronDown, TrendingUp, Bell } from "lucide-react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Users, Plus, ChevronDown, ChevronRight, TrendingUp, Bell } from "lucide-react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
@@ -13,14 +13,6 @@ import { CreateNotificationDialog } from "@/components/CreateNotificationDialog"
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 interface Profile {
   id: string;
@@ -29,6 +21,7 @@ interface Profile {
   avatar_url: string | null;
   vedouci_id: string | null;
   garant_id: string | null;
+  ziskatel_id: string | null;
   is_active: boolean | null;
   created_at: string | null;
   osobni_id?: string | null;
@@ -41,7 +34,7 @@ interface PromotionRequest {
   status: string;
   cumulative_bj: number | null;
   direct_ziskatels: number | null;
-  total_ziskatels?: number; // computed client-side for vedouci requests
+  total_ziskatels?: number;
   member?: {
     id: string;
     full_name: string;
@@ -57,48 +50,128 @@ const roleBadge: Record<string, { label: string; className: string }> = {
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
-function RoleDropdown({
-  actions,
-  onSelect,
+function MemberCard({
+  member,
+  onClick,
+  onNotify,
+  depth = 0,
 }: {
-  actions: { role: string; label: string; variant: "promote" | "demote" }[];
-  onSelect: (action: { role: string; label: string; variant: "promote" | "demote" }) => void;
+  member: Profile;
+  onClick: () => void;
+  onNotify: () => void;
+  depth?: number;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  const badge = roleBadge[member.role] || roleBadge.novacek;
+  const initials = member.full_name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="btn btn-secondary btn-sm flex items-center gap-1"
-      >
-        Změnit roli <ChevronDown className="h-3 w-3" />
-      </button>
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border bg-white shadow-lg py-1"
-          style={{ borderColor: "#E1E9EB" }}
+    <div
+      className="legatus-card legatus-card-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
+      style={{ marginLeft: depth * 24 }}
+      onClick={onClick}
+    >
+      {member.avatar_url ? (
+        <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-heading font-semibold">{initials}</span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-body font-medium text-foreground">{member.full_name}</p>
+          <span className={badge.className}>{badge.label}</span>
+        </div>
+        {member.created_at && (
+          <p className="text-xs text-muted-foreground font-body mt-0.5">
+            Přidán: {format(new Date(member.created_at), "d. M. yyyy", { locale: cs })}
+          </p>
+        )}
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); onNotify(); }}
+          className="btn btn-ghost btn-sm"
+          title="Odeslat upozornění"
         >
-          {actions.map((action) => (
-            <button
-              key={action.role}
-              onClick={() => { onSelect(action); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-sm font-body hover:bg-gray-50 transition-colors"
-              style={{ color: action.variant === "demote" ? "#e05a50" : "#0A2126" }}
-            >
-              {action.label}
-            </button>
-          ))}
+          <Bell className="h-4 w-4" />
+        </button>
+        <Link
+          to={`/tym/${member.id}/aktivity`}
+          onClick={(e) => e.stopPropagation()}
+          className="btn btn-ghost btn-sm"
+        >
+          Aktivity
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function HierarchyGroup({
+  parent,
+  children,
+  childrenMap,
+  onEdit,
+  onNotify,
+  depth,
+}: {
+  parent: Profile;
+  children: Profile[];
+  childrenMap: Map<string, Profile[]>;
+  onEdit: (m: Profile) => void;
+  onNotify: (m: Profile) => void;
+  depth: number;
+}) {
+  const [collapsed, setCollapsed] = useState(depth >= 2);
+  const hasChildren = children.length > 0;
+
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        {hasChildren && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 rounded hover:bg-muted transition-colors flex-shrink-0"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        )}
+        {!hasChildren && <div style={{ width: 28 }} />}
+        <div className="flex-1">
+          <MemberCard
+            member={parent}
+            onClick={() => onEdit(parent)}
+            onNotify={() => onNotify(parent)}
+            depth={0}
+          />
+        </div>
+      </div>
+      {hasChildren && !collapsed && (
+        <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-2">
+          {children.map((child) => {
+            const grandchildren = childrenMap.get(child.id) || [];
+            return (
+              <HierarchyGroup
+                key={child.id}
+                parent={child}
+                children={grandchildren}
+                childrenMap={childrenMap}
+                onEdit={onEdit}
+                onNotify={onNotify}
+                depth={depth + 1}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -111,8 +184,6 @@ const SpravaTeam = () => {
   const [tab, setTab] = useState<"seznam" | "orgchart">("seznam");
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
-  const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
-  const [roleChange, setRoleChange] = useState<{ member: Profile; newRole: string; label: string } | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
@@ -120,7 +191,6 @@ const SpravaTeam = () => {
     queryKey: ["promotion_requests", profile?.id],
     queryFn: async () => {
       if (!profile?.id || profile.role !== "vedouci") return [];
-      // Fetch pending requests for members in this vedouci's team
       const { data, error } = await supabase
         .from("promotion_requests")
         .select("id, user_id, requested_role, status, cumulative_bj, direct_ziskatels")
@@ -181,14 +251,10 @@ const SpravaTeam = () => {
         .neq("id", profile.id);
 
       if (profile.role === "garant") {
-        // Garant sees only their own Nováčci
         query = query.eq("garant_id", profile.id);
       } else if (profile.role === "vedouci") {
-        // Vedoucí sees everyone in their subtree:
-        // Garanté (vedouci_id = me) + Nováčci (vedouci_id = me)
         query = query.eq("vedouci_id", profile.id);
       }
-      // Nováček has no team — returns empty (shouldn't reach this page anyway)
 
       const { data, error } = await query;
       if (error) throw error;
@@ -197,25 +263,45 @@ const SpravaTeam = () => {
     enabled: !!profile?.id,
   });
 
-  // Get all profiles for name lookup
   const profileMap = new Map(members.map((m) => [m.id, m]));
   if (profile) profileMap.set(profile.id, profile as unknown as Profile);
 
-  // Enrich pending requests with member data + computed total_ziskatels for vedouci requests
+  // Build children map by ziskatel_id for hierarchy
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, Profile[]>();
+    members.forEach((m) => {
+      const parentId = m.ziskatel_id;
+      if (parentId) {
+        const list = map.get(parentId) || [];
+        list.push(m);
+        map.set(parentId, list);
+      }
+    });
+    return map;
+  }, [members]);
+
+  // Root members: those whose ziskatel_id is the current user or not in the members list
+  const rootMembers = useMemo(() => {
+    return members.filter((m) => {
+      if (!m.ziskatel_id) return true;
+      if (m.ziskatel_id === profile?.id) return true;
+      if (!profileMap.has(m.ziskatel_id) || m.ziskatel_id === m.id) return true;
+      // Check if parent is not in members (meaning parent is the current user)
+      return !members.some((other) => other.id === m.ziskatel_id);
+    });
+  }, [members, profile?.id]);
+
   const enrichedRequests: PromotionRequest[] = pendingRequests
     .filter((req) => profileMap.has(req.user_id))
     .map((req) => ({
       ...req,
       member: profileMap.get(req.user_id) as PromotionRequest["member"],
-      // For vedouci requests, cumulative_bj was repurposed to store totalZiskatels
       total_ziskatels: req.requested_role === "vedouci" ? (req.cumulative_bj ?? undefined) : undefined,
     }));
 
-  // Auto-check promotion conditions for the team
   const checkPromotions = useCallback(async () => {
     if (profile?.role !== "vedouci" || members.length === 0) return;
 
-    // ── Získatel → Garant: BJ >= 1 000 ────────────────────────────────────────
     const ziskatels = members.filter((m) => m.role === "ziskatel");
     if (ziskatels.length > 0) {
       const ziskatelIds = ziskatels.map((m) => m.id);
@@ -240,41 +326,34 @@ const SpravaTeam = () => {
       }
     }
 
-    // ── Garant → Vedoucí: celkem >= 10 Získatelů ve struktuře + min. 3 přímí ─
     const garanty = members.filter((m) => m.role === "garant");
     if (garanty.length > 0) {
       const memberMap = new Map(members.map((m) => [m.id, m]));
-
-      // Build parent→children map by ziskatel_id
-      const childrenMap = new Map<string, string[]>();
+      const childMap = new Map<string, string[]>();
       members.forEach((m) => {
-        const parentId = (m as any).ziskatel_id;
+        const parentId = m.ziskatel_id;
         if (parentId) {
-          if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
-          childrenMap.get(parentId)!.push(m.id);
+          if (!childMap.has(parentId)) childMap.set(parentId, []);
+          childMap.get(parentId)!.push(m.id);
         }
       });
 
-      // BFS: count ALL Získatelé in the subtree of rootId
       const countTotalZiskatels = (rootId: string): number => {
         let total = 0;
-        const queue = [...(childrenMap.get(rootId) || [])];
+        const queue = [...(childMap.get(rootId) || [])];
         while (queue.length > 0) {
           const id = queue.shift()!;
           const m = memberMap.get(id);
           if (m?.role === "ziskatel") total++;
-          queue.push(...(childrenMap.get(id) || []));
+          queue.push(...(childMap.get(id) || []));
         }
         return total;
       };
 
       for (const candidate of garanty) {
-        // Direct Získatelé = children with role ziskatel
-        const directZiskatels = (childrenMap.get(candidate.id) || [])
+        const directZiskatels = (childMap.get(candidate.id) || [])
           .filter((id) => memberMap.get(id)?.role === "ziskatel").length;
-
         const totalZiskatels = countTotalZiskatels(candidate.id);
-
         if (totalZiskatels >= 10 && directZiskatels >= 3) {
           await supabase.from("promotion_requests").upsert(
             {
@@ -282,7 +361,7 @@ const SpravaTeam = () => {
               requested_role: "vedouci",
               status: "pending",
               direct_ziskatels: directZiskatels,
-              cumulative_bj: totalZiskatels, // reuse field to store total count
+              cumulative_bj: totalZiskatels,
             },
             { onConflict: "user_id,requested_role", ignoreDuplicates: true }
           );
@@ -296,66 +375,6 @@ const SpravaTeam = () => {
   useEffect(() => {
     if (!isLoading && members.length > 0) checkPromotions();
   }, [isLoading, members.length]);
-
-  const promoteMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
-      const updateData: Record<string, unknown> = { role: newRole };
-      // When promoting to vedoucí, clear parent references — they become independent
-      if (newRole === "vedouci") {
-        updateData.vedouci_id = null;
-      }
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", userId);
-      if (error) throw error;
-      return newRole;
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
-      const roleLabels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", ziskatel: "Získatele", novacek: "Nováčka" };
-      toast.success(`Role změněna na ${roleLabels[variables.newRole] || variables.newRole}.`);
-      if (variables.newRole !== "novacek") {
-        fireConfetti();
-      }
-      setRoleChange(null);
-    },
-  });
-
-  const deactivateMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_active: false })
-        .eq("id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      setDeactivateMember(null);
-      toast.success("Člen byl deaktivován.");
-    },
-  });
-
-  const getRoleActions = (member: Profile) => {
-    const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
-    if (profile?.role === "vedouci") {
-      if (member.vedouci_id !== profile.id) return actions;
-      // novacek → ziskatel: fallback (normálně přes Osobní ID trigger)
-      if (member.role === "novacek") {
-        actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
-      }
-      // Demotions only — garant/vedouci promotions jdou přes approval flow
-      if (member.role === "ziskatel") {
-        actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
-      }
-      if (member.role === "garant") {
-        actions.push({ role: "ziskatel", label: "Ponížit na Získatele", variant: "demote" });
-      }
-    }
-    return actions;
-  };
 
   return (
     <div className="space-y-6">
@@ -382,7 +401,7 @@ const SpravaTeam = () => {
         ))}
       </div>
 
-      {/* Čekající povýšení — only for vedoucí when there are pending requests */}
+      {/* Čekající povýšení */}
       {profile?.role === "vedouci" && enrichedRequests.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
@@ -445,7 +464,7 @@ const SpravaTeam = () => {
       )}
 
       {tab === "seznam" ? (
-        <div className="space-y-3">
+        <div className="space-y-1">
           {isLoading ? (
             <div className="legatus-card p-8 text-center">
               <p className="font-body animate-pulse" style={{ color: "#8aadb3" }}>Načítání členů...</p>
@@ -455,86 +474,19 @@ const SpravaTeam = () => {
               <p className="font-body" style={{ color: "#8aadb3" }}>Zatím nemáte žádné členy v týmu.</p>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {members.map((member) => {
-                const badge = roleBadge[member.role] || roleBadge.novacek;
-                const roleActions = getRoleActions(member);
-                const vedouciName = member.vedouci_id ? profileMap.get(member.vedouci_id)?.full_name : null;
-                const garantName = member.garant_id ? profileMap.get(member.garant_id)?.full_name : null;
-                const initials = member.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2);
-
+            <div className="space-y-1">
+              {rootMembers.map((member) => {
+                const children = childrenMap.get(member.id) || [];
                 return (
-                  <div
+                  <HierarchyGroup
                     key={member.id}
-                    className="legatus-card legatus-card-sm flex items-center gap-4 flex-wrap"
-                  >
-                    {member.avatar_url ? (
-                      <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center">
-                        <span className="text-xs font-heading font-semibold">{initials}</span>
-                      </div>
-                    )}
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-body font-medium text-foreground">{member.full_name}</p>
-                        <span className={badge.className}>
-                          {badge.label}
-                        </span>
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted-foreground font-body mt-0.5">
-                        {vedouciName && <span>Vedoucí: {vedouciName}</span>}
-                        {garantName && <span>Garant: {garantName}</span>}
-                        {(() => {
-                          const ziskatelName = (member as any).ziskatel_id ? profileMap.get((member as any).ziskatel_id)?.full_name : null;
-                          return ziskatelName ? <span>Získatel: {ziskatelName}</span> : null;
-                        })()}
-                        {member.created_at && (
-                          <span>Přidán: {format(new Date(member.created_at), "d. M. yyyy", { locale: cs })}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => setNotifyMember(member)}
-                        className="btn btn-ghost btn-sm"
-                        title="Odeslat upozornění"
-                      >
-                        <Bell className="h-4 w-4" />
-                      </button>
-                      <Link
-                        to={`/tym/${member.id}/aktivity`}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        Zobrazit aktivity
-                      </Link>
-                      <button
-                        onClick={() => setEditMember(member)}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        Upravit
-                      </button>
-                      <button
-                        onClick={() => setDeactivateMember(member)}
-                        className="btn btn-danger btn-sm"
-                      >
-                        Deaktivovat
-                      </button>
-                      {roleActions.length > 0 && (
-                        <RoleDropdown
-                          actions={roleActions}
-                          onSelect={(action) => setRoleChange({ member, newRole: action.role, label: action.label })}
-                        />
-                      )}
-                    </div>
-                  </div>
+                    parent={member}
+                    children={children}
+                    childrenMap={childrenMap}
+                    onEdit={setEditMember}
+                    onNotify={setNotifyMember}
+                    depth={0}
+                  />
                 );
               })}
             </div>
@@ -557,61 +509,6 @@ const SpravaTeam = () => {
           recipientName={notifyMember.full_name}
         />
       )}
-
-      {/* Deactivate confirmation */}
-      <Dialog open={!!deactivateMember} onOpenChange={(open) => { if (!open) setDeactivateMember(null); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="font-heading">Deaktivovat člena</DialogTitle>
-            <DialogDescription className="font-body">
-              Opravdu chceš deaktivovat {deactivateMember?.full_name}? Jejich data zůstanou zachována.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setDeactivateMember(null)}>
-              Zrušit
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => deactivateMember && deactivateMutation.mutate(deactivateMember.id)}
-              disabled={deactivateMutation.isPending}
-            >
-              Deaktivovat
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Role change confirmation */}
-      <Dialog open={!!roleChange} onOpenChange={(open) => { if (!open) setRoleChange(null); }}>
-        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="font-heading">Změna role</DialogTitle>
-            <DialogDescription className="font-body">
-              Opravdu chceš změnit roli člena {roleChange?.member.full_name}?{" "}
-              Akce: <strong>{roleChange?.label}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setRoleChange(null)}>
-              Zrušit
-            </Button>
-            <Button
-              type="button"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => {
-                if (roleChange) {
-                  promoteMutation.mutate({ userId: roleChange.member.id, newRole: roleChange.newRole });
-                }
-              }}
-              disabled={promoteMutation.isPending}
-            >
-              Potvrdit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
