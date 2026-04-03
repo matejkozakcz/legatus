@@ -1,11 +1,29 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useAuth();
+
+  // Unread notifications count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread_notifications_count", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { count } = await supabase
+        .from("notifications" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", profile.id)
+        .eq("read", false);
+      return count || 0;
+    },
+    enabled: !!profile?.id,
+    refetchInterval: 30000,
+  });
 
   const initials = profile
     ? profile.full_name
@@ -78,44 +96,71 @@ export function MobileBottomNav() {
             alignItems: "center",
           }}
         >
-          <button
-            onClick={() => navigate("/dashboard")}
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              border: isDashboardActive ? "3px solid #00abbd" : "3px solid white",
-              boxShadow: isDashboardActive ? "0 4px 20px rgba(0,171,189,0.4)" : "0 4px 20px rgba(0,85,95,0.25)",
-              overflow: "hidden",
-              cursor: "pointer",
-              background: "#00555f",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s",
-            }}
-            aria-label="Dashboard"
-          >
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={initials}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <span
-                style={{
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 700,
-                  fontSize: 18,
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => navigate("/dashboard")}
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                border: isDashboardActive ? "3px solid #00abbd" : "3px solid white",
+                boxShadow: isDashboardActive ? "0 4px 20px rgba(0,171,189,0.4)" : "0 4px 20px rgba(0,85,95,0.25)",
+                overflow: "hidden",
+                cursor: "pointer",
+                background: "#00555f",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              aria-label="Dashboard"
+            >
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={initials}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: "white",
+                    lineHeight: 1,
+                  }}
+                >
+                  {initials}
+                </span>
+              )}
+            </button>
+            {/* Notification badge */}
+            {unreadCount > 0 && (
+              <div style={{
+                position: "absolute",
+                top: -2,
+                right: -2,
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                background: "#fc7c71",
+                border: "2px solid white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <span style={{
+                  fontSize: 9,
+                  fontWeight: 800,
                   color: "white",
                   lineHeight: 1,
-                }}
-              >
-                {initials}
-              </span>
+                }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </div>
             )}
-          </button>
+          </div>
           <div
             style={{
               textAlign: "center",

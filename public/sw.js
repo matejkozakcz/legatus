@@ -34,3 +34,44 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
+// Push notification handler
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "Legatus", body: event.data.text() };
+  }
+
+  const options = {
+    body: data.body || "",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: data.data || {},
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Legatus", options)
+  );
+});
+
+// Click on notification → open dashboard
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        if (clients.length > 0) {
+          clients[0].focus();
+          clients[0].navigate("/dashboard");
+        } else {
+          self.clients.openWindow("/dashboard");
+        }
+      })
+  );
+});

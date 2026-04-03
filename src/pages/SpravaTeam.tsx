@@ -2,13 +2,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ArrowLeft, BarChart3, ChevronDown, TrendingUp } from "lucide-react";
+import { Users, Plus, ArrowLeft, BarChart3, ChevronDown, TrendingUp, Bell } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import { OrgChart } from "@/components/OrgChart";
+import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,7 @@ const SpravaTeam = () => {
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [deactivateMember, setDeactivateMember] = useState<Profile | null>(null);
   const [roleChange, setRoleChange] = useState<{ member: Profile; newRole: string; label: string } | null>(null);
+  const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
@@ -500,6 +502,13 @@ const SpravaTeam = () => {
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => setNotifyMember(member)}
+                        className="btn btn-ghost btn-sm"
+                        title="Odeslat upozornění"
+                      >
+                        <Bell className="h-4 w-4" />
+                      </button>
                       <Link
                         to={`/tym/${member.id}/aktivity`}
                         className="btn btn-ghost btn-sm"
@@ -540,6 +549,14 @@ const SpravaTeam = () => {
       {/* Dialogs */}
       <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
+      {notifyMember && (
+        <CreateNotificationDialog
+          open={!!notifyMember}
+          onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
+          recipientId={notifyMember.id}
+          recipientName={notifyMember.full_name}
+        />
+      )}
 
       {/* Deactivate confirmation */}
       <Dialog open={!!deactivateMember} onOpenChange={(open) => { if (!open) setDeactivateMember(null); }}>
