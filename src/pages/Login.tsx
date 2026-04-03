@@ -3,8 +3,15 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import legatusLogo from "@/assets/legatus-logo-light.png";
-import loginBg from "@/assets/login-bg.svg";
-
+<div
+  className="relative min-h-screen overflow-hidden flex items-center justify-center"
+  style={{
+    backgroundImage: "url('/login-bg.svg')", /* Upraveno: string místo proměnné */
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundColor: "#00555f" /* Doporučuji přidat fallback barvu */
+  }}
+>
 const Login = () => {
   const { session, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
