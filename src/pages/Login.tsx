@@ -49,7 +49,7 @@ const Login = () => {
           backgroundImage: `url(${loginBg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundColor: "#E1E9EB",
+          backgroundColor: "#00555f",
         }}
       >
         <OnboardingModal open={true} />
