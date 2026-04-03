@@ -111,6 +111,7 @@ export type Database = {
           poradko_doporuceni: number
           poradko_pohovor_doporuceni: number
           poradko_pohovor_jde_dal: boolean | null
+          poradko_status: string | null
           potencial_bj: number | null
           poznamka: string | null
           ref_count: number
@@ -138,6 +139,7 @@ export type Database = {
           poradko_doporuceni?: number
           poradko_pohovor_doporuceni?: number
           poradko_pohovor_jde_dal?: boolean | null
+          poradko_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
           ref_count?: number
@@ -165,6 +167,7 @@ export type Database = {
           poradko_doporuceni?: number
           poradko_pohovor_doporuceni?: number
           poradko_pohovor_jde_dal?: boolean | null
+          poradko_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
           ref_count?: number
