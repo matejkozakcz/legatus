@@ -10,6 +10,7 @@ import MojeAktivity from "./pages/MojeAktivity";
 import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
+import ObchodniPripady from "./pages/ObchodniPripady";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Ukoly />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/obchodni-pripady"
+              element={
+                <AppLayout>
+                  <ObchodniPripady />
                 </AppLayout>
               }
             />

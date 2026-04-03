@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_meetings: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          week_start: string
+          meeting_type: "FSA" | "SER"
+          bj: number
+          ref_count: number
+          vizi_spoluprace: boolean
+          poznamka: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          meeting_type: "FSA" | "SER"
+          bj?: number
+          ref_count?: number
+          vizi_spoluprace?: boolean
+          poznamka?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          meeting_type?: "FSA" | "SER"
+          bj?: number
+          ref_count?: number
+          vizi_spoluprace?: boolean
+          poznamka?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_meetings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_records: {
         Row: {
           bj: number

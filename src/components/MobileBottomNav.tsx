@@ -8,7 +8,6 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, godMode } = useAuth();
-  
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -46,11 +45,11 @@ export function MobileBottomNav() {
       : "0 4px 20px rgba(0,85,95,0.25)";
 
   return (
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
           right: 0,
           padding: "0 20px 18px",
           paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))",

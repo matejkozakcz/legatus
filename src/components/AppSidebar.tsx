@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +32,7 @@ export function AppSidebar() {
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
+    { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
 
   if (profile?.role === "vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
