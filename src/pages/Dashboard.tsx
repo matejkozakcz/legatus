@@ -253,7 +253,7 @@ const Dashboard = () => {
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
-    const firstName = profile?.full_name?.split(" ")[0] ?? "";
+    const firstName = toVocative(profile?.full_name?.split(" ")[0] ?? "");
     const daysRemaining = daysRemainingInPeriod(now);
 
     // BJ goal toward next promotion
