@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { cs } from "date-fns/locale";
 import { getProductionPeriodStart, getProductionPeriodEnd } from "@/lib/productionPeriod";
-import { Plus, X, Loader2, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Plus, X, Loader2, Pencil, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -84,7 +84,7 @@ function MeetingModal({
           <X className="h-5 w-5" />
         </button>
 
-        <h2 className="font-heading text-lg font-semibold mb-5" style={{ color: "#0A2126" }}>
+        <h2 className="font-heading text-lg font-semibold mb-5" style={{ color: "#0c2226" }}>
           {initial.date ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
@@ -315,12 +315,15 @@ export default function ObchodniPripady() {
 
   // ── Render ──
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="space-y-8">
       {/* Záhlaví */}
       <div className="flex items-center justify-between">
-        <h1 className="font-heading font-semibold" style={{ fontSize: 26, color: "#0c2226" }}>
-          Obchodní případy
-        </h1>
+        <div className="flex items-center gap-3">
+          <Briefcase className="h-6 w-6" style={{ color: "#0c2226" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+            Obchodní případy
+          </h1>
+        </div>
         <button onClick={openAdd} className="btn btn-primary btn-md flex items-center gap-2">
           <Plus className="h-4 w-4" />
           {!isMobile && "Nová schůzka"}
