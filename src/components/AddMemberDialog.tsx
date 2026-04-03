@@ -15,6 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const roleLabels: Record<string, string> = {
+  vedouci: "Vedoucí",
+  garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
+};
+
 interface AddMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -26,6 +33,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [selectedGarant, setSelectedGarant] = useState("");
+  const [selectedZiskatel, setSelectedZiskatel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
@@ -68,6 +76,35 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     enabled: !!profile?.vedouci_id && profile?.role === "garant",
   });
 
+  // Get possible získatel candidates (self + people in subtree)
+  const { data: ziskatelCandidates = [] } = useQuery({
+    queryKey: ["ziskatel_candidates", profile?.id, profile?.role],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
+      // Fetch all active members under this vedoucí
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, garant_id")
+        .eq("is_active", true)
+        .eq("vedouci_id", vedouciId);
+      if (error) throw error;
+      const list = (data || []) as { id: string; full_name: string; role: string; garant_id: string | null }[];
+
+      if (profile.role === "vedouci") {
+        const selfInList = list.some((p) => p.id === profile.id);
+        if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
+        return list;
+      } else {
+        const myPeople = list.filter((p) => p.id === profile.id || p.garant_id === profile.id);
+        const selfInList = myPeople.some((p) => p.id === profile.id);
+        if (!selfInList) myPeople.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
+        return myPeople;
+      }
+    },
+    enabled: !!profile?.id,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -78,9 +115,15 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
 
       const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
       const garantId = profile.role === "garant" ? profile.id : selectedGarant;
+      const ziskatelId = selectedZiskatel || profile.id;
 
       if (!garantId) {
         toast.error("Vyberte garanta.");
+        setSubmitting(false);
+        return;
+      }
+      if (!ziskatelId) {
+        toast.error("Vyberte získatele.");
         setSubmitting(false);
         return;
       }
@@ -93,7 +136,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           role: "novacek",
           vedouci_id: vedouciId,
           garant_id: garantId,
-          ziskatel_id: profile.id, // whoever creates the member is the získatel
+          ziskatel_id: ziskatelId,
         },
       });
 
@@ -113,6 +156,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     setFullName("");
     setEmail("");
     setSelectedGarant("");
+    setSelectedZiskatel("");
     setGeneratedPassword(null);
     onOpenChange(false);
   };
@@ -188,6 +232,23 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
               <Input value={`${profile?.full_name || ""} (Já)`} disabled className="bg-muted" />
             </div>
           )}
+
+          <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">Získatel (pod koho bude patřit)</label>
+            <select
+              value={selectedZiskatel}
+              onChange={(e) => setSelectedZiskatel(e.target.value)}
+              required
+              className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Vyberte získatele...</option>
+              {ziskatelCandidates.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.full_name}{z.id === profile?.id ? " (Já)" : ""} — {roleLabels[z.role] || z.role}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Vedoucí</label>
