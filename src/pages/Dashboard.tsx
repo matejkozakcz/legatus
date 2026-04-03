@@ -293,9 +293,9 @@ const Dashboard = () => {
     };
   }, [records]);
 
-  // ── Mobile-only queries ─────────────────────────────────────────────────────
+  // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
-  // All-time cumulative BJ
+  // All-time cumulative BJ (for Získatel gauge)
   const { data: allBjData = [] } = useQuery({
     queryKey: ["bj_all_time", profile?.id],
     queryFn: async () => {
@@ -306,12 +306,83 @@ const Dashboard = () => {
         .eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id && isMobile,
+    enabled: !!profile?.id,
   });
   const totalBjAllTime = useMemo(
     () => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
     [allBjData]
   );
+
+  // Garant: count direct subordinates (garant_id = me)
+  const { data: garantDirectCount = 0 } = useQuery({
+    queryKey: ["garant_direct_count", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("garant_id", profile.id)
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!profile?.id && profile?.role === "garant",
+  });
+
+  // Garant: count all people in structure (ziskatel_id chain)
+  const { data: garantStructureCount = 0 } = useQuery({
+    queryKey: ["garant_structure_count", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      // Fetch all active profiles where garant_id = me (all under garant)
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("garant_id", profile.id)
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!profile?.id && profile?.role === "garant",
+  });
+
+  // Vedoucí: monthly BJ for entire subtree
+  const periodStart = getProductionPeriodStart(now);
+  const periodEnd = getProductionPeriodEnd(now);
+
+  const { data: vedouciMonthlyBj = 0 } = useQuery({
+    queryKey: ["vedouci_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from("activity_records")
+        .select("bj")
+        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
+        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
+      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+    },
+    enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  // Vedoucí: monthly_bj_goal from profile
+  const monthlyBjGoal = (profile as any)?.monthly_bj_goal || 0;
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInputValue, setGoalInputValue] = useState("");
+
+  const updateGoalMutation = useMutation({
+    mutationFn: async (newGoal: number) => {
+      if (!profile?.id) throw new Error("No user");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ monthly_bj_goal: newGoal } as any)
+        .eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingGoal(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      // Refetch profile in auth context
+      window.location.reload();
+    },
+  });
 
   // Mobile week record query
   const { data: mobileWeekRecords = [] } = useQuery({
