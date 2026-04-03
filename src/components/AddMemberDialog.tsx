@@ -15,6 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const roleLabels: Record<string, string> = {
+  vedouci: "Vedoucí",
+  garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
+};
+
 interface AddMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
