@@ -95,6 +95,7 @@ export type Database = {
         Row: {
           bj: number
           cancelled: boolean
+          case_name: string | null
           created_at: string
           date: string
           has_pohovor: boolean
@@ -103,8 +104,10 @@ export type Database = {
           id: string
           meeting_type: string
           podepsane_bj: number
+          pohovor_date: string | null
           pohovor_doporuceni: number
           pohovor_jde_dal: boolean | null
+          poradko_date: string | null
           poradko_doporuceni: number
           poradko_pohovor_doporuceni: number
           poradko_pohovor_jde_dal: boolean | null
@@ -119,6 +122,7 @@ export type Database = {
         Insert: {
           bj?: number
           cancelled?: boolean
+          case_name?: string | null
           created_at?: string
           date: string
           has_pohovor?: boolean
@@ -127,8 +131,10 @@ export type Database = {
           id?: string
           meeting_type: string
           podepsane_bj?: number
+          pohovor_date?: string | null
           pohovor_doporuceni?: number
           pohovor_jde_dal?: boolean | null
+          poradko_date?: string | null
           poradko_doporuceni?: number
           poradko_pohovor_doporuceni?: number
           poradko_pohovor_jde_dal?: boolean | null
@@ -143,6 +149,7 @@ export type Database = {
         Update: {
           bj?: number
           cancelled?: boolean
+          case_name?: string | null
           created_at?: string
           date?: string
           has_pohovor?: boolean
@@ -151,8 +158,10 @@ export type Database = {
           id?: string
           meeting_type?: string
           podepsane_bj?: number
+          pohovor_date?: string | null
           pohovor_doporuceni?: number
           pohovor_jde_dal?: boolean | null
+          poradko_date?: string | null
           poradko_doporuceni?: number
           poradko_pohovor_doporuceni?: number
           poradko_pohovor_jde_dal?: boolean | null

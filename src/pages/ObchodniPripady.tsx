@@ -14,7 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
-type MeetingType = "FSA" | "SER";
+type MeetingType = "FSA" | "POH" | "SER";
 type TimeFilter = "this_week" | "last_week" | "this_period";
 
 interface Meeting {
@@ -40,6 +40,9 @@ interface Meeting {
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: number;
+  case_name: string | null;
+  poradko_date: string | null;
+  pohovor_date: string | null;
 }
 
 interface MeetingForm {
@@ -50,14 +53,17 @@ interface MeetingForm {
   has_poradko: boolean;
   podepsane_bj: string;
   poradko_doporuceni: string;
+  poradko_date: string;
   has_poradko_pohovor: boolean;
   poradko_pohovor_jde_dal: boolean | null;
   poradko_pohovor_doporuceni: string;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: string;
+  pohovor_date: string;
   ref_count: string;
   poznamka: string;
+  case_name: string;
 }
 
 const defaultForm = (): MeetingForm => ({
@@ -68,14 +74,17 @@ const defaultForm = (): MeetingForm => ({
   has_poradko: false,
   podepsane_bj: "",
   poradko_doporuceni: "0",
+  poradko_date: "",
   has_poradko_pohovor: false,
   poradko_pohovor_jde_dal: null,
   poradko_pohovor_doporuceni: "0",
   has_pohovor: false,
   pohovor_jde_dal: null,
   pohovor_doporuceni: "0",
+  pohovor_date: "",
   ref_count: "0",
   poznamka: "",
+  case_name: "",
 });
 
 // ─── Helper: toggle switch ───────────────────────────────────────────────────
@@ -159,46 +168,55 @@ function MeetingModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* Zrušená */}
+        {/* Název případu */}
         <div className="mb-4">
-          <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Název případu</label>
+          <input
+            type="text"
+            value={form.case_name}
+            onChange={(e) => set({ case_name: e.target.value })}
+            placeholder="Nepovinné…"
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* Datum */}
+        {!form.cancelled && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set({ date: e.target.value })}
+              className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        )}
+
+        {/* Typ schůzky */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
+          <div className="flex gap-2">
+            {(["FSA", "POH", "SER"] as MeetingType[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => set({ meeting_type: t })}
+                className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${
+                  form.meeting_type === t
+                    ? "border-transparent text-white"
+                    : "border-input bg-background text-muted-foreground hover:border-ring"
+                }`}
+                style={form.meeting_type === t ? { background: "#00abbd" } : {}}
+              >
+                {t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis"}
+              </button>
+            ))}
+          </div>
         </div>
 
         {!form.cancelled && (
           <>
-            {/* Datum */}
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => set({ date: e.target.value })}
-                className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-
-            {/* Typ schůzky */}
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
-              <div className="flex gap-2">
-                {(["FSA", "SER"] as MeetingType[]).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => set({ meeting_type: t })}
-                    className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${
-                      form.meeting_type === t
-                        ? "border-transparent text-white"
-                        : "border-input bg-background text-muted-foreground hover:border-ring"
-                    }`}
-                    style={form.meeting_type === t ? { background: "#00abbd" } : {}}
-                  >
-                    {t === "FSA" ? "Analýza" : "Servis"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Potenciál BJ — jen FSA */}
             {form.meeting_type === "FSA" && (
               <div className="mb-4">
@@ -206,47 +224,72 @@ function MeetingModal({
               </div>
             )}
 
-            {/* ── Sekce Poradko ── */}
-            <div className="mb-4 p-3 rounded-xl border border-input">
-              <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
-              {form.has_poradko && (
-                <div className="mt-3 space-y-3 pl-1">
-                  <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
-                  <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
-                  <div className="p-2 rounded-lg bg-muted/50">
-                    <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
-                    {form.has_poradko_pohovor && (
-                      <div className="mt-2 space-y-2 pl-1">
-                        <div className="flex gap-2">
-                          {[true, false].map((val) => (
-                            <button
-                              key={String(val)}
-                              type="button"
-                              onClick={() => set({ poradko_pohovor_jde_dal: val })}
-                              className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
-                                form.poradko_pohovor_jde_dal === val
-                                  ? "border-transparent text-white"
-                                  : "border-input bg-background text-muted-foreground"
-                              }`}
-                              style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
-                            >
-                              {val ? "Jde dál" : "Nejde dál"}
-                            </button>
-                          ))}
-                        </div>
-                        <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+            {/* Zrušená — between Potenciál BJ and Poradenství */}
+            <div className="mb-4">
+              <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
             </div>
+
+            {/* ── Sekce Poradko ── */}
+            {form.meeting_type !== "POH" && (
+              <div className="mb-4 p-3 rounded-xl border border-input">
+                <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
+                {form.has_poradko && (
+                  <div className="mt-3 space-y-3 pl-1">
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Datum poradenství</label>
+                      <input
+                        type="date"
+                        value={form.poradko_date}
+                        onChange={(e) => set({ poradko_date: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                    <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                    <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
+                    <div className="p-2 rounded-lg bg-muted/50">
+                      <Toggle checked={form.has_poradko_pohovor} onChange={(v) => set({ has_poradko_pohovor: v })} label="Pohovor" />
+                      {form.has_poradko_pohovor && (
+                        <div className="mt-2 space-y-2 pl-1">
+                          <div className="flex gap-2">
+                            {[true, false].map((val) => (
+                              <button
+                                key={String(val)}
+                                type="button"
+                                onClick={() => set({ poradko_pohovor_jde_dal: val })}
+                                className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
+                                  form.poradko_pohovor_jde_dal === val
+                                    ? "border-transparent text-white"
+                                    : "border-input bg-background text-muted-foreground"
+                                }`}
+                                style={form.poradko_pohovor_jde_dal === val ? { background: val ? "#00abbd" : "#fc7c71" } : {}}
+                              >
+                                {val ? "Jde dál" : "Nejde dál"}
+                              </button>
+                            ))}
+                          </div>
+                          <NumberInput label="Doporučení" value={form.poradko_pohovor_doporuceni} onChange={(v) => set({ poradko_pohovor_doporuceni: v })} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Sekce Pohovor (přímý) ── */}
             <div className="mb-4 p-3 rounded-xl border border-input">
               <Toggle checked={form.has_pohovor} onChange={(v) => set({ has_pohovor: v })} label="Pohovor" />
               {form.has_pohovor && (
                 <div className="mt-3 space-y-3 pl-1">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Datum pohovoru</label>
+                    <input
+                      type="date"
+                      value={form.pohovor_date}
+                      onChange={(e) => set({ pohovor_date: e.target.value })}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     {[true, false].map((val) => (
                       <button
@@ -274,6 +317,13 @@ function MeetingModal({
               <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
             </div>
           </>
+        )}
+
+        {/* If cancelled, show toggle here too so user can uncancel */}
+        {form.cancelled && (
+          <div className="mb-4">
+            <Toggle checked={form.cancelled} onChange={(v) => set({ cancelled: v })} label="Zrušená schůzka" />
+          </div>
         )}
 
         {/* Poznámka — vždy viditelná */}
@@ -305,6 +355,17 @@ function MeetingModal({
 
 function totalRefs(m: Meeting): number {
   return (m.ref_count || 0) + (m.poradko_doporuceni || 0) + (m.pohovor_doporuceni || 0) + (m.poradko_pohovor_doporuceni || 0);
+}
+
+function meetingTypeLabel(t: MeetingType): string {
+  return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
+}
+
+function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
+  if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
+  if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
+  if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
+  return { background: "#fef3f2", color: "#c0392b" };
 }
 
 // ─── Hlavní komponenta ────────────────────────────────────────────────────────
@@ -357,6 +418,7 @@ export default function ObchodniPripady() {
     const active = meetings.filter((m) => !m.cancelled);
     return {
       fsa: active.filter((m) => m.meeting_type === "FSA").length,
+      poh: active.filter((m) => m.meeting_type === "POH").length,
       ser: active.filter((m) => m.meeting_type === "SER").length,
       bj: active.reduce((s, m) => s + (m.podepsane_bj || 0), 0),
       ref: active.reduce((s, m) => s + totalRefs(m), 0),
@@ -372,18 +434,21 @@ export default function ObchodniPripady() {
         date: form.cancelled ? format(new Date(), "yyyy-MM-dd") : form.date,
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
+        case_name: form.case_name.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? (parseFloat(form.potencial_bj) || null) : null,
-        has_poradko: !form.cancelled && form.has_poradko,
-        podepsane_bj: !form.cancelled && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
-        poradko_doporuceni: !form.cancelled && form.has_poradko ? (parseInt(form.poradko_doporuceni) || 0) : 0,
-        has_poradko_pohovor: !form.cancelled && form.has_poradko && form.has_poradko_pohovor,
-        poradko_pohovor_jde_dal: !form.cancelled && form.has_poradko && form.has_poradko_pohovor ? form.poradko_pohovor_jde_dal : null,
-        poradko_pohovor_doporuceni: !form.cancelled && form.has_poradko && form.has_poradko_pohovor ? (parseInt(form.poradko_pohovor_doporuceni) || 0) : 0,
+        has_poradko: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko,
+        podepsane_bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
+        poradko_doporuceni: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseInt(form.poradko_doporuceni) || 0) : 0,
+        poradko_date: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_date ? form.poradko_date : null,
+        has_poradko_pohovor: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor,
+        poradko_pohovor_jde_dal: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor ? form.poradko_pohovor_jde_dal : null,
+        poradko_pohovor_doporuceni: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.has_poradko_pohovor ? (parseInt(form.poradko_pohovor_doporuceni) || 0) : 0,
         has_pohovor: !form.cancelled && form.has_pohovor,
         pohovor_jde_dal: !form.cancelled && form.has_pohovor ? form.pohovor_jde_dal : null,
         pohovor_doporuceni: !form.cancelled && form.has_pohovor ? (parseInt(form.pohovor_doporuceni) || 0) : 0,
+        pohovor_date: !form.cancelled && form.has_pohovor && form.pohovor_date ? form.pohovor_date : null,
         // Keep legacy fields in sync
-        bj: !form.cancelled && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
+        bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
         ref_count: !form.cancelled ? (parseInt(form.ref_count) || 0) : 0,
         vizi_spoluprace: !form.cancelled && form.has_pohovor && form.pohovor_jde_dal === true,
         poznamka: form.poznamka.trim() || null,
@@ -442,14 +507,17 @@ export default function ObchodniPripady() {
         has_poradko: editMeeting.has_poradko,
         podepsane_bj: String(editMeeting.podepsane_bj || ""),
         poradko_doporuceni: String(editMeeting.poradko_doporuceni || 0),
+        poradko_date: editMeeting.poradko_date || "",
         has_poradko_pohovor: editMeeting.has_poradko_pohovor,
         poradko_pohovor_jde_dal: editMeeting.poradko_pohovor_jde_dal,
         poradko_pohovor_doporuceni: String(editMeeting.poradko_pohovor_doporuceni || 0),
         has_pohovor: editMeeting.has_pohovor,
         pohovor_jde_dal: editMeeting.pohovor_jde_dal,
         pohovor_doporuceni: String(editMeeting.pohovor_doporuceni || 0),
+        pohovor_date: editMeeting.pohovor_date || "",
         ref_count: String(editMeeting.ref_count || 0),
         poznamka: editMeeting.poznamka || "",
+        case_name: editMeeting.case_name || "",
       }
     : defaultForm();
 
@@ -497,9 +565,10 @@ export default function ObchodniPripady() {
       </div>
 
       {/* Statistiky */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Analýzy (FSA)", value: stats.fsa, sub: "schůzek" },
+          { label: "Pohovory", value: stats.poh, sub: "schůzek" },
           { label: "Servisy (SER)", value: stats.ser, sub: "schůzek" },
           { label: "Podepsané BJ", value: stats.bj % 1 === 0 ? stats.bj : stats.bj.toFixed(1), sub: "bodů" },
           { label: "Doporučení", value: stats.ref, sub: "kontaktů" },
@@ -540,12 +609,11 @@ export default function ObchodniPripady() {
                   <span
                     className="text-xs font-semibold px-2 py-0.5 rounded-full"
                     style={{
-                      background: m.cancelled ? "#e5e7eb" : m.meeting_type === "FSA" ? "#e0f5f7" : "#fef3f2",
-                      color: m.cancelled ? "#6b7280" : m.meeting_type === "FSA" ? "#00737f" : "#c0392b",
+                      ...meetingTypeBadgeStyle(m.meeting_type, m.cancelled),
                       textDecoration: m.cancelled ? "line-through" : undefined,
                     }}
                   >
-                    {m.meeting_type === "FSA" ? "Analýza" : "Servis"}
+                    {meetingTypeLabel(m.meeting_type)}
                   </span>
                   {!m.cancelled && (
                     <span className="font-body text-sm text-muted-foreground">
@@ -610,12 +678,9 @@ export default function ObchodniPripady() {
                       <td>
                         <span
                           className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-                          style={{
-                            background: m.cancelled ? "#e5e7eb" : m.meeting_type === "FSA" ? "#e0f5f7" : "#fef3f2",
-                            color: m.cancelled ? "#6b7280" : m.meeting_type === "FSA" ? "#00737f" : "#c0392b",
-                          }}
+                          style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
                         >
-                          {m.meeting_type === "FSA" ? "Analýza" : "Servis"}
+                          {meetingTypeLabel(m.meeting_type)}
                         </span>
                       </td>
                       <td className="font-semibold" style={{ color: "#0c2226" }}>
