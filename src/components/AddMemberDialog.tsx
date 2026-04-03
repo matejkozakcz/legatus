@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PersonPicker } from "@/components/PersonPicker";
 
 const roleLabels: Record<string, string> = {
   vedouci: "Vedoucí",
