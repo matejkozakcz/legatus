@@ -1,62 +1,67 @@
 
 
-## Plan: Karta "Stav byznysu" s tachometry na Dashboardu
+## Plán: Self-registrace s onboardingem
 
 ### Přehled
 
-Na desktop Dashboardu se vedle "Moje struktura" objeví nová karta **Stav byznysu** (2/5 šířky vlevo, struktura 3/5 vpravo). Obsahuje dva polokruhové tachometry, jejichž obsah závisí na roli uživatele. Pro Vedoucího přibude nastavitelný měsíční cíl BJ (nový sloupec v DB).
+Login stránka dostane tlačítko "Vytvořit účet" pro email/heslo registraci. OAuth (Google/Apple) automaticky vytvoří účet, pokud neexistuje (to už funguje přes `handle_new_user` trigger). Po první registraci se nový uživatel místo přesměrování na dashboard dostane do onboarding modalu, kde vyplní své údaje.
 
 ### Databáze
 
-**Migrace**: Přidat sloupec `monthly_bj_goal` (integer, default 0, nullable) do tabulky `profiles`. Vedoucí si ho bude moci nastavit v dashboardu.
+**Migrace** — přidat sloupec `ziskatel_name` (text, nullable) do `profiles` pro případ, kdy Získatel není v systému:
 
-### Nová komponenta: `src/components/GaugeIndicator.tsx`
-
-SVG polokruhový tachometr (arc 180°). Props: `value`, `max`, `label`, `sublabel`. Vyplnění oblouku = `value/max`. Barvy: teal gradient pro výplň, šedá pro pozadí. Uprostřed velké číslo `value` a pod ním `z max`.
-
-Placeholder varianta (pro Nováčka): šedý oblouk, text "—".
-
-### Změny v `src/pages/Dashboard.tsx` (desktop sekce)
-
-**1. Layout**: Sekce "Moje struktura" se obalí do flexboxu s kartou "Stav byznysu":
-
-```text
-┌─────────────┬───────────────────┐
-│ Stav byznysu│   Moje struktura  │
-│   (40%)     │      (60%)        │
-│ [Gauge 1]   │                   │
-│ [Gauge 2]   │    OrgChart       │
-└─────────────┴───────────────────┘
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ziskatel_name text;
 ```
 
-**2. Data queries per role**:
+Dále přidat sloupec `onboarding_completed` (boolean, default false):
 
-| Role | Gauge 1 | Gauge 2 |
-|------|---------|---------|
-| Nováček | Placeholder | Placeholder |
-| Získatel | BJ progress (cumul. x / 1000) — tachometr | Velký text "X z 1 000 BJ" (bez tachometru) |
-| Garant | Přímí podřízení (x / 3) — query `profiles` kde `garant_id = me` | Lidé ve struktuře (x / 10) — recursive count |
-| Vedoucí | BJ tento měsíc vs. `monthly_bj_goal` — sum `bj` z `activity_records` za production period | Velký text: aktuální BJ / plán (stejná data, jiný formát) |
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_completed boolean DEFAULT false;
+```
 
-**3. Vedoucí goal edit**: Malé editovací tlačítko u 1. tachometru → inline input pro nastavení `monthly_bj_goal` → upsert do `profiles`.
+### Změny
 
-**4. Queries**:
-- Získatel: reuse `allBjData` query (cumulative BJ all-time), move from mobile-only
-- Garant: nový query na `profiles` count kde `garant_id = user.id` + recursive subtree count
-- Vedoucí: nový query na `activity_records` sum `bj` za aktuální production period pro celý subtree
+| Krok | Soubor | Co |
+|------|--------|----|
+| 1 | DB migrace | Přidat `ziskatel_name` a `onboarding_completed` do profiles |
+| 2 | `src/pages/Login.tsx` | Přidat tlačítko "Vytvořit účet" — přepne formulář do režimu registrace (email + heslo + potvrzení hesla), volá `supabase.auth.signUp()` |
+| 3 | `src/components/OnboardingModal.tsx` | Nový komponent — modal se stejným vizuálem jako login karta (bílý, rounded 28px). Obsahuje: avatar upload (kruhový, kliknutelný), jméno + příjmení vedle sebe, PersonPicker pro Vedoucího (vyhledávání mezi všemi vedoucími), PersonPicker pro Získatele + textový input jako fallback |
+| 4 | `src/contexts/AuthContext.tsx` | Rozšířit `Profile` interface o `onboarding_completed` a `ziskatel_name`. Přidat `needsOnboarding` boolean do kontextu (true pokud profil existuje ale `onboarding_completed === false`) a `refetchProfile` funkci |
+| 5 | `src/pages/Login.tsx` | Po přihlášení/registraci: pokud `needsOnboarding`, zobrazit `OnboardingModal` místo redirect na dashboard |
+| 6 | RLS | Přidat SELECT policy na profiles pro čtení vedoucích (role='vedouci') všemi authenticated uživateli — potřeba pro PersonPicker v onboardingu |
 
-### Soubory
+### Onboarding modal — detail
 
-| Soubor | Akce |
-|--------|------|
-| `supabase/migrations/...` | ADD `monthly_bj_goal integer default 0` to profiles |
-| `src/components/GaugeIndicator.tsx` | CREATE — SVG tachometr |
-| `src/pages/Dashboard.tsx` | EDIT — přidat kartu Stav byznysu, layout 2/5+3/5, role-based obsah |
+- Vizuálně jako login karta (bílé pozadí, border-radius 28px, shadow)
+- Zobrazí se jako overlay nad login pozadím
+- **Avatar**: kruhový placeholder s ikonou Camera, klik otevře file picker, upload do `avatars` bucketu
+- **Jméno / Příjmení**: dva inputy vedle sebe, povinné
+- **Vedoucí**: PersonPicker, načte všechny profily s `role = 'vedouci'` a `is_active = true`
+- **Získatel**: PersonPicker se všemi lidmi pod vybraným vedoucím. Pod ním checkbox/odkaz "Získatel není v systému" → zobrazí textový input `ziskatel_name` místo pickeru, vedoucí se automaticky stane získatelem
+- **Tlačítko "Dokončit"**: uloží `full_name`, `vedouci_id`, `garant_id` (= vedoucí), `ziskatel_id` nebo `ziskatel_name`, `avatar_url`, `onboarding_completed = true`
+
+### RLS pro onboarding
+
+Nová SELECT policy na profiles:
+```sql
+CREATE POLICY "Authenticated can view vedouci profiles"
+ON public.profiles FOR SELECT TO authenticated
+USING (role = 'vedouci' AND is_active = true);
+```
+
+Nová SELECT policy pro čtení členů pod vedoucím (pro získatel picker):
+```sql
+CREATE POLICY "Authenticated can view members under vedouci"
+ON public.profiles FOR SELECT TO authenticated
+USING (is_active = true AND vedouci_id IS NOT NULL);
+```
 
 ### Technické detaily
 
-- SVG arc: `stroke-dasharray` + `stroke-dashoffset` na `<circle>` s `transform: rotate` pro polokruh
-- Garant subtree count: query all profiles where `vedouci_id` matches or recursively under garant — simplified via counting profiles where `garant_id = me` (direct) and a broader query for structure
-- Production period dates from `getProductionPeriodStart/End`
-- RLS already allows vedoucí to read subtree activity_records
+- Registrace přes `supabase.auth.signUp({ email, password })` — trigger `handle_new_user` automaticky vytvoří profil s `role = 'novacek'`, `is_active = true`, `onboarding_completed = false`
+- OAuth registrace funguje stejně — trigger vytvoří profil, onboarding se zobrazí díky `onboarding_completed = false`
+- Avatar upload používá stejný pattern jako `ProfileSettingsModal` — upload do `avatars` bucketu, public URL
+- Garant se při onboardingu nastaví automaticky na vedoucího (nováček nemá ještě garanta, vedoucí ho přiřadí později)
+- Auto-confirm email: bude potřeba zapnout, jinak uživatel nemůže pokračovat bez verifikace emailu
 
