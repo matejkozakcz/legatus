@@ -284,6 +284,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvené",
       actualKey: "fsa_actual" as ActivityKey,
       actualLabel: "Proběhlé",
+      actualSynced: true,
     },
     {
       label: "Poradka",
@@ -291,6 +292,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvená",
       actualKey: "ser_actual" as ActivityKey,
       actualLabel: "Proběhlá",
+      actualSynced: true,
     },
     {
       label: "Pohovory",
@@ -298,6 +300,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvené",
       actualKey: "poh_actual" as ActivityKey,
       actualLabel: "Proběhlé",
+      actualSynced: true,
     },
   ] as const;
 
