@@ -303,6 +303,33 @@ const SpravaTeam = () => {
   const checkPromotions = useCallback(async () => {
     if (profile?.role !== "vedouci" || members.length === 0) return;
 
+    // Build child map for structure counting
+    const memberMap = new Map(members.map((m) => [m.id, m]));
+    const childMap = new Map<string, string[]>();
+    members.forEach((m) => {
+      const parentId = m.ziskatel_id;
+      if (parentId) {
+        if (!childMap.has(parentId)) childMap.set(parentId, []);
+        childMap.get(parentId)!.push(m.id);
+      }
+    });
+
+    const countStructure = (rootId: string): number => {
+      let total = 0;
+      const queue = [...(childMap.get(rootId) || [])];
+      while (queue.length > 0) {
+        const id = queue.shift()!;
+        total++;
+        queue.push(...(childMap.get(id) || []));
+      }
+      return total;
+    };
+
+    const countDirectSubordinates = (id: string): number => {
+      return (childMap.get(id) || []).length;
+    };
+
+    // Získatel → Garant: 2 people in structure + 1000 BJ personal
     const ziskatels = members.filter((m) => m.role === "ziskatel");
     if (ziskatels.length > 0) {
       const ziskatelIds = ziskatels.map((m) => m.id);
@@ -318,55 +345,51 @@ const SpravaTeam = () => {
 
       for (const candidate of ziskatels) {
         const cumulativeBj = bjByUser.get(candidate.id) || 0;
-        if (cumulativeBj >= 1000) {
+        const structureCount = countStructure(candidate.id);
+        if (cumulativeBj >= 1000 && structureCount >= 2) {
           await supabase.from("promotion_requests").upsert(
-            { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj },
+            { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj, direct_ziskatels: structureCount },
             { onConflict: "user_id,requested_role", ignoreDuplicates: true }
           );
         }
       }
     }
 
+    // Garant → Budoucí vedoucí: 5 people in structure, min 3 direct
     const garanty = members.filter((m) => m.role === "garant");
-    if (garanty.length > 0) {
-      const memberMap = new Map(members.map((m) => [m.id, m]));
-      const childMap = new Map<string, string[]>();
-      members.forEach((m) => {
-        const parentId = m.ziskatel_id;
-        if (parentId) {
-          if (!childMap.has(parentId)) childMap.set(parentId, []);
-          childMap.get(parentId)!.push(m.id);
-        }
-      });
+    for (const candidate of garanty) {
+      const directCount = countDirectSubordinates(candidate.id);
+      const structureCount = countStructure(candidate.id);
+      if (structureCount >= 5 && directCount >= 3) {
+        await supabase.from("promotion_requests").upsert(
+          {
+            user_id: candidate.id,
+            requested_role: "budouci_vedouci",
+            status: "pending",
+            direct_ziskatels: directCount,
+            cumulative_bj: structureCount,
+          },
+          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+        );
+      }
+    }
 
-      const countTotalZiskatels = (rootId: string): number => {
-        let total = 0;
-        const queue = [...(childMap.get(rootId) || [])];
-        while (queue.length > 0) {
-          const id = queue.shift()!;
-          const m = memberMap.get(id);
-          if (m?.role === "ziskatel") total++;
-          queue.push(...(childMap.get(id) || []));
-        }
-        return total;
-      };
-
-      for (const candidate of garanty) {
-        const directZiskatels = (childMap.get(candidate.id) || [])
-          .filter((id) => memberMap.get(id)?.role === "ziskatel").length;
-        const totalZiskatels = countTotalZiskatels(candidate.id);
-        if (totalZiskatels >= 10 && directZiskatels >= 3) {
-          await supabase.from("promotion_requests").upsert(
-            {
-              user_id: candidate.id,
-              requested_role: "vedouci",
-              status: "pending",
-              direct_ziskatels: directZiskatels,
-              cumulative_bj: totalZiskatels,
-            },
-            { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-          );
-        }
+    // Budoucí vedoucí → Vedoucí: 10 people in structure, min 6 direct
+    const bvs = members.filter((m) => m.role === "budouci_vedouci");
+    for (const candidate of bvs) {
+      const directCount = countDirectSubordinates(candidate.id);
+      const structureCount = countStructure(candidate.id);
+      if (structureCount >= 10 && directCount >= 6) {
+        await supabase.from("promotion_requests").upsert(
+          {
+            user_id: candidate.id,
+            requested_role: "vedouci",
+            status: "pending",
+            direct_ziskatels: directCount,
+            cumulative_bj: structureCount,
+          },
+          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
+        );
       }
     }
 
