@@ -7,7 +7,8 @@ import {
   format, parseISO,
 } from "date-fns";
 import { cs } from "date-fns/locale";
-import { getProductionPeriodStart, getProductionPeriodEnd } from "@/lib/productionPeriod";
+import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
+import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { Plus, X, Loader2, Pencil, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
