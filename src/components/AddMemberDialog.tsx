@@ -85,15 +85,13 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
       const list = (data || []) as { id: string; full_name: string; role: string; garant_id: string | null }[];
 
       if (profile.role === "vedouci") {
-        // Vedoucí can assign to self or anyone in subtree
         const selfInList = list.some((p) => p.id === profile.id);
-        if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role });
+        if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
         return list;
       } else {
-        // Garant can assign to self or their own subordinates
         const myPeople = list.filter((p) => p.id === profile.id || p.garant_id === profile.id);
         const selfInList = myPeople.some((p) => p.id === profile.id);
-        if (!selfInList) myPeople.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role });
+        if (!selfInList) myPeople.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
         return myPeople;
       }
     },
