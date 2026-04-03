@@ -426,7 +426,7 @@ export default function ObchodniPripady() {
       fsa: active.filter((m) => m.meeting_type === "FSA").length,
       poh: active.filter((m) => m.meeting_type === "POH").length,
       ser: active.filter((m) => m.meeting_type === "SER").length,
-      bj: active.reduce((s, m) => s + (m.podepsane_bj || 0), 0),
+      bj: active.filter((m) => m.poradko_status === "probehle").reduce((s, m) => s + (m.podepsane_bj || 0), 0),
       ref: active.reduce((s, m) => s + totalRefs(m), 0),
       cancelled: meetings.filter((m) => m.cancelled).length,
     };
