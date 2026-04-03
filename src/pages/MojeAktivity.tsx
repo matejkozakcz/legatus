@@ -179,8 +179,6 @@ const MojeAktivity = () => {
           ...(existing || {}),
           [key]: value,
         };
-        // Auto-calculate BJ = BJ FSA + BJ SER
-        updated.bj = (updated.bj_fsa_actual || 0) + (updated.bj_ser_actual || 0);
         upsertMutation.mutate(updated);
       }, 500);
     },
