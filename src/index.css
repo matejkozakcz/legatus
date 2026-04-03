@@ -421,6 +421,7 @@
   /* ===== Mobile page wrapper ===== */
   .mobile-page {
     padding: 16px 16px 0;
+    padding-top: max(16px, env(safe-area-inset-top, 16px));
   }
   .mobile-page-header {
     padding: 12px 0 16px;
