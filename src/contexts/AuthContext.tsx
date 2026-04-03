@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
-    setProfile(data as Profile);
+    setProfile(data as unknown as Profile);
   }, []);
 
   const refetchProfile = useCallback(async () => {
