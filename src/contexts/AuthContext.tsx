@@ -12,6 +12,7 @@ interface Profile {
   ziskatel_id: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  is_admin: boolean;
   monthly_bj_goal: number | null;
   onboarding_completed: boolean | null;
   ziskatel_name: string | null;
@@ -23,6 +24,9 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   needsOnboarding: boolean;
+  isAdmin: boolean;
+  godMode: boolean;
+  toggleGodMode: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
@@ -30,11 +34,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const GOD_MODE_KEY = "legatus_godmode";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [godMode, setGodMode] = useState<boolean>(() => {
+    try { return localStorage.getItem(GOD_MODE_KEY) === "true"; } catch { return false; }
+  });
+
+  const isAdmin = profile?.is_admin === true;
+
+  const toggleGodMode = useCallback(() => {
+    if (!isAdmin) return;
+    setGodMode((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(GOD_MODE_KEY, String(next)); } catch {}
+      return next;
+    });
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin && godMode) {
+      setGodMode(false);
+      try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
+    }
+  }, [isAdmin, godMode]);
 
   const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
     const { data, error } = await supabase
@@ -117,12 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
+    setGodMode(false);
+    try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
   };
 
   const needsOnboarding = !!profile && profile.onboarding_completed === false;
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, signIn, signOut, refetchProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

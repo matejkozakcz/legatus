@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, isAdmin, godMode, toggleGodMode } = useAuth();
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const didLongPress = useRef(false);
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -35,6 +38,43 @@ export function MobileBottomNav() {
     : "?";
 
   const isDashboardActive = location.pathname === "/dashboard";
+
+  // Long-press 600 ms → toggle godMode (pouze admin)
+  const handlePressStart = () => {
+    if (!isAdmin) return;
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      toggleGodMode();
+    }, 600);
+  };
+
+  const handlePressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (!didLongPress.current) {
+      navigate("/dashboard");
+    }
+    didLongPress.current = false;
+  };
+
+  const handlePressCancel = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    didLongPress.current = false;
+  };
+
+  // Godmode styl: coral místo teal
+  const avatarBorder = godMode ? "3px solid #fc7c71" : isDashboardActive ? "3px solid #00abbd" : "3px solid white";
+  const avatarShadow = godMode
+    ? "0 4px 20px rgba(252,124,113,0.5)"
+    : isDashboardActive
+    ? "0 4px 20px rgba(0,171,189,0.4)"
+    : "0 4px 20px rgba(0,85,95,0.25)";
 
   return (
     <div
@@ -98,20 +138,25 @@ export function MobileBottomNav() {
         >
           <div style={{ position: "relative" }}>
             <button
-              onClick={() => navigate("/dashboard")}
+              onPointerDown={handlePressStart}
+              onPointerUp={handlePressEnd}
+              onPointerLeave={handlePressCancel}
+              onPointerCancel={handlePressCancel}
               style={{
                 width: 60,
                 height: 60,
                 borderRadius: "50%",
-                border: isDashboardActive ? "3px solid #00abbd" : "3px solid white",
-                boxShadow: isDashboardActive ? "0 4px 20px rgba(0,171,189,0.4)" : "0 4px 20px rgba(0,85,95,0.25)",
+                border: avatarBorder,
+                boxShadow: avatarShadow,
                 overflow: "hidden",
                 cursor: "pointer",
-                background: "#00555f",
+                background: godMode ? "#fc7c71" : "#00555f",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.2s",
+                transition: "all 0.25s",
+                WebkitTapHighlightColor: "transparent",
+                userSelect: "none",
               }}
               aria-label="Dashboard"
             >
@@ -119,7 +164,13 @@ export function MobileBottomNav() {
                 <img
                   src={profile.avatar_url}
                   alt={initials}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    opacity: godMode ? 0.75 : 1,
+                    transition: "opacity 0.25s",
+                  }}
                 />
               ) : (
                 <span
@@ -135,7 +186,8 @@ export function MobileBottomNav() {
                 </span>
               )}
             </button>
-            {/* Notification badge */}
+
+            {/* Notification badge — top right */}
             {unreadCount > 0 && (
               <div style={{
                 position: "absolute",
@@ -150,29 +202,46 @@ export function MobileBottomNav() {
                 alignItems: "center",
                 justifyContent: "center",
               }}>
-                <span style={{
-                  fontSize: 9,
-                  fontWeight: 800,
-                  color: "white",
-                  lineHeight: 1,
-                }}>
+                <span style={{ fontSize: 9, fontWeight: 800, color: "white", lineHeight: 1 }}>
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               </div>
             )}
+
+            {/* Godmode indicator — bottom right */}
+            {godMode && (
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                right: -2,
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                background: "white",
+                border: "1.5px solid #fc7c71",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 9,
+                lineHeight: 1,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+              }}>
+                ⚡
+              </div>
+            )}
           </div>
-          <div
-            style={{
-              textAlign: "center",
-              marginTop: 5,
-              fontSize: 10,
-              fontWeight: 600,
-              color: isDashboardActive ? "#00abbd" : "#8aadb3",
-              letterSpacing: "0.02em",
-              fontFamily: "Open Sans, sans-serif",
-            }}
-          >
-            Dashboard
+
+          <div style={{
+            textAlign: "center",
+            marginTop: 5,
+            fontSize: 10,
+            fontWeight: 600,
+            color: godMode ? "#fc7c71" : isDashboardActive ? "#00abbd" : "#8aadb3",
+            letterSpacing: "0.02em",
+            fontFamily: "Open Sans, sans-serif",
+            transition: "color 0.25s",
+          }}>
+            {godMode ? "Admin ⚡" : "Dashboard"}
           </div>
         </div>
       </div>
@@ -208,17 +277,15 @@ function NavButton({
       }}
     >
       <Icon size={22} color={active ? "#00abbd" : "#8aadb3"} style={{ transition: "color 0.2s" }} />
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: active ? "#00abbd" : "#8aadb3",
-          letterSpacing: "0.02em",
-          transition: "color 0.2s",
-          fontFamily: "Open Sans, sans-serif",
-          whiteSpace: "nowrap",
-        }}
-      >
+      <span style={{
+        fontSize: 10,
+        fontWeight: 600,
+        color: active ? "#00abbd" : "#8aadb3",
+        letterSpacing: "0.02em",
+        transition: "color 0.2s",
+        fontFamily: "Open Sans, sans-serif",
+        whiteSpace: "nowrap",
+      }}>
         {label}
       </span>
     </button>
