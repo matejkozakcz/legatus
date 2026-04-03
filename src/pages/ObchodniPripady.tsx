@@ -614,49 +614,189 @@ export default function ObchodniPripady() {
     return parts.join(" · ") || "—";
   };
 
+  const MONTH_NAMES = [
+    "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
+    "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
+  ];
+
+  const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
+  const mobilePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!mobilePickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (mobilePickerRef.current && !mobilePickerRef.current.contains(e.target as Node)) setMobilePickerOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [mobilePickerOpen]);
+
   // ── Render ──
   return (
-    <div className={isMobile ? "mobile-page space-y-6" : "space-y-8"}>
-      {/* Záhlaví */}
-      <div className="flex items-center justify-between" style={isMobile ? { paddingTop: 16 } : undefined}>
-        <div className="flex items-center gap-3">
-          <Briefcase className="h-6 w-6" style={{ color: "#0c2226" }} />
-          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
-            Obchodní případy
-          </h1>
-        </div>
-        <button onClick={openAdd} className="btn btn-primary btn-md flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          {!isMobile && "Nová schůzka"}
-        </button>
-      </div>
+    <div className={isMobile ? "mobile-page space-y-4" : "space-y-8"}>
+      {isMobile ? (
+        <>
+          {/* Mobile: Add button above period bar */}
+          <div style={{ paddingTop: 16 }}>
+            <button onClick={openAdd} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nová schůzka
+            </button>
+          </div>
 
-      {/* Filtry */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {!isMobile && (
-          <ProductionMonthPicker
-            selectedYear={selectedYear}
-            selectedMonth={selectedMonth}
-            onChange={(y, m) => {
-              setSelectedYear(y);
-              setSelectedMonth(m);
-              setTimeFilter("this_period");
+          {/* Mobile: Period navigation bar */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 16,
+              padding: "10px 16px",
+              border: "1px solid #e1e9eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              position: "relative",
             }}
-          />
-        )}
-        {filterPills.map((pill) => (
-          <button
-            key={pill.key}
-            onClick={() => setTimeFilter(pill.key)}
-            className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
+            ref={mobilePickerRef}
           >
-            {pill.label}
-          </button>
-        ))}
-        <span className="font-body text-xs text-muted-foreground ml-1">
-          {format(dateRange.from, "d. M.", { locale: cs })} – {format(dateRange.to, "d. M. yyyy", { locale: cs })}
-        </span>
-      </div>
+            <button
+              onClick={() => {
+                if (selectedMonth === 0) {
+                  setSelectedYear((y) => y - 1);
+                  setSelectedMonth(11);
+                } else {
+                  setSelectedMonth((m) => m - 1);
+                }
+              }}
+              style={{
+                width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
+                border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <ChevronLeft size={15} color="#00555f" />
+            </button>
+            <button
+              onClick={() => setMobilePickerOpen((o) => !o)}
+              style={{
+                textAlign: "center", background: "none", border: "none", cursor: "pointer",
+                padding: "4px 8px", borderRadius: 10,
+              }}
+            >
+              <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
+              <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+                {MONTH_NAMES[selectedMonth]} {selectedYear}
+              </div>
+            </button>
+            <button
+              onClick={() => {
+                if (selectedMonth === 11) {
+                  setSelectedYear((y) => y + 1);
+                  setSelectedMonth(0);
+                } else {
+                  setSelectedMonth((m) => m + 1);
+                }
+              }}
+              style={{
+                width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
+                border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <ChevronRight size={15} color="#00555f" />
+            </button>
+
+            {/* Inline month picker dropdown */}
+            {mobilePickerOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0, right: 0,
+                  zIndex: 50,
+                  background: "#fff",
+                  borderRadius: 14,
+                  border: "1px solid #e1e9eb",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Year header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #eef3f4" }}>
+                  <button
+                    onClick={() => setSelectedYear((y) => y - 1)}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eef3f4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <ChevronLeft size={14} color="#00555f" />
+                  </button>
+                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>{selectedYear}</span>
+                  <button
+                    onClick={() => setSelectedYear((y) => y + 1)}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eef3f4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <ChevronRight size={14} color="#00555f" />
+                  </button>
+                </div>
+                {/* Month grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, padding: 8 }}>
+                  {MONTH_NAMES.map((name, idx) => {
+                    const isSelected = idx === selectedMonth;
+                    const isCurrent = selectedYear === currentPeriod.year && idx === currentPeriod.month;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setSelectedMonth(idx);
+                          setMobilePickerOpen(false);
+                        }}
+                        style={{
+                          padding: "8px 4px", borderRadius: 10, border: "none", cursor: "pointer",
+                          fontFamily: "Open Sans, sans-serif", fontSize: 13,
+                          fontWeight: isSelected ? 700 : 500,
+                          background: isSelected ? "#00abbd" : "transparent",
+                          color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "#0c2226",
+                          transition: "background 0.15s, color 0.15s",
+                        }}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Desktop: Záhlaví */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Briefcase className="h-6 w-6" style={{ color: "#0c2226" }} />
+              <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+                Obchodní případy
+              </h1>
+            </div>
+            <button onClick={openAdd} className="btn btn-primary btn-md flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nová schůzka
+            </button>
+          </div>
+
+          {/* Desktop: Filtry */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ProductionMonthPicker
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              onChange={(y, m) => {
+                setSelectedYear(y);
+                setSelectedMonth(m);
+                setTimeFilter("this_period");
+              }}
+            />
+            <span className="font-body text-xs text-muted-foreground ml-1">
+              {format(dateRange.from, "d. M.", { locale: cs })} – {format(dateRange.to, "d. M. yyyy", { locale: cs })}
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Seznam schůzek */}
       {isLoading ? (
