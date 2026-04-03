@@ -545,7 +545,7 @@ const Dashboard = () => {
     const role = profile?.role ?? "novacek";
 
     return (
-      <div className="mobile-page">
+      <div className="mobile-page" style={{ paddingBottom: 160 }}>
         {/* ── HEADER ── */}
         <div style={{ paddingTop: 16, paddingBottom: 16 }}>
           <div
@@ -729,14 +729,21 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* ── WEEK NAVIGATOR ── */}
+        {/* ── WEEK NAVIGATOR (fixed above bottom nav) ── */}
         <div
           style={{
-            background: "#ffffff",
+            position: "fixed",
+            bottom: 100,
+            left: 16,
+            right: 16,
+            zIndex: 40,
+            background: "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(20px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.8)",
             borderRadius: 16,
             padding: "10px 16px",
-            marginBottom: 12,
-            border: "1px solid #e1e9eb",
+            border: "1px solid rgba(225,233,235,0.8)",
+            boxShadow: "0 -2px 16px rgba(0,0,0,0.06)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",

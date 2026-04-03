@@ -633,44 +633,53 @@ export default function ObchodniPripady() {
 
   // ── Render ──
   return (
-    <div className={isMobile ? "mobile-page" : "space-y-8"} style={isMobile ? { paddingBottom: 140 } : undefined}>
+    <div className={isMobile ? "mobile-page" : "space-y-8"} style={isMobile ? { paddingBottom: 200, paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" } : undefined}>
       {isMobile ? (
         <>
-          {/* Mobile header with safe-area */}
-          <div style={{ padding: "0 0 12px" }}>
-            <div className="flex items-center gap-3" style={{ marginBottom: 12 }}>
+          {/* Mobile header */}
+          <div style={{ marginBottom: 16 }}>
+            <div className="flex items-center gap-3">
               <Briefcase className="h-5 w-5" style={{ color: "#0c2226" }} />
               <h1 className="font-heading font-bold" style={{ fontSize: 22, color: "#0c2226" }}>
                 Obchodní případy
               </h1>
             </div>
-            <button onClick={openAdd} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nová schůzka
-            </button>
           </div>
 
-          {/* Fixed period bar above bottom nav */}
+          {/* Fixed: Add button + period bar above bottom nav */}
           <div
-            ref={mobilePickerRef}
             style={{
               position: "fixed",
               bottom: 100,
               left: 16,
               right: 16,
               zIndex: 40,
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(20px) saturate(1.8)",
-              WebkitBackdropFilter: "blur(20px) saturate(1.8)",
-              borderRadius: 16,
-              padding: "10px 16px",
-              border: "1px solid rgba(225,233,235,0.8)",
-              boxShadow: "0 -2px 16px rgba(0,0,0,0.06)",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
+              gap: 8,
             }}
           >
+            <button onClick={openAdd} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2" style={{ boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}>
+              <Plus className="h-4 w-4" />
+              Nová schůzka
+            </button>
+
+            {/* Period bar */}
+            <div
+              ref={mobilePickerRef}
+              style={{
+                background: "rgba(255,255,255,0.92)",
+                backdropFilter: "blur(20px) saturate(1.8)",
+                WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+                borderRadius: 16,
+                padding: "10px 16px",
+                border: "1px solid rgba(225,233,235,0.8)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                position: "relative",
+              }}
+            >
             <button
               onClick={() => {
                 if (selectedMonth === 0) {
@@ -775,6 +784,7 @@ export default function ObchodniPripady() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </>
       ) : (
