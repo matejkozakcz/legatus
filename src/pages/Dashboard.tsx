@@ -12,6 +12,7 @@ import { OrgChart } from "@/components/OrgChart";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toVocative } from "@/lib/vocative";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
