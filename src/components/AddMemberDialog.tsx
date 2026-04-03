@@ -69,6 +69,37 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     enabled: !!profile?.vedouci_id && profile?.role === "garant",
   });
 
+  // Get possible získatel candidates (self + people in subtree)
+  const { data: ziskatelCandidates = [] } = useQuery({
+    queryKey: ["ziskatel_candidates", profile?.id, profile?.role],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
+      // Fetch all active members under this vedoucí
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true)
+        .eq("vedouci_id", vedouciId);
+      if (error) throw error;
+      const list = (data || []) as { id: string; full_name: string; role: string }[];
+
+      if (profile.role === "vedouci") {
+        // Vedoucí can assign to self or anyone in subtree
+        const selfInList = list.some((p) => p.id === profile.id);
+        if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role });
+        return list;
+      } else {
+        // Garant can assign to self or their own subordinates
+        const myPeople = list.filter((p) => p.id === profile.id || p.garant_id === profile.id);
+        const selfInList = myPeople.some((p) => p.id === profile.id);
+        if (!selfInList) myPeople.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role });
+        return myPeople;
+      }
+    },
+    enabled: !!profile?.id,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
