@@ -458,9 +458,11 @@ const SpravaTeam = () => {
                       <span className={targetBadge.className}>{targetBadge.label}</span>
                       <span className="text-xs font-body" style={{ color: "#8aadb3" }}>
                         {req.requested_role === "garant" && req.cumulative_bj != null &&
-                          `Kumulativní BJ: ${req.cumulative_bj}`}
+                          `Kumulativní BJ: ${req.cumulative_bj} · ${req.direct_ziskatels ?? "?"} ve struktuře`}
+                        {req.requested_role === "budouci_vedouci" && req.direct_ziskatels != null &&
+                          `${req.direct_ziskatels} přímých · ${req.cumulative_bj ?? "?"} ve struktuře`}
                         {req.requested_role === "vedouci" && req.direct_ziskatels != null &&
-                          `${req.direct_ziskatels} přímých · ${req.total_ziskatels ?? "?"} celkem Získatelů`}
+                          `${req.direct_ziskatels} přímých · ${req.cumulative_bj ?? "?"} ve struktuře`}
                       </span>
                     </div>
                   </div>
