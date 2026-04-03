@@ -40,6 +40,9 @@ interface Meeting {
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: number;
+  case_name: string | null;
+  poradko_date: string | null;
+  pohovor_date: string | null;
 }
 
 interface MeetingForm {
