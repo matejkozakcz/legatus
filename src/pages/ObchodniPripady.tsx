@@ -316,10 +316,12 @@ function MeetingModal({
               )}
             </div>
 
-            {/* Doporučení (úroveň schůzky) */}
-            <div className="mb-4">
-              <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
-            </div>
+            {/* Doporučení (úroveň schůzky) — jen u non-FSA typů (FSA má doporučení vedle Potenciál BJ) */}
+            {form.meeting_type !== "FSA" && (
+              <div className="mb-4">
+                <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+              </div>
+            )}
           </>
         )}
 
