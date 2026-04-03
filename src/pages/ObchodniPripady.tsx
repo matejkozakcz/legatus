@@ -561,6 +561,17 @@ export default function ObchodniPripady() {
 
       {/* Filtry */}
       <div className="flex items-center gap-2 flex-wrap">
+        {!isMobile && (
+          <ProductionMonthPicker
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onChange={(y, m) => {
+              setSelectedYear(y);
+              setSelectedMonth(m);
+              setTimeFilter("this_period");
+            }}
+          />
+        )}
         {filterPills.map((pill) => (
           <button
             key={pill.key}
