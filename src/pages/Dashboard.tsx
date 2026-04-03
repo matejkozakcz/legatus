@@ -792,11 +792,11 @@ const Dashboard = () => {
       <section className="space-y-4">
         <div className="flex gap-6" style={{ alignItems: "start" }}>
           {/* Stav byznysu — 1/4 */}
-          <div ref={stavByznysuRef} style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column", height: stavCardHeight > 0 ? stavCardHeight : "auto" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
               Stav byznysu
             </h2>
-            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
+            <div ref={stavByznysuRef} className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center", flex: 1, overflowY: "auto" }}>
               {renderStavByznysu()}
             </div>
           </div>
