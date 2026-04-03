@@ -25,8 +25,8 @@ export function MobileBottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: "0 20px 14px",
-        paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
+        padding: "0 20px 18px",
+        paddingBottom: "calc(18px + env(safe-area-inset-bottom, 0px))",
         zIndex: 100,
         pointerEvents: "none",
       }}
