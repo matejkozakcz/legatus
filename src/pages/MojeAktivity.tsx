@@ -243,7 +243,6 @@ const MojeAktivity = () => {
       debounceTimers.current[timerKey] = setTimeout(() => {
         const existing = records.find((r) => r.week_start === mobileWeekStr);
         const record: any = { ...(existing || {}), week_start: mobileWeekStr, ...localValuesRef.current };
-        record.bj = (record.bj_fsa_actual || 0) + (record.bj_ser_actual || 0);
         upsertMutation.mutate(record);
       }, 800);
     },
