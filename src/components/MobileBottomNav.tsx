@@ -79,7 +79,7 @@ export function MobileBottomNav() {
           {/* Left: Přehled aktivit */}
           <NavButton
             icon={TrendingUp}
-            label="Přehlet aktivit"
+            label="Přehled aktivit"
             active={location.pathname === "/aktivity"}
             onClick={() => navigate("/aktivity")}
           />
