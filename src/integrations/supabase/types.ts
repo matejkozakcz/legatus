@@ -14,53 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      client_meetings: {
-        Row: {
-          id: string
-          user_id: string
-          date: string
-          week_start: string
-          meeting_type: "FSA" | "SER"
-          bj: number
-          ref_count: number
-          vizi_spoluprace: boolean
-          poznamka: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          date: string
-          meeting_type: "FSA" | "SER"
-          bj?: number
-          ref_count?: number
-          vizi_spoluprace?: boolean
-          poznamka?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          date?: string
-          meeting_type?: "FSA" | "SER"
-          bj?: number
-          ref_count?: number
-          vizi_spoluprace?: boolean
-          poznamka?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_meetings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       activity_records: {
         Row: {
           bj: number
@@ -131,6 +84,89 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "activity_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_meetings: {
+        Row: {
+          bj: number
+          cancelled: boolean
+          created_at: string
+          date: string
+          has_pohovor: boolean
+          has_poradko: boolean
+          has_poradko_pohovor: boolean
+          id: string
+          meeting_type: string
+          podepsane_bj: number
+          pohovor_doporuceni: number
+          pohovor_jde_dal: boolean | null
+          poradko_doporuceni: number
+          poradko_pohovor_doporuceni: number
+          poradko_pohovor_jde_dal: boolean | null
+          potencial_bj: number | null
+          poznamka: string | null
+          ref_count: number
+          updated_at: string
+          user_id: string
+          vizi_spoluprace: boolean
+          week_start: string
+        }
+        Insert: {
+          bj?: number
+          cancelled?: boolean
+          created_at?: string
+          date: string
+          has_pohovor?: boolean
+          has_poradko?: boolean
+          has_poradko_pohovor?: boolean
+          id?: string
+          meeting_type: string
+          podepsane_bj?: number
+          pohovor_doporuceni?: number
+          pohovor_jde_dal?: boolean | null
+          poradko_doporuceni?: number
+          poradko_pohovor_doporuceni?: number
+          poradko_pohovor_jde_dal?: boolean | null
+          potencial_bj?: number | null
+          poznamka?: string | null
+          ref_count?: number
+          updated_at?: string
+          user_id: string
+          vizi_spoluprace?: boolean
+          week_start?: string
+        }
+        Update: {
+          bj?: number
+          cancelled?: boolean
+          created_at?: string
+          date?: string
+          has_pohovor?: boolean
+          has_poradko?: boolean
+          has_poradko_pohovor?: boolean
+          id?: string
+          meeting_type?: string
+          podepsane_bj?: number
+          pohovor_doporuceni?: number
+          pohovor_jde_dal?: boolean | null
+          poradko_doporuceni?: number
+          poradko_pohovor_doporuceni?: number
+          poradko_pohovor_jde_dal?: boolean | null
+          potencial_bj?: number | null
+          poznamka?: string | null
+          ref_count?: number
+          updated_at?: string
+          user_id?: string
+          vizi_spoluprace?: boolean
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_meetings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -352,6 +388,10 @@ export type Database = {
       is_in_vedouci_subtree: {
         Args: { _target_id: string; _vedouci_id: string }
         Returns: boolean
+      }
+      sync_activity_from_meetings: {
+        Args: { p_user_id: string; p_week_start: string }
+        Returns: undefined
       }
     }
     Enums: {
