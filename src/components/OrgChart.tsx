@@ -133,15 +133,15 @@ function TreeNode({
   childrenMap,
   collapsedIds,
   toggleCollapse,
-  isRoot,
   onSelect,
+  depth = 0,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
   collapsedIds: Set<string>;
   toggleCollapse: (id: string) => void;
-  isRoot?: boolean;
   onSelect: (node: ProfileNode) => void;
+  depth?: number;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -156,6 +156,12 @@ function TreeNode({
             <ToggleButton expanded={false} count={children.length} onClick={() => toggleCollapse(node.id)} />
           ) : (
             <>
+              {depth > 0 && (
+                <>
+                  <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
+                  <Connector />
+                </>
+              )}
               <div className="flex gap-6 flex-wrap justify-center">
                 {children.map((child) => (
                   <TreeNode
@@ -165,15 +171,10 @@ function TreeNode({
                     collapsedIds={collapsedIds}
                     toggleCollapse={toggleCollapse}
                     onSelect={onSelect}
+                    depth={depth + 1}
                   />
                 ))}
               </div>
-              {!isRoot && (
-                <>
-                  <Connector />
-                  <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
-                </>
-              )}
             </>
           )}
         </>
@@ -185,16 +186,7 @@ function TreeNode({
 export function OrgChart({ currentUserId }: OrgChartProps) {
   const { profile } = useAuth();
   const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
-  const toggleCollapse = (id: string) => {
-    setCollapsedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
     queryFn: async () => {
@@ -208,7 +200,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     enabled: !!currentUserId,
   });
 
-  // Build children map based on ziskatel_id
   const childrenMap = useMemo(() => {
     const map = new Map<string, ProfileNode[]>();
     profiles.forEach((p) => {
@@ -220,6 +211,41 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     });
     return map;
   }, [profiles]);
+
+  // Compute default collapsed: all nodes at depth >= 2 that have children
+  const defaultCollapsed = useMemo(() => {
+    const set = new Set<string>();
+    const root = profiles.find((p) => p.id === currentUserId);
+    if (!root) return set;
+
+    function walk(nodeId: string, depth: number) {
+      const kids = childrenMap.get(nodeId) || [];
+      if (depth >= 2 && kids.length > 0) {
+        set.add(nodeId);
+      }
+      kids.forEach((k) => walk(k.id, depth + 1));
+    }
+    walk(root.id, 0);
+    return set;
+  }, [profiles, childrenMap, currentUserId]);
+
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize collapsed state once data loads
+  if (profiles.length > 0 && !initialized) {
+    setCollapsedIds(defaultCollapsed);
+    setInitialized(true);
+  }
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -238,7 +264,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     );
   }
 
-  // Root = current user; show them and their entire subtree
   return (
     <>
       <div className="overflow-auto" style={{ maxHeight: 520 }}>
@@ -248,8 +273,8 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
             childrenMap={childrenMap}
             collapsedIds={collapsedIds}
             toggleCollapse={toggleCollapse}
-            isRoot
             onSelect={setSelectedMember}
+            depth={0}
           />
         </div>
       </div>
