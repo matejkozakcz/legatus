@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,8 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
   ziskatel: { bg: "#7c6fcd", glow: "rgba(124, 111, 205, 0.25)" },
   novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
+
+const LINE_COLOR = "#c8d8dc";
 
 function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }) {
   const initials = node.full_name
@@ -101,11 +103,9 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
   );
 }
 
-function Connector() {
+function VerticalLine({ height = 24 }: { height?: number }) {
   return (
-    <svg width="2" height="24" className="mx-auto flex-shrink-0">
-      <line x1="1" y1="0" x2="1" y2="24" stroke="#c8d8dc" strokeWidth="1.5" />
-    </svg>
+    <div style={{ width: 2, height, background: LINE_COLOR, margin: "0 auto", flexShrink: 0 }} />
   );
 }
 
@@ -128,6 +128,76 @@ function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: 
   );
 }
 
+function ChildrenBranch({
+  children,
+  childrenMap,
+  collapsedIds,
+  toggleCollapse,
+  onSelect,
+  depth,
+}: {
+  children: ProfileNode[];
+  childrenMap: Map<string, ProfileNode[]>;
+  collapsedIds: Set<string>;
+  toggleCollapse: (id: string) => void;
+  onSelect: (node: ProfileNode) => void;
+  depth: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const childRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [lineStyle, setLineStyle] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || children.length < 2) return;
+    const first = childRefs.current[0];
+    const last = childRefs.current[children.length - 1];
+    if (!first || !last) return;
+    const cRect = container.getBoundingClientRect();
+    const fRect = first.getBoundingClientRect();
+    const lRect = last.getBoundingClientRect();
+    const firstCenter = fRect.left + fRect.width / 2 - cRect.left;
+    const lastCenter = lRect.left + lRect.width / 2 - cRect.left;
+    setLineStyle({ left: firstCenter, width: lastCenter - firstCenter });
+  }, [children.length]);
+
+  return (
+    <div ref={containerRef} className="relative flex flex-col items-center">
+      {children.length > 1 && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: lineStyle.left,
+            width: lineStyle.width,
+            height: 2,
+            background: LINE_COLOR,
+          }}
+        />
+      )}
+      <div className="flex" style={{ gap: 24 }}>
+        {children.map((child, i) => (
+          <div
+            key={child.id}
+            ref={(el) => { childRefs.current[i] = el; }}
+            className="flex flex-col items-center"
+          >
+            {children.length > 1 && <VerticalLine height={16} />}
+            <TreeNode
+              node={child}
+              childrenMap={childrenMap}
+              collapsedIds={collapsedIds}
+              toggleCollapse={toggleCollapse}
+              onSelect={onSelect}
+              depth={depth}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TreeNode({
   node,
   childrenMap,
@@ -147,11 +217,11 @@ function TreeNode({
   const isCollapsed = collapsedIds.has(node.id);
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center">
       <NodeCard node={node} onClick={() => onSelect(node)} />
       {children.length > 0 && (
         <>
-          <Connector />
+          <VerticalLine />
           {isCollapsed ? (
             <ToggleButton expanded={false} count={children.length} onClick={() => toggleCollapse(node.id)} />
           ) : (
@@ -159,22 +229,17 @@ function TreeNode({
               {depth > 0 && (
                 <>
                   <ToggleButton expanded={true} count={children.length} onClick={() => toggleCollapse(node.id)} />
-                  <Connector />
+                  <VerticalLine />
                 </>
               )}
-              <div className="flex gap-6 flex-wrap justify-center">
-                {children.map((child) => (
-                  <TreeNode
-                    key={child.id}
-                    node={child}
-                    childrenMap={childrenMap}
-                    collapsedIds={collapsedIds}
-                    toggleCollapse={toggleCollapse}
-                    onSelect={onSelect}
-                    depth={depth + 1}
-                  />
-                ))}
-              </div>
+              <ChildrenBranch
+                children={children}
+                childrenMap={childrenMap}
+                collapsedIds={collapsedIds}
+                toggleCollapse={toggleCollapse}
+                onSelect={onSelect}
+                depth={depth + 1}
+              />
             </>
           )}
         </>
@@ -212,7 +277,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     return map;
   }, [profiles]);
 
-  // Compute default collapsed: all nodes at depth >= 2 that have children
   const defaultCollapsed = useMemo(() => {
     const set = new Set<string>();
     const root = profiles.find((p) => p.id === currentUserId);
@@ -220,7 +284,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
 
     function walk(nodeId: string, depth: number) {
       const kids = childrenMap.get(nodeId) || [];
-      if (depth >= 2 && kids.length > 0) {
+      if (depth >= 1 && kids.length > 0) {
         set.add(nodeId);
       }
       kids.forEach((k) => walk(k.id, depth + 1));
@@ -232,7 +296,6 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
 
-  // Initialize collapsed state once data loads
   if (profiles.length > 0 && !initialized) {
     setCollapsedIds(defaultCollapsed);
     setInitialized(true);
@@ -267,7 +330,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   return (
     <>
       <div className="overflow-auto" style={{ maxHeight: 520 }}>
-        <div className="flex flex-col items-center gap-2 py-4 px-4 min-w-fit">
+        <div className="flex flex-col items-center py-4 px-4 min-w-fit">
           <TreeNode
             node={currentUser}
             childrenMap={childrenMap}
