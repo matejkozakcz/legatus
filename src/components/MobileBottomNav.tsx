@@ -216,6 +216,7 @@ export function MobileBottomNav() {
               {godMode ? "Admin ⚡" : "Dashboard"}
             </div>
           </div>
+        </div>
       </div>
   );
 }
