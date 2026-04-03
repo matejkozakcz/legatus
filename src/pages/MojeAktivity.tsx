@@ -373,7 +373,7 @@ const MojeAktivity = () => {
         </div>
 
         {/* Analýzy, Poradka, Pohovory — dual counters */}
-        {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel }) => {
+        {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel, actualSynced }) => {
           const plannedVal = localValues[plannedKey] || 0;
           const actualVal = localValues[actualKey] || 0;
           return (
@@ -407,19 +407,39 @@ const MojeAktivity = () => {
                 </div>
                 {/* Divider */}
                 <div style={{ width: 1, background: "#e1e9eb", alignSelf: "stretch" }} />
-                {/* Actual counter */}
+                {/* Actual counter — read-only if synced */}
                 <div style={{ flex: 1 }}>
                   <div
                     style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
                   >
                     {actualLabel}
                   </div>
-                  <Counter
-                    value={actualVal}
-                    editable={isMobileWeekEditable}
-                    onDecrement={() => handleMobileChange(actualKey, Math.max(0, actualVal - 1))}
-                    onIncrement={() => handleMobileChange(actualKey, actualVal + 1)}
-                  />
+                  {actualSynced ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#eef3f4",
+                        borderRadius: 12,
+                        height: 36,
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 17,
+                        color: "#8aadb3",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {actualVal}
+                    </div>
+                  ) : (
+                    <Counter
+                      value={actualVal}
+                      editable={isMobileWeekEditable}
+                      onDecrement={() => handleMobileChange(actualKey, Math.max(0, actualVal - 1))}
+                      onIncrement={() => handleMobileChange(actualKey, actualVal + 1)}
+                    />
+                  )}
                 </div>
               </div>
             </div>
