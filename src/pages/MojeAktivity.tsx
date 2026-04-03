@@ -128,6 +128,12 @@ type ActivityKey = (typeof ACTIVITY_COLUMNS)[number]["key"];
 
 const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 
+// Columns auto-synced from client_meetings — read-only in this view
+const AUTO_SYNCED_KEYS: Set<string> = new Set([
+  "fsa_actual", "ser_actual", "poh_actual",
+  "ref_actual", "bj", "bj_fsa_actual", "bj_ser_actual",
+]);
+
 const MojeAktivity = () => {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
