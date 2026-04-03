@@ -2,18 +2,22 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
+import { OnboardingModal } from "@/components/OnboardingModal";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 import loginBg from "@/assets/login-bg.svg";
 
 const Login = () => {
-  const { session, loading, signIn } = useAuth();
+  const { session, loading, needsOnboarding, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setError("");
@@ -36,6 +40,23 @@ const Login = () => {
     );
   }
 
+  // Show onboarding overlay if logged in but not onboarded
+  if (session && needsOnboarding) {
+    return (
+      <div
+        className="relative min-h-screen overflow-hidden flex items-center justify-center"
+        style={{
+          backgroundImage: `url(${loginBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: "#E1E9EB",
+        }}
+      >
+        <OnboardingModal open={true} />
+      </div>
+    );
+  }
+
   if (session) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -43,26 +64,42 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSubmitting(true);
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError("Nesprávný e-mail nebo heslo.");
+
+    if (isSignUp) {
+      if (password !== confirmPassword) {
+        setError("Hesla se neshodují.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Heslo musí mít alespoň 6 znaků.");
+        return;
+      }
+      setSubmitting(true);
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+      }
+      setSubmitting(false);
+    } else {
+      setSubmitting(true);
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError("Nesprávný e-mail nebo heslo.");
+      }
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
     <div
       className="relative min-h-screen overflow-hidden flex items-center justify-center"
       style={{
-    backgroundImage: `url(${loginBg})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundColor: "#E1E9EB",
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: "#E1E9EB",
       }}
     >
-
-      {/* Login card */}
       <div
         className="relative z-10 w-full max-w-[400px] mx-4 flex flex-col items-center"
         style={{
@@ -72,7 +109,6 @@ const Login = () => {
           padding: "32px",
         }}
       >
-        {/* Logo */}
         <img src={legatusLogo} alt="Legatus" className="h-16 mb-2" />
         <h1
           className="font-heading font-bold text-lg mb-8"
@@ -83,10 +119,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           <div>
-            <label
-              className="block font-body mb-1.5"
-              style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}
-            >
+            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
               E-mail
             </label>
             <input
@@ -117,10 +150,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label
-              className="block font-body mb-1.5"
-              style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}
-            >
+            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
               Heslo
             </label>
             <div className="relative">
@@ -161,6 +191,39 @@ const Login = () => {
             </div>
           </div>
 
+          {isSignUp && (
+            <div>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
+                Potvrzení hesla
+              </label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full font-body"
+                style={{
+                  background: "#ffffff",
+                  border: "1.5px solid #e2eaec",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  color: "#0c2226",
+                  outline: "none",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#00abbd";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(0,171,189,0.12)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e2eaec";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
+          )}
+
           {error && (
             <p className="font-body text-center" style={{ fontSize: 12, color: "#e05a50" }}>
               {error}
@@ -172,9 +235,25 @@ const Login = () => {
             disabled={submitting || oauthLoading}
             className="w-full btn btn-primary btn-lg disabled:opacity-50 font-heading font-semibold"
           >
-            {submitting ? "Přihlašování..." : "Přihlásit se"}
+            {submitting
+              ? (isSignUp ? "Registrace..." : "Přihlašování...")
+              : (isSignUp ? "Vytvořit účet" : "Přihlásit se")}
           </button>
         </form>
+
+        {/* Toggle sign-in / sign-up */}
+        <button
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setError("");
+            setConfirmPassword("");
+          }}
+          className="mt-3 font-body text-sm transition-colors"
+          style={{ color: "#00abbd" }}
+        >
+          {isSignUp ? "Už máte účet? Přihlásit se" : "Vytvořit účet"}
+        </button>
 
         {/* Divider */}
         <div className="w-full flex items-center gap-3 my-5">
