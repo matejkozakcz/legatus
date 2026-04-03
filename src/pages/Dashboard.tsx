@@ -601,72 +601,72 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ── KUMULATIVNÍ BJ CARD ── */}
+        {/* ── STAV BYZNYSU GAUGES ── */}
         <div
           style={{
             background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
             borderRadius: 20,
-            padding: "20px 20px 18px",
+            padding: "20px 12px 18px",
             marginBottom: 12,
             color: "white",
             boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
+            display: "flex",
+            justifyContent: "center",
+            gap: 8,
           }}
         >
-          <div style={{ fontSize: 13, opacity: 0.72, marginBottom: 10, fontFamily: "Open Sans, sans-serif" }}>
-            Kumulativní BJ (celkem)
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span
-              style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 800,
-                fontSize: 52,
-                lineHeight: 1,
-                color: "white",
-              }}
-            >
-              {totalBjAllTime}
-            </span>
-            <span style={{ fontSize: 20, fontWeight: 600, opacity: 0.75 }}>BJ</span>
-          </div>
-
-          {/* Progress bar */}
-          <div
-            style={{
-              height: 8,
-              background: "rgba(255,255,255,0.18)",
-              borderRadius: 4,
-              overflow: "hidden",
-              marginTop: 16,
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                background: "#fc7c71",
-                borderRadius: 4,
-                width: `${bjProgress}%`,
-                transition: "width 0.6s ease",
-              }}
-            />
-          </div>
-
-          {nextRoleLabel && (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 7,
-                fontSize: 12,
-                opacity: 0.8,
-                fontFamily: "Open Sans, sans-serif",
-              }}
-            >
-              <span>Do {nextRoleLabel} zbývá</span>
-              <span style={{ fontWeight: 700 }}>{bjRemaining} BJ</span>
-            </div>
+          {role === "novacek" ? (
+            <>
+              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+              <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+            </>
+          ) : role === "vedouci" ? (
+            <>
+              <GaugeIndicator
+                value={vedouciMonthlyBj}
+                max={monthlyBjGoal || 100}
+                label="Týmové BJ"
+                sublabel="vs. měsíční cíl"
+              />
+              <GaugeIndicator
+                value={personalMonthlyBj}
+                max={monthlyBjGoal || 100}
+                label="Osobní BJ"
+                sublabel="tento měsíc"
+              />
+            </>
+          ) : (
+            <>
+              <GaugeIndicator
+                value={personalMonthlyBj}
+                max={monthlyBjGoal || 100}
+                label="Osobní BJ"
+                sublabel="tento měsíc"
+              />
+              {role === "ziskatel" ? (
+                <GaugeIndicator
+                  value={totalBjAllTime}
+                  max={1000}
+                  label="Progress k Garantovi"
+                  sublabel={`${Math.max(0, 1000 - totalBjAllTime)} BJ zbývá`}
+                />
+              ) : role === "garant" ? (
+                <GaugeIndicator
+                  value={structureCount}
+                  max={5}
+                  label="Progress k BV"
+                  sublabel={`${structureCount} z 5 lidí`}
+                />
+              ) : (
+                <GaugeIndicator
+                  value={structureCount}
+                  max={10}
+                  label="Progress k Vedoucímu"
+                  sublabel={`${structureCount} z 10 lidí`}
+                />
+              )}
+            </>
           )}
-          {!nextRoleLabel && <div style={{ marginTop: 7, fontSize: 12, opacity: 0.8 }}>Vedoucí ✓</div>}
         </div>
 
         {/* ── 2×2 STAT GRID (this week, editable) ── */}
