@@ -492,14 +492,17 @@ export default function ObchodniPripady() {
         has_poradko: editMeeting.has_poradko,
         podepsane_bj: String(editMeeting.podepsane_bj || ""),
         poradko_doporuceni: String(editMeeting.poradko_doporuceni || 0),
+        poradko_date: editMeeting.poradko_date || "",
         has_poradko_pohovor: editMeeting.has_poradko_pohovor,
         poradko_pohovor_jde_dal: editMeeting.poradko_pohovor_jde_dal,
         poradko_pohovor_doporuceni: String(editMeeting.poradko_pohovor_doporuceni || 0),
         has_pohovor: editMeeting.has_pohovor,
         pohovor_jde_dal: editMeeting.pohovor_jde_dal,
         pohovor_doporuceni: String(editMeeting.pohovor_doporuceni || 0),
+        pohovor_date: editMeeting.pohovor_date || "",
         ref_count: String(editMeeting.ref_count || 0),
         poznamka: editMeeting.poznamka || "",
+        case_name: editMeeting.case_name || "",
       }
     : defaultForm();
 
