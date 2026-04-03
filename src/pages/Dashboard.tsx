@@ -548,6 +548,46 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* ── 2×2 STAT GRID (this week, editable) ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <MobileStatCard
+            label="Analýzy"
+            actual={localValues.fsa_actual || 0}
+            planned={localValues.fsa_planned || 0}
+            sublabel="proběhlých / doml."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))}
+          />
+          <MobileStatCard
+            label="Pohovory"
+            actual={localValues.poh_actual || 0}
+            planned={localValues.poh_planned || 0}
+            sublabel="proběhlých / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))}
+          />
+          <MobileStatCard
+            label="Poradka"
+            actual={localValues.ser_actual || 0}
+            planned={localValues.ser_planned || 0}
+            sublabel="proběhlých / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))}
+          />
+          <MobileStatCard
+            label="Doporučení"
+            actual={localValues.ref_actual || 0}
+            planned={localValues.ref_planned || 0}
+            sublabel="vybraných / naplán."
+            editable={isMobileWeekEditable}
+            onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
+            onDecrement={() => handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))}
+          />
+        </div>
+
         {/* ── WEEK NAVIGATOR ── */}
         <div style={{
           background: "#ffffff",
@@ -590,46 +630,6 @@ const Dashboard = () => {
           >
             <ChevronRight size={15} color="#00555f" />
           </button>
-        </div>
-
-        {/* ── 2×2 STAT GRID (this week, editable) ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <MobileStatCard
-            label="Analýzy"
-            actual={localValues.fsa_actual || 0}
-            planned={localValues.fsa_planned || 0}
-            sublabel="proběhlých / doml."
-            editable={isMobileWeekEditable}
-            onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))}
-          />
-          <MobileStatCard
-            label="Pohovory"
-            actual={localValues.poh_actual || 0}
-            planned={localValues.poh_planned || 0}
-            sublabel="proběhlých / naplán."
-            editable={isMobileWeekEditable}
-            onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))}
-          />
-          <MobileStatCard
-            label="Poradka"
-            actual={localValues.ser_actual || 0}
-            planned={localValues.ser_planned || 0}
-            sublabel="proběhlých / naplán."
-            editable={isMobileWeekEditable}
-            onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))}
-          />
-          <MobileStatCard
-            label="Doporučení"
-            actual={localValues.ref_actual || 0}
-            planned={localValues.ref_planned || 0}
-            sublabel="vybraných / naplán."
-            editable={isMobileWeekEditable}
-            onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
-            onDecrement={() => handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))}
-          />
         </div>
 
         {/* Autosave indicator */}
