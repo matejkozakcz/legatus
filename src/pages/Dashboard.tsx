@@ -407,6 +407,7 @@ const Dashboard = () => {
   const periodStart = getProductionPeriodStart(now);
   const periodEnd = getProductionPeriodEnd(now);
 
+  // Vedoucí: monthly BJ for entire subtree (team)
   const { data: vedouciMonthlyBj = 0 } = useQuery({
     queryKey: ["vedouci_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -419,6 +420,22 @@ const Dashboard = () => {
       return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
     },
     enabled: !!profile?.id && profile?.role === "vedouci",
+  });
+
+  // Personal monthly BJ (current production period)
+  const { data: personalMonthlyBj = 0 } = useQuery({
+    queryKey: ["personal_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from("activity_records")
+        .select("bj")
+        .eq("user_id", profile.id)
+        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
+        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
+      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+    },
+    enabled: !!profile?.id,
   });
 
   // Vedoucí: monthly_bj_goal from profile
