@@ -461,12 +461,23 @@ const MojeAktivity = () => {
             >
               Doporučení
             </div>
-            <Counter
-              value={refActual}
-              editable={isMobileWeekEditable}
-              onDecrement={() => handleMobileChange("ref_actual", Math.max(0, refActual - 1))}
-              onIncrement={() => handleMobileChange("ref_actual", refActual + 1)}
-            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#eef3f4",
+                borderRadius: 12,
+                height: 36,
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 17,
+                color: "#8aadb3",
+                fontStyle: "italic",
+              }}
+            >
+              {refActual}
+            </div>
           </div>
           <div className="mobile-activity-card" style={{ padding: 14 }}>
             <div
@@ -481,12 +492,23 @@ const MojeAktivity = () => {
             >
               BJ
             </div>
-            <Counter
-              value={bjValue}
-              editable={isMobileWeekEditable}
-              onDecrement={() => handleMobileChange("bj", Math.max(0, bjValue - 1))}
-              onIncrement={() => handleMobileChange("bj", bjValue + 1)}
-            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#eef3f4",
+                borderRadius: 12,
+                height: 36,
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 17,
+                color: "#8aadb3",
+                fontStyle: "italic",
+              }}
+            >
+              {bjValue}
+            </div>
           </div>
         </div>
 
