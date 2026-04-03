@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TrendingUp, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 
 export function MobileBottomNav() {
   const location = useLocation();
