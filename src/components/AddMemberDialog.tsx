@@ -26,6 +26,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [selectedGarant, setSelectedGarant] = useState("");
+  const [selectedZiskatel, setSelectedZiskatel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
