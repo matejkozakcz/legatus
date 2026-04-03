@@ -34,7 +34,7 @@ const Login = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#00555f" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#e1e9eb" }}>
         <div className="font-heading text-xl" style={{ color: "#ffffff" }}>Načítání...</div>
       </div>
     );
