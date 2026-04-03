@@ -655,6 +655,110 @@ const Dashboard = () => {
   }
 
   // ── DESKTOP render ──────────────────────────────────────────────────────────
+  const role = profile?.role ?? "novacek";
+
+  const renderStavByznysu = () => {
+    if (role === "novacek") {
+      return (
+        <>
+          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
+        </>
+      );
+    }
+    if (role === "ziskatel") {
+      return (
+        <>
+          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="historický výkon" />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+              {totalBjAllTime}
+            </span>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
+              z 1 000 BJ
+            </span>
+            <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
+              Historické BJ
+            </span>
+          </div>
+        </>
+      );
+    }
+    if (role === "garant") {
+      return (
+        <>
+          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel="aktivní nováčci" />
+          <GaugeIndicator value={garantStructureCount} max={10} label="Lidé ve struktuře" sublabel="celkem aktivních" />
+        </>
+      );
+    }
+    // vedouci
+    return (
+      <>
+        <div style={{ position: "relative" }}>
+          <GaugeIndicator value={vedouciMonthlyBj} max={monthlyBjGoal || 100} label="BJ tento měsíc" sublabel="vs. měsíční cíl" />
+          {!editingGoal ? (
+            <button
+              onClick={() => { setGoalInputValue(String(monthlyBjGoal || "")); setEditingGoal(true); }}
+              style={{
+                position: "absolute", top: 4, right: 4,
+                width: 28, height: 28, borderRadius: 8,
+                background: "#e6f7f9", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+              title="Nastavit cíl"
+            >
+              <Pencil size={14} color="#00abbd" />
+            </button>
+          ) : (
+            <div style={{
+              position: "absolute", top: 4, right: 4,
+              display: "flex", alignItems: "center", gap: 4,
+            }}>
+              <input
+                type="number"
+                value={goalInputValue}
+                onChange={(e) => setGoalInputValue(e.target.value)}
+                style={{
+                  width: 64, height: 28, borderRadius: 6,
+                  border: "1.5px solid #00abbd", padding: "0 6px",
+                  fontFamily: "Poppins, sans-serif", fontSize: 13, fontWeight: 600,
+                  color: "#00555f", outline: "none",
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") updateGoalMutation.mutate(Number(goalInputValue) || 0);
+                  if (e.key === "Escape") setEditingGoal(false);
+                }}
+              />
+              <button
+                onClick={() => updateGoalMutation.mutate(Number(goalInputValue) || 0)}
+                style={{
+                  width: 28, height: 28, borderRadius: 8,
+                  background: "#00abbd", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <Check size={14} color="white" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "12px 0" }}>
+          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 42, color: "#00555f", lineHeight: 1 }}>
+            {vedouciMonthlyBj}
+          </span>
+          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#00abbd" }}>
+            z {monthlyBjGoal || "—"} BJ
+          </span>
+          <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 12, fontWeight: 600, color: "#4a6b70" }}>
+            Aktuální stav / plán
+          </span>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
@@ -665,11 +769,25 @@ const Dashboard = () => {
       </div>
 
       <section className="space-y-4">
-        <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
-          Moje struktura
-        </h2>
-        <div className="legatus-card" style={{ padding: 24 }}>
-          <OrgChart currentUserId={profile?.id || ""} />
+        <div className="flex gap-6">
+          {/* Stav byznysu — 2/5 */}
+          <div style={{ width: "40%", flexShrink: 0 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+              Stav byznysu
+            </h2>
+            <div className="legatus-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
+              {renderStavByznysu()}
+            </div>
+          </div>
+          {/* Moje struktura — 3/5 */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+              Moje struktura
+            </h2>
+            <div className="legatus-card" style={{ padding: 24 }}>
+              <OrgChart currentUserId={profile?.id || ""} />
+            </div>
+          </div>
         </div>
       </section>
 
