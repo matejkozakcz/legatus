@@ -398,16 +398,12 @@ const MojeAktivity = () => {
             }}>
               BJ
             </div>
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#dde8ea", borderRadius: 12, padding: "8px 0",
-            }}>
-              <span style={{
-                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 22, color: "#00555f",
-              }}>
-                {bjValue}
-              </span>
-            </div>
+            <Counter
+              value={bjValue}
+              editable={isMobileWeekEditable}
+              onDecrement={() => handleMobileChange("bj", Math.max(0, bjValue - 1))}
+              onIncrement={() => handleMobileChange("bj", bjValue + 1)}
+            />
           </div>
         </div>
 
