@@ -315,7 +315,7 @@ export default function ObchodniPripady() {
 
   // ── Render ──
   return (
-    <div className="space-y-8">
+    <div className={isMobile ? "mobile-page space-y-6" : "space-y-8"}>
       {/* Záhlaví */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
