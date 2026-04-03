@@ -11,8 +11,8 @@ CREATE TABLE public.client_meetings (
   id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         uuid        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   date            date        NOT NULL,
-  -- week_start se počítá automaticky z date (pondělí daného týdne)
-  week_start      date        GENERATED ALWAYS AS (date_trunc('week', date)::date) STORED,
+  -- week_start se nastavuje automaticky triggerem (pondělí daného týdne)
+  week_start      date        NOT NULL DEFAULT CURRENT_DATE,
   meeting_type    text        NOT NULL CHECK (meeting_type IN ('FSA', 'SER')),
   bj              numeric     NOT NULL DEFAULT 0 CHECK (bj >= 0),
   ref_count       integer     NOT NULL DEFAULT 0 CHECK (ref_count >= 0),
@@ -174,7 +174,26 @@ CREATE TRIGGER trg_sync_activity
   EXECUTE FUNCTION public.trg_fn_sync_activity();
 
 -- ----------------------------------------------------------------
--- 7. updated_at trigger pro client_meetings
+-- 7. Trigger pro automatický výpočet week_start z date
+-- ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.set_week_start()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.week_start := date_trunc('week', NEW.date)::date;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER set_client_meetings_week_start
+  BEFORE INSERT OR UPDATE OF date
+  ON public.client_meetings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_week_start();
+
+-- ----------------------------------------------------------------
+-- 8. updated_at trigger pro client_meetings
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS trigger
