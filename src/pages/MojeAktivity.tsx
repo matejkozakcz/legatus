@@ -141,13 +141,17 @@ const MojeAktivity = () => {
   const queryClient = useQueryClient();
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const now = new Date();
+  const currentPeriod = getProductionPeriodMonth(now);
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   // Mobile week navigation state
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   // Optimistic local values for instant UI feedback (mobile only)
   const [localValues, setLocalValues] = useState<Record<string, number>>({});
   const localValuesRef = useRef<Record<string, number>>({});
-  const monthStart = getProductionPeriodStart(now);
-  const monthEnd = getProductionPeriodEnd(now);
+  const periodRange = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
+  const monthStart = periodRange.start;
+  const monthEnd = periodRange.end;
 
   // Get weeks in current production period
   const weeks = useMemo(() => {
@@ -158,7 +162,7 @@ const MojeAktivity = () => {
       weekStart = addWeeks(weekStart, 1);
     }
     return result;
-  }, []);
+  }, [monthStart, monthEnd]);
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["activity_records", profile?.id, "period", format(monthStart, "yyyy-MM-dd")],
