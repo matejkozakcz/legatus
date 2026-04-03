@@ -227,6 +227,23 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           )}
 
           <div>
+            <label className="text-sm font-body font-medium text-foreground mb-1 block">Získatel (pod koho bude patřit)</label>
+            <select
+              value={selectedZiskatel}
+              onChange={(e) => setSelectedZiskatel(e.target.value)}
+              required
+              className="w-full h-10 px-3 rounded-input border border-input bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Vyberte získatele...</option>
+              {ziskatelCandidates.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.full_name}{z.id === profile?.id ? " (Já)" : ""} — {roleBadgeConfig[z.role]?.label || z.role}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Vedoucí</label>
             <Input
               value={
