@@ -243,14 +243,14 @@ const Dashboard = () => {
     }
   }, [user, profile]);
 
-  // Measure Stav byznysu card height
-  useEffect(() => {
-    const el = stavByznysuRef.current;
-    if (!el) return;
-    const measure = () => setStavCardHeight(el.offsetHeight);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
+   // Measure Stav byznysu card height (+30%)
+   useEffect(() => {
+     const el = stavByznysuRef.current;
+     if (!el) return;
+     const measure = () => setStavCardHeight(Math.round(el.offsetHeight * 1.3));
+     measure();
+     const observer = new ResizeObserver(measure);
+     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
