@@ -687,8 +687,16 @@ const Dashboard = () => {
     if (role === "garant") {
       return (
         <>
-          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel="aktivní nováčci" />
-          <GaugeIndicator value={garantStructureCount} max={10} label="Lidé ve struktuře" sublabel="celkem aktivních" />
+          <GaugeIndicator value={garantStructureCount} max={2} label="Lidé ve struktuře" sublabel="pro povýšení na BV" />
+          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="osobní výkon" />
+        </>
+      );
+    }
+    if (role === "budouci_vedouci") {
+      return (
+        <>
+          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel={`z 3 pro Vedoucího`} />
+          <GaugeIndicator value={garantStructureCount} max={5} label="Lidé ve struktuře" sublabel={`z 5 pro Vedoucího`} />
         </>
       );
     }
