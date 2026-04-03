@@ -2,12 +2,14 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  startOfWeek, endOfWeek, subWeeks,
-  format, parseISO,
-} from "date-fns";
+import { startOfWeek, endOfWeek, subWeeks, format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
-import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
+import {
+  getProductionPeriodStart,
+  getProductionPeriodEnd,
+  getProductionPeriodForMonth,
+  getProductionPeriodMonth,
+} from "@/lib/productionPeriod";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { Plus, X, Loader2, Pencil, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
@@ -92,7 +94,9 @@ const defaultForm = (): MeetingForm => ({
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm font-medium" style={{ color: "#0c2226" }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: "#0c2226" }}>
+        {label}
+      </span>
       <button
         type="button"
         role="switch"
@@ -110,8 +114,20 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-function NumberInput({ label, value, onChange, min = 0, step = 1, placeholder = "0" }: {
-  label: string; value: string; onChange: (v: string) => void; min?: number; step?: number; placeholder?: string;
+function NumberInput({
+  label,
+  value,
+  onChange,
+  min = 0,
+  step = 1,
+  placeholder = "0",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  min?: number;
+  step?: number;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -146,7 +162,9 @@ function MeetingModal({
 }) {
   const [form, setForm] = useState<MeetingForm>(initial);
 
-  useEffect(() => { setForm(initial); }, [initial]);
+  useEffect(() => {
+    setForm(initial);
+  }, [initial]);
 
   if (!open) return null;
 
@@ -221,7 +239,12 @@ function MeetingModal({
             {form.meeting_type === "FSA" && (
               <div className="mb-4 flex gap-3">
                 <div className="flex-1">
-                  <NumberInput label="Potenciál BJ" value={form.potencial_bj} onChange={(v) => set({ potencial_bj: v })} step={0.5} />
+                  <NumberInput
+                    label="Potenciál BJ"
+                    value={form.potencial_bj}
+                    onChange={(v) => set({ potencial_bj: v })}
+                    step={0.5}
+                  />
                 </div>
                 <div className="flex-1">
                   <NumberInput label="Doporučení" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
@@ -252,7 +275,9 @@ function MeetingModal({
                               ? "border-transparent text-white"
                               : "border-input bg-background text-muted-foreground"
                           }`}
-                          style={form.poradko_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}}
+                          style={
+                            form.poradko_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}
+                          }
                         >
                           {s === "probehle" ? "Proběhlé" : "Zrušené"}
                         </button>
@@ -270,10 +295,19 @@ function MeetingModal({
                     {/* Podepsané BJ + Doporučení vedle sebe */}
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <NumberInput label="Podepsané BJ *" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                        <NumberInput
+                          label="Podepsané BJ *"
+                          value={form.podepsane_bj}
+                          onChange={(v) => set({ podepsane_bj: v })}
+                          step={0.5}
+                        />
                       </div>
                       <div className="flex-1">
-                        <NumberInput label="Doporučení" value={form.poradko_doporuceni} onChange={(v) => set({ poradko_doporuceni: v })} />
+                        <NumberInput
+                          label="Doporučení"
+                          value={form.poradko_doporuceni}
+                          onChange={(v) => set({ poradko_doporuceni: v })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -312,7 +346,11 @@ function MeetingModal({
                       </button>
                     ))}
                   </div>
-                  <NumberInput label="Doporučení" value={form.pohovor_doporuceni} onChange={(v) => set({ pohovor_doporuceni: v })} />
+                  <NumberInput
+                    label="Doporučení"
+                    value={form.pohovor_doporuceni}
+                    onChange={(v) => set({ pohovor_doporuceni: v })}
+                  />
                 </div>
               )}
             </div>
@@ -320,7 +358,11 @@ function MeetingModal({
             {/* Doporučení (úroveň schůzky) — jen u non-FSA typů (FSA má doporučení vedle Potenciál BJ) */}
             {form.meeting_type !== "FSA" && (
               <div className="mb-4">
-                <NumberInput label="Doporučení (schůzka)" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+                <NumberInput
+                  label="Doporučení (schůzka)"
+                  value={form.ref_count}
+                  onChange={(v) => set({ ref_count: v })}
+                />
               </div>
             )}
           </>
@@ -361,7 +403,9 @@ function MeetingModal({
 // ─── Helper: total refs ──────────────────────────────────────────────────────
 
 function totalRefs(m: Meeting): number {
-  return (m.ref_count || 0) + (m.poradko_doporuceni || 0) + (m.pohovor_doporuceni || 0) + (m.poradko_pohovor_doporuceni || 0);
+  return (
+    (m.ref_count || 0) + (m.poradko_doporuceni || 0) + (m.pohovor_doporuceni || 0) + (m.poradko_pohovor_doporuceni || 0)
+  );
 }
 
 function meetingTypeLabel(t: MeetingType): string {
@@ -390,7 +434,10 @@ export default function ObchodniPripady() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeeting, setEditMeeting] = useState<Meeting | null>(null);
 
-  const periodRange = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
+  const periodRange = useMemo(
+    () => getProductionPeriodForMonth(selectedYear, selectedMonth),
+    [selectedYear, selectedMonth],
+  );
 
   const dateRange = useMemo(() => {
     switch (timeFilter) {
@@ -409,7 +456,12 @@ export default function ObchodniPripady() {
 
   // ── Data ──
   const { data: meetings = [], isLoading } = useQuery<Meeting[]>({
-    queryKey: ["client_meetings", profile?.id, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
+    queryKey: [
+      "client_meetings",
+      profile?.id,
+      format(dateRange.from, "yyyy-MM-dd"),
+      format(dateRange.to, "yyyy-MM-dd"),
+    ],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
@@ -447,27 +499,40 @@ export default function ObchodniPripady() {
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
-        potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? (parseFloat(form.potencial_bj) || null) : null,
+        potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
         has_poradko: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko,
-        podepsane_bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseFloat(form.podepsane_bj) || 0) : 0,
-        poradko_doporuceni: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? (parseInt(form.poradko_doporuceni) || 0) : 0,
-        poradko_date: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_date ? form.poradko_date : null,
+        podepsane_bj:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? parseFloat(form.podepsane_bj) || 0 : 0,
+        poradko_doporuceni:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko
+            ? parseInt(form.poradko_doporuceni) || 0
+            : 0,
+        poradko_date:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_date
+            ? form.poradko_date
+            : null,
         poradko_status: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? form.poradko_status : null,
         has_poradko_pohovor: false,
         poradko_pohovor_jde_dal: null,
         poradko_pohovor_doporuceni: 0,
         has_pohovor: !form.cancelled && form.has_pohovor,
         pohovor_jde_dal: !form.cancelled && form.has_pohovor ? form.pohovor_jde_dal : null,
-        pohovor_doporuceni: !form.cancelled && form.has_pohovor ? (parseInt(form.pohovor_doporuceni) || 0) : 0,
+        pohovor_doporuceni: !form.cancelled && form.has_pohovor ? parseInt(form.pohovor_doporuceni) || 0 : 0,
         pohovor_date: !form.cancelled && form.has_pohovor && form.pohovor_date ? form.pohovor_date : null,
         // Legacy fields
-        bj: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_status === "probehle" ? (parseFloat(form.podepsane_bj) || 0) : 0,
-        ref_count: !form.cancelled ? (parseInt(form.ref_count) || 0) : 0,
+        bj:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_status === "probehle"
+            ? parseFloat(form.podepsane_bj) || 0
+            : 0,
+        ref_count: !form.cancelled ? parseInt(form.ref_count) || 0 : 0,
         vizi_spoluprace: !form.cancelled && form.has_pohovor && form.pohovor_jde_dal === true,
         poznamka: form.poznamka.trim() || null,
       };
       if (id) {
-        const { error } = await supabase.from("client_meetings").update(payload as any).eq("id", id);
+        const { error } = await supabase
+          .from("client_meetings")
+          .update(payload as any)
+          .eq("id", id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("client_meetings").insert(payload as any);
@@ -498,8 +563,14 @@ export default function ObchodniPripady() {
     onError: (err: any) => toast.error(err.message || "Chyba při mazání"),
   });
 
-  const openAdd = () => { setEditMeeting(null); setModalOpen(true); };
-  const openEdit = (m: Meeting) => { setEditMeeting(m); setModalOpen(true); };
+  const openAdd = () => {
+    setEditMeeting(null);
+    setModalOpen(true);
+  };
+  const openEdit = (m: Meeting) => {
+    setEditMeeting(m);
+    setModalOpen(true);
+  };
 
   const handleSave = (form: MeetingForm) => {
     saveMutation.mutate({ form, id: editMeeting?.id });
@@ -536,7 +607,8 @@ export default function ObchodniPripady() {
   const meetingSummary = (m: Meeting) => {
     const parts: string[] = [];
     if (m.has_poradko) parts.push(`${m.podepsane_bj} BJ`);
-    if (m.has_pohovor) parts.push(m.pohovor_jde_dal ? "Jde dál" : m.pohovor_jde_dal === false ? "Nejde dál" : "Pohovor");
+    if (m.has_pohovor)
+      parts.push(m.pohovor_jde_dal ? "Jde dál" : m.pohovor_jde_dal === false ? "Nejde dál" : "Pohovor");
     const refs = totalRefs(m);
     if (refs > 0) parts.push(`${refs} dop.`);
     return parts.join(" · ") || "—";
@@ -586,24 +658,6 @@ export default function ObchodniPripady() {
         </span>
       </div>
 
-      {/* Statistiky */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: "Analýzy (FSA)", value: stats.fsa, sub: "schůzek" },
-          { label: "Pohovory", value: stats.poh, sub: "schůzek" },
-          { label: "Servisy (SER)", value: stats.ser, sub: "schůzek" },
-          { label: "Podepsané BJ", value: stats.bj % 1 === 0 ? stats.bj : stats.bj.toFixed(1), sub: "bodů" },
-          { label: "Doporučení", value: stats.ref, sub: "kontaktů" },
-          { label: "Zrušené", value: stats.cancelled, sub: "schůzek" },
-        ].map((s) => (
-          <div key={s.label} className="legatus-card p-4 flex flex-col gap-1">
-            <span className="font-body text-xs text-muted-foreground">{s.label}</span>
-            <span className="font-heading font-bold text-2xl" style={{ color: "#0c2226" }}>{s.value}</span>
-            <span className="font-body text-xs text-muted-foreground">{s.sub}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Seznam schůzek */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -621,11 +675,7 @@ export default function ObchodniPripady() {
         /* Mobilní karty */
         <div className="flex flex-col gap-3">
           {meetings.map((m) => (
-            <div
-              key={m.id}
-              className="legatus-card p-4"
-              style={m.cancelled ? { opacity: 0.5 } : {}}
-            >
+            <div key={m.id} className="legatus-card p-4" style={m.cancelled ? { opacity: 0.5 } : {}}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                   <span
@@ -642,9 +692,7 @@ export default function ObchodniPripady() {
                       {format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
                     </span>
                   )}
-                  {m.cancelled && (
-                    <span className="text-xs font-medium text-muted-foreground">Zrušená</span>
-                  )}
+                  {m.cancelled && <span className="text-xs font-medium text-muted-foreground">Zrušená</span>}
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
@@ -663,9 +711,7 @@ export default function ObchodniPripady() {
                   {meetingSummary(m)}
                 </div>
               )}
-              {m.poznamka && (
-                <p className="mt-2 text-xs text-muted-foreground font-body">{m.poznamka}</p>
-              )}
+              {m.poznamka && <p className="mt-2 text-xs text-muted-foreground font-body">{m.poznamka}</p>}
             </div>
           ))}
         </div>
@@ -709,7 +755,9 @@ export default function ObchodniPripady() {
                         {m.cancelled ? "—" : m.has_poradko ? m.podepsane_bj : "—"}
                       </td>
                       <td>
-                        {m.cancelled ? "—" : m.has_pohovor ? (
+                        {m.cancelled ? (
+                          "—"
+                        ) : m.has_pohovor ? (
                           m.pohovor_jde_dal ? (
                             <span style={{ color: "#00abbd", fontWeight: 700 }}>Jde dál</span>
                           ) : m.pohovor_jde_dal === false ? (
@@ -755,7 +803,10 @@ export default function ObchodniPripady() {
       {/* Modal */}
       <MeetingModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditMeeting(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setEditMeeting(null);
+        }}
         initial={initialForm}
         onSave={handleSave}
         saving={saveMutation.isPending}
