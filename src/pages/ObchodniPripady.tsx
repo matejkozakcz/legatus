@@ -650,7 +650,7 @@ export default function ObchodniPripady() {
           <div
             style={{
               position: "fixed",
-              bottom: 100,
+              bottom: 120,
               left: 16,
               right: 16,
               zIndex: 40,
