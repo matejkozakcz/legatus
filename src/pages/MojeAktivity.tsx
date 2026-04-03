@@ -128,6 +128,12 @@ type ActivityKey = (typeof ACTIVITY_COLUMNS)[number]["key"];
 
 const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 
+// Columns auto-synced from client_meetings — read-only in this view
+const AUTO_SYNCED_KEYS: Set<string> = new Set([
+  "fsa_actual", "ser_actual", "poh_actual",
+  "ref_actual", "bj", "bj_fsa_actual", "bj_ser_actual",
+]);
+
 const MojeAktivity = () => {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
@@ -278,6 +284,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvené",
       actualKey: "fsa_actual" as ActivityKey,
       actualLabel: "Proběhlé",
+      actualSynced: true,
     },
     {
       label: "Poradka",
@@ -285,6 +292,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvená",
       actualKey: "ser_actual" as ActivityKey,
       actualLabel: "Proběhlá",
+      actualSynced: true,
     },
     {
       label: "Pohovory",
@@ -292,6 +300,7 @@ const MojeAktivity = () => {
       plannedLabel: "Domluvené",
       actualKey: "poh_actual" as ActivityKey,
       actualLabel: "Proběhlé",
+      actualSynced: true,
     },
   ] as const;
 
@@ -364,7 +373,7 @@ const MojeAktivity = () => {
         </div>
 
         {/* Analýzy, Poradka, Pohovory — dual counters */}
-        {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel }) => {
+        {MOBILE_ACTIVITIES.map(({ label, plannedKey, plannedLabel, actualKey, actualLabel, actualSynced }) => {
           const plannedVal = localValues[plannedKey] || 0;
           const actualVal = localValues[actualKey] || 0;
           return (
@@ -398,19 +407,39 @@ const MojeAktivity = () => {
                 </div>
                 {/* Divider */}
                 <div style={{ width: 1, background: "#e1e9eb", alignSelf: "stretch" }} />
-                {/* Actual counter */}
+                {/* Actual counter — read-only if synced */}
                 <div style={{ flex: 1 }}>
                   <div
                     style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
                   >
                     {actualLabel}
                   </div>
-                  <Counter
-                    value={actualVal}
-                    editable={isMobileWeekEditable}
-                    onDecrement={() => handleMobileChange(actualKey, Math.max(0, actualVal - 1))}
-                    onIncrement={() => handleMobileChange(actualKey, actualVal + 1)}
-                  />
+                  {actualSynced ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#eef3f4",
+                        borderRadius: 12,
+                        height: 36,
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 17,
+                        color: "#8aadb3",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {actualVal}
+                    </div>
+                  ) : (
+                    <Counter
+                      value={actualVal}
+                      editable={isMobileWeekEditable}
+                      onDecrement={() => handleMobileChange(actualKey, Math.max(0, actualVal - 1))}
+                      onIncrement={() => handleMobileChange(actualKey, actualVal + 1)}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -432,12 +461,23 @@ const MojeAktivity = () => {
             >
               Doporučení
             </div>
-            <Counter
-              value={refActual}
-              editable={isMobileWeekEditable}
-              onDecrement={() => handleMobileChange("ref_actual", Math.max(0, refActual - 1))}
-              onIncrement={() => handleMobileChange("ref_actual", refActual + 1)}
-            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#eef3f4",
+                borderRadius: 12,
+                height: 36,
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 17,
+                color: "#8aadb3",
+                fontStyle: "italic",
+              }}
+            >
+              {refActual}
+            </div>
           </div>
           <div className="mobile-activity-card" style={{ padding: 14 }}>
             <div
@@ -452,12 +492,23 @@ const MojeAktivity = () => {
             >
               BJ
             </div>
-            <Counter
-              value={bjValue}
-              editable={isMobileWeekEditable}
-              onDecrement={() => handleMobileChange("bj", Math.max(0, bjValue - 1))}
-              onIncrement={() => handleMobileChange("bj", bjValue + 1)}
-            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#eef3f4",
+                borderRadius: 12,
+                height: 36,
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 17,
+                color: "#8aadb3",
+                fontStyle: "italic",
+              }}
+            >
+              {bjValue}
+            </div>
           </div>
         </div>
 
@@ -567,9 +618,10 @@ const MojeAktivity = () => {
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
                       const cellValue = (record as any)?.[col.key] || 0;
+                      const isSynced = AUTO_SYNCED_KEYS.has(col.key);
                       return (
-                        <td key={col.key}>
-                          {isEditable ? (
+                        <td key={col.key} style={isSynced ? { color: "#8aadb3", fontStyle: "italic" } : undefined}>
+                          {isEditable && !isSynced ? (
                             <input
                               type="number"
                               min={0}
