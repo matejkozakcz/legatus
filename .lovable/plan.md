@@ -1,49 +1,62 @@
 
 
-## Plan: OrgChart — default expand & collapse UX fix
+## Plan: Karta "Stav byznysu" s tachometry na Dashboardu
 
-### Changes in `src/components/OrgChart.tsx`
+### Přehled
 
-**1. Add `depth` prop to `TreeNode`**
+Na desktop Dashboardu se vedle "Moje struktura" objeví nová karta **Stav byznysu** (2/5 šířky vlevo, struktura 3/5 vpravo). Obsahuje dva polokruhové tachometry, jejichž obsah závisí na roli uživatele. Pro Vedoucího přibude nastavitelný měsíční cíl BJ (nový sloupec v DB).
 
-Pass a `depth` number (0 = root, 1 = direct children, 2 = grandchildren, etc.) through the recursive tree.
+### Databáze
 
-**2. Invert collapse logic — use default-collapsed set**
+**Migrace**: Přidat sloupec `monthly_bj_goal` (integer, default 0, nullable) do tabulky `profiles`. Vedoucí si ho bude moci nastavit v dashboardu.
 
-Instead of starting with an empty `collapsedIds` (everything expanded), compute an initial `collapsedIds` set that contains all nodes at depth ≥ 2 (i.e., grandchildren and deeper). This means:
-- Level 0 (current user): always visible
-- Level 1 (direct subordinates): expanded by default
-- Level 2+ (grandchildren etc.): collapsed by default, expandable via +
+### Nová komponenta: `src/components/GaugeIndicator.tsx`
 
-Use a `useMemo` to walk the tree from the root and collect IDs of all nodes at depth ≥ 2 that have children, then initialize `collapsedIds` with those IDs.
+SVG polokruhový tachometr (arc 180°). Props: `value`, `max`, `label`, `sublabel`. Vyplnění oblouku = `value/max`. Barvy: teal gradient pro výplň, šedá pro pozadí. Uprostřed velké číslo `value` a pod ním `z max`.
 
-**3. Move minus button ABOVE the expanded children**
+Placeholder varianta (pro Nováčka): šedý oblouk, text "—".
 
-Current layout when expanded:
+### Změny v `src/pages/Dashboard.tsx` (desktop sekce)
+
+**1. Layout**: Sekce "Moje struktura" se obalí do flexboxu s kartou "Stav byznysu":
+
 ```text
-[Card]
-  |
-[children...]
-  |
-[-] button
+┌─────────────┬───────────────────┐
+│ Stav byznysu│   Moje struktura  │
+│   (40%)     │      (60%)        │
+│ [Gauge 1]   │                   │
+│ [Gauge 2]   │    OrgChart       │
+└─────────────┴───────────────────┘
 ```
 
-New layout:
-```text
-[Card]
-  |
-[-] button
-  |
-[children...]
-```
+**2. Data queries per role**:
 
-In the `TreeNode` component, swap the order: render ToggleButton (minus) before the children group, not after. The `+` button (collapsed state) stays in the same position (below the connector after the card).
+| Role | Gauge 1 | Gauge 2 |
+|------|---------|---------|
+| Nováček | Placeholder | Placeholder |
+| Získatel | BJ progress (cumul. x / 1000) — tachometr | Velký text "X z 1 000 BJ" (bez tachometru) |
+| Garant | Přímí podřízení (x / 3) — query `profiles` kde `garant_id = me` | Lidé ve struktuře (x / 10) — recursive count |
+| Vedoucí | BJ tento měsíc vs. `monthly_bj_goal` — sum `bj` z `activity_records` za production period | Velký text: aktuální BJ / plán (stejná data, jiný formát) |
 
-### Summary of logic changes
+**3. Vedoucí goal edit**: Malé editovací tlačítko u 1. tachometru → inline input pro nastavení `monthly_bj_goal` → upsert do `profiles`.
 
-- `TreeNode` receives `depth` (default 0 for root)
-- Children rendered with `depth + 1`
-- Initial `collapsedIds` = all node IDs at depth ≥ 2 that have children
-- Expanded state: `[-]` → `connector` → `children` (button above)
-- Collapsed state: `connector` → `[+]` (button below card, unchanged)
+**4. Queries**:
+- Získatel: reuse `allBjData` query (cumulative BJ all-time), move from mobile-only
+- Garant: nový query na `profiles` count kde `garant_id = user.id` + recursive subtree count
+- Vedoucí: nový query na `activity_records` sum `bj` za aktuální production period pro celý subtree
+
+### Soubory
+
+| Soubor | Akce |
+|--------|------|
+| `supabase/migrations/...` | ADD `monthly_bj_goal integer default 0` to profiles |
+| `src/components/GaugeIndicator.tsx` | CREATE — SVG tachometr |
+| `src/pages/Dashboard.tsx` | EDIT — přidat kartu Stav byznysu, layout 2/5+3/5, role-based obsah |
+
+### Technické detaily
+
+- SVG arc: `stroke-dasharray` + `stroke-dashoffset` na `<circle>` s `transform: rotate` pro polokruh
+- Garant subtree count: query all profiles where `vedouci_id` matches or recursively under garant — simplified via counting profiles where `garant_id = me` (direct) and a broader query for structure
+- Production period dates from `getProductionPeriodStart/End`
+- RLS already allows vedoucí to read subtree activity_records
 
