@@ -46,7 +46,6 @@ export function MobileBottomNav() {
       : "0 4px 20px rgba(0,85,95,0.25)";
 
   return (
-    <>
       <div
         style={{
           position: "fixed",
