@@ -53,14 +53,17 @@ interface MeetingForm {
   has_poradko: boolean;
   podepsane_bj: string;
   poradko_doporuceni: string;
+  poradko_date: string;
   has_poradko_pohovor: boolean;
   poradko_pohovor_jde_dal: boolean | null;
   poradko_pohovor_doporuceni: string;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
   pohovor_doporuceni: string;
+  pohovor_date: string;
   ref_count: string;
   poznamka: string;
+  case_name: string;
 }
 
 const defaultForm = (): MeetingForm => ({
@@ -71,14 +74,17 @@ const defaultForm = (): MeetingForm => ({
   has_poradko: false,
   podepsane_bj: "",
   poradko_doporuceni: "0",
+  poradko_date: "",
   has_poradko_pohovor: false,
   poradko_pohovor_jde_dal: null,
   poradko_pohovor_doporuceni: "0",
   has_pohovor: false,
   pohovor_jde_dal: null,
   pohovor_doporuceni: "0",
+  pohovor_date: "",
   ref_count: "0",
   poznamka: "",
+  case_name: "",
 });
 
 // ─── Helper: toggle switch ───────────────────────────────────────────────────
