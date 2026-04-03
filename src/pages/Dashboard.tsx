@@ -247,7 +247,7 @@ const Dashboard = () => {
     const prev = prevRoleRef.current;
     prevRoleRef.current = profile.role;
     if (prev && prev !== profile.role) {
-      const roleOrder: Record<string, number> = { novacek: 0, ziskatel: 1, garant: 2, vedouci: 3 };
+      const roleOrder: Record<string, number> = { novacek: 0, ziskatel: 1, garant: 2, budouci_vedouci: 3, vedouci: 4 };
       if ((roleOrder[profile.role] ?? 0) > (roleOrder[prev] ?? 0)) {
         fireConfetti();
         setPromotionRole(profile.role);
@@ -306,7 +306,7 @@ const Dashboard = () => {
         .eq("user_id", profile.id);
       return data || [];
     },
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && (profile?.role !== "vedouci"),
   });
   const totalBjAllTime = useMemo(
     () => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0),
@@ -471,7 +471,7 @@ const Dashboard = () => {
     const bjGoal = 1000;
     const bjProgress = Math.min(100, (totalBjAllTime / bjGoal) * 100);
     const bjRemaining = Math.max(0, bjGoal - totalBjAllTime);
-    const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Vedoucího" : null;
+    const nextRoleLabel = role === "ziskatel" ? "Garanta" : role === "garant" ? "Budoucího vedoucího" : role === "budouci_vedouci" ? "Vedoucího" : null;
 
     return (
       <div className="mobile-page">
@@ -687,8 +687,16 @@ const Dashboard = () => {
     if (role === "garant") {
       return (
         <>
-          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel="aktivní nováčci" />
-          <GaugeIndicator value={garantStructureCount} max={10} label="Lidé ve struktuře" sublabel="celkem aktivních" />
+          <GaugeIndicator value={garantStructureCount} max={2} label="Lidé ve struktuře" sublabel="pro povýšení na BV" />
+          <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel="osobní výkon" />
+        </>
+      );
+    }
+    if (role === "budouci_vedouci") {
+      return (
+        <>
+          <GaugeIndicator value={garantDirectCount} max={3} label="Přímí podřízení" sublabel={`z 3 pro Vedoucího`} />
+          <GaugeIndicator value={garantStructureCount} max={5} label="Lidé ve struktuře" sublabel={`z 5 pro Vedoucího`} />
         </>
       );
     }

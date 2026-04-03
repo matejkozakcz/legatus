@@ -35,6 +35,7 @@ interface EditMemberDialogProps {
 
 const roleBadge: Record<string, string> = {
   vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
   ziskatel: "Získatel",
   novacek: "Nováček",
@@ -157,10 +158,16 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
       actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
     }
     if (member.role === "ziskatel") {
+      actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
       actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
     }
     if (member.role === "garant") {
+      actions.push({ role: "budouci_vedouci", label: "Povýšit na Budoucího vedoucího", variant: "promote" });
       actions.push({ role: "ziskatel", label: "Ponížit na Získatele", variant: "demote" });
+    }
+    if (member.role === "budouci_vedouci") {
+      actions.push({ role: "vedouci", label: "Povýšit na Vedoucího", variant: "promote" });
+      actions.push({ role: "garant", label: "Ponížit na Garanta", variant: "demote" });
     }
     return actions;
   };

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const roleLabels: Record<string, string> = {
   vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
   ziskatel: "Získatel",
   novacek: "Nováček",
