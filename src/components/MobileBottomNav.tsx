@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckSquare, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,6 +9,8 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, godMode } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -62,12 +65,18 @@ export function MobileBottomNav() {
             display: "flex",
             alignItems: "center",
             height: 64,
-            background: "rgba(255,255,255,0.55)",
+            background: isDark
+              ? "rgba(9,29,33,0.82)"
+              : "rgba(255,255,255,0.55)",
             backdropFilter: "blur(24px) saturate(1.8)",
             WebkitBackdropFilter: "blur(24px) saturate(1.8)",
             borderRadius: 40,
-            border: "1px solid rgba(255,255,255,0.7)",
-            boxShadow: "0 8px 32px rgba(0,85,95,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(255,255,255,0.7)",
+            boxShadow: isDark
+              ? "0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)"
+              : "0 8px 32px rgba(0,85,95,0.12), 0 2px 8px rgba(0,0,0,0.06)",
             position: "relative",
             pointerEvents: "all",
           }}
@@ -78,6 +87,7 @@ export function MobileBottomNav() {
             label="Obchod"
             active={location.pathname === "/obchodni-pripady"}
             onClick={() => navigate("/obchodni-pripady")}
+            isDark={isDark}
           />
 
           {/* Center spacer */}
@@ -89,6 +99,7 @@ export function MobileBottomNav() {
             label="Úkoly"
             active={location.pathname === "/ukoly"}
             onClick={() => navigate("/ukoly")}
+            isDark={isDark}
           />
 
           {/* Center elevated Dashboard/Avatar button */}
@@ -206,7 +217,7 @@ export function MobileBottomNav() {
                 marginTop: 5,
                 fontSize: 10,
                 fontWeight: 600,
-                color: godMode ? "#fc7c71" : "#8aadb3",
+                color: godMode ? "#fc7c71" : isDark ? "#4a7a80" : "#8aadb3",
                 letterSpacing: "0.02em",
                 fontFamily: "Open Sans, sans-serif",
                 transition: "color 0.25s",
@@ -225,12 +236,18 @@ function NavButton({
   label,
   active,
   onClick,
+  isDark = false,
 }: {
   icon: React.ElementType;
   label: string;
   active: boolean;
   onClick: () => void;
+  isDark?: boolean;
 }) {
+  const activeColor = "#00abbd";
+  const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
+  const color = active ? activeColor : inactiveColor;
+
   return (
     <button
       onClick={onClick}
@@ -247,12 +264,12 @@ function NavButton({
         flex: 1,
       }}
     >
-      <Icon size={22} color={active ? "#00abbd" : "#8aadb3"} style={{ transition: "color 0.2s" }} />
+      <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
       <span
         style={{
           fontSize: 10,
           fontWeight: 600,
-          color: active ? "#00abbd" : "#8aadb3",
+          color,
           letterSpacing: "0.02em",
           transition: "color 0.2s",
           fontFamily: "Open Sans, sans-serif",

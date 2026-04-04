@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,7 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -82,6 +84,24 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          {/* Dark mode toggle — nad čárou nad avatarem */}
+          <div className="mt-auto pt-2">
+            <button
+              onClick={toggleTheme}
+              className="nav-item w-full"
+              title={theme === "dark" ? "Světlý režim" : "Tmavý režim"}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[18px] w-[18px] flex-shrink-0" />
+              ) : (
+                <Moon className="h-[18px] w-[18px] flex-shrink-0" />
+              )}
+              {!collapsed && (
+                <span>{theme === "dark" ? "Světlý režim" : "Tmavý režim"}</span>
+              )}
+            </button>
+          </div>
         </SidebarContent>
 
         <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">

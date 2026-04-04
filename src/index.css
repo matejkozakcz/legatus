@@ -129,6 +129,151 @@
   }
 }
 
+/* ===== Dark mode variables ===== */
+.dark {
+  --background: 188 35% 7%;
+  --foreground: 186 25% 88%;
+
+  --card: 188 28% 10%;
+  --card-foreground: 186 25% 88%;
+
+  --popover: 188 28% 12%;
+  --popover-foreground: 186 25% 88%;
+
+  --muted: 188 22% 14%;
+  --muted-foreground: 186 18% 48%;
+
+  --border: 186 18% 17%;
+  --border-mid: 186 18% 22%;
+  --input: 186 18% 17%;
+
+  --text-primary: #cde4e7;
+  --text-secondary: #7aadb3;
+  --text-muted: #4a7a80;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.45);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* ===== Dark mode component overrides ===== */
+.dark body {
+  color: var(--text-primary);
+}
+
+/* Cards — glassmorphism */
+.dark .legatus-card,
+.dark .legatus-card-sm,
+.dark .stat-card {
+  background: rgba(255,255,255,0.055);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.dark .mobile-stat-card,
+.dark .mobile-activity-card,
+.dark .mobile-member-card {
+  background: rgba(255,255,255,0.055);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  color: var(--text-primary);
+}
+
+/* Chips */
+.dark .chip-neutral {
+  background: rgba(255,255,255,0.08);
+  color: #7aadb3;
+  border-color: rgba(255,255,255,0.1);
+}
+.dark .chip-teal {
+  background: rgba(0,171,189,0.15);
+  color: #4dd8e8;
+}
+.dark .chip-deep {
+  background: rgba(0,85,95,0.35);
+  color: #7aadb3;
+}
+
+/* Buttons */
+.dark .btn-ghost {
+  color: #7aadb3;
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+}
+.dark .btn-ghost:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+}
+.dark .btn-danger {
+  background: rgba(252,124,113,0.12);
+  color: #fc7c71;
+  border-color: rgba(252,124,113,0.25);
+}
+.dark .btn-danger:hover {
+  background: rgba(252,124,113,0.2);
+}
+
+/* Activity table */
+.dark .activity-table th {
+  color: #4a7a80;
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+.dark .activity-table td {
+  color: #cde4e7;
+  border-bottom-color: rgba(255,255,255,0.05);
+}
+.dark .activity-table tr.past td {
+  color: #4a7a80;
+  background: rgba(255,255,255,0.02);
+}
+.dark .activity-table tr.current td {
+  background: rgba(255,255,255,0.04);
+}
+.dark .activity-table tr.summary td {
+  background: rgba(0,171,189,0.12);
+  color: #4dd8e8;
+}
+.dark .activity-table td input[type="number"] {
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #cde4e7;
+}
+.dark .activity-table td input[type="number"]:focus {
+  border-color: #00abbd;
+  box-shadow: 0 0 0 2px rgba(0,171,189,0.2);
+}
+
+/* Progress bar track */
+.dark .progress-track {
+  background: rgba(255,255,255,0.1);
+}
+
+/* Mobile BJ card stays dark — it already is */
+.dark .mobile-bj-card {
+  background: linear-gradient(135deg, #003a42 0%, #005060 100%);
+}
+
+/* Inputs in dark mode */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark textarea,
+.dark select {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: #cde4e7;
+}
+.dark input[type="text"]::placeholder,
+.dark input[type="number"]::placeholder,
+.dark textarea::placeholder {
+  color: #4a7a80;
+}
+
 /* ===== Button Variants ===== */
 @layer components {
   .btn {
