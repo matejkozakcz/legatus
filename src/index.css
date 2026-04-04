@@ -134,10 +134,10 @@
   --background: 188 35% 7%;
   --foreground: 186 25% 88%;
 
-  --card: 188 28% 10%;
+  --card: 188 22% 14%;
   --card-foreground: 186 25% 88%;
 
-  --popover: 188 28% 12%;
+  --popover: 188 20% 17%;
   --popover-foreground: 186 25% 88%;
 
   --muted: 188 22% 14%;
@@ -707,10 +707,20 @@
   color: #4dd8e8 !important;
 }
 
-/* Bílá pozadí statCards na desktopu */
-.dark .bg-card,
-.dark [class*="bg-white"] {
-  background: rgba(255,255,255,0.055) !important;
+/* Modály — solid neprůhledné pozadí v dark mode */
+.dark .bg-card {
+  background: hsl(188, 20%, 15%) !important;
+}
+.dark .rounded-2xl.bg-card,
+.dark .rounded-2xl.shadow-2xl {
+  background: hsl(188, 18%, 18%) !important;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6) !important;
+}
+
+/* bg-white třídy (ostatní prvky) */
+.dark [class*="bg-white"]:not([class*="bg-white/"]) {
+  background: hsl(188, 18%, 16%) !important;
 }
 
 /* Shadcn card komponenty */
