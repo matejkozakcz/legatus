@@ -99,22 +99,21 @@ export type Database = {
           created_at: string
           date: string
           has_pohovor: boolean
-          has_poradko: boolean
-          has_poradko_pohovor: boolean
+          has_poradenstvi: boolean
+          
           id: string
           meeting_type: string
           podepsane_bj: number
           pohovor_date: string | null
-          pohovor_doporuceni: number
+          doporuceni_pohovor: number
           pohovor_jde_dal: boolean | null
-          poradko_date: string | null
-          poradko_doporuceni: number
-          poradko_pohovor_doporuceni: number
-          poradko_pohovor_jde_dal: boolean | null
-          poradko_status: string | null
+          poradenstvi_date: string | null
+          doporuceni_poradenstvi: number
+
+          poradenstvi_status: string | null
           potencial_bj: number | null
           poznamka: string | null
-          ref_count: number
+          doporuceni_fsa: number
           updated_at: string
           user_id: string
           vizi_spoluprace: boolean
@@ -127,22 +126,19 @@ export type Database = {
           created_at?: string
           date: string
           has_pohovor?: boolean
-          has_poradko?: boolean
-          has_poradko_pohovor?: boolean
+          has_poradenstvi?: boolean
           id?: string
           meeting_type: string
           podepsane_bj?: number
           pohovor_date?: string | null
-          pohovor_doporuceni?: number
+          doporuceni_pohovor?: number
           pohovor_jde_dal?: boolean | null
-          poradko_date?: string | null
-          poradko_doporuceni?: number
-          poradko_pohovor_doporuceni?: number
-          poradko_pohovor_jde_dal?: boolean | null
-          poradko_status?: string | null
+          poradenstvi_date?: string | null
+          doporuceni_poradenstvi?: number
+          poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
-          ref_count?: number
+          doporuceni_fsa?: number
           updated_at?: string
           user_id: string
           vizi_spoluprace?: boolean
@@ -155,22 +151,19 @@ export type Database = {
           created_at?: string
           date?: string
           has_pohovor?: boolean
-          has_poradko?: boolean
-          has_poradko_pohovor?: boolean
+          has_poradenstvi?: boolean
           id?: string
           meeting_type?: string
           podepsane_bj?: number
           pohovor_date?: string | null
-          pohovor_doporuceni?: number
+          doporuceni_pohovor?: number
           pohovor_jde_dal?: boolean | null
-          poradko_date?: string | null
-          poradko_doporuceni?: number
-          poradko_pohovor_doporuceni?: number
-          poradko_pohovor_jde_dal?: boolean | null
-          poradko_status?: string | null
+          poradenstvi_date?: string | null
+          doporuceni_poradenstvi?: number
+          poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
-          ref_count?: number
+          doporuceni_fsa?: number
           updated_at?: string
           user_id?: string
           vizi_spoluprace?: boolean

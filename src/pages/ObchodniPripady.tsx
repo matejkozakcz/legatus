@@ -27,25 +27,22 @@ interface Meeting {
   week_start: string;
   meeting_type: MeetingType;
   bj: number;
-  ref_count: number;
+  doporuceni_fsa: number;
   vizi_spoluprace: boolean;
   poznamka: string | null;
   created_at: string;
   updated_at: string;
   cancelled: boolean;
   potencial_bj: number | null;
-  has_poradko: boolean;
+  has_poradenstvi: boolean;
   podepsane_bj: number;
-  poradko_doporuceni: number;
-  poradko_status: string | null;
-  has_poradko_pohovor: boolean;
-  poradko_pohovor_jde_dal: boolean | null;
-  poradko_pohovor_doporuceni: number;
+  doporuceni_poradenstvi: number;
+  poradenstvi_status: string | null;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
-  pohovor_doporuceni: number;
+  doporuceni_pohovor: number;
   case_name: string | null;
-  poradko_date: string | null;
+  poradenstvi_date: string | null;
   pohovor_date: string | null;
 }
 
@@ -56,16 +53,16 @@ interface MeetingForm {
   meeting_type: MeetingType;
   cancelled: boolean;
   potencial_bj: string;
-  has_poradko: boolean;
+  has_poradenstvi: boolean;
   podepsane_bj: string;
-  poradko_doporuceni: string;
-  poradko_date: string;
-  poradko_status: PoradkoStatus;
+  doporuceni_poradenstvi: string;
+  poradenstvi_date: string;
+  poradenstvi_status: PoradkoStatus;
   has_pohovor: boolean;
   pohovor_jde_dal: boolean | null;
-  pohovor_doporuceni: string;
+  doporuceni_pohovor: string;
   pohovor_date: string;
-  ref_count: string;
+  doporuceni_fsa: string;
   poznamka: string;
   case_name: string;
 }
@@ -75,16 +72,16 @@ const defaultForm = (): MeetingForm => ({
   meeting_type: "FSA",
   cancelled: false,
   potencial_bj: "",
-  has_poradko: false,
+  has_poradenstvi: false,
   podepsane_bj: "",
-  poradko_doporuceni: "0",
-  poradko_date: "",
-  poradko_status: null,
+  doporuceni_poradenstvi: "0",
+  poradenstvi_date: "",
+  poradenstvi_status: null,
   has_pohovor: false,
   pohovor_jde_dal: null,
-  pohovor_doporuceni: "0",
+  doporuceni_pohovor: "0",
   pohovor_date: "",
-  ref_count: "0",
+  doporuceni_fsa: "0",
   poznamka: "",
   case_name: "",
 });
@@ -169,7 +166,7 @@ function MeetingModal({
   if (!open) return null;
 
   const set = (patch: Partial<MeetingForm>) => setForm((f) => ({ ...f, ...patch }));
-  const isEdit = initial.date !== format(new Date(), "yyyy-MM-dd") || initial.has_poradko || initial.cancelled;
+  const isEdit = initial.date !== format(new Date(), "yyyy-MM-dd") || initial.has_poradenstvi || initial.cancelled;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -247,7 +244,7 @@ function MeetingModal({
                   />
                 </div>
                 <div className="flex-1">
-                  <NumberInput label="Doporučení" value={form.ref_count} onChange={(v) => set({ ref_count: v })} />
+                  <NumberInput label="Doporučení" value={form.doporuceni_fsa} onChange={(v) => set({ doporuceni_fsa: v })} />
                 </div>
               </div>
             )}
@@ -260,8 +257,8 @@ function MeetingModal({
             {/* ── Sekce Poradko ── */}
             {form.meeting_type !== "POH" && (
               <div className="mb-4 p-3 rounded-xl border border-input">
-                <Toggle checked={form.has_poradko} onChange={(v) => set({ has_poradko: v })} label="Poradenství" />
-                {form.has_poradko && (
+                <Toggle checked={form.has_poradenstvi} onChange={(v) => set({ has_poradenstvi: v })} label="Poradenství" />
+                {form.has_poradenstvi && (
                   <div className="mt-3 space-y-3 pl-1">
                     {/* Status: Proběhlé / Zrušené */}
                     <div className="flex gap-2">
@@ -269,14 +266,14 @@ function MeetingModal({
                         <button
                           key={s}
                           type="button"
-                          onClick={() => set({ poradko_status: form.poradko_status === s ? null : s })}
+                          onClick={() => set({ poradenstvi_status: form.poradenstvi_status === s ? null : s })}
                           className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${
-                            form.poradko_status === s
+                            form.poradenstvi_status === s
                               ? "border-transparent text-white"
                               : "border-input bg-background text-muted-foreground"
                           }`}
                           style={
-                            form.poradko_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}
+                            form.poradenstvi_status === s ? { background: s === "probehle" ? "#00abbd" : "#fc7c71" } : {}
                           }
                         >
                           {s === "probehle" ? "Proběhlé" : "Zrušené"}
@@ -287,8 +284,8 @@ function MeetingModal({
                       <label className="block text-xs font-medium text-muted-foreground mb-1">Datum poradenství</label>
                       <input
                         type="date"
-                        value={form.poradko_date}
-                        onChange={(e) => set({ poradko_date: e.target.value })}
+                        value={form.poradenstvi_date}
+                        onChange={(e) => set({ poradenstvi_date: e.target.value })}
                         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -305,8 +302,8 @@ function MeetingModal({
                       <div className="flex-1">
                         <NumberInput
                           label="Doporučení"
-                          value={form.poradko_doporuceni}
-                          onChange={(v) => set({ poradko_doporuceni: v })}
+                          value={form.doporuceni_poradenstvi}
+                          onChange={(v) => set({ doporuceni_poradenstvi: v })}
                         />
                       </div>
                     </div>
@@ -348,8 +345,8 @@ function MeetingModal({
                   </div>
                   <NumberInput
                     label="Doporučení"
-                    value={form.pohovor_doporuceni}
-                    onChange={(v) => set({ pohovor_doporuceni: v })}
+                    value={form.doporuceni_pohovor}
+                    onChange={(v) => set({ doporuceni_pohovor: v })}
                   />
                 </div>
               )}
@@ -360,8 +357,8 @@ function MeetingModal({
               <div className="mb-4">
                 <NumberInput
                   label="Doporučení (schůzka)"
-                  value={form.ref_count}
-                  onChange={(v) => set({ ref_count: v })}
+                  value={form.doporuceni_fsa}
+                  onChange={(v) => set({ doporuceni_fsa: v })}
                 />
               </div>
             )}
@@ -404,7 +401,7 @@ function MeetingModal({
 
 function totalRefs(m: Meeting): number {
   return (
-    (m.ref_count || 0) + (m.poradko_doporuceni || 0) + (m.pohovor_doporuceni || 0) + (m.poradko_pohovor_doporuceni || 0)
+    (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0) + (0 || 0)
   );
 }
 
@@ -484,7 +481,7 @@ export default function ObchodniPripady() {
       fsa: active.filter((m) => m.meeting_type === "FSA").length,
       poh: active.filter((m) => m.meeting_type === "POH").length,
       ser: active.filter((m) => m.meeting_type === "SER").length,
-      bj: active.filter((m) => m.poradko_status === "probehle").reduce((s, m) => s + (m.podepsane_bj || 0), 0),
+      bj: active.filter((m) => m.poradenstvi_status === "probehle").reduce((s, m) => s + (m.podepsane_bj || 0), 0),
       ref: active.reduce((s, m) => s + totalRefs(m), 0),
       cancelled: meetings.filter((m) => m.cancelled).length,
     };
@@ -500,31 +497,27 @@ export default function ObchodniPripady() {
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
-        has_poradko: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko,
+        has_poradenstvi: !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi,
         podepsane_bj:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? parseFloat(form.podepsane_bj) || 0 : 0,
-        poradko_doporuceni:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko
-            ? parseInt(form.poradko_doporuceni) || 0
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi ? parseFloat(form.podepsane_bj) || 0 : 0,
+        doporuceni_poradenstvi:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi
+            ? parseInt(form.doporuceni_poradenstvi) || 0
             : 0,
-        poradko_date:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_date
-            ? form.poradko_date
+        poradenstvi_date:
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi && form.poradenstvi_date
+            ? form.poradenstvi_date
             : null,
-        poradko_status: !form.cancelled && form.meeting_type !== "POH" && form.has_poradko ? form.poradko_status : null,
-        has_poradko_pohovor: false,
-        poradko_pohovor_jde_dal: null,
-        poradko_pohovor_doporuceni: 0,
-        has_pohovor: !form.cancelled && form.has_pohovor,
+        poradenstvi_status: !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi ? form.poradenstvi_status : null,
+                                has_pohovor: !form.cancelled && form.has_pohovor,
         pohovor_jde_dal: !form.cancelled && form.has_pohovor ? form.pohovor_jde_dal : null,
-        pohovor_doporuceni: !form.cancelled && form.has_pohovor ? parseInt(form.pohovor_doporuceni) || 0 : 0,
+        doporuceni_pohovor: !form.cancelled && form.has_pohovor ? parseInt(form.doporuceni_pohovor) || 0 : 0,
         pohovor_date: !form.cancelled && form.has_pohovor && form.pohovor_date ? form.pohovor_date : null,
-        // Legacy fields
         bj:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradko && form.poradko_status === "probehle"
+          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi && form.poradenstvi_status === "probehle"
             ? parseFloat(form.podepsane_bj) || 0
             : 0,
-        ref_count: !form.cancelled ? parseInt(form.ref_count) || 0 : 0,
+        doporuceni_fsa: !form.cancelled ? parseInt(form.doporuceni_fsa) || 0 : 0,
         vizi_spoluprace: !form.cancelled && form.has_pohovor && form.pohovor_jde_dal === true,
         poznamka: form.poznamka.trim() || null,
       };
@@ -588,16 +581,16 @@ export default function ObchodniPripady() {
         meeting_type: editMeeting.meeting_type,
         cancelled: editMeeting.cancelled,
         potencial_bj: editMeeting.potencial_bj != null ? String(editMeeting.potencial_bj) : "",
-        has_poradko: editMeeting.has_poradko,
+        has_poradenstvi: editMeeting.has_poradenstvi,
         podepsane_bj: String(editMeeting.podepsane_bj || ""),
-        poradko_doporuceni: String(editMeeting.poradko_doporuceni || 0),
-        poradko_date: editMeeting.poradko_date || "",
-        poradko_status: (editMeeting.poradko_status as PoradkoStatus) || null,
+        doporuceni_poradenstvi: String(editMeeting.doporuceni_poradenstvi || 0),
+        poradenstvi_date: editMeeting.poradenstvi_date || "",
+        poradenstvi_status: (editMeeting.poradenstvi_status as PoradkoStatus) || null,
         has_pohovor: editMeeting.has_pohovor,
         pohovor_jde_dal: editMeeting.pohovor_jde_dal,
-        pohovor_doporuceni: String(editMeeting.pohovor_doporuceni || 0),
+        doporuceni_pohovor: String(editMeeting.doporuceni_pohovor || 0),
         pohovor_date: editMeeting.pohovor_date || "",
-        ref_count: String(editMeeting.ref_count || 0),
+        doporuceni_fsa: String(editMeeting.doporuceni_fsa || 0),
         poznamka: editMeeting.poznamka || "",
         case_name: editMeeting.case_name || "",
       }
@@ -606,7 +599,7 @@ export default function ObchodniPripady() {
   // ── Summary helpers ──
   const meetingSummary = (m: Meeting) => {
     const parts: string[] = [];
-    if (m.has_poradko) parts.push(`${m.podepsane_bj} BJ`);
+    if (m.has_poradenstvi) parts.push(`${m.podepsane_bj} BJ`);
     if (m.has_pohovor)
       parts.push(m.pohovor_jde_dal ? "Jde dál" : m.pohovor_jde_dal === false ? "Nejde dál" : "Pohovor");
     const refs = totalRefs(m);
@@ -915,7 +908,7 @@ export default function ObchodniPripady() {
                         </span>
                       </td>
                       <td className="font-semibold" style={{ color: "#0c2226" }}>
-                        {m.cancelled ? "—" : m.has_poradko ? m.podepsane_bj : "—"}
+                        {m.cancelled ? "—" : m.has_poradenstvi ? m.podepsane_bj : "—"}
                       </td>
                       <td>
                         {m.cancelled ? (
