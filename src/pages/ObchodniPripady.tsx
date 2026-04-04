@@ -936,7 +936,7 @@ export default function ObchodniPripady() {
                       <td>
                         <div className="flex items-center gap-1 justify-end">
                           <button
-                            onClick={() => openEdit(m)}
+                            onClick={(e) => { e.stopPropagation(); openEdit(m); }}
                             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
