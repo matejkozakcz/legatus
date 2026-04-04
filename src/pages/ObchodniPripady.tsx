@@ -894,8 +894,9 @@ export default function ObchodniPripady() {
                   return (
                     <tr
                       key={m.id}
-                      className={isToday ? "current" : ""}
+                      className={`${isToday ? "current" : ""} cursor-pointer hover:bg-muted/50`}
                       style={m.cancelled ? { opacity: 0.45, textDecoration: "line-through" } : {}}
+                      onClick={() => openEdit(m)}
                     >
                       <td className="text-left whitespace-nowrap font-medium">
                         {m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
