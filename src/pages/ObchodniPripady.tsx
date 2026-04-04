@@ -894,8 +894,9 @@ export default function ObchodniPripady() {
                   return (
                     <tr
                       key={m.id}
-                      className={isToday ? "current" : ""}
+                      className={`${isToday ? "current" : ""} cursor-pointer hover:bg-muted/50`}
                       style={m.cancelled ? { opacity: 0.45, textDecoration: "line-through" } : {}}
+                      onClick={() => openEdit(m)}
                     >
                       <td className="text-left whitespace-nowrap font-medium">
                         {m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
@@ -935,13 +936,13 @@ export default function ObchodniPripady() {
                       <td>
                         <div className="flex items-center gap-1 justify-end">
                           <button
-                            onClick={() => openEdit(m)}
+                            onClick={(e) => { e.stopPropagation(); openEdit(m); }}
                             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                           <button
-                            onClick={() => setConfirmDeleteId(m.id)}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
                             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
