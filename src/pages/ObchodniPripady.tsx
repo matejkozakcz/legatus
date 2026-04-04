@@ -91,7 +91,7 @@ const defaultForm = (): MeetingForm => ({
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm font-medium" style={{ color: "#0c2226" }}>
+      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
         {label}
       </span>
       <button
@@ -179,7 +179,7 @@ function MeetingModal({
           <X className="h-5 w-5" />
         </button>
 
-        <h2 className="font-heading text-lg font-semibold mb-5" style={{ color: "#0c2226" }}>
+        <h2 className="font-heading text-lg font-semibold mb-5" style={{ color: "var(--text-primary)" }}>
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
@@ -633,8 +633,8 @@ export default function ObchodniPripady() {
           {/* Mobile header */}
           <div style={{ marginBottom: 16 }}>
             <div className="flex items-center gap-3">
-              <Briefcase className="h-5 w-5" style={{ color: "#0c2226" }} />
-              <h1 className="font-heading font-bold" style={{ fontSize: 22, color: "#0c2226" }}>
+              <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
+              <h1 className="font-heading font-bold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
                 Obchodní případy
               </h1>
             </div>
@@ -698,7 +698,7 @@ export default function ObchodniPripady() {
               }}
             >
               <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
-              <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+              <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
                 {MONTH_NAMES[selectedMonth]} {selectedYear}
               </div>
             </button>
@@ -742,7 +742,7 @@ export default function ObchodniPripady() {
                   >
                     <ChevronLeft size={14} color="#00555f" />
                   </button>
-                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>{selectedYear}</span>
+                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{selectedYear}</span>
                   <button
                     onClick={() => setSelectedYear((y) => y + 1)}
                     style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eef3f4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -767,7 +767,7 @@ export default function ObchodniPripady() {
                           fontFamily: "Open Sans, sans-serif", fontSize: 13,
                           fontWeight: isSelected ? 700 : 500,
                           background: isSelected ? "#00abbd" : "transparent",
-                          color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "#0c2226",
+                          color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "var(--text-primary)",
                           transition: "background 0.15s, color 0.15s",
                         }}
                       >
@@ -786,8 +786,8 @@ export default function ObchodniPripady() {
           {/* Desktop: Záhlaví */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Briefcase className="h-6 w-6" style={{ color: "#0c2226" }} />
-              <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+              <Briefcase className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+              <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
                 Obchodní případy
               </h1>
             </div>
@@ -864,7 +864,7 @@ export default function ObchodniPripady() {
                 </button>
               </div>
               {!m.cancelled && (
-                <div className="text-sm font-body" style={{ color: "#0c2226" }}>
+                <div className="text-sm font-body" style={{ color: "var(--text-primary)" }}>
                   {meetingSummary(m)}
                 </div>
               )}
@@ -908,7 +908,7 @@ export default function ObchodniPripady() {
                           {meetingTypeLabel(m.meeting_type)}
                         </span>
                       </td>
-                      <td className="font-semibold" style={{ color: "#0c2226" }}>
+                      <td className="font-semibold" style={{ color: "var(--text-primary)" }}>
                         {m.cancelled ? "—" : m.has_poradenstvi ? m.podepsane_bj : "—"}
                       </td>
                       <td>
@@ -965,7 +965,7 @@ export default function ObchodniPripady() {
             className="relative w-full max-w-xs bg-card rounded-2xl shadow-2xl p-6 mx-4 animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-heading text-base font-semibold mb-2" style={{ color: "#0c2226" }}>Smazat schůzku?</h2>
+            <h2 className="font-heading text-base font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Smazat schůzku?</h2>
             <p className="text-sm text-muted-foreground mb-5">Tato akce je nevratná.</p>
             <div className="flex gap-3">
               <button

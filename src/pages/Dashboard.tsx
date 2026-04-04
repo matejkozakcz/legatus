@@ -15,11 +15,14 @@ import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { toast } from "sonner";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
 // ─── Deadlines section (incoming notifications) ───────────────────────────────
 function DeadlinesSection({ userId }: { userId?: string }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { data: notifications = [] } = useQuery({
     queryKey: ["my_notifications", userId],
     queryFn: async () => {
@@ -61,7 +64,7 @@ function DeadlinesSection({ userId }: { userId?: string }) {
             fontFamily: "Poppins, sans-serif",
             fontWeight: 700,
             fontSize: 16,
-            color: "#0c2226",
+            color: "var(--text-primary)",
           }}
         >
           Upozornění
@@ -75,7 +78,9 @@ function DeadlinesSection({ userId }: { userId?: string }) {
               key={n.id}
               onClick={() => !n.read && markRead(n.id)}
               style={{
-                background: n.read ? "#f5f8f9" : "white",
+                background: isDark
+                  ? (n.read ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)")
+                  : (n.read ? "#f5f8f9" : "white"),
                 borderRadius: 14,
                 padding: "12px 16px",
                 border: `1px solid ${isOverdue ? "#fc7c71" : "#e1e9eb"}`,
@@ -89,7 +94,7 @@ function DeadlinesSection({ userId }: { userId?: string }) {
                     fontFamily: "Poppins, sans-serif",
                     fontWeight: 600,
                     fontSize: 14,
-                    color: "#0c2226",
+                    color: "var(--text-primary)",
                   }}
                 >
                   {n.title}
@@ -108,7 +113,7 @@ function DeadlinesSection({ userId }: { userId?: string }) {
                 <div
                   style={{
                     fontSize: 13,
-                    color: "#8aadb3",
+                    color: "var(--text-muted)",
                     marginTop: 4,
                     fontFamily: "Open Sans, sans-serif",
                   }}
@@ -268,6 +273,8 @@ function MobileStatCard({
 
 const Dashboard = () => {
   const { profile, user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -553,7 +560,7 @@ const Dashboard = () => {
               fontFamily: "Open Sans, sans-serif",
               fontSize: 22,
               fontWeight: 400,
-              color: "#0c2226",
+              color: "var(--text-primary)",
               lineHeight: 1.2,
             }}
           >
@@ -564,7 +571,7 @@ const Dashboard = () => {
               fontFamily: "Poppins, sans-serif",
               fontSize: 34,
               fontWeight: 800,
-              color: "#0c2226",
+              color: "var(--text-primary)",
               lineHeight: 1.1,
               display: "flex",
               alignItems: "center",
@@ -581,7 +588,7 @@ const Dashboard = () => {
               fontFamily: "Poppins, sans-serif",
               fontSize: 16,
               fontWeight: 700,
-              color: "#0c2226",
+              color: "var(--text-primary)",
               marginTop: 10,
             }}
           >
@@ -737,13 +744,13 @@ const Dashboard = () => {
             left: 16,
             right: 16,
             zIndex: 40,
-            background: "rgba(255,255,255,0.92)",
+            background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
             backdropFilter: "blur(20px) saturate(1.8)",
             WebkitBackdropFilter: "blur(20px) saturate(1.8)",
             borderRadius: 16,
             padding: "10px 16px",
-            border: "1px solid rgba(225,233,235,0.8)",
-            boxShadow: "0 -2px 16px rgba(0,0,0,0.06)",
+            border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(225,233,235,0.8)",
+            boxShadow: isDark ? "0 -2px 16px rgba(0,0,0,0.4)" : "0 -2px 16px rgba(0,0,0,0.06)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -755,7 +762,7 @@ const Dashboard = () => {
               width: 32,
               height: 32,
               borderRadius: 10,
-              background: "#dde8ea",
+              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
               border: "none",
               cursor: "pointer",
               display: "flex",
@@ -763,13 +770,13 @@ const Dashboard = () => {
               justifyContent: "center",
             }}
           >
-            <ChevronLeft size={15} color="#00555f" />
+            <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
           </button>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
               {isMobileWeekEditable ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
             </div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
               {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
             </div>
           </div>
@@ -780,7 +787,7 @@ const Dashboard = () => {
               width: 32,
               height: 32,
               borderRadius: 10,
-              background: "#dde8ea",
+              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
               border: "none",
               cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
               display: "flex",
@@ -789,7 +796,7 @@ const Dashboard = () => {
               opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
             }}
           >
-            <ChevronRight size={15} color="#00555f" />
+            <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
           </button>
         </div>
 
@@ -798,7 +805,7 @@ const Dashboard = () => {
           style={{
             textAlign: "center",
             fontSize: 11,
-            color: "#8aadb3",
+            color: "var(--text-muted)",
             padding: "6px 0 12px",
             display: "flex",
             alignItems: "center",
@@ -976,8 +983,8 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <LayoutDashboard className="h-6 w-6" style={{ color: "#0c2226" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+        <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           DASHBOARD
         </h1>
       </div>
@@ -986,7 +993,7 @@ const Dashboard = () => {
         <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 350 }}>
           {/* Stav byznysu — 1/4 */}
           <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
               Stav byznysu
             </h2>
             <div
@@ -1006,7 +1013,7 @@ const Dashboard = () => {
           </div>
           {/* Moje struktura — 3/5 */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226", marginBottom: 16 }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
               Moje struktura
             </h2>
             <div
@@ -1029,7 +1036,7 @@ const Dashboard = () => {
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+        <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
           Přehled aktivit
         </h2>
 

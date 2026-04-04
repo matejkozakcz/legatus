@@ -72,7 +72,7 @@ function Counter({
           fontFamily: "Poppins, sans-serif",
           fontWeight: 700,
           fontSize: 17,
-          color: "#0c2226",
+          color: "var(--text-primary)",
           transition: "transform 0.1s",
           transform: pressed ? "scale(1.15)" : "scale(1)",
           display: "inline-block",
@@ -353,7 +353,7 @@ const MojeAktivity = () => {
             <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
               {isMobileWeekEditable ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
             </div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "#0c2226" }}>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
               {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
             </div>
           </div>
@@ -388,7 +388,7 @@ const MojeAktivity = () => {
                   fontFamily: "Poppins, sans-serif",
                   fontWeight: 700,
                   fontSize: 15,
-                  color: "#0c2226",
+                  color: "var(--text-primary)",
                   textAlign: "center",
                   marginBottom: 14,
                 }}
@@ -399,7 +399,7 @@ const MojeAktivity = () => {
                 {/* Planned counter */}
                 <div style={{ flex: 1 }}>
                   <div
-                    style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
+                    style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
                   >
                     {plannedLabel}
                   </div>
@@ -415,7 +415,7 @@ const MojeAktivity = () => {
                 {/* Actual counter — read-only if synced */}
                 <div style={{ flex: 1 }}>
                   <div
-                    style={{ fontSize: 11, color: "#8aadb3", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
+                    style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 8, textAlign: "center" }}
                   >
                     {actualLabel}
                   </div>
@@ -431,7 +431,7 @@ const MojeAktivity = () => {
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 700,
                         fontSize: 17,
-                        color: "#8aadb3",
+                        color: "var(--text-muted)",
                         fontStyle: "italic",
                       }}
                     >
@@ -459,7 +459,7 @@ const MojeAktivity = () => {
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 700,
                 fontSize: 14,
-                color: "#0c2226",
+                color: "var(--text-primary)",
                 textAlign: "center",
                 marginBottom: 12,
               }}
@@ -477,7 +477,7 @@ const MojeAktivity = () => {
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 700,
                 fontSize: 17,
-                color: "#8aadb3",
+                color: "var(--text-muted)",
                 fontStyle: "italic",
               }}
             >
@@ -490,7 +490,7 @@ const MojeAktivity = () => {
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 700,
                 fontSize: 14,
-                color: "#0c2226",
+                color: "var(--text-primary)",
                 textAlign: "center",
                 marginBottom: 12,
               }}
@@ -508,7 +508,7 @@ const MojeAktivity = () => {
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 700,
                 fontSize: 17,
-                color: "#8aadb3",
+                color: "var(--text-muted)",
                 fontStyle: "italic",
               }}
             >
@@ -522,7 +522,7 @@ const MojeAktivity = () => {
           style={{
             textAlign: "center",
             fontSize: 11,
-            color: "#8aadb3",
+            color: "var(--text-muted)",
             padding: "6px 0 12px",
             display: "flex",
             alignItems: "center",
@@ -540,8 +540,8 @@ const MojeAktivity = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <BarChart3 className="h-6 w-6" style={{ color: "#0c2226" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+        <BarChart3 className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           Přehled aktivit
         </h1>
       </div>
@@ -549,10 +549,10 @@ const MojeAktivity = () => {
       {/* Stats */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "#0c2226" }}>
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
             Přehled aktivit
           </h2>
-          <Pencil className="h-4 w-4" style={{ color: "#8aadb3" }} />
+          <Pencil className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -561,7 +561,7 @@ const MojeAktivity = () => {
             selectedMonth={selectedMonth}
             onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
           />
-          <span className="font-body ml-2" style={{ fontSize: 12, color: "#8aadb3" }}>
+          <span className="font-body ml-2" style={{ fontSize: 12, color: "var(--text-muted)" }}>
             Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
             {format(monthEnd, "d. M. yyyy", { locale: cs })}
           </span>
@@ -629,7 +629,7 @@ const MojeAktivity = () => {
                       const cellValue = (record as any)?.[col.key] || 0;
                       const isSynced = AUTO_SYNCED_KEYS.has(col.key);
                       return (
-                        <td key={col.key} style={isSynced ? { color: "#8aadb3", fontStyle: "italic" } : undefined}>
+                        <td key={col.key} style={isSynced ? { color: "var(--text-muted)", fontStyle: "italic" } : undefined}>
                           {isEditable && !isSynced ? (
                             <input
                               type="number"

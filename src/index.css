@@ -652,3 +652,95 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
 }
+
+/* ===== Dark mode — doplňkové overrides pro čitelnost ===== */
+
+/* CSS proměnné pro text — funkční v inline stylech i třídách */
+.dark {
+  --text-primary: #cde4e7;
+  --text-secondary: #7aadb3;
+  --text-muted: #4a7a80;
+}
+
+/* Všechny h1-h6 v dark mode */
+.dark h1, .dark h2, .dark h3, .dark h4 {
+  color: var(--text-primary);
+}
+
+/* Inline-style white backgrounds (notification karty, week nav) */
+.dark [style*="background: white"],
+.dark [style*='background: "white"'],
+.dark [style*="background:#fff"],
+.dark [style*="background: #fff"],
+.dark [style*="background: rgb(255, 255, 255)"] {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.09) !important;
+  color: var(--text-primary) !important;
+}
+.dark [style*="background: #f5f8f9"],
+.dark [style*="background:#f5f8f9"] {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+/* +/- tlačítka v mobile stat kartách */
+.dark [style*="background: rgba(255,255,255,0.15)"] {
+  background: rgba(255,255,255,0.12) !important;
+}
+.dark [style*="background: rgba(255,255,255,0.2)"] {
+  background: rgba(255,255,255,0.16) !important;
+}
+
+/* Světle šedá pozadí (role badge, chip) */
+.dark [style*="background: #dde8ea"],
+.dark [style*="background: #eef3f4"],
+.dark [style*="background: #e6f0f1"],
+.dark [style*="background: #e6f7f9"],
+.dark [style*="background: #eeebf7"] {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* Deep-teal tlačítka/ikony — zůstávají viditelné */
+.dark [style*="color: #00555f"] {
+  color: #4dd8e8 !important;
+}
+.dark [style*="color: \"#00555f\""] {
+  color: #4dd8e8 !important;
+}
+
+/* Bílá pozadí statCards na desktopu */
+.dark .bg-card,
+.dark [class*="bg-white"] {
+  background: rgba(255,255,255,0.055) !important;
+}
+
+/* Shadcn card komponenty */
+.dark .bg-background {
+  background: hsl(188,35%,7%) !important;
+}
+
+/* Formulářové prvky — border a pozadí */
+.dark .border-input {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+.dark .bg-background.border.border-input {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Mobile stat labels (ANALÝZY, POHOVORY atd.) */
+.dark .mobile-stat-label {
+  color: #fc9d95;
+}
+.dark .mobile-stat-value {
+  color: #4dd8e8;
+}
+.dark .mobile-stat-sub {
+  color: #4dd8e8;
+}
+.dark .mobile-stat-sublabel {
+  color: var(--text-muted);
+}
+
+/* Muted-foreground text */
+.dark .text-muted-foreground {
+  color: var(--text-secondary) !important;
+}

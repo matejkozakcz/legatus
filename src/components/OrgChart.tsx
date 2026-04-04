@@ -316,7 +316,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <p className="font-body text-[13px]" style={{ color: "#8aadb3" }}>Načítání struktury...</p>
+        <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Načítání struktury...</p>
       </div>
     );
   }
@@ -326,7 +326,7 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   const currentUser = profiles.find((p) => p.id === currentUserId);
   if (!currentUser) {
     return (
-      <p className="font-body text-[13px]" style={{ color: "#8aadb3" }}>Žádná struktura k zobrazení.</p>
+      <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Žádná struktura k zobrazení.</p>
     );
   }
 

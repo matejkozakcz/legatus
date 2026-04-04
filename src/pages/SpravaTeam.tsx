@@ -404,8 +404,8 @@ const SpravaTeam = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6" style={{ color: "#0c2226" }} />
-          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>SPRÁVA TÝMU</h1>
+          <Users className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
       </div>
 
@@ -427,7 +427,7 @@ const SpravaTeam = () => {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" style={{ color: "#00abbd" }} />
-            <h2 className="font-heading font-semibold" style={{ fontSize: 16, color: "#0c2226" }}>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 16, color: "var(--text-primary)" }}>
               Čekající povýšení
             </h2>
           </div>
@@ -453,7 +453,7 @@ const SpravaTeam = () => {
                       <span className={currentBadge.className}>{currentBadge.label}</span>
                       <span className="text-xs text-muted-foreground">→</span>
                       <span className={targetBadge.className}>{targetBadge.label}</span>
-                      <span className="text-xs font-body" style={{ color: "#8aadb3" }}>
+                      <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
                         {req.requested_role === "garant" && req.cumulative_bj != null &&
                           `Kumulativní BJ: ${req.cumulative_bj} · ${req.direct_ziskatels ?? "?"} ve struktuře`}
                         {req.requested_role === "budouci_vedouci" && req.direct_ziskatels != null &&
@@ -490,11 +490,11 @@ const SpravaTeam = () => {
         <div className="space-y-1">
           {isLoading ? (
             <div className="legatus-card p-8 text-center">
-              <p className="font-body animate-pulse" style={{ color: "#8aadb3" }}>Načítání členů...</p>
+              <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
             </div>
           ) : members.length === 0 ? (
             <div className="legatus-card p-8 text-center">
-              <p className="font-body" style={{ color: "#8aadb3" }}>Zatím nemáte žádné členy v týmu.</p>
+              <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
             </div>
           ) : (
             <div className="space-y-1">

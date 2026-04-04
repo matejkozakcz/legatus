@@ -167,7 +167,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         <img src={legatusLogo} alt="Legatus" className="h-12 mb-1" />
         <h2
           className="font-heading font-bold text-base mb-6"
-          style={{ letterSpacing: "0.12em", color: "#0c2226" }}
+          style={{ letterSpacing: "0.12em", color: "var(--text-primary)" }}
         >
           NASTAVENÍ ÚČTU
         </h2>
@@ -190,8 +190,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center gap-0.5">
-                  <Camera className="w-5 h-5" style={{ color: "#8aadb3" }} />
-                  <span className="text-[10px] font-body" style={{ color: "#8aadb3" }}>Foto</span>
+                  <Camera className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                  <span className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>Foto</span>
                 </div>
               )}
             </button>
@@ -207,7 +207,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           {/* Name fields */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 Jméno
               </label>
               <input
@@ -223,7 +223,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
-                  color: "#0c2226",
+                  color: "var(--text-primary)",
                   outline: "none",
                 }}
                 onFocus={(e) => {
@@ -237,7 +237,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               />
             </div>
             <div className="flex-1">
-              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 Příjmení
               </label>
               <input
@@ -253,7 +253,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
-                  color: "#0c2226",
+                  color: "var(--text-primary)",
                   outline: "none",
                 }}
                 onFocus={(e) => {
@@ -270,7 +270,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
           {/* Vedouci picker */}
           <div>
-            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
+            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
               Vedoucí
             </label>
             <PersonPicker
@@ -287,7 +287,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
           {/* Ziskatel picker */}
           <div>
-            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "#0c2226" }}>
+            <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
               Získatel
             </label>
             {!ziskatelNotInSystem ? (
@@ -311,7 +311,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
-                  color: "#0c2226",
+                  color: "var(--text-primary)",
                   outline: "none",
                 }}
                 onFocus={(e) => {

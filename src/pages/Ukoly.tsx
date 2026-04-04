@@ -70,7 +70,7 @@ const Ukoly = () => {
               border: "none",
               outline: "none",
               fontSize: 14,
-              color: "#0c2226",
+              color: "var(--text-primary)",
               background: "transparent",
               fontFamily: "Open Sans, sans-serif",
             }}
@@ -87,7 +87,7 @@ const Ukoly = () => {
               flexShrink: 0,
             }}
           >
-            <Plus size={16} color={inputValue.trim() ? "white" : "#8aadb3"} />
+            <Plus size={16} color={inputValue.trim() ? "white" : "var(--text-muted)"} />
           </button>
         </div>
 
@@ -96,7 +96,7 @@ const Ukoly = () => {
           <div style={{ marginBottom: 16 }}>
             <div style={{
               fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: "#8aadb3",
+              textTransform: "uppercase", color: "var(--text-muted)",
               padding: "0 4px 8px",
             }}>
               Aktivní ({pending.length})
@@ -117,7 +117,7 @@ const Ukoly = () => {
           <div>
             <div style={{
               fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase", color: "#8aadb3",
+              textTransform: "uppercase", color: "var(--text-muted)",
               padding: "0 4px 8px",
             }}>
               Hotové ({done.length})
@@ -137,10 +137,10 @@ const Ukoly = () => {
         {tasks.length === 0 && (
           <div style={{
             textAlign: "center", padding: "48px 24px",
-            color: "#8aadb3",
+            color: "var(--text-muted)",
           }}>
             <CheckSquare size={48} color="#c8d8dc" style={{ margin: "0 auto 12px" }} />
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "#4a6b70" }}>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 16, color: "var(--text-secondary)" }}>
               Žádné úkoly
             </div>
             <div style={{ fontSize: 13, marginTop: 4 }}>
@@ -156,8 +156,8 @@ const Ukoly = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <CheckSquare className="h-6 w-6" style={{ color: "#0c2226" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "#0c2226" }}>
+        <CheckSquare className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           Úkoly
         </h1>
       </div>
@@ -173,7 +173,7 @@ const Ukoly = () => {
             className="flex-1"
             style={{
               border: "1.5px solid #e2eaec", borderRadius: 8, padding: "8px 14px",
-              fontSize: 14, color: "#0c2226", outline: "none",
+              fontSize: 14, color: "var(--text-primary)", outline: "none",
             }}
           />
           <button
@@ -186,7 +186,7 @@ const Ukoly = () => {
         </div>
 
         {tasks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "32px 0", color: "#8aadb3" }}>
+          <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)" }}>
             Zatím žádné úkoly. Přidej první!
           </div>
         ) : (
@@ -214,7 +214,7 @@ const Ukoly = () => {
                   {task.done && <Check size={12} color="white" />}
                 </button>
                 <span style={{
-                  flex: 1, fontSize: 14, color: task.done ? "#8aadb3" : "#0c2226",
+                  flex: 1, fontSize: 14, color: task.done ? "var(--text-muted)" : "var(--text-primary)",
                   textDecoration: task.done ? "line-through" : "none",
                 }}>
                   {task.text}
@@ -223,7 +223,7 @@ const Ukoly = () => {
                   onClick={() => removeTask(task.id)}
                   style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}
                 >
-                  <X size={14} color="#8aadb3" />
+                  <X size={14} color="var(--text-muted)" />
                 </button>
               </div>
             ))}
@@ -271,7 +271,7 @@ function TaskRow({
       </button>
       <span style={{
         flex: 1, fontSize: 14, fontFamily: "Open Sans, sans-serif",
-        color: task.done ? "#8aadb3" : "#0c2226",
+        color: task.done ? "var(--text-muted)" : "var(--text-primary)",
         textDecoration: task.done ? "line-through" : "none",
       }}>
         {task.text}
@@ -284,7 +284,7 @@ function TaskRow({
           borderRadius: 8,
         }}
       >
-        <X size={14} color="#8aadb3" />
+        <X size={14} color="var(--text-muted)" />
       </button>
     </div>
   );

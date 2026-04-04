@@ -19,8 +19,8 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
   const bgArc = dark ? "rgba(255,255,255,0.18)" : "#e2eaec";
   const valueColor = dark ? (placeholder ? "rgba(255,255,255,0.4)" : "#ffffff") : (placeholder ? "#b8cfd4" : "#00555f");
   const maxColor = dark ? "rgba(255,255,255,0.7)" : "#00abbd";
-  const labelColor = dark ? "rgba(255,255,255,0.85)" : "#4a6b70";
-  const sublabelColor = dark ? "rgba(255,255,255,0.6)" : "#8aadb3";
+  const labelColor = dark ? "rgba(255,255,255,0.85)" : "var(--text-secondary)";
+  const sublabelColor = dark ? "rgba(255,255,255,0.6)" : "var(--text-muted)";
   const gradId = dark ? "gaugeGradDark" : "gaugeGrad";
 
   return (

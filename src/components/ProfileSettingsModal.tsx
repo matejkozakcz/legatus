@@ -231,10 +231,10 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
             <Icon />
           </div>
           <div>
-            <p className="text-sm font-medium" style={{ color: "#0c2226" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
               {PROVIDER_LABELS[provider]}
             </p>
-            <p className="text-xs" style={{ color: linked ? "#00abbd" : "#8aadb3" }}>
+            <p className="text-xs" style={{ color: linked ? "#00abbd" : "var(--text-muted)" }}>
               {linked ? "Připojeno" : "Nepřipojeno"}
             </p>
           </div>
@@ -448,13 +448,13 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               <div className="flex items-center gap-2">
                 <Zap
                   className="h-4 w-4"
-                  style={{ color: godMode ? "#e05a50" : "#8aadb3" }}
+                  style={{ color: godMode ? "#e05a50" : "var(--text-muted)" }}
                 />
                 <div>
-                  <p className="text-sm font-medium" style={{ color: "#0c2226" }}>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                     God Mode
                   </p>
-                  <p className="text-xs" style={{ color: "#8aadb3" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {godMode ? "Admin pohled aktivní" : "Zobrazuji vlastní data"}
                   </p>
                 </div>

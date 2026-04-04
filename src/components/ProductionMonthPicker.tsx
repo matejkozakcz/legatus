@@ -53,11 +53,11 @@ export function ProductionMonthPicker({ selectedYear, selectedMonth, onChange }:
           fontFamily: "Poppins, sans-serif",
           fontWeight: 600,
           fontSize: 14,
-          color: "#0c2226",
+          color: "var(--text-primary)",
         }}
       >
         <span>{MONTH_NAMES[selectedMonth]} {selectedYear}</span>
-        <ChevronDown size={14} color="#8aadb3" style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0)" }} />
+        <ChevronDown size={14} color="var(--text-muted)" style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0)" }} />
       </button>
 
       {/* Dropdown */}
@@ -107,7 +107,7 @@ export function ProductionMonthPicker({ selectedYear, selectedMonth, onChange }:
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 700,
                 fontSize: 15,
-                color: "#0c2226",
+                color: "var(--text-primary)",
               }}
             >
               {displayYear}
@@ -158,7 +158,7 @@ export function ProductionMonthPicker({ selectedYear, selectedMonth, onChange }:
                     fontSize: 13,
                     fontWeight: isSelected ? 700 : 500,
                     background: isSelected ? "#00abbd" : "transparent",
-                    color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "#0c2226",
+                    color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "var(--text-primary)",
                     transition: "background 0.15s, color 0.15s",
                   }}
                   onMouseEnter={(e) => {
