@@ -430,6 +430,7 @@ export default function ObchodniPripady() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_period");
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeeting, setEditMeeting] = useState<Meeting | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -831,7 +832,12 @@ export default function ObchodniPripady() {
         /* Mobilní karty */
         <div className="flex flex-col gap-3">
           {meetings.map((m) => (
-            <div key={m.id} className="legatus-card p-4" style={m.cancelled ? { opacity: 0.5 } : {}}>
+            <div
+              key={m.id}
+              className="legatus-card p-4 cursor-pointer"
+              style={m.cancelled ? { opacity: 0.5 } : {}}
+              onClick={() => openEdit(m)}
+            >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                   <span
@@ -850,17 +856,12 @@ export default function ObchodniPripady() {
                   )}
                   {m.cancelled && <span className="text-xs font-medium text-muted-foreground">Zrušená</span>}
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                  <button
-                    onClick={() => deleteMutation.mutate(m.id)}
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
-                  </button>
-                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
+                </button>
               </div>
               {!m.cancelled && (
                 <div className="text-sm font-body" style={{ color: "#0c2226" }}>
@@ -940,7 +941,7 @@ export default function ObchodniPripady() {
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                           <button
-                            onClick={() => deleteMutation.mutate(m.id)}
+                            onClick={() => setConfirmDeleteId(m.id)}
                             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
@@ -954,6 +955,35 @@ export default function ObchodniPripady() {
             </table>
           </div>
         </section>
+      )}
+
+      {/* Potvrzení smazání */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setConfirmDeleteId(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-xs bg-card rounded-2xl shadow-2xl p-6 mx-4 animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-heading text-base font-semibold mb-2" style={{ color: "#0c2226" }}>Smazat schůzku?</h2>
+            <p className="text-sm text-muted-foreground mb-5">Tato akce je nevratná.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Zrušit
+              </button>
+              <button
+                onClick={() => { deleteMutation.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+                className="flex-1 h-10 rounded-xl text-sm font-semibold text-white transition-colors"
+                style={{ background: "#fc7c71" }}
+              >
+                Smazat
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal */}
