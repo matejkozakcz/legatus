@@ -98,22 +98,20 @@ export type Database = {
           case_name: string | null
           created_at: string
           date: string
+          doporuceni_fsa: number
+          doporuceni_pohovor: number
+          doporuceni_poradenstvi: number
           has_pohovor: boolean
           has_poradenstvi: boolean
-          
           id: string
           meeting_type: string
           podepsane_bj: number
           pohovor_date: string | null
-          doporuceni_pohovor: number
           pohovor_jde_dal: boolean | null
           poradenstvi_date: string | null
-          doporuceni_poradenstvi: number
-
           poradenstvi_status: string | null
           potencial_bj: number | null
           poznamka: string | null
-          doporuceni_fsa: number
           updated_at: string
           user_id: string
           vizi_spoluprace: boolean
@@ -125,20 +123,20 @@ export type Database = {
           case_name?: string | null
           created_at?: string
           date: string
+          doporuceni_fsa?: number
+          doporuceni_pohovor?: number
+          doporuceni_poradenstvi?: number
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
           meeting_type: string
           podepsane_bj?: number
           pohovor_date?: string | null
-          doporuceni_pohovor?: number
           pohovor_jde_dal?: boolean | null
           poradenstvi_date?: string | null
-          doporuceni_poradenstvi?: number
           poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
-          doporuceni_fsa?: number
           updated_at?: string
           user_id: string
           vizi_spoluprace?: boolean
@@ -150,20 +148,20 @@ export type Database = {
           case_name?: string | null
           created_at?: string
           date?: string
+          doporuceni_fsa?: number
+          doporuceni_pohovor?: number
+          doporuceni_poradenstvi?: number
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
           meeting_type?: string
           podepsane_bj?: number
           pohovor_date?: string | null
-          doporuceni_pohovor?: number
           pohovor_jde_dal?: boolean | null
           poradenstvi_date?: string | null
-          doporuceni_poradenstvi?: number
           poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
-          doporuceni_fsa?: number
           updated_at?: string
           user_id?: string
           vizi_spoluprace?: boolean
