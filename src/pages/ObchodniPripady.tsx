@@ -942,7 +942,7 @@ export default function ObchodniPripady() {
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                           <button
-                            onClick={() => setConfirmDeleteId(m.id)}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
                             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
