@@ -370,8 +370,8 @@ const Dashboard = () => {
   });
 
   // Vedoucí: monthly_bj_goal from profile
-  const monthlyBjGoal = profile?.monthly_bj_goal || 0;
-  const personalBjGoal = (profile as any)?.personal_bj_goal || 0;
+  const monthlyBjGoal = activeProfile?.monthly_bj_goal || 0;
+  const personalBjGoal = (activeProfile as any)?.personal_bj_goal || 0;
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInputValue, setGoalInputValue] = useState("");
   const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
