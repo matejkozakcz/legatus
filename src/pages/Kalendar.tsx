@@ -107,10 +107,9 @@ const defaultForm = (date?: string, time?: string): MeetingForm => ({
 
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   FSA: { bg: "rgba(0,171,189,0.15)", border: "#00abbd", text: "#00737f" },
-  POH: { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#1e40af" },
+  POR: { bg: "rgba(34,197,94,0.15)", border: "#22c55e", text: "#15803d" },
   SER: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#9a3412" },
-  Analyza: { bg: "rgba(139,92,246,0.15)", border: "#8b5cf6", text: "#5b21b6" },
-  Poradko: { bg: "rgba(34,197,94,0.15)", border: "#22c55e", text: "#15803d" },
+  POH: { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#1e40af" },
 };
 
 function getTypeColor(type: string) {
