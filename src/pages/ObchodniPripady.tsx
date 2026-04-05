@@ -533,6 +533,7 @@ export default function ObchodniPripady() {
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -644,12 +645,19 @@ export default function ObchodniPripady() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
       toast.success(editMeeting ? "Schůzka upravena" : "Schůzka přidána");
+      const savedForm = variables.form;
+      const savedCaseId = savedForm.case_id;
+      const savedCase = cases.find((c) => c.id === savedCaseId);
       setMeetingModalOpen(false);
       setEditMeeting(null);
+      // Show follow-up if not cancelled
+      if (!savedForm.cancelled && savedCaseId && savedCase) {
+        setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type });
+      }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
