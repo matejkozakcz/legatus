@@ -126,7 +126,7 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
           className="absolute"
           style={{
             bottom: 0, left: 0, right: 0, height: 3,
-            background: "rgba(0,0,0,0.06)",
+            background: "rgba(0,0,0,0.12)",
             borderRadius: "0 0 12px 12px",
             overflow: "hidden",
           }}
