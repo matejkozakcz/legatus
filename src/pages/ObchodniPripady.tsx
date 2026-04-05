@@ -120,9 +120,11 @@ function CaseModal({
   saving: boolean;
 }) {
   const [form, setForm] = useState(initial);
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    setForm(initial);
-  }, [initial]);
+    if (open && !prevOpenRef.current) setForm(initial);
+    prevOpenRef.current = open;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!open) return null;
   const isEdit = initial.nazev_pripadu !== "";
   return (

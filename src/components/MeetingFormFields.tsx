@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Trash2 } from "lucide-react";
 
@@ -115,13 +115,21 @@ export function MeetingFormModal({
   const [newCaseNote, setNewCaseNote] = useState("");
   const [creatingCase, setCreatingCase] = useState(false);
 
+  // Reset formuláře pouze při otevření modalu (false → true), ne při každém
+  // re-renderu parenta. Dependency na [initial] způsobovala reset při
+  // refetchOnWindowFocus — React Query vytváří novou referenci objektu
+  // i když se data nezměnila.
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    setForm(initial);
-    setShowDeleteConfirm(false);
-    setShowNewCase(false);
-    setNewCaseName("");
-    setNewCaseNote("");
-  }, [initial]);
+    if (open && !prevOpenRef.current) {
+      setForm(initial);
+      setShowDeleteConfirm(false);
+      setShowNewCase(false);
+      setNewCaseName("");
+      setNewCaseNote("");
+    }
+    prevOpenRef.current = open;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
