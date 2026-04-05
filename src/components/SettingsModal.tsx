@@ -492,9 +492,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     </div>
   );
 
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
-  );
 
   const handleRequestPermission = async () => {
     if (typeof Notification === "undefined") return;
