@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { FollowUpModal } from "@/components/FollowUpModal";
 
 interface Meeting {
   id: string;
@@ -155,6 +156,7 @@ export default function Kalendar() {
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
 
   // Week grid scroll ref
   const weekGridScrollRef = useRef<HTMLDivElement>(null);
@@ -206,7 +208,7 @@ export default function Kalendar() {
 
   // Save meeting
   const saveMutation = useMutation({
-    mutationFn: async (form: MeetingForm) => {
+    mutationFn: async ({ form, skipFollowUp }: { form: MeetingForm; skipFollowUp?: boolean }) => {
       if (!user) throw new Error("Not logged in");
       const weekStartDate = startOfWeek(parseISO(form.date), { weekStartsOn: 1 });
       const payload = {
@@ -241,12 +243,22 @@ export default function Kalendar() {
         const { error } = await supabase.from("client_meetings").insert(payload);
         if (error) throw error;
       }
+      return { form, skipFollowUp };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
       setMeetingFormOpen(false);
+      const wasEdit = !!editingMeetingId;
       setEditingMeetingId(null);
-      toast.success(editingMeetingId ? "Schůzka upravena" : "Schůzka vytvořena");
+      toast.success(wasEdit ? "Schůzka upravena" : "Schůzka vytvořena");
+      // Show follow-up for non-cancelled meetings (not from follow-up itself)
+      const form = result.form;
+      if (!result.skipFollowUp && !form.cancelled && form.case_id) {
+        const c = localCases.find((cs) => cs.id === form.case_id);
+        if (c) {
+          setFollowUp({ caseId: form.case_id, caseName: c.nazev_pripadu, meetingType: form.meeting_type });
+        }
+      }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
@@ -745,7 +757,7 @@ export default function Kalendar() {
           open={meetingFormOpen}
           onClose={() => setMeetingFormOpen(false)}
           initial={meetingFormInitial}
-          onSave={(form) => saveMutation.mutate(form)}
+          onSave={(form) => saveMutation.mutate({ form })}
           saving={saveMutation.isPending}
           cases={localCases}
           isEdit={!!editingMeetingId}
@@ -793,6 +805,29 @@ export default function Kalendar() {
               setEditingMeetingId(detailMeeting.id);
               setMeetingFormOpen(true);
             }
+          }}
+        />
+        <FollowUpModal
+          open={!!followUp}
+          onClose={() => setFollowUp(null)}
+          caseName={followUp?.caseName || ""}
+          caseId={followUp?.caseId || ""}
+          meetingType={followUp?.meetingType || "FSA"}
+          onSchedule={async (data) => {
+            const form: MeetingForm = {
+              ...defaultMeetingForm(data.date, data.meeting_time),
+              case_id: data.case_id,
+              meeting_type: data.meeting_type,
+              duration_minutes: data.duration_minutes,
+              location_type: data.location_type,
+              location_detail: data.location_detail,
+            };
+            await new Promise<void>((resolve, reject) => {
+              saveMutation.mutate({ form, skipFollowUp: true }, {
+                onSuccess: () => resolve(),
+                onError: (err) => reject(err),
+              });
+            });
           }}
         />
       </div>
@@ -846,7 +881,7 @@ export default function Kalendar() {
         open={meetingFormOpen}
         onClose={() => setMeetingFormOpen(false)}
         initial={meetingFormInitial}
-        onSave={(form) => saveMutation.mutate(form)}
+        onSave={(form) => saveMutation.mutate({ form })}
         saving={saveMutation.isPending}
         cases={localCases}
         isEdit={!!editingMeetingId}
@@ -894,6 +929,29 @@ export default function Kalendar() {
             setEditingMeetingId(detailMeeting.id);
             setMeetingFormOpen(true);
           }
+        }}
+      />
+      <FollowUpModal
+        open={!!followUp}
+        onClose={() => setFollowUp(null)}
+        caseName={followUp?.caseName || ""}
+        caseId={followUp?.caseId || ""}
+        meetingType={followUp?.meetingType || "FSA"}
+        onSchedule={async (data) => {
+          const form: MeetingForm = {
+            ...defaultMeetingForm(data.date, data.meeting_time),
+            case_id: data.case_id,
+            meeting_type: data.meeting_type,
+            duration_minutes: data.duration_minutes,
+            location_type: data.location_type,
+            location_detail: data.location_detail,
+          };
+          await new Promise<void>((resolve, reject) => {
+            saveMutation.mutate({ form, skipFollowUp: true }, {
+              onSuccess: () => resolve(),
+              onError: (err) => reject(err),
+            });
+          });
         }}
       />
     </div>

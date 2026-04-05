@@ -25,6 +25,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
@@ -286,191 +287,7 @@ function MeetingDetailModal({
 
 // ─── Follow-Up Suggestion Modal ──────────────────────────────────────────────
 
-function getFollowUpSuggestions(meetingType: MeetingType): { type: MeetingType; label: string }[] {
-  switch (meetingType) {
-    case "FSA":
-      return [{ type: "POH", label: "Pohovor" }];
-    case "POH":
-      return [{ type: "FSA", label: "Analýza" }];
-    case "SER":
-      return [
-        { type: "POH", label: "Pohovor" },
-        { type: "FSA", label: "Poradko" },
-      ];
-    default:
-      return [{ type: "POH", label: "Pohovor" }];
-  }
-}
-
-function FollowUpModal({
-  open,
-  onClose,
-  caseName,
-  caseId,
-  meetingType,
-  onSchedule,
-}: {
-  open: boolean;
-  onClose: () => void;
-  caseName: string;
-  caseId: string;
-  meetingType: MeetingType;
-  onSchedule: (data: {
-    case_id: string;
-    meeting_type: MeetingType;
-    date: string;
-    meeting_time: string;
-    duration_minutes: string;
-    location_type: string;
-    location_detail: string;
-  }) => void;
-}) {
-  const suggestions = getFollowUpSuggestions(meetingType);
-  const [expanded, setExpanded] = useState<MeetingType | null>(null);
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [time, setTime] = useState("");
-  const [duration, setDuration] = useState("");
-  const [locationType, setLocationType] = useState("");
-  const [locationDetail, setLocationDetail] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setExpanded(null);
-      setDate(format(new Date(), "yyyy-MM-dd"));
-      setTime("");
-      setDuration("");
-      setLocationType("");
-      setLocationDetail("");
-    }
-  }, [open]);
-
-  if (!open) return null;
-
-  const handleConfirm = () => {
-    if (!expanded || !date) return;
-    onSchedule({
-      case_id: caseId,
-      meeting_type: expanded,
-      date,
-      meeting_time: time,
-      duration_minutes: duration,
-      location_type: locationType,
-      location_detail: locationDetail,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div
-        className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-          <X className="h-5 w-5" />
-        </button>
-        <h2 className="font-heading text-lg font-semibold mb-5" style={{ color: "var(--text-primary)" }}>
-          Jaký je další krok s případem {caseName}?
-        </h2>
-
-        <div className="flex flex-col gap-2 mb-4">
-          {suggestions.map((s) => (
-            <button
-              key={s.type}
-              type="button"
-              onClick={() => setExpanded(expanded === s.type ? null : s.type)}
-              className={`h-10 rounded-xl border text-sm font-semibold transition-colors ${expanded === s.type ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
-              style={expanded === s.type ? { background: "#00abbd" } : {}}
-            >
-              {s.label}
-            </button>
-          ))}
-          {!expanded && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-10 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
-            >
-              Žádná
-            </button>
-          )}
-        </div>
-
-        {expanded && (
-          <div className="space-y-3 border-t border-border pt-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Datum *</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Čas schůzky</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-              <div className="flex-1">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Délka (min)</label>
-                  <input type="number" min={0} step={1} value={duration} onChange={(e) => setDuration(e.target.value)}
-                    placeholder="0" className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
-              <div className="flex gap-2 mb-2">
-                {(["osobne", "online"] as const).map((lt) => (
-                  <button
-                    key={lt}
-                    type="button"
-                    onClick={() => setLocationType(locationType === lt ? "" : lt)}
-                    className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${locationType === lt ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
-                    style={locationType === lt ? { background: "#00abbd" } : {}}
-                  >
-                    {lt === "osobne" ? "Osobně" : "Online"}
-                  </button>
-                ))}
-              </div>
-              {locationType && (
-                <input
-                  type="text"
-                  value={locationDetail}
-                  onChange={(e) => setLocationDetail(e.target.value)}
-                  placeholder={locationType === "osobne" ? "Adresa…" : "Platforma…"}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              )}
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setExpanded(null)}
-                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
-              >
-                Zrušit
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={!date}
-                className="btn btn-primary btn-md flex-1 flex items-center justify-center"
-              >
-                Naplánovat
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// Old FollowUpModal removed — using shared component from @/components/FollowUpModal
 
 // ─── Case Accordion Item ─────────────────────────────────────────────────────
 
@@ -1240,7 +1057,7 @@ export default function ObchodniPripady() {
         caseName={followUp?.caseName || ""}
         caseId={followUp?.caseId || ""}
         meetingType={followUp?.meetingType || "FSA"}
-        onSchedule={(data) => {
+        onSchedule={async (data) => {
           const form: MeetingForm = {
             ...defaultForm(data.case_id),
             meeting_type: data.meeting_type,
@@ -1250,8 +1067,12 @@ export default function ObchodniPripady() {
             location_type: data.location_type,
             location_detail: data.location_detail,
           };
-          setFollowUp(null);
-      saveMeetingMutation.mutate({ form, skipFollowUp: true });
+          await new Promise<void>((resolve, reject) => {
+            saveMeetingMutation.mutate({ form, skipFollowUp: true }, {
+              onSuccess: () => resolve(),
+              onError: (err) => reject(err),
+            });
+          });
         }}
       />
     </div>
