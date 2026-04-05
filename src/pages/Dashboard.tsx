@@ -550,7 +550,13 @@ const Dashboard = () => {
               marginTop: 10,
             }}
           >
-            Zbývá {daysRemaining} dní a takhle vypadá tvůj byznys:
+            {role === "vedouci"
+              ? `Zbývá ${daysRemaining} dní a takhle vypadá tvůj byznys:`
+              : role === "novacek" ? "Postup k tvému povýšení na pozici Získatele:"
+              : role === "ziskatel" ? "Postup k tvému povýšení na pozici Garanta:"
+              : role === "garant" ? "Postup k tvému povýšení na pozici Budoucího vedoucího:"
+              : "Postup k tvému povýšení na pozici Vedoucího:"
+            }
           </div>
         </div>
 
