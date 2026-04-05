@@ -802,12 +802,26 @@ export default function Kalendar() {
                       }}>
                         {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                       </span>
-                      {m.cancelled && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 600, color: "#fc7c71",
-                          background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
-                        }}>
-                          Zrušená
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {needsFollowUp(m) && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#fc7c71",
+                            background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
+                            display: "flex", alignItems: "center", gap: 3,
+                          }}>
+                            <AlertCircle size={10} /> Doplň výsledek
+                          </span>
+                        )}
+                        {m.cancelled && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#fc7c71",
+                            background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
+                          }}>
+                            Zrušená
+                          </span>
+                        )}
+                      </div>
+                    </div>
                         </span>
                       )}
                     </div>
