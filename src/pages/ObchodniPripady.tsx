@@ -1049,7 +1049,7 @@ export default function ObchodniPripady() {
 
   // ── Meeting mutations ──
   const saveMeetingMutation = useMutation({
-    mutationFn: async ({ form, id }: { form: MeetingForm; id?: string }) => {
+    mutationFn: async ({ form, id }: { form: MeetingForm; id?: string; skipFollowUp?: boolean }) => {
       const payload: Record<string, unknown> = {
         user_id: profile!.id,
         case_id: form.case_id || null,
@@ -1112,8 +1112,8 @@ export default function ObchodniPripady() {
       const savedCase = cases.find((c) => c.id === savedCaseId);
       setMeetingModalOpen(false);
       setEditMeeting(null);
-      // Show follow-up if not cancelled
-      if (!savedForm.cancelled && savedCaseId && savedCase) {
+      // Show follow-up if not cancelled and not already from follow-up
+      if (!variables.skipFollowUp && !savedForm.cancelled && savedCaseId && savedCase) {
         setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type });
       }
     },
@@ -1592,7 +1592,7 @@ export default function ObchodniPripady() {
             location_detail: data.location_detail,
           };
           setFollowUp(null);
-          saveMeetingMutation.mutate({ form });
+      saveMeetingMutation.mutate({ form, skipFollowUp: true });
         }}
       />
     </div>
