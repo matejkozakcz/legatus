@@ -380,23 +380,6 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     onPersonClick?.(node.id, node);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Načítání struktury...</p>
-      </div>
-    );
-  }
-
-  if (!profile) return null;
-
-  const currentUser = profiles.find((p) => p.id === currentUserId);
-  if (!currentUser) {
-    return (
-      <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Žádná struktura k zobrazení.</p>
-    );
-  }
-
   const [zoom, setZoom] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
