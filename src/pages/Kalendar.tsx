@@ -121,9 +121,11 @@ function meetingTypeLabel(t: MeetingType): string {
   return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
 }
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7..21
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
 const DAY_NAMES = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
-const SLOT_HEIGHT = 48; // px per 30 min
+const SLOT_HEIGHT = 40; // px per 30 min
+const VISIBLE_HOURS = 5;
+const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -456,6 +458,9 @@ export default function Kalendar() {
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  // Week grid scroll ref
+  const weekGridScrollRef = useRef<HTMLDivElement>(null);
+
   // Week boundaries
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -587,13 +592,25 @@ export default function Kalendar() {
 
   const today = new Date();
 
+  // Auto-scroll week grid to current hour
+  useEffect(() => {
+    if (view !== "week" || isMobile) return;
+    const el = weekGridScrollRef.current;
+    if (!el) return;
+    const now = new Date();
+    const targetHour = now.getHours();
+    // Scroll so current hour is near top, with 1 hour padding
+    const scrollTo = Math.max(0, (targetHour - 1) * SLOT_HEIGHT * 2);
+    el.scrollTop = scrollTo;
+  }, [view, isMobile, currentDate]);
+
   // ─── Week View ─────────────────────────────────────────────────────────────
 
   const renderWeekView = () => (
-    <div className="flex-1 overflow-auto rounded-2xl border border-border bg-card">
+    <div className="flex-1 rounded-2xl border border-border bg-card overflow-hidden">
       <div className="min-w-[700px]">
         {/* Day headers */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border sticky top-0 z-10 bg-card">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-card">
           <div className="p-2" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today);
@@ -608,8 +625,12 @@ export default function Kalendar() {
           })}
         </div>
 
-        {/* Time grid */}
-        <div className="relative">
+        {/* Time grid — scrollable, 5-hour visible window */}
+        <div
+          ref={weekGridScrollRef}
+          className="relative overflow-y-auto"
+          style={{ maxHeight: GRID_VISIBLE_HEIGHT }}
+        >
           {HOURS.map((hour) => (
             <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)]" style={{ height: SLOT_HEIGHT * 2 }}>
               <div className="p-1 text-right pr-2 text-xs text-muted-foreground border-r border-border" style={{ height: SLOT_HEIGHT }}>
@@ -634,11 +655,10 @@ export default function Kalendar() {
                       onClick={() => handleSlotClick(dayIdx, hour, true)}
                     />
 
-                    {/* Meeting blocks — render only in the row matching the meeting's start hour */}
+                    {/* Meeting blocks */}
                     {dayMeetings.map((m) => {
                       if (!m.meeting_time) return null;
                       const [h, min] = m.meeting_time.split(":").map(Number);
-                      if (h < 7 || h > 21) return null;
                       if (h !== hour) return null;
                       const topOffset = min * (SLOT_HEIGHT / 30);
                       const duration = m.duration_minutes || 60;
