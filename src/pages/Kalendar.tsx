@@ -533,9 +533,6 @@ export default function Kalendar() {
                           <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
                             {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                           </div>
-                          {blockHeight > 30 && m.case_name && (
-                            <div className="truncate text-muted-foreground" style={{ fontSize: 10 }}>{m.case_name}</div>
-                          )}
                           {blockHeight > 30 && (
                             <div className="text-muted-foreground" style={{ fontSize: 10 }}>
                               {m.meeting_time?.slice(0, 5)}
