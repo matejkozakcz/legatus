@@ -26,7 +26,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
-type MeetingType = "FSA" | "POH" | "SER";
+type MeetingType = "FSA" | "POR" | "SER" | "POH";
 
 interface Meeting {
   id: string;
@@ -203,12 +203,16 @@ function totalRefs(m: Meeting): number {
 }
 
 function meetingTypeLabel(t: MeetingType): string {
-  return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
+  if (t === "FSA") return "Analýza";
+  if (t === "POR") return "Poradenství";
+  if (t === "SER") return "Servis";
+  return "Pohovor";
 }
 
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
   if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
+  if (t === "POR") return { background: "#e8f5e9", color: "#2e7d32" };
   if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
   return { background: "#fef3f2", color: "#c0392b" };
 }
@@ -518,7 +522,7 @@ function MeetingModal({
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2">
-            {(["FSA", "POH", "SER"] as MeetingType[]).map((t) => (
+            {(["FSA", "POR", "SER", "POH"] as MeetingType[]).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -526,7 +530,7 @@ function MeetingModal({
                 className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${form.meeting_type === t ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
                 style={form.meeting_type === t ? { background: "#00abbd" } : {}}
               >
-                {t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis"}
+                {meetingTypeLabel(t)}
               </button>
             ))}
           </div>
