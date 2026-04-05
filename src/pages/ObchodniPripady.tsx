@@ -418,7 +418,11 @@ function FollowUpModal({
                 />
               </div>
               <div className="flex-1">
-                <NumberInput label="Délka (min)" value={duration} onChange={setDuration} />
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Délka (min)</label>
+                  <input type="number" min={0} step={1} value={duration} onChange={(e) => setDuration(e.target.value)}
+                    placeholder="0" className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
               </div>
             </div>
             <div>
