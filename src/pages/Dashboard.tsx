@@ -135,29 +135,28 @@ const Dashboard = () => {
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [viewingUserName, setViewingUserName] = useState<string>("");
 
-  // Transition state for smooth view switching
-  const [transitioning, setTransitioning] = useState(false);
+  // Transition state for smooth OrgChart view switching
+  const [orgTransitioning, setOrgTransitioning] = useState(false);
   const pendingSwitch = useRef<{ userId: string | null; userName: string } | null>(null);
 
   const handlePersonSwitch = (userId: string | null, userName: string) => {
     if (userId === viewingUserId) return;
-    setTransitioning(true);
+    setOrgTransitioning(true);
     pendingSwitch.current = { userId, userName };
   };
 
   useEffect(() => {
-    if (!transitioning) return;
+    if (!orgTransitioning) return;
     const timer = setTimeout(() => {
       if (pendingSwitch.current) {
         setViewingUserId(pendingSwitch.current.userId);
         setViewingUserName(pendingSwitch.current.userName);
         pendingSwitch.current = null;
       }
-      // Fade back in after a brief delay for data to settle
-      requestAnimationFrame(() => setTransitioning(false));
-    }, 250);
+      requestAnimationFrame(() => setOrgTransitioning(false));
+    }, 200);
     return () => clearTimeout(timer);
-  }, [transitioning]);
+  }, [orgTransitioning]);
 
   // The ID used for all data queries — either impersonated user or self
   const activeUserId = viewingUserId || profile?.id || "";
@@ -795,11 +794,7 @@ const Dashboard = () => {
         </h1>
       </div>
 
-      <div style={{
-        transition: "opacity 0.25s ease, transform 0.25s ease",
-        opacity: transitioning ? 0 : 1,
-        transform: transitioning ? "translateY(8px)" : "translateY(0)",
-      }}>
+      <div>
       {/* Impersonation banner */}
       {isImpersonating && (
         <div
@@ -857,7 +852,12 @@ const Dashboard = () => {
                 minHeight: 0,
               }}
             >
-              <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+              <div style={{
+                flex: 1, overflowY: "auto", minHeight: 0,
+                transition: "opacity 0.2s ease, transform 0.2s ease",
+                opacity: orgTransitioning ? 0 : 1,
+                transform: orgTransitioning ? "scale(0.97)" : "scale(1)",
+              }}>
                 <OrgChart
                   currentUserId={profile?.id || ""}
                   focusUserId={viewingUserId || undefined}
