@@ -618,8 +618,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Upcoming deadlines */}
-        <DeadlinesSection userId={profile?.id} />
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
       </div>
@@ -847,7 +845,7 @@ const Dashboard = () => {
         </div>
       </section>
 
-      <DeadlinesSection userId={profile?.id} />
+      
 
       <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
     </div>
