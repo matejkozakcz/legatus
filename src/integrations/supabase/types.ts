@@ -323,6 +323,7 @@ export type Database = {
           monthly_bj_goal: number | null
           onboarding_completed: boolean | null
           osobni_id: string | null
+          personal_bj_goal: number | null
           role: string
           vedouci_id: string | null
           ziskatel_id: string | null
@@ -339,6 +340,7 @@ export type Database = {
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
+          personal_bj_goal?: number | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
+          personal_bj_goal?: number | null
           role?: string
           vedouci_id?: string | null
           ziskatel_id?: string | null
