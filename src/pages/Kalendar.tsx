@@ -93,23 +93,19 @@ function MeetingDetailModal({ open, onClose, meeting, onEdit }: {
           {m.location_type && row("Místo", m.location_type === "osobne" ? "Osobně" : "Online")}
           {m.location_detail && row(m.location_type === "osobne" ? "Adresa" : "Platforma", m.location_detail)}
           {m.cancelled && row("Stav", "Zrušená")}
-          {!m.cancelled && m.meeting_type === "FSA" && m.potencial_bj != null && row("Potenciál BJ", m.potencial_bj)}
-          {!m.cancelled && m.has_poradenstvi && (
+          {!m.cancelled && m.meeting_type === "FSA" && row("Doporučení", m.doporuceni_fsa)}
+          {!m.cancelled && (m.meeting_type === "POR" || m.meeting_type === "SER") && (
             <>
-              {row("Poradenství", m.poradenstvi_status === "probehle" ? "Proběhlé" : m.poradenstvi_status === "zrusene" ? "Zrušené" : "Ano")}
-              {m.poradenstvi_date && row("Datum poradenství", format(parseISO(m.poradenstvi_date), "d. M. yyyy", { locale: cs }))}
               {row("Podepsané BJ", m.podepsane_bj)}
-              {row("Doporučení (poradko)", m.doporuceni_poradenstvi)}
+              {row("Doporučení", m.doporuceni_poradenstvi)}
             </>
           )}
-          {!m.cancelled && m.has_pohovor && (
+          {!m.cancelled && m.meeting_type === "POH" && (
             <>
-              {row("Pohovor", m.pohovor_jde_dal === true ? "Jde dál" : m.pohovor_jde_dal === false ? "Nejde dál" : "Ano")}
-              {m.pohovor_date && row("Datum pohovoru", format(parseISO(m.pohovor_date), "d. M. yyyy", { locale: cs }))}
-              {row("Doporučení (pohovor)", m.doporuceni_pohovor)}
+              {row("Jde dál", m.pohovor_jde_dal === true ? "Ano" : m.pohovor_jde_dal === false ? "Ne" : "—")}
+              {row("Doporučení", m.doporuceni_pohovor)}
             </>
           )}
-          {!m.cancelled && row("Doporučení (schůzka)", m.doporuceni_fsa)}
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
         <button onClick={onEdit} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2 mt-5">
