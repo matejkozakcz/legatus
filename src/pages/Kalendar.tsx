@@ -13,7 +13,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type MeetingType = "FSA" | "POH" | "SER";
+type MeetingType = "FSA" | "POR" | "SER" | "POH";
 
 interface Meeting {
   id: string;
@@ -118,7 +118,10 @@ function getTypeColor(type: string) {
 }
 
 function meetingTypeLabel(t: MeetingType): string {
-  return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
+  if (t === "FSA") return "Analýza";
+  if (t === "POR") return "Poradenství";
+  if (t === "SER") return "Servis";
+  return "Pohovor";
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
@@ -326,7 +329,7 @@ function CalendarMeetingModal({ open, onClose, initial, onSave, saving, cases, o
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2">
-            {(["FSA", "POH", "SER"] as MeetingType[]).map((t) => (
+            {(["FSA", "POR", "SER", "POH"] as MeetingType[]).map((t) => (
               <button key={t} type="button" onClick={() => set({ meeting_type: t })}
                 className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${form.meeting_type === t ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
                 style={form.meeting_type === t ? { background: "#00abbd" } : {}}>
