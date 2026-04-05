@@ -45,17 +45,31 @@ interface Meeting {
   location_detail: string | null;
 }
 
-// ─── Color mapping by meeting type ──────────────────────────────────────────
+// ─── Color mapping by status + type ─────────────────────────────────────────
 
-const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  FSA: { bg: "rgba(0,171,189,0.15)", border: "#00abbd", text: "#00737f" },
-  POR: { bg: "rgba(34,197,94,0.15)", border: "#22c55e", text: "#15803d" },
-  SER: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#9a3412" },
-  POH: { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#1e40af" },
+const TYPE_BORDER: Record<string, string> = {
+  FSA: "#00abbd",
+  POR: "#8b5cf6",
+  SER: "#f97316",
+  POH: "#3b82f6",
 };
 
-function getTypeColor(type: string) {
-  return TYPE_COLORS[type] || TYPE_COLORS.FSA;
+type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
+
+function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatus {
+  if (m.cancelled) return "zrusena";
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  return m.date < todayStr ? "probehla" : "naplanovana";
+}
+
+function getStatusBg(status: MeetingStatus, dark: boolean): string {
+  if (status === "naplanovana") return dark ? "rgba(245,200,66,0.25)" : "rgba(245,200,66,0.18)";
+  if (status === "probehla") return dark ? "rgba(34,197,94,0.25)" : "rgba(34,197,94,0.18)";
+  return dark ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.12)";
+}
+
+function getTypeBorder(type: string): string {
+  return TYPE_BORDER[type] || TYPE_BORDER.FSA;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
