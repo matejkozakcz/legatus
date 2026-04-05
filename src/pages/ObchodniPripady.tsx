@@ -1537,7 +1537,7 @@ export default function ObchodniPripady() {
       />
 
       {/* Meeting form modal */}
-      <MeetingModal
+      <MeetingFormModal
         open={meetingModalOpen}
         onClose={() => {
           setMeetingModalOpen(false);
