@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +33,7 @@ const AppleIcon = () => (
 );
 
 export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProps) {
+  useBodyScrollLock(open);
   const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);

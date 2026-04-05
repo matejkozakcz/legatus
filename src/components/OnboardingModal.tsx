@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { Camera, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,7 @@ interface VedouciOption {
 }
 
 export function OnboardingModal({ open }: OnboardingModalProps) {
+  useBodyScrollLock(open);
   const { user, refetchProfile } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Trash2 } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ export function MeetingFormModal({
   isEdit: isEditProp, onDelete,
   allowCreateCase, createCaseFn, onCaseCreated,
 }: MeetingFormModalProps) {
+  useBodyScrollLock(open);
   const [form, setForm] = useState<MeetingForm>(initial);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewCase, setShowNewCase] = useState(false);

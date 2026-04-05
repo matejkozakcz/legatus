@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Check, Plus } from "lucide-react";
 import { format } from "date-fns";
 import type { MeetingType } from "@/components/MeetingFormFields";
@@ -175,6 +176,7 @@ function TrackSection({
 // ─── Main modal ──────────────────────────────────────────────────────────────
 
 export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, onSchedule }: FollowUpModalProps) {
+  useBodyScrollLock(open);
   const [clientDone, setClientDone] = useState(false);
   const [recruitDone, setRecruitDone] = useState(false);
 

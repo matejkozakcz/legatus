@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,6 +78,7 @@ function loadNotifPrefs(): NotifPrefs {
 }
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
+  useBodyScrollLock(open);
   const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";

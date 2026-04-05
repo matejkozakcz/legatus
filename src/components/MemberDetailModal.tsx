@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ function getWeekStart() {
 }
 
 export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
+  useBodyScrollLock(true);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
