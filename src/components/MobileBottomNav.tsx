@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckSquare, Briefcase } from "lucide-react";
+import { Calendar, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
@@ -93,12 +93,12 @@ export function MobileBottomNav() {
           {/* Center spacer */}
           <div style={{ flex: 1 }} />
 
-          {/* Right: Úkoly */}
+          {/* Right: Kalendář */}
           <NavButton
-            icon={CheckSquare}
-            label="Úkoly"
-            active={location.pathname === "/ukoly"}
-            onClick={() => navigate("/ukoly")}
+            icon={Calendar}
+            label="Kalendář"
+            active={location.pathname === "/kalendar"}
+            onClick={() => navigate("/kalendar")}
             isDark={isDark}
           />
 
