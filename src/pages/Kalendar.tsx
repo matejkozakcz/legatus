@@ -157,7 +157,6 @@ export default function Kalendar() {
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
-  const [lastSavedForm, setLastSavedForm] = useState<MeetingForm | null>(null);
 
   // Week grid scroll ref
   const weekGridScrollRef = useRef<HTMLDivElement>(null);
