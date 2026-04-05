@@ -617,9 +617,21 @@ export default function Kalendar() {
         {/* Selected day meetings */}
         {selectedDay && (
           <div className="rounded-2xl border border-border bg-card p-4">
-            <h3 className="font-heading font-semibold text-sm mb-3 text-foreground">
-              {format(selectedDay, "EEEE d. MMMM yyyy", { locale: cs })}
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-heading font-semibold text-sm text-foreground">
+                {format(selectedDay, "EEEE d. MMMM yyyy", { locale: cs })}
+              </h3>
+              <button
+                onClick={() => {
+                  setMeetingFormInitial(defaultMeetingForm(format(selectedDay, "yyyy-MM-dd")));
+                  setEditingMeetingId(null);
+                  setMeetingFormOpen(true);
+                }}
+                className="btn btn-primary btn-sm flex items-center gap-1.5"
+              >
+                <Plus size={14} /> Nová schůzka
+              </button>
+            </div>
             {selectedDayMeetings.length === 0 ? (
               <p className="text-sm text-muted-foreground">Žádné schůzky</p>
             ) : (
