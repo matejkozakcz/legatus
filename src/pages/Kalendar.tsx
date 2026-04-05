@@ -931,6 +931,26 @@ export default function Kalendar() {
           )}
         </div>
 
+        {/* Add meeting button */}
+        <div style={{ position: "fixed", bottom: 178, left: 16, right: 16, zIndex: 40 }}>
+          <button
+            onClick={() => {
+              setMeetingFormInitial(defaultForm(mobileDayStr));
+              setMeetingFormOpen(true);
+            }}
+            style={{
+              width: "100%", height: 44, borderRadius: 14, border: "none", cursor: "pointer",
+              background: "#00abbd", color: "#fff",
+              fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              boxShadow: "0 4px 16px rgba(0,171,189,0.3)",
+            }}
+          >
+            <Plus size={18} />
+            Přidat schůzku
+          </button>
+        </div>
+
         {/* Floating day picker bar */}
         <div style={{ position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 40 }}>
           <div ref={mobileDayPickerRef} style={{
