@@ -390,7 +390,7 @@ export default function Kalendar() {
 
   // Modals
   const [meetingFormOpen, setMeetingFormOpen] = useState(false);
-  const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultForm());
+  const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultMeetingForm());
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -494,7 +494,7 @@ export default function Kalendar() {
   const handleSlotClick = (dayIndex: number, hour: number, half: boolean) => {
     const day = addDays(weekStart, dayIndex);
     const time = `${String(hour).padStart(2, "0")}:${half ? "30" : "00"}`;
-    setMeetingFormInitial(defaultForm(format(day, "yyyy-MM-dd"), time));
+    setMeetingFormInitial(defaultMeetingForm(format(day, "yyyy-MM-dd"), time));
     setEditingMeetingId(null);
     setMeetingFormOpen(true);
   };
@@ -882,7 +882,7 @@ export default function Kalendar() {
         }}>
           <button
             onClick={() => {
-              setMeetingFormInitial(defaultForm(mobileDayStr));
+              setMeetingFormInitial(defaultMeetingForm(mobileDayStr));
               setEditingMeetingId(null);
               setMeetingFormOpen(true);
             }}
