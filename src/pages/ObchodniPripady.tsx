@@ -26,6 +26,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
+import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
