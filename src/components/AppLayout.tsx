@@ -98,7 +98,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               flex: 1,
               overflowY: "auto",
               overflowX: "hidden",
-              paddingBottom: "calc(110px + env(safe-area-inset-bottom, 0px))",
+              paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
             }}
           >
             {children}
