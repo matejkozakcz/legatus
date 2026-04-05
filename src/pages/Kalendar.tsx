@@ -908,6 +908,8 @@ export default function Kalendar() {
           open={detailOpen}
           onClose={() => setDetailOpen(false)}
           meeting={detailMeeting}
+          onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
+          savingOutcome={outcomeMutation.isPending}
           onEdit={() => {
             setDetailOpen(false);
             if (detailMeeting) {
@@ -1032,6 +1034,8 @@ export default function Kalendar() {
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         meeting={detailMeeting}
+        onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
+        savingOutcome={outcomeMutation.isPending}
         onEdit={() => {
           setDetailOpen(false);
           if (detailMeeting) {
