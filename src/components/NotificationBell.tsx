@@ -57,16 +57,22 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
     if (!user) return;
     const channel = supabase
       .channel("user-notifications")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "notifications",
-        filter: `recipient_id=eq.${user.id}`,
-      }, () => {
-        fetchNotifications();
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        },
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, fetchNotifications]);
 
   // Click outside
@@ -74,8 +80,10 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (
-        panelRef.current && !panelRef.current.contains(e.target as Node) &&
-        bellRef.current && !bellRef.current.contains(e.target as Node)
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        bellRef.current &&
+        !bellRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
       }
@@ -88,18 +96,14 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
 
   const markAllRead = async () => {
     if (!user) return;
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("recipient_id", user.id)
-      .eq("read", false);
+    await supabase.from("notifications").update({ read: true }).eq("recipient_id", user.id).eq("read", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const markRead = async (notif: Notification) => {
     if (!notif.read) {
       await supabase.from("notifications").update({ read: true }).eq("id", notif.id);
-      setNotifications((prev) => prev.map((n) => n.id === notif.id ? { ...n, read: true } : n));
+      setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
     }
     if (notif.related_meeting_id && onMeetingClick) {
       onMeetingClick(notif.related_meeting_id);
@@ -132,7 +136,7 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span className="font-heading font-semibold text-sm text-foreground">Notifikace</span>
+            <span className="font-heading font-semibold text-sm text-foreground">Oznámení</span>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
@@ -146,9 +150,7 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
 
           {/* List */}
           {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              Žádné notifikace
-            </div>
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">Žádné Oznámení</div>
           ) : (
             <div>
               {notifications.map((notif) => (
@@ -171,12 +173,12 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm leading-tight ${notif.read ? "text-muted-foreground" : "text-foreground font-medium"}`}>
+                    <p
+                      className={`text-sm leading-tight ${notif.read ? "text-muted-foreground" : "text-foreground font-medium"}`}
+                    >
                       {notif.title}
                     </p>
-                    {notif.body && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
-                    )}
+                    {notif.body && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>}
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: cs })}
                     </p>
