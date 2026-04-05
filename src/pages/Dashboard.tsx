@@ -451,8 +451,11 @@ const Dashboard = () => {
 
   // Vedoucí: monthly_bj_goal from profile
   const monthlyBjGoal = profile?.monthly_bj_goal || 0;
+  const personalBjGoal = (profile as any)?.personal_bj_goal || 0;
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInputValue, setGoalInputValue] = useState("");
+  const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
+  const [personalGoalInputValue, setPersonalGoalInputValue] = useState("");
 
   const updateGoalMutation = useMutation({
     mutationFn: async (newGoal: number) => {
@@ -466,7 +469,22 @@ const Dashboard = () => {
     onSuccess: () => {
       setEditingGoal(false);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      // Refetch profile in auth context
+      window.location.reload();
+    },
+  });
+
+  const updatePersonalGoalMutation = useMutation({
+    mutationFn: async (newGoal: number) => {
+      if (!profile?.id) throw new Error("No user");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ personal_bj_goal: newGoal } as any)
+        .eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingPersonalGoal(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       window.location.reload();
     },
   });
