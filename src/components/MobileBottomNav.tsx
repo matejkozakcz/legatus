@@ -89,12 +89,12 @@ export function MobileBottomNav() {
         {/* Center spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Right: Úkoly */}
+        {/* Right: Kalendář */}
         <NavButton
-          icon={CheckSquare}
-          label="Úkoly"
-          active={location.pathname === "/ukoly"}
-          onClick={() => navigate("/ukoly")}
+          icon={Calendar}
+          label="Schůzky"
+          active={location.pathname === "/kalendar"}
+          onClick={() => navigate("/kalendar")}
           isDark={isDark}
         />
 
