@@ -700,6 +700,7 @@ const Dashboard = () => {
             planned={localValues.fsa_planned || 0}
             sublabel="proběhlých / doml."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))
@@ -711,6 +712,7 @@ const Dashboard = () => {
             planned={localValues.poh_planned || 0}
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))
@@ -722,6 +724,7 @@ const Dashboard = () => {
             planned={localValues.ser_planned || 0}
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))
@@ -733,6 +736,7 @@ const Dashboard = () => {
             planned={localValues.ref_planned || 0}
             sublabel="vybraných / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))
