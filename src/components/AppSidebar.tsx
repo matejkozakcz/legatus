@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
+import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
