@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,7 @@ export function AppSidebar() {
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
+    { title: "Kalendář", url: "/kalendar", icon: Calendar },
     { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
 

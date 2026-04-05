@@ -12,6 +12,7 @@ import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
 import ObchodniPripady from "./pages/ObchodniPripady";
+import Kalendar from "./pages/Kalendar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +77,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <ObchodniPripady />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/kalendar"
+              element={
+                <AppLayout>
+                  <Kalendar />
                 </AppLayout>
               }
             />
