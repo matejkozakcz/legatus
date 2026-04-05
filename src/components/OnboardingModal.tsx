@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { PersonPicker } from "@/components/PersonPicker";
 import { toast } from "sonner";
 import legatusLogo from "@/assets/legatus-logo-light.png";
@@ -17,6 +18,8 @@ interface VedouciOption {
 
 export function OnboardingModal({ open }: OnboardingModalProps) {
   const { user, refetchProfile } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [jmeno, setJmeno] = useState("");
@@ -154,13 +157,14 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     : "?";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,85,95,0.35)", backdropFilter: "blur(2px)" }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,85,95,0.35)", backdropFilter: "blur(2px)" }}>
       <div
         className="w-full max-w-[440px] mx-4 flex flex-col items-center overflow-y-auto max-h-[90vh]"
         style={{
-          background: "#ffffff",
+          background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
           borderRadius: 28,
-          boxShadow: "0 8px 32px rgba(0,85,95,0.22)",
+          boxShadow: isDark ? "0 8px 48px rgba(0,0,0,0.5)" : "0 8px 32px rgba(0,85,95,0.22)",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "none",
           padding: "32px",
         }}
       >
@@ -218,8 +222,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 placeholder="Jan"
                 className="w-full font-body"
                 style={{
-                  background: "#ffffff",
-                  border: "1.5px solid #e2eaec",
+                  background: isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
+                  border: isDark ? "1.5px solid rgba(255,255,255,0.12)" : "1.5px solid #e2eaec",
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
@@ -231,7 +235,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   e.target.style.boxShadow = "0 0 0 3px rgba(0,171,189,0.12)";
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "#e2eaec";
+                  e.target.style.borderColor = isDark ? "rgba(255,255,255,0.12)" : "#e2eaec";
                   e.target.style.boxShadow = "none";
                 }}
               />
@@ -248,8 +252,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 placeholder="Novák"
                 className="w-full font-body"
                 style={{
-                  background: "#ffffff",
-                  border: "1.5px solid #e2eaec",
+                  background: isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
+                  border: isDark ? "1.5px solid rgba(255,255,255,0.12)" : "1.5px solid #e2eaec",
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
@@ -261,7 +265,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   e.target.style.boxShadow = "0 0 0 3px rgba(0,171,189,0.12)";
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "#e2eaec";
+                  e.target.style.borderColor = isDark ? "rgba(255,255,255,0.12)" : "#e2eaec";
                   e.target.style.boxShadow = "none";
                 }}
               />
@@ -306,8 +310,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 placeholder="Jméno získatele"
                 className="w-full font-body"
                 style={{
-                  background: "#ffffff",
-                  border: "1.5px solid #e2eaec",
+                  background: isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
+                  border: isDark ? "1.5px solid rgba(255,255,255,0.12)" : "1.5px solid #e2eaec",
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 14,
@@ -319,7 +323,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                   e.target.style.boxShadow = "0 0 0 3px rgba(0,171,189,0.12)";
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "#e2eaec";
+                  e.target.style.borderColor = isDark ? "rgba(255,255,255,0.12)" : "#e2eaec";
                   e.target.style.boxShadow = "none";
                 }}
               />

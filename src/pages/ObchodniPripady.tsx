@@ -14,6 +14,7 @@ import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { Plus, X, Loader2, Pencil, Trash2, Briefcase, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
@@ -422,6 +423,8 @@ export default function ObchodniPripady() {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const now = new Date();
   const currentPeriod = getProductionPeriodMonth(now);
 
@@ -662,12 +665,12 @@ export default function ObchodniPripady() {
             <div
               ref={mobilePickerRef}
               style={{
-                background: "rgba(255,255,255,0.92)",
+                background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
                 backdropFilter: "blur(20px) saturate(1.8)",
                 WebkitBackdropFilter: "blur(20px) saturate(1.8)",
                 borderRadius: 16,
                 padding: "10px 16px",
-                border: "1px solid rgba(225,233,235,0.8)",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(225,233,235,0.8)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -684,11 +687,11 @@ export default function ObchodniPripady() {
                 }
               }}
               style={{
-                width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
+                width: 32, height: 32, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
                 border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
-              <ChevronLeft size={15} color="#00555f" />
+              <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
             </button>
             <button
               onClick={() => setMobilePickerOpen((o) => !o)}
@@ -712,11 +715,11 @@ export default function ObchodniPripady() {
                 }
               }}
               style={{
-                width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
+                width: 32, height: 32, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
                 border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
-              <ChevronRight size={15} color="#00555f" />
+              <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
             </button>
 
             {/* Inline month picker dropdown — opens upward */}

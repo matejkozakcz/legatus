@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, formatISO } from "date-fns";
 import { X, Loader2, ArrowRight } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
   id: string;
@@ -39,6 +40,8 @@ function getWeekStart() {
 
 export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   // Close on Escape
   useEffect(() => {
@@ -86,13 +89,16 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.4)" }}
+      style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
       onClick={onClose}
     >
       <div
-        className="relative max-w-md w-full mx-4 bg-white rounded-2xl shadow-2xl p-6"
+        className="relative max-w-md w-full mx-4 rounded-2xl shadow-2xl p-6"
         style={{
           animation: "modalIn 150ms ease-out forwards",
+          background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
+          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+          boxShadow: isDark ? "0 24px 60px rgba(0,0,0,0.6)" : "0 8px 40px rgba(0,0,0,0.18)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -112,7 +118,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                 src={member.avatar_url}
                 alt={member.full_name}
                 className="rounded-full object-cover"
-                style={{ width: 64, height: 64, border: "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                style={{ width: 64, height: 64, border: isDark ? "2px solid rgba(255,255,255,0.15)" : "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
               />
             ) : (
               <div
@@ -138,12 +144,12 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                 height: 10,
                 borderRadius: "50%",
                 background: status.bg,
-                boxShadow: `0 0 0 3px #fff, 0 0 0 6px ${status.shadow}`,
+                boxShadow: `0 0 0 3px ${isDark ? "hsl(188,18%,18%)" : "#fff"}, 0 0 0 6px ${status.shadow}`,
               }}
             />
           </div>
 
-          <h3 className="font-heading text-xl font-semibold" style={{ color: "#0A2126" }}>
+          <h3 className="font-heading text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
             {member.full_name}
           </h3>
 
@@ -153,11 +159,11 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         </div>
 
         {/* Divider */}
-        <div className="my-4" style={{ height: 1, background: "#E1E9EB" }} />
+        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
 
         {/* Stats */}
         <div>
-          <p className="font-heading text-sm font-semibold mb-3" style={{ color: "#0A2126" }}>
+          <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
             Statistiky tohoto týdne
           </p>
 
@@ -176,7 +182,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                     {s.label}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="font-heading text-2xl font-bold leading-none" style={{ color: "#00555f" }}>
+                    <span className="font-heading text-2xl font-bold leading-none" style={{ color: isDark ? "#4dd8e8" : "#00555f" }}>
                       {s.actual}
                     </span>
                     <span className="font-body text-sm font-semibold" style={{ color: "#00abbd" }}>
@@ -190,7 +196,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         </div>
 
         {/* Divider */}
-        <div className="my-4" style={{ height: 1, background: "#E1E9EB" }} />
+        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
 
         {/* Footer */}
         <button

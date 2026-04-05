@@ -718,9 +718,17 @@
   box-shadow: 0 24px 60px rgba(0,0,0,0.6) !important;
 }
 
-/* bg-white třídy (ostatní prvky) */
-.dark [class*="bg-white"]:not([class*="bg-white/"]) {
-  background: hsl(188, 18%, 16%) !important;
+/* bg-white modaly a karty (jen rounded-2xl nebo rounded-xl, ne malé prvky) */
+.dark .rounded-2xl.bg-white,
+.dark .rounded-xl.bg-white {
+  background: hsl(188, 18%, 18%) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6) !important;
+}
+
+/* Modal overlay — tmavší přes tmavé pozadí */
+.dark [style*="rgba(0,85,95,0.35)"] {
+  background: rgba(0,0,0,0.65) !important;
 }
 
 /* Shadcn card komponenty */
