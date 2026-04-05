@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -79,7 +79,7 @@ function loadNotifPrefs(): NotifPrefs {
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
-  const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
+  const { user, profile, isAdmin, godMode, toggleGodMode, signOut } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const queryClient = useQueryClient();
@@ -651,7 +651,20 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">{tabContent[activeTab]()}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {tabContent[activeTab]()}
+
+          {/* Logout button — mobile only */}
+          <div className="md:hidden mt-6 pt-4 border-t border-border">
+            <button
+              onClick={signOut}
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-destructive border border-destructive/30 hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Odhlásit se
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
