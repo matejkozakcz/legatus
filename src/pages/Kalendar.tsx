@@ -455,6 +455,7 @@ export default function Kalendar() {
   // Modals
   const [meetingFormOpen, setMeetingFormOpen] = useState(false);
   const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultForm());
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -536,13 +537,19 @@ export default function Kalendar() {
         location_type: form.location_type || null,
         location_detail: form.location_detail || null,
       };
-      const { error } = await supabase.from("client_meetings").insert(payload);
-      if (error) throw error;
+      if (editingMeetingId) {
+        const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("client_meetings").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
       setMeetingFormOpen(false);
-      toast.success("Schůzka vytvořena");
+      setEditingMeetingId(null);
+      toast.success(editingMeetingId ? "Schůzka upravena" : "Schůzka vytvořena");
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
@@ -552,6 +559,7 @@ export default function Kalendar() {
     const day = addDays(weekStart, dayIndex);
     const time = `${String(hour).padStart(2, "0")}:${half ? "30" : "00"}`;
     setMeetingFormInitial(defaultForm(format(day, "yyyy-MM-dd"), time));
+    setEditingMeetingId(null);
     setMeetingFormOpen(true);
   };
 
@@ -939,6 +947,7 @@ export default function Kalendar() {
           <button
             onClick={() => {
               setMeetingFormInitial(defaultForm(mobileDayStr));
+              setEditingMeetingId(null);
               setMeetingFormOpen(true);
             }}
             className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
@@ -1074,6 +1083,7 @@ export default function Kalendar() {
                 location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
               });
+              setEditingMeetingId(detailMeeting.id);
               setMeetingFormOpen(true);
             }
           }}
@@ -1164,6 +1174,7 @@ export default function Kalendar() {
               location_type: detailMeeting.location_type || "",
               location_detail: detailMeeting.location_detail || "",
             });
+            setEditingMeetingId(detailMeeting.id);
             setMeetingFormOpen(true);
           }
         }}
