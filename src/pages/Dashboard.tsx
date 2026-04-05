@@ -659,7 +659,7 @@ const Dashboard = () => {
   }
 
   // ── DESKTOP render ──────────────────────────────────────────────────────────
-  const role = profile?.role ?? "novacek";
+  const role = activeRole;
 
   const renderStavByznysu = () => {
     if (role === "novacek") {
