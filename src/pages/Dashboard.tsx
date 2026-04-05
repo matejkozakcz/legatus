@@ -131,6 +131,35 @@ const Dashboard = () => {
   const now = new Date();
   const todayStr = format(now, "yyyy-MM-dd");
 
+  // ── Impersonation: view dashboard as another team member ──
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [viewingUserName, setViewingUserName] = useState<string>("");
+
+  // The ID used for all data queries — either impersonated user or self
+  const activeUserId = viewingUserId || profile?.id || "";
+  const isImpersonating = !!viewingUserId && viewingUserId !== profile?.id;
+
+  // Fetch impersonated user's profile for role-dependent sections
+  const { data: viewingProfile } = useQuery({
+    queryKey: ["impersonated_profile", viewingUserId],
+    queryFn: async () => {
+      if (!viewingUserId) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, monthly_bj_goal, personal_bj_goal, osobni_id")
+        .eq("id", viewingUserId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!viewingUserId && viewingUserId !== profile?.id,
+  });
+
+  // Active profile for rendering (impersonated or own)
+  const activeProfile = isImpersonating && viewingProfile
+    ? { ...profile, ...viewingProfile }
+    : profile;
+
   // Mobile week navigation
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
