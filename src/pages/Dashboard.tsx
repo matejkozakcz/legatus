@@ -210,19 +210,19 @@ const Dashboard = () => {
 
   // ── Desktop stats from client_meetings ──────────────────────────────────────
   const { data: desktopMeetings = [] } = useQuery({
-    queryKey: ["dashboard_meetings", profile?.id, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
+    queryKey: ["dashboard_meetings", activeUserId, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
         .lte("date", format(dateRange.to, "yyyy-MM-dd"));
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.id,
+    enabled: !!activeUserId,
   });
 
   const stats = useMemo(() => computeStats(desktopMeetings, todayStr), [desktopMeetings, todayStr]);
@@ -232,19 +232,19 @@ const Dashboard = () => {
   const mobileWeekEndStr = format(mobileWeekEnd, "yyyy-MM-dd");
 
   const { data: mobileMeetings = [] } = useQuery({
-    queryKey: ["dashboard_meetings_mobile", profile?.id, mobileWeekStartStr, mobileWeekEndStr],
+    queryKey: ["dashboard_meetings_mobile", activeUserId, mobileWeekStartStr, mobileWeekEndStr],
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .gte("date", mobileWeekStartStr)
         .lte("date", mobileWeekEndStr);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.id && isMobile,
+    enabled: !!activeUserId && isMobile,
   });
 
   const mobileStats = useMemo(() => computeStats(mobileMeetings, todayStr), [mobileMeetings, todayStr]);
