@@ -802,7 +802,7 @@ const Dashboard = () => {
           style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
         >
           <button
-            onClick={() => { setViewingUserId(null); setViewingUserName(""); }}
+            onClick={() => handlePersonSwitch(null, "")}
             className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
             style={{ color: "#00abbd" }}
           >
@@ -858,8 +858,7 @@ const Dashboard = () => {
                   focusUserId={viewingUserId || undefined}
                   viewerRole={profile?.role}
                   onPersonClick={(userId, p) => {
-                    setViewingUserId(userId);
-                    setViewingUserName(p.full_name);
+                    handlePersonSwitch(userId, p.full_name);
                   }}
                 />
               </div>
