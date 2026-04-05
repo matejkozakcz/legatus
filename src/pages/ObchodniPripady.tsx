@@ -498,7 +498,22 @@ export default function ObchodniPripady() {
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
 
-  const deleteMutation = useMutation({
+  // ── Outcome mutation (save meeting results) ──
+  const outcomeMutation = useMutation({
+    mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
+      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
+      if (error) throw error;
+      return { meetingId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_records"] });
+      setDetailMeeting(null);
+      toast.success("Výsledek uložen");
+    },
+    onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
+  });
+
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("client_meetings").delete().eq("id", id);
       if (error) throw error;
