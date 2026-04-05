@@ -657,7 +657,7 @@ const Dashboard = () => {
                 <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>Osobní BJ</span>
                 <GaugeIndicator
                   value={personalMonthlyBj}
-                  max={monthlyBjGoal || 100}
+                  max={personalBjGoal || 100}
                   label=""
                   sublabel="tento měsíc"
                   dark
