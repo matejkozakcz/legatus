@@ -557,13 +557,17 @@ export default function Kalendar() {
                           }}
                           onClick={(e) => { e.stopPropagation(); handleMeetingClick(m); }}
                         >
-                          <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
-                            {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                          <div className="flex items-center gap-0.5">
+                            <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
+                              {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                            </div>
+                            {needsFollowUp(m) && <AlertCircle size={11} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           {blockHeight > 30 && (
                             <div className="text-muted-foreground" style={{ fontSize: 10 }}>
                               {m.meeting_time?.slice(0, 5)}
                               {m.cancelled && " • Zrušená"}
+                              {needsFollowUp(m) && " • Doplň výsledek"}
                             </div>
                           )}
                         </div>
