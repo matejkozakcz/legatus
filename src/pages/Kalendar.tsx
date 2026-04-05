@@ -231,17 +231,24 @@ export default function Kalendar() {
         week_start: format(weekStartDate, "yyyy-MM-dd"),
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
-        potencial_bj: form.potencial_bj ? parseFloat(form.potencial_bj) : null,
-        has_poradenstvi: form.has_poradenstvi,
-        podepsane_bj: form.podepsane_bj ? parseFloat(form.podepsane_bj) : 0,
-        doporuceni_poradenstvi: parseInt(form.doporuceni_poradenstvi) || 0,
-        poradenstvi_date: form.poradenstvi_date || null,
-        poradenstvi_status: form.poradenstvi_status,
-        has_pohovor: form.has_pohovor,
-        pohovor_jde_dal: form.pohovor_jde_dal,
-        doporuceni_pohovor: parseInt(form.doporuceni_pohovor) || 0,
-        pohovor_date: form.pohovor_date || null,
-        doporuceni_fsa: parseInt(form.doporuceni_fsa) || 0,
+        potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
+        // BJ: přímo z formuláře pro POR a SER
+        podepsane_bj: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+          ? parseFloat(form.podepsane_bj) || 0
+          : 0,
+        // Doporučení podle typu
+        doporuceni_fsa: !form.cancelled && form.meeting_type === "FSA" ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_poradenstvi: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+          ? parseInt(form.doporuceni_poradenstvi) || 0
+          : 0,
+        doporuceni_pohovor: !form.cancelled && form.meeting_type === "POH" ? parseInt(form.doporuceni_pohovor) || 0 : 0,
+        // POH výsledek
+        pohovor_jde_dal: !form.cancelled && form.meeting_type === "POH" ? form.pohovor_jde_dal : null,
+        vizi_spoluprace: !form.cancelled && form.meeting_type === "POH" && form.pohovor_jde_dal === true,
+        // Legacy fields
+        has_poradenstvi: false,
+        poradenstvi_status: null,
+        has_pohovor: false,
         poznamka: form.poznamka || null,
         case_id: form.case_id || null,
         case_name: form.case_name || null,

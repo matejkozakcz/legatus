@@ -522,34 +522,23 @@ export default function ObchodniPripady() {
         location_type: form.location_type || null,
         location_detail: form.location_detail.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
-        has_poradenstvi: !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi,
-        podepsane_bj:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi
-            ? parseFloat(form.podepsane_bj) || 0
-            : 0,
-        doporuceni_poradenstvi:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi
-            ? parseInt(form.doporuceni_poradenstvi) || 0
-            : 0,
-        poradenstvi_date:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi && form.poradenstvi_date
-            ? form.poradenstvi_date
-            : null,
-        poradenstvi_status:
-          !form.cancelled && form.meeting_type !== "POH" && form.has_poradenstvi ? form.poradenstvi_status : null,
-        has_pohovor: !form.cancelled && form.has_pohovor,
-        pohovor_jde_dal: !form.cancelled && form.has_pohovor ? form.pohovor_jde_dal : null,
-        doporuceni_pohovor: !form.cancelled && form.has_pohovor ? parseInt(form.doporuceni_pohovor) || 0 : 0,
-        pohovor_date: !form.cancelled && form.has_pohovor && form.pohovor_date ? form.pohovor_date : null,
-        bj:
-          !form.cancelled &&
-          form.meeting_type !== "POH" &&
-          form.has_poradenstvi &&
-          form.poradenstvi_status === "probehle"
-            ? parseFloat(form.podepsane_bj) || 0
-            : 0,
-        doporuceni_fsa: !form.cancelled ? parseInt(form.doporuceni_fsa) || 0 : 0,
-        vizi_spoluprace: !form.cancelled && form.has_pohovor && form.pohovor_jde_dal === true,
+        // BJ: přímo z formuláře pro POR a SER (bez podmínky has_poradenstvi/poradenstvi_status)
+        podepsane_bj: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+          ? parseFloat(form.podepsane_bj) || 0
+          : 0,
+        // Doporučení podle typu
+        doporuceni_fsa: !form.cancelled && form.meeting_type === "FSA" ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_poradenstvi: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+          ? parseInt(form.doporuceni_poradenstvi) || 0
+          : 0,
+        doporuceni_pohovor: !form.cancelled && form.meeting_type === "POH" ? parseInt(form.doporuceni_pohovor) || 0 : 0,
+        // POH výsledek
+        pohovor_jde_dal: !form.cancelled && form.meeting_type === "POH" ? form.pohovor_jde_dal : null,
+        vizi_spoluprace: !form.cancelled && form.meeting_type === "POH" && form.pohovor_jde_dal === true,
+        // Legacy fields — zachováme null (DB sloupce existují, formulář je nepoužívá)
+        has_poradenstvi: false,
+        poradenstvi_status: null,
+        has_pohovor: false,
         poznamka: form.poznamka.trim() || null,
       };
       if (id) {
