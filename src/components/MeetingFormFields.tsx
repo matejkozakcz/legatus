@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Trash2 } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
