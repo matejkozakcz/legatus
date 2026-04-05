@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, Minus, Bell, Pencil, Check } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Bell, Pencil, Check } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
@@ -14,7 +14,6 @@ import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
-import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
@@ -141,36 +140,19 @@ function DeadlinesSection({ userId }: { userId?: string }) {
   );
 }
 
-// ─── Mobile editable stat card ────────────────────────────────────────────────
+// ─── Mobile read-only stat card ───────────────────────────────────────────────
 
 function MobileStatCard({
   label,
   actual,
   planned,
   sublabel,
-  editable,
-  onIncrement,
-  onDecrement,
-  showButtons = true,
 }: {
   label: string;
   actual: number;
   planned: number;
   sublabel: string;
-  editable: boolean;
-  onIncrement: () => void;
-  onDecrement: () => void;
-  showButtons?: boolean;
 }) {
-  const [pressed, setPressed] = useState<"plus" | "minus" | null>(null);
-
-  const handlePress = (side: "plus" | "minus", action: () => void) => {
-    if (!editable) return;
-    setPressed(side);
-    action();
-    setTimeout(() => setPressed(null), 150);
-  };
-
   return (
     <div
       className="mobile-stat-card"
@@ -217,66 +199,43 @@ function MobileStatCard({
           {sublabel}
         </div>
       </div>
-      {/* +/- buttons stacked vertically — only in God Mode */}
-      {showButtons && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            marginLeft: 10,
-          }}
-        >
-          <button
-            disabled={!editable}
-            onPointerDown={() => handlePress("plus", onIncrement)}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
-              border: "none",
-              cursor: editable ? "pointer" : "default",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: editable ? 1 : 0.35,
-              transition: "background 0.1s",
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <Plus size={16} color="#00555f" strokeWidth={2.5} />
-          </button>
-          <button
-            disabled={!editable}
-            onPointerDown={() => handlePress("minus", onDecrement)}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
-              border: "none",
-              cursor: editable ? "pointer" : "default",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: editable ? 1 : 0.35,
-              transition: "background 0.1s",
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <Minus size={16} color="#00555f" strokeWidth={2.5} />
-          </button>
-        </div>
-      )}
     </div>
   );
+}
+
+// ─── Helper: compute stats from meetings ──────────────────────────────────────
+
+function computeStats(meetings: any[], todayStr: string) {
+  const count = (type: string, past: boolean) =>
+    meetings.filter(
+      (m: any) =>
+        m.meeting_type === type &&
+        !m.cancelled &&
+        (past ? m.date < todayStr : m.date >= todayStr),
+    ).length;
+
+  const sumRefs = (past: boolean) =>
+    meetings
+      .filter((m: any) => !m.cancelled && (past ? m.date < todayStr : m.date >= todayStr))
+      .reduce(
+        (acc: number, m: any) =>
+          acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
+        0,
+      );
+
+  return {
+    fsa: { actual: count("FSA", true), planned: count("FSA", false) },
+    poh: { actual: count("POH", true), planned: count("POH", false) },
+    ser: { actual: count("SER", true), planned: count("SER", false) },
+    por: { actual: count("POR", true), planned: count("POR", false) },
+    ref: { actual: sumRefs(true), planned: sumRefs(false) },
+  };
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { profile, user, godMode } = useAuth();
+  const { profile, user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isMobile = useIsMobile();
@@ -286,8 +245,8 @@ const Dashboard = () => {
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const now = new Date();
+  const todayStr = format(now, "yyyy-MM-dd");
 
   // Mobile week navigation
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
@@ -296,12 +255,7 @@ const Dashboard = () => {
     [mobileWeekOffset],
   );
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
-  const mobileWeekStr = format(mobileWeekStart, "yyyy-MM-dd");
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
-
-  // Local values for optimistic updates
-  const [localValues, setLocalValues] = useState<Record<string, number>>({});
-  const localValuesRef = useRef<Record<string, number>>({});
 
   // First login confetti
   useEffect(() => {
@@ -342,45 +296,63 @@ const Dashboard = () => {
     }
   }, [timeFilter]);
 
-  const { data: records = [] } = useQuery({
-    queryKey: ["activity_records", profile?.id, dateRange],
+  // ── Desktop stats from client_meetings ──────────────────────────────────────
+  const { data: desktopMeetings = [] } = useQuery({
+    queryKey: ["dashboard_meetings", profile?.id, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
-        .from("activity_records")
-        .select("*")
+        .from("client_meetings")
+        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
         .eq("user_id", profile.id)
-        .gte("week_start", format(dateRange.from, "yyyy-MM-dd"))
-        .lte("week_start", format(dateRange.to, "yyyy-MM-dd"));
+        .gte("date", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("date", format(dateRange.to, "yyyy-MM-dd"));
       if (error) throw error;
       return data || [];
     },
     enabled: !!profile?.id,
   });
 
-  const stats = useMemo(() => {
-    const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
-    return {
-      fsa: { actual: sum("fsa_actual"), planned: sum("fsa_planned") },
-      poh: { actual: sum("poh_actual"), planned: sum("poh_planned") },
-      ser: { actual: sum("ser_actual"), planned: sum("ser_planned") },
-      ref: { actual: sum("ref_actual"), planned: sum("ref_planned") },
-    };
-  }, [records]);
+  const stats = useMemo(() => computeStats(desktopMeetings, todayStr), [desktopMeetings, todayStr]);
+
+  // ── Mobile stats from client_meetings (week) ───────────────────────────────
+  const mobileWeekStartStr = format(mobileWeekStart, "yyyy-MM-dd");
+  const mobileWeekEndStr = format(mobileWeekEnd, "yyyy-MM-dd");
+
+  const { data: mobileMeetings = [] } = useQuery({
+    queryKey: ["dashboard_meetings_mobile", profile?.id, mobileWeekStartStr, mobileWeekEndStr],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+        .eq("user_id", profile.id)
+        .gte("date", mobileWeekStartStr)
+        .lte("date", mobileWeekEndStr);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id && isMobile,
+  });
+
+  const mobileStats = useMemo(() => computeStats(mobileMeetings, todayStr), [mobileMeetings, todayStr]);
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
   // All-time cumulative BJ (for promotion progress gauge)
-  const { data: allBjData = [] } = useQuery({
-    queryKey: ["bj_all_time", profile?.id],
+  const { data: totalBjAllTime = 0 } = useQuery({
+    queryKey: ["bj_all_time_meetings", profile?.id],
     queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data } = await supabase.from("activity_records").select("bj").eq("user_id", profile.id);
-      return data || [];
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .eq("user_id", profile.id)
+        .eq("cancelled", false);
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
     enabled: !!profile?.id && profile?.role !== "vedouci" && profile?.role !== "novacek",
   });
-  const totalBjAllTime = useMemo(() => allBjData.reduce((acc: number, r: any) => acc + (r.bj || 0), 0), [allBjData]);
 
   // Direct subordinates count (for Garant and BV promotion progress)
   const { data: directSubordinateCount = 0 } = useQuery({
@@ -402,7 +374,6 @@ const Dashboard = () => {
     queryKey: ["structure_count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      // Count people where garant_id = me OR vedouci_id = me
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
@@ -417,34 +388,38 @@ const Dashboard = () => {
   // Vedoucí: monthly BJ for entire subtree
   const periodStart = getProductionPeriodStart(now);
   const periodEnd = getProductionPeriodEnd(now);
+  const periodStartStr = format(periodStart, "yyyy-MM-dd");
+  const periodEndStr = format(periodEnd, "yyyy-MM-dd");
 
-  // Vedoucí: monthly BJ for entire subtree (team)
+  // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
-    queryKey: ["vedouci_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryKey: ["vedouci_monthly_bj_meetings", profile?.id, periodStartStr],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { data } = await supabase
-        .from("activity_records")
-        .select("bj")
-        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
-        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
-      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
     enabled: !!profile?.id && profile?.role === "vedouci",
   });
 
-  // Personal monthly BJ (current production period)
+  // Personal monthly BJ (current production period) — from client_meetings
   const { data: personalMonthlyBj = 0 } = useQuery({
-    queryKey: ["personal_monthly_bj", profile?.id, format(periodStart, "yyyy-MM-dd")],
+    queryKey: ["personal_monthly_bj_meetings", profile?.id, periodStartStr],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { data } = await supabase
-        .from("activity_records")
-        .select("bj")
+        .from("client_meetings")
+        .select("podepsane_bj")
         .eq("user_id", profile.id)
-        .gte("week_start", format(periodStart, "yyyy-MM-dd"))
-        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
-      return (data || []).reduce((acc: number, r: any) => acc + (r.bj || 0), 0);
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
     enabled: !!profile?.id,
   });
@@ -488,76 +463,6 @@ const Dashboard = () => {
       window.location.reload();
     },
   });
-
-  // Mobile week record query
-  const { data: mobileWeekRecords = [] } = useQuery({
-    queryKey: ["activity_records", profile?.id, mobileWeekStr],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data } = await supabase
-        .from("activity_records")
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("week_start", mobileWeekStr);
-      return data || [];
-    },
-    enabled: !!profile?.id && isMobile,
-  });
-
-  const mobileRecord = mobileWeekRecords[0] as any;
-
-  // Sync local values from server
-  useEffect(() => {
-    const rec = mobileRecord;
-    const fresh: Record<string, number> = {
-      fsa_actual: rec?.fsa_actual || 0,
-      fsa_planned: rec?.fsa_planned || 0,
-      poh_actual: rec?.poh_actual || 0,
-      poh_planned: rec?.poh_planned || 0,
-      ser_actual: rec?.ser_actual || 0,
-      ser_planned: rec?.ser_planned || 0,
-      ref_actual: rec?.ref_actual || 0,
-      ref_planned: rec?.ref_planned || 0,
-    };
-    localValuesRef.current = fresh;
-    setLocalValues(fresh);
-  }, [mobileWeekStr, mobileRecord]);
-
-  // Upsert mutation
-  const upsertMutation = useMutation({
-    mutationFn: async (record: { week_start: string; [key: string]: any }) => {
-      if (!profile?.id) throw new Error("No user");
-      const { error } = await supabase
-        .from("activity_records")
-        .upsert({ user_id: profile.id, ...record }, { onConflict: "user_id,week_start" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activity_records"] });
-      queryClient.invalidateQueries({ queryKey: ["bj_all_time"] });
-    },
-    onError: () => {
-      toast.error("Nepodařilo se uložit změny.");
-    },
-  });
-
-  // Mobile change handler
-  const handleMobileChange = useCallback(
-    (key: string, newVal: number) => {
-      const updated = { ...localValuesRef.current, [key]: newVal };
-      localValuesRef.current = updated;
-      setLocalValues({ ...updated });
-
-      const timerKey = "dashboard-save-" + mobileWeekStr;
-      if (debounceTimers.current[timerKey]) clearTimeout(debounceTimers.current[timerKey]);
-      debounceTimers.current[timerKey] = setTimeout(() => {
-        const existing = mobileRecord;
-        const record: any = { ...(existing || {}), week_start: mobileWeekStr, ...localValuesRef.current };
-        upsertMutation.mutate(record);
-      }, 800);
-    },
-    [mobileWeekStr, mobileRecord, upsertMutation],
-  );
 
   // ── Desktop filter pills ────────────────────────────────────────────────────
   const filterPills: { key: TimeFilter; label: string }[] = [
@@ -710,55 +615,37 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* ── 2×2 STAT GRID (this week, editable) ── */}
+        {/* ── 2×3 STAT GRID (read-only, from meetings) ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
           <MobileStatCard
             label="Analýzy"
-            actual={localValues.fsa_actual || 0}
-            planned={localValues.fsa_planned || 0}
+            actual={mobileStats.fsa.actual}
+            planned={mobileStats.fsa.planned}
             sublabel="proběhlých / doml."
-            editable={isMobileWeekEditable}
-            showButtons={godMode}
-            onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
-            onDecrement={() =>
-              handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))
-            }
           />
           <MobileStatCard
             label="Pohovory"
-            actual={localValues.poh_actual || 0}
-            planned={localValues.poh_planned || 0}
+            actual={mobileStats.poh.actual}
+            planned={mobileStats.poh.planned}
             sublabel="proběhlých / naplán."
-            editable={isMobileWeekEditable}
-            showButtons={godMode}
-            onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
-            onDecrement={() =>
-              handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))
-            }
           />
           <MobileStatCard
-            label="Poradka"
-            actual={localValues.ser_actual || 0}
-            planned={localValues.ser_planned || 0}
+            label="Servisy"
+            actual={mobileStats.ser.actual}
+            planned={mobileStats.ser.planned}
             sublabel="proběhlých / naplán."
-            editable={isMobileWeekEditable}
-            showButtons={godMode}
-            onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
-            onDecrement={() =>
-              handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))
-            }
+          />
+          <MobileStatCard
+            label="Poradenství"
+            actual={mobileStats.por.actual}
+            planned={mobileStats.por.planned}
+            sublabel="proběhlých / naplán."
           />
           <MobileStatCard
             label="Doporučení"
-            actual={localValues.ref_actual || 0}
-            planned={localValues.ref_planned || 0}
+            actual={mobileStats.ref.actual}
+            planned={mobileStats.ref.planned}
             sublabel="vybraných / naplán."
-            editable={isMobileWeekEditable}
-            showButtons={godMode}
-            onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
-            onDecrement={() =>
-              handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))
-            }
           />
         </div>
 
@@ -824,23 +711,6 @@ const Dashboard = () => {
           >
             <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
           </button>
-        </div>
-
-        {/* Autosave indicator */}
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: 11,
-            color: "var(--text-muted)",
-            padding: "6px 0 12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-          }}
-        >
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3fc55d", flexShrink: 0 }} />
-          Automaticky ukládáno
         </div>
 
         {/* Upcoming deadlines */}
@@ -1163,7 +1033,7 @@ const Dashboard = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
             label="Analýzy"
             actual={stats.fsa.actual}
@@ -1179,9 +1049,16 @@ const Dashboard = () => {
             plannedLabel="naplánovaných"
           />
           <StatCard
-            label="Poradka"
+            label="Servisy"
             actual={stats.ser.actual}
             planned={stats.ser.planned}
+            actualLabel="proběhlých"
+            plannedLabel="naplánovaných"
+          />
+          <StatCard
+            label="Poradenství"
+            actual={stats.por.actual}
+            planned={stats.por.planned}
             actualLabel="proběhlých"
             plannedLabel="naplánovaných"
           />
