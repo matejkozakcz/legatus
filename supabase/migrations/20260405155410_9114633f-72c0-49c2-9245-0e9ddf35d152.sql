@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN personal_bj_goal integer DEFAULT 0;

@@ -451,8 +451,11 @@ const Dashboard = () => {
 
   // Vedoucí: monthly_bj_goal from profile
   const monthlyBjGoal = profile?.monthly_bj_goal || 0;
+  const personalBjGoal = (profile as any)?.personal_bj_goal || 0;
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInputValue, setGoalInputValue] = useState("");
+  const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
+  const [personalGoalInputValue, setPersonalGoalInputValue] = useState("");
 
   const updateGoalMutation = useMutation({
     mutationFn: async (newGoal: number) => {
@@ -466,7 +469,22 @@ const Dashboard = () => {
     onSuccess: () => {
       setEditingGoal(false);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      // Refetch profile in auth context
+      window.location.reload();
+    },
+  });
+
+  const updatePersonalGoalMutation = useMutation({
+    mutationFn: async (newGoal: number) => {
+      if (!profile?.id) throw new Error("No user");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ personal_bj_goal: newGoal } as any)
+        .eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingPersonalGoal(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       window.location.reload();
     },
   });
@@ -639,7 +657,7 @@ const Dashboard = () => {
                 <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "white", marginBottom: 2 }}>Osobní BJ</span>
                 <GaugeIndicator
                   value={personalMonthlyBj}
-                  max={monthlyBjGoal || 100}
+                  max={personalBjGoal || 100}
                   label=""
                   sublabel="tento měsíc"
                   dark
@@ -932,12 +950,89 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-          <GaugeIndicator
-            value={personalMonthlyBj}
-            max={monthlyBjGoal || 100}
-            label="Osobní BJ"
-            sublabel="tento měsíc"
-          />
+          <div style={{ position: "relative" }}>
+            <GaugeIndicator
+              value={personalMonthlyBj}
+              max={personalBjGoal || 100}
+              label="Osobní BJ"
+              sublabel="tento měsíc"
+            />
+            {!editingPersonalGoal ? (
+              <button
+                onClick={() => {
+                  setPersonalGoalInputValue(String(personalBjGoal || ""));
+                  setEditingPersonalGoal(true);
+                }}
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "#e6f7f9",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="Nastavit cíl"
+              >
+                <Pencil size={14} color="#00abbd" />
+              </button>
+            ) : (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <input
+                  type="number"
+                  value={personalGoalInputValue}
+                  onChange={(e) => setPersonalGoalInputValue(e.target.value)}
+                  style={{
+                    width: 64,
+                    height: 28,
+                    borderRadius: 6,
+                    border: "1.5px solid #00abbd",
+                    padding: "0 6px",
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#00555f",
+                    outline: "none",
+                  }}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") updatePersonalGoalMutation.mutate(Number(personalGoalInputValue) || 0);
+                    if (e.key === "Escape") setEditingPersonalGoal(false);
+                  }}
+                />
+                <button
+                  onClick={() => updatePersonalGoalMutation.mutate(Number(personalGoalInputValue) || 0)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: "#00abbd",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Check size={14} color="white" />
+                </button>
+              </div>
+            )}
+          </div>
         </>
       );
     }
