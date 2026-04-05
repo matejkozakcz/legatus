@@ -909,6 +909,29 @@ export default function Kalendar() {
           }
         }}
       />
+      <FollowUpModal
+        open={!!followUp}
+        onClose={() => setFollowUp(null)}
+        caseName={followUp?.caseName || ""}
+        caseId={followUp?.caseId || ""}
+        meetingType={followUp?.meetingType || "FSA"}
+        onSchedule={async (data) => {
+          const form: MeetingForm = {
+            ...defaultMeetingForm(data.date, data.meeting_time),
+            case_id: data.case_id,
+            meeting_type: data.meeting_type,
+            duration_minutes: data.duration_minutes,
+            location_type: data.location_type,
+            location_detail: data.location_detail,
+          };
+          await new Promise<void>((resolve, reject) => {
+            saveMutation.mutate({ form, skipFollowUp: true }, {
+              onSuccess: () => resolve(),
+              onError: (err) => reject(err),
+            });
+          });
+        }}
+      />
     </div>
   );
 }
