@@ -522,7 +522,7 @@ function MeetingModal({
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2">
-            {(["FSA", "POH", "SER"] as MeetingType[]).map((t) => (
+            {(["FSA", "POR", "SER", "POH"] as MeetingType[]).map((t) => (
               <button
                 key={t}
                 type="button"
