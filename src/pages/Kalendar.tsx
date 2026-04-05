@@ -65,33 +65,6 @@ const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{label}</span>
-      <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-        style={{ background: checked ? "#00abbd" : "#d1dfe2" }}>
-        <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-          style={{ transform: checked ? "translateX(1.375rem)" : "translateX(0.25rem)" }} />
-      </button>
-    </div>
-  );
-}
-
-function NumberInput({ label, value, onChange, min = 0, step = 1, placeholder = "0" }: {
-  label: string; value: string; onChange: (v: string) => void; min?: number; step?: number; placeholder?: string;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-      <input type="number" min={min} step={step} value={value} onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-    </div>
-  );
-}
-
 // ─── Detail Modal ────────────────────────────────────────────────────────────
 
 function MeetingDetailModal({ open, onClose, meeting, onEdit }: {
