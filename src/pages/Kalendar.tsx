@@ -62,6 +62,18 @@ function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatu
   return m.date < todayStr ? "probehla" : "naplanovana";
 }
 
+/** Meeting is past, not cancelled, and has no outcome filled in */
+function needsFollowUp(m: Meeting): boolean {
+  if (m.cancelled) return false;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  if (m.date >= todayStr) return false; // not yet past
+  // Check if any result field was filled
+  if (m.meeting_type === "FSA") return m.doporuceni_fsa === 0;
+  if (m.meeting_type === "POR" || m.meeting_type === "SER") return m.podepsane_bj === 0 && m.doporuceni_poradenstvi === 0;
+  if (m.meeting_type === "POH") return m.pohovor_jde_dal === null && m.doporuceni_pohovor === 0;
+  return false;
+}
+
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
   if (status === "naplanovana") return dark ? "rgba(245,200,66,0.25)" : "rgba(245,200,66,0.18)";
   if (status === "probehla") return dark ? "rgba(34,197,94,0.25)" : "rgba(34,197,94,0.18)";
