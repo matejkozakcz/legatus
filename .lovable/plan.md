@@ -1,34 +1,24 @@
+## Kompaktnější týdenní zobrazení kalendáře
 
+### Problém
 
-## Problem: Sync trigger overwrites manual edits
+Aktuálně se zobrazuje 15 hodin (7:00–21:00) najednou, každý 30min slot má 48px → celková výška ~1440px. Grid je příliš velký a vyžaduje hodně scrollování.
 
-The `sync_activity_from_meetings` database trigger fires on every meeting INSERT/UPDATE/DELETE and overwrites these `activity_records` columns:
-- `fsa_actual` (FSA Proběhlé)
-- `ser_actual` (SER Proběhlé)  
-- `bj`, `bj_fsa_actual`, `bj_ser_actual`
-- `ref_actual`
+### Řešení
 
-But users also manually edit `fsa_actual`, `ser_actual`, `poh_actual`, `ref_actual`, `bj` in "Moje aktivity". The trigger resets their manual values.
+1. **Omezit viditelné okno na 5 hodin** — grid nově obsahuje všech 24 hodin (0–24), ale wrapper má fixní výšku odpovídající 5 hodinám a `overflow-y: auto` pro vertikální scroll.
+2. **Automatický scroll na relevantní čas** — při načtení se grid automaticky posune na aktuální hodinu (nebo na první schůzku dne, pokud existuje).
+3. **Zmenšit SLOT_HEIGHT** — snížit z 48px na ~40px pro kompaktnější vzhled.
 
-### Solution
+### Technické změny
 
-Split the data into two categories:
-1. **Manually edited** (planned + some actuals): `fsa_planned`, `ser_planned`, `poh_planned`, `ref_planned`, `por_planned`, `por_actual`, `kl_fsa_actual`, `dop_kl_actual` — these stay user-editable, trigger never touches them
-2. **Auto-synced from meetings**: `fsa_actual`, `ser_actual`, `bj`, `bj_fsa_actual`, `bj_ser_actual`, `ref_actual` — these are computed from `client_meetings` and should be **read-only** in MojeAktivity
+**Soubor: `src/pages/Kalendar.tsx**`
 
-### Changes
-
-**1. Update sync trigger** to also count `poh_actual` (POH meetings) from `client_meetings`:
-```sql
-COUNT(*) FILTER (WHERE meeting_type = 'POH' AND NOT cancelled) → poh_actual
-```
-
-**2. Mark auto-synced columns as read-only in MojeAktivity UI**:
-- `fsa_actual`, `ser_actual`, `poh_actual`, `ref_actual`, `bj`, `bj_fsa_actual`, `bj_ser_actual` — display as non-editable (no +/- buttons, greyed out styling)
-- Desktop table: these cells show value without edit controls
-- Mobile counters: remove increment/decrement for these fields
-
-**3. Files to edit**:
-- **Migration SQL** — update `sync_activity_from_meetings` to also sync `poh_actual`
-- `src/pages/MojeAktivity.tsx` — make auto-synced columns read-only in both desktop and mobile views
-
+- Změnit `SLOT_HEIGHT` z `48` na `40`
+- V `renderWeekView()` obalit time grid do kontejneru s:
+  - `maxHeight: SLOT_HEIGHT * 2 * 5` (5 hodin = 10 slotů × SLOT_HEIGHT = 400px)
+  - `overflow-y: auto`
+  - `scroll-behavior: smooth`
+- Přidat `useRef` na scrollovací kontejner
+- V `useEffect` po renderování scrollnout na aktuální hodinu (`scrollTop = (currentHour - 7) * SLOT_HEIGHT * 2`)
+- Day headers zůstávají sticky nahoře (už mají `sticky top-0`)
