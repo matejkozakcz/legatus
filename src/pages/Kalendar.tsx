@@ -471,12 +471,9 @@ export default function Kalendar() {
                     {format(day, "d")}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {dayMeetings.slice(0, 3).map((m) => {
-                      const colors = getTypeColor(m.meeting_type);
-                      return (
-                        <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: colors.border }} />
-                      );
-                    })}
+                    {dayMeetings.slice(0, 3).map((m) => (
+                      <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: getTypeBorder(m.meeting_type) }} />
+                    ))}
                     {dayMeetings.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayMeetings.length - 3}</span>}
                   </div>
                 </div>
