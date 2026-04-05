@@ -151,6 +151,7 @@ function MobileStatCard({
   editable,
   onIncrement,
   onDecrement,
+  showButtons = true,
 }: {
   label: string;
   actual: number;
@@ -159,6 +160,7 @@ function MobileStatCard({
   editable: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
+  showButtons?: boolean;
 }) {
   const [pressed, setPressed] = useState<"plus" | "minus" | null>(null);
 
@@ -215,56 +217,58 @@ function MobileStatCard({
           {sublabel}
         </div>
       </div>
-      {/* +/- buttons stacked vertically */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          marginLeft: 10,
-        }}
-      >
-        <button
-          disabled={!editable}
-          onPointerDown={() => handlePress("plus", onIncrement)}
+      {/* +/- buttons stacked vertically — only in God Mode */}
+      {showButtons && (
+        <div
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
-            border: "none",
-            cursor: editable ? "pointer" : "default",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: editable ? 1 : 0.35,
-            transition: "background 0.1s",
-            WebkitTapHighlightColor: "transparent",
+            flexDirection: "column",
+            gap: 6,
+            marginLeft: 10,
           }}
         >
-          <Plus size={16} color="#00555f" strokeWidth={2.5} />
-        </button>
-        <button
-          disabled={!editable}
-          onPointerDown={() => handlePress("minus", onDecrement)}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
-            border: "none",
-            cursor: editable ? "pointer" : "default",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: editable ? 1 : 0.35,
-            transition: "background 0.1s",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <Minus size={16} color="#00555f" strokeWidth={2.5} />
-        </button>
-      </div>
+          <button
+            disabled={!editable}
+            onPointerDown={() => handlePress("plus", onIncrement)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
+              border: "none",
+              cursor: editable ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: editable ? 1 : 0.35,
+              transition: "background 0.1s",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Plus size={16} color="#00555f" strokeWidth={2.5} />
+          </button>
+          <button
+            disabled={!editable}
+            onPointerDown={() => handlePress("minus", onDecrement)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
+              border: "none",
+              cursor: editable ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: editable ? 1 : 0.35,
+              transition: "background 0.1s",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Minus size={16} color="#00555f" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -272,7 +276,7 @@ function MobileStatCard({
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, godMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isMobile = useIsMobile();
@@ -696,6 +700,7 @@ const Dashboard = () => {
             planned={localValues.fsa_planned || 0}
             sublabel="proběhlých / doml."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("fsa_actual", (localValuesRef.current.fsa_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("fsa_actual", Math.max(0, (localValuesRef.current.fsa_actual || 0) - 1))
@@ -707,6 +712,7 @@ const Dashboard = () => {
             planned={localValues.poh_planned || 0}
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("poh_actual", (localValuesRef.current.poh_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("poh_actual", Math.max(0, (localValuesRef.current.poh_actual || 0) - 1))
@@ -718,6 +724,7 @@ const Dashboard = () => {
             planned={localValues.ser_planned || 0}
             sublabel="proběhlých / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("ser_actual", (localValuesRef.current.ser_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("ser_actual", Math.max(0, (localValuesRef.current.ser_actual || 0) - 1))
@@ -729,6 +736,7 @@ const Dashboard = () => {
             planned={localValues.ref_planned || 0}
             sublabel="vybraných / naplán."
             editable={isMobileWeekEditable}
+            showButtons={godMode}
             onIncrement={() => handleMobileChange("ref_actual", (localValuesRef.current.ref_actual || 0) + 1)}
             onDecrement={() =>
               handleMobileChange("ref_actual", Math.max(0, (localValuesRef.current.ref_actual || 0) - 1))

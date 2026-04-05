@@ -118,6 +118,30 @@ const defaultForm = (caseId?: string): MeetingForm => ({
   location_detail: "",
 });
 
+const meetingToForm = (m: Meeting): MeetingForm => ({
+  date: m.date,
+  meeting_type: m.meeting_type,
+  cancelled: m.cancelled,
+  potencial_bj: m.potencial_bj != null ? String(m.potencial_bj) : "",
+  has_poradenstvi: m.has_poradenstvi,
+  podepsane_bj: String(m.podepsane_bj || ""),
+  doporuceni_poradenstvi: String(m.doporuceni_poradenstvi || 0),
+  poradenstvi_date: m.poradenstvi_date || "",
+  poradenstvi_status: (m.poradenstvi_status as PoradkoStatus) || null,
+  has_pohovor: m.has_pohovor,
+  pohovor_jde_dal: m.pohovor_jde_dal,
+  doporuceni_pohovor: String(m.doporuceni_pohovor || 0),
+  pohovor_date: m.pohovor_date || "",
+  doporuceni_fsa: String(m.doporuceni_fsa || 0),
+  poznamka: m.poznamka || "",
+  case_name: m.case_name || "",
+  case_id: m.case_id || "",
+  meeting_time: m.meeting_time ? m.meeting_time.slice(0, 5) : "",
+  duration_minutes: m.duration_minutes != null ? String(m.duration_minutes) : "",
+  location_type: m.location_type || "",
+  location_detail: m.location_detail || "",
+});
+
 // ─── Helper components ───────────────────────────────────────────────────────
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -280,11 +304,13 @@ function MeetingDetailModal({
   onClose,
   meeting,
   onEdit,
+  onCancel,
 }: {
   open: boolean;
   onClose: () => void;
   meeting: Meeting | null;
   onEdit: () => void;
+  onCancel: () => void;
 }) {
   if (!open || !meeting) return null;
   const m = meeting;
@@ -347,9 +373,19 @@ function MeetingDetailModal({
           {!m.cancelled && row("Doporučení (schůzka)", m.doporuceni_fsa)}
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
-        <button onClick={onEdit} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2 mt-5">
-          <Pencil className="h-4 w-4" /> Upravit schůzku
-        </button>
+        <div className="flex gap-3 mt-5">
+          {!m.cancelled && (
+            <button
+              onClick={onCancel}
+              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <X className="h-4 w-4" /> Zrušit schůzku
+            </button>
+          )}
+          <button onClick={onEdit} className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2">
+            <Pencil className="h-4 w-4" /> Upravit schůzku
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -364,6 +400,8 @@ function MeetingModal({
   onSave,
   saving,
   cases,
+  isEdit: isEditProp,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
@@ -371,14 +409,18 @@ function MeetingModal({
   onSave: (form: MeetingForm) => void;
   saving: boolean;
   cases: Case[];
+  isEdit?: boolean;
+  onDelete?: () => void;
 }) {
   const [form, setForm] = useState<MeetingForm>(initial);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   useEffect(() => {
     setForm(initial);
+    setShowDeleteConfirm(false);
   }, [initial]);
   if (!open) return null;
   const set = (patch: Partial<MeetingForm>) => setForm((f) => ({ ...f, ...patch }));
-  const isEdit = !!initial.case_id && initial.date !== format(new Date(), "yyyy-MM-dd");
+  const isEdit = isEditProp ?? (!!initial.case_id && initial.date !== format(new Date(), "yyyy-MM-dd"));
   const activeCases = cases.filter((c) => c.status === "aktivni");
 
   return (
@@ -640,6 +682,39 @@ function MeetingModal({
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
+
+        {isEdit && onDelete && (
+          <>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full mt-3 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                style={{ color: "#fc7c71", background: "transparent", border: "1px solid #fc7c71" }}
+              >
+                <Trash2 className="h-4 w-4" /> Smazat schůzku
+              </button>
+            ) : (
+              <div className="mt-3 p-3 rounded-xl border border-border bg-muted/50">
+                <p className="text-sm text-muted-foreground mb-3">Opravdu smazat? Tato akce je nevratná.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 h-9 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground"
+                  >
+                    Ne
+                  </button>
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); onDelete(); }}
+                    className="flex-1 h-9 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: "#fc7c71" }}
+                  >
+                    Ano, smazat
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1559,6 +1634,16 @@ export default function ObchodniPripady() {
             setDetailMeeting(null);
           }
         }}
+        onCancel={() => {
+          if (detailMeeting) {
+            const cancelForm: MeetingForm = {
+              ...meetingToForm(detailMeeting),
+              cancelled: true,
+            };
+            saveMeetingMutation.mutate({ form: cancelForm, id: detailMeeting.id, skipFollowUp: true });
+            setDetailMeeting(null);
+          }
+        }}
       />
 
       {/* Meeting form modal */}
@@ -1572,6 +1657,12 @@ export default function ObchodniPripady() {
         onSave={(form) => saveMeetingMutation.mutate({ form, id: editMeeting?.id })}
         saving={saveMeetingMutation.isPending}
         cases={cases}
+        isEdit={!!editMeeting}
+        onDelete={editMeeting ? () => {
+          deleteMutation.mutate(editMeeting.id);
+          setMeetingModalOpen(false);
+          setEditMeeting(null);
+        } : undefined}
       />
 
       {/* Follow-up suggestion modal */}
