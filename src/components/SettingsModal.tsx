@@ -614,8 +614,13 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
       <div
         className="relative w-full max-w-2xl bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col
-          max-md:inset-0 max-md:fixed max-md:max-w-none max-md:rounded-none max-md:h-full
-          md:rounded-2xl md:max-h-[90vh]"
+          max-md:max-w-none max-md:rounded-none
+          md:rounded-2xl md:max-h-[90vh] md:mx-6"
+        style={{
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))",
+          marginTop: "env(safe-area-inset-top, 0px)",
+          marginBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

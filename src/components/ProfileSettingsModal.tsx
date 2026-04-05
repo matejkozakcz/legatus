@@ -277,7 +277,8 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-md bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]"
+        className="relative w-full max-w-md bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto mx-4"
+        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
