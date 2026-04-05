@@ -18,7 +18,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
-}
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
