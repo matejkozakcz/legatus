@@ -215,56 +215,58 @@ function MobileStatCard({
           {sublabel}
         </div>
       </div>
-      {/* +/- buttons stacked vertically */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          marginLeft: 10,
-        }}
-      >
-        <button
-          disabled={!editable}
-          onPointerDown={() => handlePress("plus", onIncrement)}
+      {/* +/- buttons stacked vertically — only in God Mode */}
+      {showButtons && (
+        <div
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
-            border: "none",
-            cursor: editable ? "pointer" : "default",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: editable ? 1 : 0.35,
-            transition: "background 0.1s",
-            WebkitTapHighlightColor: "transparent",
+            flexDirection: "column",
+            gap: 6,
+            marginLeft: 10,
           }}
         >
-          <Plus size={16} color="#00555f" strokeWidth={2.5} />
-        </button>
-        <button
-          disabled={!editable}
-          onPointerDown={() => handlePress("minus", onDecrement)}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
-            border: "none",
-            cursor: editable ? "pointer" : "default",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: editable ? 1 : 0.35,
-            transition: "background 0.1s",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <Minus size={16} color="#00555f" strokeWidth={2.5} />
-        </button>
-      </div>
+          <button
+            disabled={!editable}
+            onPointerDown={() => handlePress("plus", onIncrement)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: pressed === "plus" ? "#b8cfd4" : "#dde8ea",
+              border: "none",
+              cursor: editable ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: editable ? 1 : 0.35,
+              transition: "background 0.1s",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Plus size={16} color="#00555f" strokeWidth={2.5} />
+          </button>
+          <button
+            disabled={!editable}
+            onPointerDown={() => handlePress("minus", onDecrement)}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: pressed === "minus" ? "#b8cfd4" : "#dde8ea",
+              border: "none",
+              cursor: editable ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: editable ? 1 : 0.35,
+              transition: "background 0.1s",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Minus size={16} color="#00555f" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

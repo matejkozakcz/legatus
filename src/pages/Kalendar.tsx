@@ -932,19 +932,14 @@ export default function Kalendar() {
         </div>
 
         {/* Add meeting button */}
-        <div style={{ position: "fixed", bottom: 178, left: 16, right: 16, zIndex: 40 }}>
+        <div style={{ position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 41, display: "flex", flexDirection: "column", gap: 8 }}>
           <button
             onClick={() => {
               setMeetingFormInitial(defaultForm(mobileDayStr));
               setMeetingFormOpen(true);
             }}
-            style={{
-              width: "100%", height: 44, borderRadius: 14, border: "none", cursor: "pointer",
-              background: "#00abbd", color: "#fff",
-              fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 4px 16px rgba(0,171,189,0.3)",
-            }}
+            className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
           >
             <Plus size={18} />
             Přidat schůzku
