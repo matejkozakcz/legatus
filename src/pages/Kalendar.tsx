@@ -576,6 +576,18 @@ export default function Kalendar() {
 
     return (
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <button
+            onClick={() => {
+              setMeetingFormInitial(defaultMeetingForm(selectedDay ? format(selectedDay, "yyyy-MM-dd") : ""));
+              setEditingMeetingId(null);
+              setMeetingFormOpen(true);
+            }}
+            className="btn btn-primary btn-sm flex items-center gap-1.5"
+          >
+            <Plus size={14} /> Nová schůzka
+          </button>
+        </div>
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           {/* Day headers */}
           <div className="grid grid-cols-7 border-b border-border">
