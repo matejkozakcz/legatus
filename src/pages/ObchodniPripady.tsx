@@ -311,6 +311,9 @@ function CaseAccordion({
 }) {
   const [expanded, setExpanded] = useState(false);
   const sorted = [...meetings].sort((a, b) => b.date.localeCompare(a.date));
+  const activeMeetings = meetings.filter((m) => !m.cancelled);
+  const sumRefs = activeMeetings.reduce((s, m) => s + totalRefs(m), 0);
+  const sumBj = activeMeetings.reduce((s, m) => s + (m.podepsane_bj || 0), 0);
 
   return (
     <div className="legatus-card overflow-hidden">
@@ -323,6 +326,21 @@ function CaseAccordion({
         <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
           {c.nazev_pripadu}
         </span>
+        {/* Case totals */}
+        {(sumRefs > 0 || sumBj > 0) && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {sumRefs > 0 && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}>
+                {sumRefs} dop.
+              </span>
+            )}
+            {sumBj > 0 && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}>
+                {sumBj} BJ
+              </span>
+            )}
+          </div>
+        )}
         {c.status === "uzavreny" && (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
             Uzavřený
