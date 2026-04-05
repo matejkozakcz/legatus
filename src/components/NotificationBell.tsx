@@ -26,6 +26,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   post_meeting: <CalendarCheck className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
   deadline: <AlertTriangle className="h-4 w-4 text-destructive" />,
   garant_share: <Share2 className="h-4 w-4 text-muted-foreground" />,
+  promotion_eligible: <TrendingUp className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
 };
 
 export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
