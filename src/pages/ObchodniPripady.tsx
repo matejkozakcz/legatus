@@ -514,6 +514,7 @@ export default function ObchodniPripady() {
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
   });
 
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("client_meetings").delete().eq("id", id);
       if (error) throw error;
