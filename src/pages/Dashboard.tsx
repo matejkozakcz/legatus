@@ -795,6 +795,11 @@ const Dashboard = () => {
         </h1>
       </div>
 
+      <div style={{
+        transition: "opacity 0.25s ease, transform 0.25s ease",
+        opacity: transitioning ? 0 : 1,
+        transform: transitioning ? "translateY(8px)" : "translateY(0)",
+      }}>
       {/* Impersonation banner */}
       {isImpersonating && (
         <div
@@ -932,6 +937,7 @@ const Dashboard = () => {
       
 
       <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+      </div>
     </div>
   );
 };
