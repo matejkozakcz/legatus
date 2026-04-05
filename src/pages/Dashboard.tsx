@@ -276,8 +276,8 @@ const Dashboard = () => {
 
   const activeRole = activeProfile?.role ?? "novacek";
 
-  // All-time cumulative BJ (for promotion progress gauge)
-  const { data: totalBjAllTime = 0 } = useQuery({
+  // All-time cumulative BJ from meetings
+  const { data: meetingBjTotal = 0 } = useQuery({
     queryKey: ["bj_all_time_meetings", activeUserId],
     queryFn: async () => {
       if (!activeUserId) return 0;
@@ -290,6 +290,24 @@ const Dashboard = () => {
     },
     enabled: !!activeUserId && activeRole !== "vedouci" && activeRole !== "novacek",
   });
+
+  // Historical BJ from onboarding (stored in activity_records for Dec 2025)
+  const { data: historicalBj = 0 } = useQuery({
+    queryKey: ["bj_historical", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { data } = await supabase
+        .from("activity_records")
+        .select("bj")
+        .eq("user_id", activeUserId)
+        .eq("week_start", "2025-12-01")
+        .maybeSingle();
+      return Number(data?.bj) || 0;
+    },
+    enabled: !!activeUserId && activeRole !== "vedouci" && activeRole !== "novacek",
+  });
+
+  const totalBjAllTime = meetingBjTotal + historicalBj;
 
   // Získatel: lidé ve struktuře (ziskatel_id = profile.id)
   const { data: ziskatelStructureCount = 0 } = useQuery({
