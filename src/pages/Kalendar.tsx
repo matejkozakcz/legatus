@@ -679,7 +679,7 @@ export default function Kalendar() {
                           onClick={(e) => { e.stopPropagation(); handleMeetingClick(m); }}
                         >
                           <div className="font-semibold truncate" style={{ color: isDark ? colors.border : colors.text }}>
-                            {meetingTypeLabel(m.meeting_type)}
+                            {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                           </div>
                           {blockHeight > 30 && m.case_name && (
                             <div className="truncate text-muted-foreground" style={{ fontSize: 10 }}>{m.case_name}</div>
@@ -770,7 +770,7 @@ export default function Kalendar() {
                       className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                       <div className="w-1 h-8 rounded-full" style={{ background: colors.border }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground">{meetingTypeLabel(m.meeting_type)}</div>
+                        <div className="text-sm font-medium text-foreground">{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
                         <div className="text-xs text-muted-foreground">
                           {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
                           {m.cancelled && " • Zrušená"}
@@ -891,7 +891,7 @@ export default function Kalendar() {
                         fontSize: 15,
                         color: isDark ? colors.border : colors.text,
                       }}>
-                        {meetingTypeLabel(m.meeting_type)}
+                        {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                       </span>
                       {m.cancelled && (
                         <span style={{
