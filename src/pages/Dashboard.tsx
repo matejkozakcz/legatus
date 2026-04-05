@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Bell, Pencil, Check } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
@@ -18,127 +18,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
-// ─── Deadlines section (incoming notifications) ───────────────────────────────
-function DeadlinesSection({ userId }: { userId?: string }) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["my_notifications", userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const { data } = await supabase
-        .from("notifications" as any)
-        .select("id, title, message, deadline, read, created_at")
-        .eq("recipient_id", userId)
-        .order("deadline", { ascending: true })
-        .limit(10);
-      return (data || []) as any[];
-    },
-    enabled: !!userId,
-  });
-
-  const markRead = async (id: string) => {
-    await supabase
-      .from("notifications" as any)
-      .update({ read: true })
-      .eq("id", id);
-  };
-
-  if (notifications.length === 0) return null;
-
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 10,
-          paddingTop: 8,
-        }}
-      >
-        <Bell size={18} color="#00abbd" />
-        <span
-          style={{
-            fontFamily: "Poppins, sans-serif",
-            fontWeight: 700,
-            fontSize: 16,
-            color: "var(--text-primary)",
-          }}
-        >
-          Upozornění
-        </span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {notifications.map((n: any) => {
-          const isOverdue = new Date(n.deadline) < new Date();
-          return (
-            <div
-              key={n.id}
-              onClick={() => !n.read && markRead(n.id)}
-              style={{
-                background: isDark
-                  ? (n.read ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)")
-                  : (n.read ? "#f5f8f9" : "white"),
-                borderRadius: 14,
-                padding: "12px 16px",
-                border: `1px solid ${isOverdue ? "#fc7c71" : "#e1e9eb"}`,
-                opacity: n.read ? 0.7 : 1,
-                cursor: n.read ? "default" : "pointer",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {n.title}
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: isOverdue ? "#fc7c71" : "#00abbd",
-                  }}
-                >
-                  {n.deadline}
-                </span>
-              </div>
-              {n.message && (
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "var(--text-muted)",
-                    marginTop: 4,
-                    fontFamily: "Open Sans, sans-serif",
-                  }}
-                >
-                  {n.message}
-                </div>
-              )}
-              {!n.read && (
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#00abbd",
-                    marginTop: 6,
-                    fontFamily: "Open Sans, sans-serif",
-                  }}
-                >
-                  Klepni pro označení jako přečtené
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -739,8 +618,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Upcoming deadlines */}
-        <DeadlinesSection userId={profile?.id} />
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
       </div>
@@ -968,7 +845,7 @@ const Dashboard = () => {
         </div>
       </section>
 
-      <DeadlinesSection userId={profile?.id} />
+      
 
       <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
     </div>
