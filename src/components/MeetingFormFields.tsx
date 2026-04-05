@@ -200,7 +200,7 @@ export function MeetingFormModal({
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2 items-center">
             <div className="flex gap-2 flex-1">
-              {(["FSA", "POR", "SER", "POH"] as MeetingType[]).map((t) => (
+              {(["FSA", "POR", "SER", "POH"] as MeetingType[]).filter((t) => t !== "POR" || isEdit).map((t) => (
                 <button
                   key={t}
                   type="button"
