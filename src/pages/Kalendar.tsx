@@ -458,10 +458,10 @@ export default function Kalendar() {
   // ─── Week View ─────────────────────────────────────────────────────────────
 
   const renderWeekView = () => (
-    <div className="flex-1 rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="min-w-[700px]">
+    <div className="flex-1 flex flex-col rounded-2xl border border-border bg-card overflow-hidden" style={{ minHeight: 0 }}>
+      <div className="min-w-[700px] flex flex-col flex-1" style={{ minHeight: 0 }}>
         {/* Day headers */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-card">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-card flex-shrink-0">
           <div className="p-2" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today);
@@ -476,11 +476,11 @@ export default function Kalendar() {
           })}
         </div>
 
-        {/* Time grid — scrollable, 5-hour visible window */}
+        {/* Time grid — scrollable, roste do výšky karty */}
         <div
           ref={weekGridScrollRef}
-          className="relative overflow-y-auto"
-          style={{ maxHeight: GRID_VISIBLE_HEIGHT }}
+          className="relative overflow-y-auto flex-1"
+          style={{ minHeight: GRID_VISIBLE_HEIGHT }}
         >
           {HOURS.map((hour) => (
             <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)]" style={{ height: SLOT_HEIGHT * 2 }}>
@@ -972,7 +972,7 @@ export default function Kalendar() {
   // ─── Desktop Render ────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4">
+    <div className={`flex flex-col gap-4${view === "week" ? " h-full" : ""}`}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
