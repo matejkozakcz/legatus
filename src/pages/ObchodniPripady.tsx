@@ -26,7 +26,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
-type MeetingType = "FSA" | "POH" | "SER";
+type MeetingType = "FSA" | "POR" | "SER" | "POH";
 
 interface Meeting {
   id: string;
@@ -203,12 +203,16 @@ function totalRefs(m: Meeting): number {
 }
 
 function meetingTypeLabel(t: MeetingType): string {
-  return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
+  if (t === "FSA") return "Analýza";
+  if (t === "POR") return "Poradenství";
+  if (t === "SER") return "Servis";
+  return "Pohovor";
 }
 
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
   if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
+  if (t === "POR") return { background: "#e8f5e9", color: "#2e7d32" };
   if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
   return { background: "#fef3f2", color: "#c0392b" };
 }
