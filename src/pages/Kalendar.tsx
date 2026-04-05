@@ -121,9 +121,11 @@ function meetingTypeLabel(t: MeetingType): string {
   return t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis";
 }
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7..21
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
 const DAY_NAMES = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
-const SLOT_HEIGHT = 48; // px per 30 min
+const SLOT_HEIGHT = 40; // px per 30 min
+const VISIBLE_HOURS = 5;
+const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
