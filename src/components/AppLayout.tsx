@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
@@ -24,6 +25,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             transition: "background 0.3s ease",
           }}
         >
+          {/* Floating notification bell — vlevo od dark mode toggleu */}
+          <div
+            style={{
+              position: "fixed",
+              top: "max(14px, calc(env(safe-area-inset-top, 0px) + 10px))",
+              right: 62,
+              zIndex: 30,
+            }}
+          >
+            <NotificationBell />
+          </div>
+
           {/* Floating dark mode toggle — pravý horní roh */}
           <button
             onClick={toggleTheme}
@@ -81,8 +94,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 flex items-center border-b border-border bg-card px-4 lg:hidden">
-              <SidebarTrigger />
+            <header className="h-14 flex items-center justify-between border-b border-border bg-card px-4">
+              <SidebarTrigger className="lg:hidden" />
+              <div className="ml-auto">
+                <NotificationBell />
+              </div>
             </header>
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
               {children}
