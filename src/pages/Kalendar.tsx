@@ -45,17 +45,31 @@ interface Meeting {
   location_detail: string | null;
 }
 
-// ─── Color mapping by meeting type ──────────────────────────────────────────
+// ─── Color mapping by status + type ─────────────────────────────────────────
 
-const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  FSA: { bg: "rgba(0,171,189,0.15)", border: "#00abbd", text: "#00737f" },
-  POR: { bg: "rgba(34,197,94,0.15)", border: "#22c55e", text: "#15803d" },
-  SER: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#9a3412" },
-  POH: { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#1e40af" },
+const TYPE_BORDER: Record<string, string> = {
+  FSA: "#00abbd",
+  POR: "#8b5cf6",
+  SER: "#f97316",
+  POH: "#3b82f6",
 };
 
-function getTypeColor(type: string) {
-  return TYPE_COLORS[type] || TYPE_COLORS.FSA;
+type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
+
+function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatus {
+  if (m.cancelled) return "zrusena";
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  return m.date < todayStr ? "probehla" : "naplanovana";
+}
+
+function getStatusBg(status: MeetingStatus, dark: boolean): string {
+  if (status === "naplanovana") return dark ? "rgba(245,200,66,0.25)" : "rgba(245,200,66,0.18)";
+  if (status === "probehla") return dark ? "rgba(34,197,94,0.25)" : "rgba(34,197,94,0.18)";
+  return dark ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.12)";
+}
+
+function getTypeBorder(type: string): string {
+  return TYPE_BORDER[type] || TYPE_BORDER.FSA;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0..23
@@ -380,7 +394,8 @@ export default function Kalendar() {
                       const topOffset = min * (SLOT_HEIGHT / 30);
                       const duration = m.duration_minutes || 60;
                       const blockHeight = Math.max(duration * (SLOT_HEIGHT / 30), SLOT_HEIGHT * 0.8);
-                      const colors = getTypeColor(m.meeting_type);
+                      const status = getMeetingStatus(m);
+                      const borderColor = getTypeBorder(m.meeting_type);
 
                       return (
                         <div
@@ -389,13 +404,13 @@ export default function Kalendar() {
                           style={{
                             top: topOffset,
                             height: blockHeight,
-                            background: isDark ? colors.bg.replace("0.15", "0.25") : colors.bg,
-                            borderLeft: `3px solid ${colors.border}`,
+                            background: getStatusBg(status, isDark),
+                            borderLeft: `4px solid ${borderColor}`,
                             fontSize: 11,
                           }}
                           onClick={(e) => { e.stopPropagation(); handleMeetingClick(m); }}
                         >
-                          <div className="font-semibold truncate" style={{ color: isDark ? colors.border : colors.text }}>
+                          <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
                             {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                           </div>
                           {blockHeight > 30 && m.case_name && (
@@ -456,12 +471,9 @@ export default function Kalendar() {
                     {format(day, "d")}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {dayMeetings.slice(0, 3).map((m) => {
-                      const colors = getTypeColor(m.meeting_type);
-                      return (
-                        <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: colors.border }} />
-                      );
-                    })}
+                    {dayMeetings.slice(0, 3).map((m) => (
+                      <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: getTypeBorder(m.meeting_type) }} />
+                    ))}
                     {dayMeetings.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayMeetings.length - 3}</span>}
                   </div>
                 </div>
@@ -481,13 +493,13 @@ export default function Kalendar() {
             ) : (
               <div className="space-y-2">
                 {selectedDayMeetings.map((m) => {
-                  const colors = getTypeColor(m.meeting_type);
+                  const borderColor = getTypeBorder(m.meeting_type);
                   return (
                     <button key={m.id} onClick={() => handleMeetingClick(m)}
                       className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
-                      <div className="w-1 h-8 rounded-full" style={{ background: colors.border }} />
+                      <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground">{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
+                        <div className="text-sm font-medium text-foreground" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
                         <div className="text-xs text-muted-foreground">
                           {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
                           {m.cancelled && " • Zrušená"}
@@ -585,19 +597,19 @@ export default function Kalendar() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {mobileDayMeetings.map((m) => {
-                const colors = getTypeColor(m.meeting_type);
+                const status = getMeetingStatus(m);
+                const borderColor = getTypeBorder(m.meeting_type);
                 return (
                   <div
                     key={m.id}
                     onClick={() => { setDetailMeeting(m); setDetailOpen(true); }}
                     style={{
-                      background: isDark ? "rgba(9,29,33,0.6)" : "#fff",
+                      background: getStatusBg(status, isDark),
                       borderRadius: 16,
                       border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
-                      borderLeft: `4px solid ${colors.border}`,
+                      borderLeft: `4px solid ${borderColor}`,
                       padding: "14px 16px",
                       cursor: "pointer",
-                      opacity: m.cancelled ? 0.55 : 1,
                       transition: "transform 0.1s",
                     }}
                   >
@@ -606,7 +618,8 @@ export default function Kalendar() {
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 700,
                         fontSize: 15,
-                        color: isDark ? colors.border : colors.text,
+                        color: borderColor,
+                        textDecoration: m.cancelled ? "line-through" : undefined,
                       }}>
                         {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                       </span>
