@@ -261,8 +261,8 @@ export function MeetingFormModal({
           )}
         </div>
 
-        {/* 7. Výsledek schůzky — shown only when not cancelled */}
-        {!form.cancelled && (
+        {/* 7. Výsledek schůzky — jen při editaci existující schůzky */}
+        {isEdit && !form.cancelled && (
           <div className="mb-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
@@ -323,8 +323,8 @@ export function MeetingFormModal({
           {saving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
 
-        {/* 9. Cancel / Restore toggle */}
-        <button
+        {/* 9. Cancel / Restore toggle — jen při editaci existující schůzky */}
+        {isEdit && <button
           type="button"
           onClick={() => set({ cancelled: !form.cancelled })}
           className="w-full mt-3 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
@@ -335,7 +335,7 @@ export function MeetingFormModal({
           }
         >
           {form.cancelled ? "Obnovit schůzku" : "Schůzka zrušena"}
-        </button>
+        </button>}
 
         {/* Delete (edit mode only) */}
         {isEdit && onDelete && (

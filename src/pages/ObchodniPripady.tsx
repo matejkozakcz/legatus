@@ -513,7 +513,7 @@ export default function ObchodniPripady() {
       const payload: Record<string, unknown> = {
         user_id: profile!.id,
         case_id: form.case_id || null,
-        date: form.cancelled ? format(new Date(), "yyyy-MM-dd") : form.date,
+        date: form.date,
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
