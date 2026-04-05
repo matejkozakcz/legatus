@@ -1592,7 +1592,7 @@ export default function ObchodniPripady() {
             location_detail: data.location_detail,
           };
           setFollowUp(null);
-          saveMeetingMutation.mutate({ form });
+      saveMeetingMutation.mutate({ form, skipFollowUp: true });
         }}
       />
     </div>
