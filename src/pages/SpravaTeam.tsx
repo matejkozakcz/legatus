@@ -13,6 +13,7 @@ import { CreateNotificationDialog } from "@/components/CreateNotificationDialog"
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { Button } from "@/components/ui/button";
+import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 
 interface Profile {
   id: string;
@@ -324,205 +325,14 @@ const SpravaTeam = () => {
     }));
 
   const checkPromotions = useCallback(async () => {
-    if (profile?.role !== "vedouci" || members.length === 0) return;
-
-    // Build child map for structure counting
-    const memberMap = new Map(members.map((m) => [m.id, m]));
-    const childMap = new Map<string, string[]>();
-    members.forEach((m) => {
-      const parentId = m.ziskatel_id;
-      if (parentId) {
-        if (!childMap.has(parentId)) childMap.set(parentId, []);
-        childMap.get(parentId)!.push(m.id);
-      }
-    });
-
-    const countStructure = (rootId: string): number => {
-      let total = 0;
-      const queue = [...(childMap.get(rootId) || [])];
-      while (queue.length > 0) {
-        const id = queue.shift()!;
-        total++;
-        queue.push(...(childMap.get(id) || []));
-      }
-      return total;
-    };
-
-    const countDirectSubordinates = (id: string): number => {
-      return (childMap.get(id) || []).length;
-    };
-
-    // Získatel → Garant: 2 people in structure + 1000 BJ personal
-    const ziskatels = members.filter((m) => m.role === "ziskatel");
-    if (ziskatels.length > 0) {
-      const ziskatelIds = ziskatels.map((m) => m.id);
-
-      // BJ from signed meetings (primary source)
-      const { data: meetingBjData } = await supabase
-        .from("client_meetings")
-        .select("user_id, podepsane_bj")
-        .in("user_id", ziskatelIds)
-        .eq("cancelled", false);
-
-      // Historical BJ from onboarding (activity_records, Dec 2025 only)
-      const { data: historicalBjData } = await supabase
-        .from("activity_records")
-        .select("user_id, bj")
-        .in("user_id", ziskatelIds)
-        .eq("week_start", "2025-12-01");
-
-      const bjByUser = new Map<string, number>();
-      (meetingBjData || []).forEach((r: any) => {
-        bjByUser.set(r.user_id, (bjByUser.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
-      });
-      (historicalBjData || []).forEach((r: any) => {
-        bjByUser.set(r.user_id, (bjByUser.get(r.user_id) || 0) + (Number(r.bj) || 0));
-      });
-
-      for (const candidate of ziskatels) {
-        const cumulativeBj = bjByUser.get(candidate.id) || 0;
-        const structureCount = countStructure(candidate.id);
-        if (cumulativeBj >= 1000 && structureCount >= 2) {
-          // Upsert promotion request (ignore if already exists)
-          await supabase.from("promotion_requests").upsert(
-            { user_id: candidate.id, requested_role: "garant", status: "pending", cumulative_bj: cumulativeBj, direct_ziskatels: structureCount },
-            { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-          );
-          // Notification: send if not already sent (independent of upsert result)
-          if (profile?.id) {
-            const { data: existing } = await supabase
-              .from("notifications")
-              .select("id")
-              .eq("recipient_id", profile.id)
-              .eq("type", "promotion_eligible")
-              .ilike("title", `%${candidate.full_name}%Garant%`)
-              .limit(1);
-            if (!existing || existing.length === 0) {
-              const { data: notifData } = await supabase.from("notifications").insert({
-                sender_id: profile.id,
-                recipient_id: profile.id,
-                type: "promotion_eligible",
-                title: `${candidate.full_name} splňuje podmínky pro povýšení na Garanta`,
-                body: `Kumulativní BJ: ${cumulativeBj} · ${structureCount} lidí ve struktuře`,
-                deadline: new Date().toISOString().split("T")[0],
-              }).select("id").single();
-              if (notifData?.id) {
-                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-                fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-                  body: JSON.stringify({ notification_id: notifData.id }),
-                }).catch(() => {});
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Garant → Budoucí vedoucí: 5 people in structure, min 3 direct
-    const garanty = members.filter((m) => m.role === "garant");
-    for (const candidate of garanty) {
-      const directCount = countDirectSubordinates(candidate.id);
-      const structureCount = countStructure(candidate.id);
-      if (structureCount >= 5 && directCount >= 3) {
-        await supabase.from("promotion_requests").upsert(
-          {
-            user_id: candidate.id,
-            requested_role: "budouci_vedouci",
-            status: "pending",
-            direct_ziskatels: directCount,
-            cumulative_bj: structureCount,
-          },
-          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-        );
-        if (profile?.id) {
-          const roleLabel = "Budoucího vedoucího";
-          const { data: existing } = await supabase
-            .from("notifications")
-            .select("id")
-            .eq("recipient_id", profile.id)
-            .eq("type", "promotion_eligible")
-            .ilike("title", `%${candidate.full_name}%${roleLabel}%`)
-            .limit(1);
-          if (!existing || existing.length === 0) {
-            const { data: notifData } = await supabase.from("notifications").insert({
-              sender_id: profile.id,
-              recipient_id: profile.id,
-              type: "promotion_eligible",
-              title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
-              body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
-              deadline: new Date().toISOString().split("T")[0],
-            }).select("id").single();
-            if (notifData?.id) {
-              const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-              const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-              fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-                body: JSON.stringify({ notification_id: notifData.id }),
-              }).catch(() => {});
-            }
-          }
-        }
-      }
-    }
-
-    // Budoucí vedoucí → Vedoucí: 10 people in structure, min 6 direct
-    const bvs = members.filter((m) => m.role === "budouci_vedouci");
-    for (const candidate of bvs) {
-      const directCount = countDirectSubordinates(candidate.id);
-      const structureCount = countStructure(candidate.id);
-      if (structureCount >= 10 && directCount >= 6) {
-        await supabase.from("promotion_requests").upsert(
-          {
-            user_id: candidate.id,
-            requested_role: "vedouci",
-            status: "pending",
-            direct_ziskatels: directCount,
-            cumulative_bj: structureCount,
-          },
-          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-        );
-        if (profile?.id) {
-          const roleLabel = "Vedoucího";
-          const { data: existing } = await supabase
-            .from("notifications")
-            .select("id")
-            .eq("recipient_id", profile.id)
-            .eq("type", "promotion_eligible")
-            .ilike("title", `%${candidate.full_name}%${roleLabel}%`)
-            .limit(1);
-          if (!existing || existing.length === 0) {
-            const { data: notifData } = await supabase.from("notifications").insert({
-              sender_id: profile.id,
-              recipient_id: profile.id,
-              type: "promotion_eligible",
-              title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
-              body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
-              deadline: new Date().toISOString().split("T")[0],
-            }).select("id").single();
-            if (notifData?.id) {
-              const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-              const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-              fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-                body: JSON.stringify({ notification_id: notifData.id }),
-              }).catch(() => {});
-            }
-          }
-        }
-      }
-    }
-
+    if (!profile) return;
+    await runCheckPromotions(profile, members);
     refetchRequests();
   }, [profile, members, refetchRequests]);
 
   useEffect(() => {
     if (!isLoading && members.length > 0) checkPromotions();
-  }, [isLoading, members.length]);
+  }, [isLoading, members.length, checkPromotions]);
 
   return (
     <div className="space-y-6">

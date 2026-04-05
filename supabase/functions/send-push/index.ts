@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
 
     const pushPayload = JSON.stringify({
       title: notif.title,
-      body: notif.message || `Deadline: ${notif.deadline}`,
+      body: notif.body || notif.message || (notif.deadline ? `Deadline: ${notif.deadline}` : ""),
       data: { notification_id: notif.id, deadline: notif.deadline },
     });
 

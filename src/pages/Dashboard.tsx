@@ -15,6 +15,7 @@ import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
+import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 
 type TimeFilter = "this_week" | "last_week" | "this_month";
 
@@ -192,6 +193,27 @@ const Dashboard = () => {
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
+  // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
+  const promotionCheckDoneRef = useRef(false);
+  useEffect(() => {
+    if (!profile || profile.role !== "vedouci" || promotionCheckDoneRef.current) return;
+    promotionCheckDoneRef.current = true;
+
+    supabase
+      .from("profiles")
+      .select("id, role, full_name, ziskatel_id")
+      .eq("vedouci_id", profile.id)
+      .eq("is_active", true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          runCheckPromotions(
+            { id: profile.id, role: profile.role, full_name: profile.full_name },
+            data as any
+          );
+        }
+      });
+  }, [profile]);
+
   // First login confetti
   useEffect(() => {
     if (!user || !profile || hasCheckedFirstLogin.current) return;
@@ -339,18 +361,49 @@ const Dashboard = () => {
     enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
 
-  // Garant / BV: celá struktura (rekurzivně přes garant_id / vedouci_id)
+  // Garant / BV: celá struktura — rekurzivní BFS přes ziskatel_id
+  // Podřízení Garanta mají vedouci_id = jejich Vedoucí, ne Garantovo ID,
+  // takže jedinou spolehlivou vazbou je ziskatel_id řetěz.
   const { data: structureCount = 0 } = useQuery({
     queryKey: ["structure_count", activeUserId],
     queryFn: async () => {
       if (!activeUserId) return 0;
-      const { count } = await supabase
+
+      // Zjistíme vedouci_id aktivního uživatele
+      const { data: me } = await supabase
         .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .or(`garant_id.eq.${activeUserId},vedouci_id.eq.${activeUserId}`)
-        .eq("is_active", true)
-        .neq("id", activeUserId);
-      return count || 0;
+        .select("vedouci_id")
+        .eq("id", activeUserId)
+        .single();
+
+      const vedouciId = me?.vedouci_id ?? activeUserId;
+
+      // Stáhneme všechny aktivní profily pod stejným Vedoucím (celý tým)
+      const { data: teamMembers } = await supabase
+        .from("profiles")
+        .select("id, ziskatel_id")
+        .eq("vedouci_id", vedouciId)
+        .eq("is_active", true);
+
+      if (!teamMembers) return 0;
+
+      // BFS od activeUserId přes ziskatel_id vazby
+      const childMap = new Map<string, string[]>();
+      teamMembers.forEach((p: any) => {
+        if (p.ziskatel_id) {
+          if (!childMap.has(p.ziskatel_id)) childMap.set(p.ziskatel_id, []);
+          childMap.get(p.ziskatel_id)!.push(p.id);
+        }
+      });
+
+      let count = 0;
+      const queue = [...(childMap.get(activeUserId) || [])];
+      while (queue.length > 0) {
+        const id = queue.shift()!;
+        count++;
+        queue.push(...(childMap.get(id) || []));
+      }
+      return count;
     },
     enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
