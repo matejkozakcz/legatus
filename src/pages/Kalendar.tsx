@@ -704,14 +704,15 @@ export default function Kalendar() {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
         {/* Header */}
-        <div style={{ padding: "0 20px", marginBottom: 16, paddingTop: 16 }}>
+        <div style={{ padding: "16px 20px 12px", flexShrink: 0 }}>
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
             <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>Kalendář</h1>
           </div>
         </div>
 
-        {/* Meeting list for the day */}
+        {/* Scrollable meeting list */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 180 }}>
         <div style={{ padding: "0 16px" }}>
           {mobileDayMeetings.length === 0 ? (
             <div style={{
