@@ -489,8 +489,52 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     </div>
   );
 
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+
+  const handleRequestPermission = async () => {
+    if (typeof Notification === "undefined") return;
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
+    if (result === "granted") {
+      toast.success("Oznámení povolena");
+      // Register push subscription
+      if (user) {
+        registerPushSubscription(user.id);
+      }
+    } else if (result === "denied") {
+      toast.error("Oznámení byla zamítnuta. Povolit je můžeš v nastavení prohlížeče.");
+    }
+  };
+
   const renderNotifikace = () => (
     <div className="space-y-1">
+      {/* Permission banner */}
+      {notifPermission !== "granted" && (
+        <div className="mb-4 p-4 rounded-xl border border-border bg-muted/50">
+          <div className="flex items-start gap-3">
+            <Bell className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Oznámení nejsou povolena</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {notifPermission === "denied"
+                  ? "Oznámení jsi zablokoval/a v prohlížeči. Povol je v nastavení prohlížeče."
+                  : "Pro příjem připomínek a upozornění povol oznámení."}
+              </p>
+              {notifPermission !== "denied" && (
+                <button
+                  onClick={handleRequestPermission}
+                  className="btn btn-primary btn-sm mt-3 flex items-center gap-2"
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  Povolit oznámení
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Připomínka schůzky */}
       {renderToggleRow(
         "Připomínka schůzky",
