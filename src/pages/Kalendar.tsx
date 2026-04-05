@@ -628,8 +628,8 @@ export default function Kalendar() {
 
         {/* Selected day meetings */}
         {selectedDay && (
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="rounded-2xl border border-border bg-card flex flex-col" style={{ maxHeight: "calc(100vh - 20rem)" }}>
+            <div className="flex items-center justify-between p-4 pb-3 shrink-0">
               <h3 className="font-heading font-semibold text-sm text-foreground">
                 {format(selectedDay, "EEEE d. MMMM yyyy", { locale: cs })}
               </h3>
@@ -644,28 +644,30 @@ export default function Kalendar() {
                 <Plus size={14} /> Nová schůzka
               </button>
             </div>
-            {selectedDayMeetings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Žádné schůzky</p>
-            ) : (
-              <div className="space-y-2">
-                {selectedDayMeetings.map((m) => {
-                  const borderColor = getTypeBorder(m.meeting_type);
-                  return (
-                    <button key={m.id} onClick={() => handleMeetingClick(m)}
-                      className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
-                      <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
-                          {m.cancelled && " • Zrušená"}
+            <div className="overflow-y-auto px-4 pb-4">
+              {selectedDayMeetings.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Žádné schůzky</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedDayMeetings.map((m) => {
+                    const borderColor = getTypeBorder(m.meeting_type);
+                    return (
+                      <button key={m.id} onClick={() => handleMeetingClick(m)}
+                        className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
+                        <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
+                            {m.cancelled && " • Zrušená"}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
