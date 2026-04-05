@@ -458,6 +458,23 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     };
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Načítání struktury...</p>
+      </div>
+    );
+  }
+
+  if (!profile) return null;
+
+  const currentUser = profiles.find((p) => p.id === currentUserId);
+  if (!currentUser) {
+    return (
+      <p className="font-body text-[13px]" style={{ color: "var(--text-muted)" }}>Žádná struktura k zobrazení.</p>
+    );
+  }
+
   return (
     <div className="relative" style={{ width: "100%", height: "100%" }}>
       <div
