@@ -19,6 +19,7 @@ import legatusLogoWhite from "@/assets/legatus-logo-white.png";
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
+  budouci_vedouci: { label: "Budoucí vedoucí", className: "role-badge role-badge-vedouci" },
   garant: { label: "Garant", className: "role-badge role-badge-garant" },
   ziskatel: { label: "Získatel", className: "role-badge role-badge-ziskatel" },
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
@@ -38,7 +39,7 @@ export function AppSidebar() {
     { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
 
-  if (profile?.role === "vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
+  if (profile?.role === "vedouci" || profile?.role === "budouci_vedouci") {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users });
   }
 

@@ -244,6 +244,7 @@ const SpravaTeam = () => {
     queryKey: ["team_members", profile?.id, profile?.role],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
+      if (!["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
 
       let query = supabase
         .from("profiles")
@@ -251,9 +252,7 @@ const SpravaTeam = () => {
         .eq("is_active", true)
         .neq("id", profile.id);
 
-      if (profile.role === "garant") {
-        query = query.eq("garant_id", profile.id);
-      } else if (profile.role === "vedouci") {
+      if (profile.role === "vedouci" || profile.role === "budouci_vedouci") {
         query = query.eq("vedouci_id", profile.id);
       }
 
@@ -506,7 +505,7 @@ const SpravaTeam = () => {
                     parent={member}
                     children={children}
                     childrenMap={childrenMap}
-                    onEdit={setEditMember}
+                    onEdit={profile?.role === "vedouci" ? setEditMember : () => {}}
                     onNotify={setNotifyMember}
                     depth={0}
                   />
