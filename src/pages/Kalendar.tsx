@@ -537,13 +537,19 @@ export default function Kalendar() {
         location_type: form.location_type || null,
         location_detail: form.location_detail || null,
       };
-      const { error } = await supabase.from("client_meetings").insert(payload);
-      if (error) throw error;
+      if (editingMeetingId) {
+        const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("client_meetings").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
       setMeetingFormOpen(false);
-      toast.success("Schůzka vytvořena");
+      setEditingMeetingId(null);
+      toast.success(editingMeetingId ? "Schůzka upravena" : "Schůzka vytvořena");
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
