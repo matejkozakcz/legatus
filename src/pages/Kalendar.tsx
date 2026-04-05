@@ -1083,6 +1083,7 @@ export default function Kalendar() {
                 location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
               });
+              setEditingMeetingId(detailMeeting.id);
               setMeetingFormOpen(true);
             }
           }}
