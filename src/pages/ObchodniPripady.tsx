@@ -11,8 +11,9 @@ import {
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import {
   Plus, X, Loader2, Pencil, Trash2, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown, ChevronRight as ChevronRightIcon, Bell, Clock, MapPin,
+  ChevronDown, ChevronRight as ChevronRightIcon, Clock, MapPin,
 } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
