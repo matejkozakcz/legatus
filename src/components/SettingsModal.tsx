@@ -78,6 +78,7 @@ function loadNotifPrefs(): NotifPrefs {
 }
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
+  useBodyScrollLock(open);
   const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
