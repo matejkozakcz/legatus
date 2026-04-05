@@ -86,7 +86,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Dark mode toggle */}
+          {/* Dark mode toggle + Settings + Sign out */}
           <div className="mt-auto pt-2 space-y-1">
             <button
               onClick={toggleTheme}
@@ -104,15 +104,20 @@ export function AppSidebar() {
               <Settings className="h-[18px] w-[18px] flex-shrink-0" />
               {!collapsed && <span>Nastavení</span>}
             </button>
+            <button
+              onClick={signOut}
+              className="nav-item w-full"
+              title="Odhlásit"
+            >
+              <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
+              {!collapsed && <span>Odhlásit</span>}
+            </button>
           </div>
         </SidebarContent>
 
         <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setSettingsOpen(true)}
-            >
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -138,16 +143,6 @@ export function AppSidebar() {
                 </div>
               )}
             </div>
-            {!collapsed && (
-              <button
-                onClick={signOut}
-                className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-[12px] font-body"
-                title="Odhlásit"
-              >
-                <LogOut className="h-4 w-4 flex-shrink-0" />
-                <span>Odhlásit</span>
-              </button>
-            )}
           </div>
         </SidebarFooter>
       </Sidebar>
