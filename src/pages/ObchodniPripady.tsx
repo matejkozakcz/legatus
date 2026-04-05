@@ -1112,8 +1112,8 @@ export default function ObchodniPripady() {
       const savedCase = cases.find((c) => c.id === savedCaseId);
       setMeetingModalOpen(false);
       setEditMeeting(null);
-      // Show follow-up if not cancelled
-      if (!savedForm.cancelled && savedCaseId && savedCase) {
+      // Show follow-up if not cancelled and not already from follow-up
+      if (!variables.skipFollowUp && !savedForm.cancelled && savedCaseId && savedCase) {
         setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type });
       }
     },
