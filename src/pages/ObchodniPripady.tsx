@@ -118,6 +118,30 @@ const defaultForm = (caseId?: string): MeetingForm => ({
   location_detail: "",
 });
 
+const meetingToForm = (m: Meeting): MeetingForm => ({
+  date: m.date,
+  meeting_type: m.meeting_type,
+  cancelled: m.cancelled,
+  potencial_bj: m.potencial_bj != null ? String(m.potencial_bj) : "",
+  has_poradenstvi: m.has_poradenstvi,
+  podepsane_bj: String(m.podepsane_bj || ""),
+  doporuceni_poradenstvi: String(m.doporuceni_poradenstvi || 0),
+  poradenstvi_date: m.poradenstvi_date || "",
+  poradenstvi_status: (m.poradenstvi_status as PoradkoStatus) || null,
+  has_pohovor: m.has_pohovor,
+  pohovor_jde_dal: m.pohovor_jde_dal,
+  doporuceni_pohovor: String(m.doporuceni_pohovor || 0),
+  pohovor_date: m.pohovor_date || "",
+  doporuceni_fsa: String(m.doporuceni_fsa || 0),
+  poznamka: m.poznamka || "",
+  case_name: m.case_name || "",
+  case_id: m.case_id || "",
+  meeting_time: m.meeting_time ? m.meeting_time.slice(0, 5) : "",
+  duration_minutes: m.duration_minutes != null ? String(m.duration_minutes) : "",
+  location_type: m.location_type || "",
+  location_detail: m.location_detail || "",
+});
+
 // ─── Helper components ───────────────────────────────────────────────────────
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
