@@ -91,19 +91,59 @@ export type Database = {
           },
         ]
       }
+      cases: {
+        Row: {
+          created_at: string
+          id: string
+          nazev_pripadu: string
+          poznamka: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nazev_pripadu: string
+          poznamka?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nazev_pripadu?: string
+          poznamka?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_meetings: {
         Row: {
           bj: number
           cancelled: boolean
+          case_id: string | null
           case_name: string | null
           created_at: string
           date: string
           doporuceni_fsa: number
           doporuceni_pohovor: number
           doporuceni_poradenstvi: number
+          duration_minutes: number | null
           has_pohovor: boolean
           has_poradenstvi: boolean
           id: string
+          location_detail: string | null
+          location_type: string | null
+          meeting_time: string | null
           meeting_type: string
           podepsane_bj: number
           pohovor_date: string | null
@@ -120,15 +160,20 @@ export type Database = {
         Insert: {
           bj?: number
           cancelled?: boolean
+          case_id?: string | null
           case_name?: string | null
           created_at?: string
           date: string
           doporuceni_fsa?: number
           doporuceni_pohovor?: number
           doporuceni_poradenstvi?: number
+          duration_minutes?: number | null
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
+          location_detail?: string | null
+          location_type?: string | null
+          meeting_time?: string | null
           meeting_type: string
           podepsane_bj?: number
           pohovor_date?: string | null
@@ -145,15 +190,20 @@ export type Database = {
         Update: {
           bj?: number
           cancelled?: boolean
+          case_id?: string | null
           case_name?: string | null
           created_at?: string
           date?: string
           doporuceni_fsa?: number
           doporuceni_pohovor?: number
           doporuceni_poradenstvi?: number
+          duration_minutes?: number | null
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
+          location_detail?: string | null
+          location_type?: string | null
+          meeting_time?: string | null
           meeting_type?: string
           podepsane_bj?: number
           pohovor_date?: string | null
@@ -168,6 +218,13 @@ export type Database = {
           week_start?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_meetings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_meetings_user_id_fkey"
             columns: ["user_id"]
