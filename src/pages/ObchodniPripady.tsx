@@ -1057,7 +1057,7 @@ export default function ObchodniPripady() {
         caseName={followUp?.caseName || ""}
         caseId={followUp?.caseId || ""}
         meetingType={followUp?.meetingType || "FSA"}
-        onSchedule={(data) => {
+        onSchedule={async (data) => {
           const form: MeetingForm = {
             ...defaultForm(data.case_id),
             meeting_type: data.meeting_type,
@@ -1067,8 +1067,12 @@ export default function ObchodniPripady() {
             location_type: data.location_type,
             location_detail: data.location_detail,
           };
-          setFollowUp(null);
-      saveMeetingMutation.mutate({ form, skipFollowUp: true });
+          await new Promise<void>((resolve, reject) => {
+            saveMeetingMutation.mutate({ form, skipFollowUp: true }, {
+              onSuccess: () => resolve(),
+              onError: (err) => reject(err),
+            });
+          });
         }}
       />
     </div>
