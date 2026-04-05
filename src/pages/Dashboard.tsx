@@ -29,7 +29,7 @@ function MobileStatCard({
 }: {
   label: string;
   actual: number;
-  planned: number;
+  planned?: number;
   sublabel: string;
 }) {
   return (
@@ -51,28 +51,32 @@ function MobileStatCard({
           >
             {actual}
           </span>
-          <span
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 500,
-              fontSize: 22,
-              color: "#b8cfd4",
-              lineHeight: 1,
-            }}
-          >
-            /
-          </span>
-          <span
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 700,
-              fontSize: 28,
-              color: "#00abbd",
-              lineHeight: 1,
-            }}
-          >
-            {planned}
-          </span>
+          {planned != null && (
+            <>
+              <span
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 500,
+                  fontSize: 22,
+                  color: "#b8cfd4",
+                  lineHeight: 1,
+                }}
+              >
+                /
+              </span>
+              <span
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 28,
+                  color: "#00abbd",
+                  lineHeight: 1,
+                }}
+              >
+                {planned}
+              </span>
+            </>
+          )}
         </div>
         <div className="mobile-stat-sublabel" style={{ marginTop: 5 }}>
           {sublabel}
@@ -549,8 +553,7 @@ const Dashboard = () => {
           <MobileStatCard
             label="Doporučení"
             actual={mobileStats.ref.actual}
-            planned={mobileStats.ref.planned}
-            sublabel="vybraných / naplán."
+            sublabel="celkem"
           />
         </div>
 
@@ -838,9 +841,7 @@ const Dashboard = () => {
           <StatCard
             label="Doporučení"
             actual={stats.ref.actual}
-            planned={stats.ref.planned}
-            actualLabel="vybraných"
-            plannedLabel="naplánovaných"
+            actualLabel="celkem"
           />
         </div>
       </section>
