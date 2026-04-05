@@ -455,6 +455,7 @@ export default function Kalendar() {
   // Modals
   const [meetingFormOpen, setMeetingFormOpen] = useState(false);
   const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultForm());
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
