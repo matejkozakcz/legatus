@@ -139,6 +139,12 @@ function MeetingDetailModal({ open, onClose, meeting, onEdit, onSaveOutcome, sav
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
         <h2 className="font-heading text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Detail schůzky</h2>
         <div className="space-y-0">
+          {m.case_name && (
+            <div className="flex justify-between py-1.5 border-b border-border">
+              <span className="text-xs text-muted-foreground">Obchodní případ</span>
+              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{m.case_name}</span>
+            </div>
+          )}
           {row("Datum", m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs }))}
           {m.meeting_time && row("Čas", m.meeting_time.slice(0, 5))}
           {m.duration_minutes != null && row("Délka", `${m.duration_minutes} min`)}
