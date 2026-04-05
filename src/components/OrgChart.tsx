@@ -1,9 +1,8 @@
-import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { MemberDetailModal } from "./MemberDetailModal";
 
 interface ProfileNode {
   id: string;
@@ -17,6 +16,12 @@ interface ProfileNode {
 
 interface OrgChartProps {
   currentUserId: string;
+  /** When set, the tree focuses on this person (expands their line) */
+  focusUserId?: string;
+  /** Called when a clickable person is clicked (only BV/Vedoucí can click) */
+  onPersonClick?: (userId: string, profile: ProfileNode) => void;
+  /** The role of the logged-in user — controls who can click */
+  viewerRole?: string;
 }
 
 const roleBadgeConfig: Record<string, { label: string }> = {
@@ -45,7 +50,7 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
 
 const LINE_COLOR = "#c8d8dc";
 
-function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }) {
+function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -58,17 +63,18 @@ function NodeCard({ node, onClick }: { node: ProfileNode; onClick?: () => void }
 
   return (
     <div
-      className="relative flex flex-col items-center cursor-pointer transition-shadow hover:shadow-md flex-shrink-0"
-      onClick={onClick}
+      className={`relative flex flex-col items-center transition-shadow flex-shrink-0 ${isClickable ? "cursor-pointer hover:shadow-md" : ""}`}
+      onClick={isClickable ? onClick : undefined}
       style={{
         width: 160,
         minHeight: 105,
-        background: "#F6F8F9",
-        border: "1px solid #E1E9EB",
+        background: isFocused ? "#e0f4f7" : "#F6F8F9",
+        border: isFocused ? "2px solid #00abbd" : "1px solid #E1E9EB",
         borderRadius: 12,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        boxShadow: isFocused ? "0 0 0 3px rgba(0,171,189,0.2), 0 2px 8px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.08)",
         paddingTop: 10,
         paddingBottom: 14,
+        opacity: isClickable || isFocused ? 1 : 0.7,
       }}
     >
       <div
@@ -138,6 +144,8 @@ function ChildrenBranch({
   toggleCollapse,
   onSelect,
   depth,
+  focusUserId,
+  isClickableFn,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -145,6 +153,8 @@ function ChildrenBranch({
   toggleCollapse: (id: string) => void;
   onSelect: (node: ProfileNode) => void;
   depth: number;
+  focusUserId?: string;
+  isClickableFn: (node: ProfileNode) => boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -193,6 +203,8 @@ function ChildrenBranch({
               toggleCollapse={toggleCollapse}
               onSelect={onSelect}
               depth={depth}
+              focusUserId={focusUserId}
+              isClickableFn={isClickableFn}
             />
           </div>
         ))}
@@ -208,6 +220,8 @@ function TreeNode({
   toggleCollapse,
   onSelect,
   depth = 0,
+  focusUserId,
+  isClickableFn,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -215,13 +229,17 @@ function TreeNode({
   toggleCollapse: (id: string) => void;
   onSelect: (node: ProfileNode) => void;
   depth?: number;
+  focusUserId?: string;
+  isClickableFn: (node: ProfileNode) => boolean;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
+  const isFocused = node.id === focusUserId;
+  const isClickable = isClickableFn(node);
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} />
+      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -242,6 +260,8 @@ function TreeNode({
                 toggleCollapse={toggleCollapse}
                 onSelect={onSelect}
                 depth={depth + 1}
+                focusUserId={focusUserId}
+                isClickableFn={isClickableFn}
               />
             </>
           )}
@@ -251,9 +271,23 @@ function TreeNode({
   );
 }
 
-export function OrgChart({ currentUserId }: OrgChartProps) {
+/** Find all ancestor IDs of a given user in the tree */
+function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string> {
+  const parentMap = new Map<string, string>();
+  profiles.forEach((p) => {
+    if (p.ziskatel_id) parentMap.set(p.id, p.ziskatel_id);
+  });
+  const path = new Set<string>();
+  let current = targetId;
+  while (parentMap.has(current)) {
+    current = parentMap.get(current)!;
+    path.add(current);
+  }
+  return path;
+}
+
+export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole }: OrgChartProps) {
   const { profile } = useAuth();
-  const [selectedMember, setSelectedMember] = useState<ProfileNode | null>(null);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
@@ -280,27 +314,47 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
     return map;
   }, [profiles]);
 
-  const defaultCollapsed = useMemo(() => {
+  // Compute which nodes should be collapsed by default
+  // If focusUserId is set, expand the path to that person + their direct children
+  const computeCollapsed = useMemo(() => {
     const set = new Set<string>();
     const root = profiles.find((p) => p.id === currentUserId);
     if (!root) return set;
 
+    // Collect IDs on the path to focusUserId
+    const focusPath = focusUserId ? findAncestorPath(profiles, focusUserId) : new Set<string>();
+    // Also include focusUserId itself (expand their children)
+    if (focusUserId) focusPath.add(focusUserId);
+    // And include root
+    focusPath.add(root.id);
+
     function walk(nodeId: string, depth: number) {
       const kids = childrenMap.get(nodeId) || [];
-      if (depth >= 1 && kids.length > 0) {
+      if (kids.length > 0 && depth >= 1 && !focusPath.has(nodeId)) {
         set.add(nodeId);
       }
       kids.forEach((k) => walk(k.id, depth + 1));
     }
     walk(root.id, 0);
     return set;
-  }, [profiles, childrenMap, currentUserId]);
+  }, [profiles, childrenMap, currentUserId, focusUserId]);
 
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-  const [initialized, setInitialized] = useState(false);
+  const prevFocusRef = useRef<string | undefined>(undefined);
 
+  // Re-compute collapsed when focusUserId changes
+  useEffect(() => {
+    if (profiles.length === 0) return;
+    if (prevFocusRef.current !== focusUserId) {
+      setCollapsedIds(computeCollapsed);
+      prevFocusRef.current = focusUserId;
+    }
+  }, [focusUserId, computeCollapsed, profiles.length]);
+
+  // Initialize on first load
+  const [initialized, setInitialized] = useState(false);
   if (profiles.length > 0 && !initialized) {
-    setCollapsedIds(defaultCollapsed);
+    setCollapsedIds(computeCollapsed);
     setInitialized(true);
   }
 
@@ -311,6 +365,19 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
       else next.add(id);
       return next;
     });
+  };
+
+  // Determine if clicking is allowed — only BV and Vedoucí can click
+  const canClick = viewerRole === "vedouci" || viewerRole === "budouci_vedouci";
+  const isClickableFn = (node: ProfileNode) => {
+    if (!canClick) return false;
+    // Can click anyone except yourself
+    return node.id !== (focusUserId || currentUserId);
+  };
+
+  const handleSelect = (node: ProfileNode) => {
+    if (!isClickableFn(node)) return;
+    onPersonClick?.(node.id, node);
   };
 
   if (isLoading) {
@@ -331,23 +398,19 @@ export function OrgChart({ currentUserId }: OrgChartProps) {
   }
 
   return (
-    <>
-      <div className="overflow-auto" style={{ maxHeight: 520 }}>
-        <div className="flex flex-col items-center py-4 px-4 min-w-fit">
-          <TreeNode
-            node={currentUser}
-            childrenMap={childrenMap}
-            collapsedIds={collapsedIds}
-            toggleCollapse={toggleCollapse}
-            onSelect={setSelectedMember}
-            depth={0}
-          />
-        </div>
+    <div className="overflow-auto" style={{ maxHeight: 520 }}>
+      <div className="flex flex-col items-center py-4 px-4 min-w-fit">
+        <TreeNode
+          node={currentUser}
+          childrenMap={childrenMap}
+          collapsedIds={collapsedIds}
+          toggleCollapse={toggleCollapse}
+          onSelect={handleSelect}
+          depth={0}
+          focusUserId={focusUserId || currentUserId}
+          isClickableFn={isClickableFn}
+        />
       </div>
-
-      {selectedMember && (
-        <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />
-      )}
-    </>
+    </div>
   );
 }
