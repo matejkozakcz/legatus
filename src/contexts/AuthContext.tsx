@@ -76,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await new Promise((r) => setTimeout(r, 500));
         return fetchProfile(userId, retries - 1);
       }
-      await supabase.auth.signOut();
+      // scope: 'local' — odhlásí jen toto zařízení, ne všechny sessions uživatele
+      await supabase.auth.signOut({ scope: 'local' });
       setProfile(null);
       return;
     }
@@ -140,7 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // scope: 'local' — odhlásí jen toto zařízení, ostatní sessions zůstanou aktivní
+    await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
     setProfile(null);
