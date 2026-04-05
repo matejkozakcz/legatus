@@ -1181,7 +1181,7 @@ export default function ObchodniPripady() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
-      toast.success(editMeeting ? "Schůzka upravena" : "Schůzka přidána");
+      toast.success(variables.id ? "Schůzka upravena" : "Schůzka přidána");
       const savedForm = variables.form;
       const savedCaseId = savedForm.case_id;
       const savedCase = cases.find((c) => c.id === savedCaseId);
