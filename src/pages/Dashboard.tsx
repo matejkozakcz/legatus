@@ -251,19 +251,21 @@ const Dashboard = () => {
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
+  const activeRole = activeProfile?.role ?? "novacek";
+
   // All-time cumulative BJ (for promotion progress gauge)
   const { data: totalBjAllTime = 0 } = useQuery({
-    queryKey: ["bj_all_time_meetings", profile?.id],
+    queryKey: ["bj_all_time_meetings", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .eq("cancelled", false);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id && profile?.role !== "vedouci" && profile?.role !== "novacek",
+    enabled: !!activeUserId && activeRole !== "vedouci" && activeRole !== "novacek",
   });
 
   // Získatel: lidé ve struktuře (ziskatel_id = profile.id)
