@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check } from "lucide-react";
+import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -26,6 +26,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   post_meeting: <CalendarCheck className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
   deadline: <AlertTriangle className="h-4 w-4 text-destructive" />,
   garant_share: <Share2 className="h-4 w-4 text-muted-foreground" />,
+  promotion_eligible: <TrendingUp className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
 };
 
 export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
