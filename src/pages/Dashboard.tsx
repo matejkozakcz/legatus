@@ -769,6 +769,25 @@ const Dashboard = () => {
         </h1>
       </div>
 
+      {/* Impersonation banner */}
+      {isImpersonating && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 rounded-xl"
+          style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
+        >
+          <button
+            onClick={() => { setViewingUserId(null); setViewingUserName(""); }}
+            className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+            style={{ color: "#00abbd" }}
+          >
+            <ArrowLeft size={16} /> Zpět na můj dashboard
+          </button>
+          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+            Prohlížíte dashboard: <strong>{viewingUserName}</strong>
+          </span>
+        </div>
+      )}
+
       <section className="space-y-4">
         <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 350 }}>
           {/* Stav byznysu — 1/4 */}
@@ -794,7 +813,7 @@ const Dashboard = () => {
           {/* Moje struktura — 3/5 */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
-              Moje struktura
+              {isImpersonating ? `Struktura — ${viewingUserName}` : "Moje struktura"}
             </h2>
             <div
               className="legatus-card"
@@ -808,7 +827,15 @@ const Dashboard = () => {
               }}
             >
               <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-                <OrgChart currentUserId={profile?.id || ""} />
+                <OrgChart
+                  currentUserId={profile?.id || ""}
+                  focusUserId={viewingUserId || undefined}
+                  viewerRole={profile?.role}
+                  onPersonClick={(userId, p) => {
+                    setViewingUserId(userId);
+                    setViewingUserName(p.full_name);
+                  }}
+                />
               </div>
             </div>
           </div>
