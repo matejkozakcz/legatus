@@ -597,19 +597,19 @@ export default function Kalendar() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {mobileDayMeetings.map((m) => {
-                const colors = getTypeColor(m.meeting_type);
+                const status = getMeetingStatus(m);
+                const borderColor = getTypeBorder(m.meeting_type);
                 return (
                   <div
                     key={m.id}
                     onClick={() => { setDetailMeeting(m); setDetailOpen(true); }}
                     style={{
-                      background: isDark ? "rgba(9,29,33,0.6)" : "#fff",
+                      background: getStatusBg(status, isDark),
                       borderRadius: 16,
                       border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
-                      borderLeft: `4px solid ${colors.border}`,
+                      borderLeft: `4px solid ${borderColor}`,
                       padding: "14px 16px",
                       cursor: "pointer",
-                      opacity: m.cancelled ? 0.55 : 1,
                       transition: "transform 0.1s",
                     }}
                   >
@@ -618,7 +618,8 @@ export default function Kalendar() {
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 700,
                         fontSize: 15,
-                        color: isDark ? colors.border : colors.text,
+                        color: borderColor,
+                        textDecoration: m.cancelled ? "line-through" : undefined,
                       }}>
                         {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                       </span>
