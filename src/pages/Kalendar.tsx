@@ -758,7 +758,7 @@ export default function Kalendar() {
           open={meetingFormOpen}
           onClose={() => setMeetingFormOpen(false)}
           initial={meetingFormInitial}
-          onSave={(form) => saveMutation.mutate(form)}
+          onSave={(form) => saveMutation.mutate({ form })}
           saving={saveMutation.isPending}
           cases={localCases}
           isEdit={!!editingMeetingId}
@@ -859,7 +859,7 @@ export default function Kalendar() {
         open={meetingFormOpen}
         onClose={() => setMeetingFormOpen(false)}
         initial={meetingFormInitial}
-        onSave={(form) => saveMutation.mutate(form)}
+        onSave={(form) => saveMutation.mutate({ form })}
         saving={saveMutation.isPending}
         cases={localCases}
         isEdit={!!editingMeetingId}
