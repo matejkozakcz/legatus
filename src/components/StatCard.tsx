@@ -1,9 +1,9 @@
 interface StatCardProps {
   label: string;
   actual: number;
-  planned: number;
+  planned?: number;
   actualLabel: string;
-  plannedLabel: string;
+  plannedLabel?: string;
 }
 
 export function StatCard({ label, actual, planned, actualLabel, plannedLabel }: StatCardProps) {
@@ -20,15 +20,21 @@ export function StatCard({ label, actual, planned, actualLabel, plannedLabel }: 
         <span className="font-heading text-4xl font-bold leading-none" style={{ color: "#00555f" }}>
           {actual}
         </span>
-        <span className="font-body text-xl font-semibold" style={{ color: "#00abbd" }}>
-          z {planned}
-        </span>
+        {planned != null && (
+          <span className="font-body text-xl font-semibold" style={{ color: "#00abbd" }}>
+            z {planned}
+          </span>
+        )}
       </div>
 
       <div className="flex gap-1 font-body text-xs text-muted-foreground">
         <span>{actualLabel}</span>
-        <span>/</span>
-        <span>{plannedLabel}</span>
+        {plannedLabel && (
+          <>
+            <span>/</span>
+            <span>{plannedLabel}</span>
+          </>
+        )}
       </div>
     </div>
   );

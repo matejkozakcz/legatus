@@ -549,8 +549,7 @@ const Dashboard = () => {
           <MobileStatCard
             label="Doporučení"
             actual={mobileStats.ref.actual}
-            planned={mobileStats.ref.planned}
-            sublabel="vybraných / naplán."
+            sublabel="celkem"
           />
         </div>
 
@@ -838,9 +837,7 @@ const Dashboard = () => {
           <StatCard
             label="Doporučení"
             actual={stats.ref.actual}
-            planned={stats.ref.planned}
-            actualLabel="vybraných"
-            plannedLabel="naplánovaných"
+            actualLabel="celkem"
           />
         </div>
       </section>
