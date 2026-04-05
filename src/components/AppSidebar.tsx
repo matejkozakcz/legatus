@@ -34,6 +34,7 @@ export function AppSidebar() {
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
+    { title: "Kalendář", url: "/kalendar", icon: Calendar },
     { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
 

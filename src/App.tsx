@@ -80,6 +80,14 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route
+              path="/kalendar"
+              element={
+                <AppLayout>
+                  <Kalendar />
+                </AppLayout>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
