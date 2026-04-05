@@ -161,7 +161,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,85,95,0.35)", backdropFilter: "blur(2px)" }}>
       <div
-        className="w-full max-w-[440px] mx-4 flex flex-col items-center overflow-y-auto max-h-[90vh]"
+        className="w-full max-w-[440px] mx-4 flex flex-col items-center overflow-y-auto"
+        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)" }} data-onboarding
         style={{
           background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
           borderRadius: 28,
