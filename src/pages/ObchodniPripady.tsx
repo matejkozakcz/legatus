@@ -280,11 +280,13 @@ function MeetingDetailModal({
   onClose,
   meeting,
   onEdit,
+  onCancel,
 }: {
   open: boolean;
   onClose: () => void;
   meeting: Meeting | null;
   onEdit: () => void;
+  onCancel: () => void;
 }) {
   if (!open || !meeting) return null;
   const m = meeting;
@@ -347,9 +349,19 @@ function MeetingDetailModal({
           {!m.cancelled && row("Doporučení (schůzka)", m.doporuceni_fsa)}
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
-        <button onClick={onEdit} className="btn btn-primary btn-md w-full flex items-center justify-center gap-2 mt-5">
-          <Pencil className="h-4 w-4" /> Upravit schůzku
-        </button>
+        <div className="flex gap-3 mt-5">
+          {!m.cancelled && (
+            <button
+              onClick={onCancel}
+              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <X className="h-4 w-4" /> Zrušit schůzku
+            </button>
+          )}
+          <button onClick={onEdit} className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2">
+            <Pencil className="h-4 w-4" /> Upravit schůzku
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -364,6 +376,8 @@ function MeetingModal({
   onSave,
   saving,
   cases,
+  isEdit: isEditProp,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
@@ -371,6 +385,8 @@ function MeetingModal({
   onSave: (form: MeetingForm) => void;
   saving: boolean;
   cases: Case[];
+  isEdit?: boolean;
+  onDelete?: () => void;
 }) {
   const [form, setForm] = useState<MeetingForm>(initial);
   useEffect(() => {
