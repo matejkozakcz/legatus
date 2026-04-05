@@ -196,7 +196,7 @@ function ChildrenBranch({
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [lineStyle, setLineStyle] = useState({ left: 0, width: 0 });
 
-  useLayoutEffect(() => {
+  const recalcLines = useCallback(() => {
     const container = containerRef.current;
     if (!container || children.length < 2) return;
     const first = childRefs.current[0];
@@ -209,6 +209,17 @@ function ChildrenBranch({
     const lastCenter = lRect.left + lRect.width / 2 - cRect.left;
     setLineStyle({ left: firstCenter, width: lastCenter - firstCenter });
   }, [children.length]);
+
+  // Recalculate on mount, collapse changes, and layout shifts
+  useLayoutEffect(() => { recalcLines(); }, [recalcLines, collapsedIds]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(() => recalcLines());
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [recalcLines]);
 
   return (
     <div ref={containerRef} className="relative flex flex-col items-center">
