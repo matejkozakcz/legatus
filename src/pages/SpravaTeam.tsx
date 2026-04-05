@@ -180,7 +180,8 @@ function HierarchyGroup({
 }
 
 const SpravaTeam = () => {
-  const { profile } = useAuth();
+  const { profile, isAdmin, godMode } = useAuth();
+  const isGodMode = isAdmin && godMode;
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"seznam" | "orgchart">("seznam");
   const [addOpen, setAddOpen] = useState(false);
@@ -263,10 +264,10 @@ const SpravaTeam = () => {
   });
 
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ["team_members", profile?.id, profile?.role],
+    queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
-      if (!["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
+      if (!["vedouci", "budouci_vedouci"].includes(profile.role) && !isGodMode) return [];
 
       let query = supabase
         .from("profiles")
@@ -274,7 +275,8 @@ const SpravaTeam = () => {
         .eq("is_active", true)
         .neq("id", profile.id);
 
-      if (profile.role === "vedouci" || profile.role === "budouci_vedouci") {
+      // God Mode: see ALL users across all structures
+      if (!isGodMode) {
         query = query.eq("vedouci_id", profile.id);
       }
 
@@ -614,7 +616,7 @@ const SpravaTeam = () => {
                     parent={member}
                     children={children}
                     childrenMap={childrenMap}
-                    onEdit={profile?.role === "vedouci" ? setEditMember : () => {}}
+                    onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
                     onNotify={setNotifyMember}
                     depth={0}
                   />
