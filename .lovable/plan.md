@@ -1,24 +1,52 @@
-## Kompaktnější týdenní zobrazení kalendáře
 
-### Problém
 
-Aktuálně se zobrazuje 15 hodin (7:00–21:00) najednou, každý 30min slot má 48px → celková výška ~1440px. Grid je příliš velký a vyžaduje hodně scrollování.
+# Dashboard data z client_meetings
 
-### Řešení
+## Problém
+Dashboard aktuálně čte data z tabulky `activity_records`, která je odvozená (syncovaná triggerem). Uživatel chce, aby jediným zdrojem dat byly `client_meetings` (Byznys případy).
 
-1. **Omezit viditelné okno na 5 hodin** — grid nově obsahuje všech 24 hodin (0–24), ale wrapper má fixní výšku odpovídající 5 hodinám a `overflow-y: auto` pro vertikální scroll.
-2. **Automatický scroll na relevantní čas** — při načtení se grid automaticky posune na aktuální hodinu (nebo na první schůzku dne, pokud existuje).
-3. **Zmenšit SLOT_HEIGHT** — snížit z 48px na ~40px pro kompaktnější vzhled.
+## Nový datový model
 
-### Technické změny
+Místo čtení z `activity_records` bude Dashboard počítat vše přímo z `client_meetings`:
 
-**Soubor: `src/pages/Kalendar.tsx**`
+| Metrika | Actual (proběhlé) | Planned (naplánované) |
+|---------|------|---------|
+| Analýzy (FSA) | COUNT kde `meeting_type='FSA'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='FSA'`, `NOT cancelled`, `date >= today` |
+| Pohovory (POH) | COUNT kde `meeting_type='POH'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='POH'`, `NOT cancelled`, `date >= today` |
+| Servisy (SER) | COUNT kde `meeting_type='SER'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='SER'`, `NOT cancelled`, `date >= today` |
+| Poradenství (POR) | COUNT kde `meeting_type='POR'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='POR'`, `NOT cancelled`, `date >= today` |
+| Doporučení | SUM(doporuceni_fsa + doporuceni_poradenstvi + doporuceni_pohovor) z proběhlých | SUM z naplánovaných |
+| BJ | SUM(podepsane_bj) z proběhlých, NOT cancelled | — |
 
-- Změnit `SLOT_HEIGHT` z `48` na `40`
-- V `renderWeekView()` obalit time grid do kontejneru s:
-  - `maxHeight: SLOT_HEIGHT * 2 * 5` (5 hodin = 10 slotů × SLOT_HEIGHT = 400px)
-  - `overflow-y: auto`
-  - `scroll-behavior: smooth`
-- Přidat `useRef` na scrollovací kontejner
-- V `useEffect` po renderování scrollnout na aktuální hodinu (`scrollTop = (currentHour - 7) * SLOT_HEIGHT * 2`)
-- Day headers zůstávají sticky nahoře (už mají `sticky top-0`)
+## Změny
+
+### 1. Dashboard.tsx — Desktop stats (řádky 345-369)
+- Nahradit query na `activity_records` za query na `client_meetings`
+- Filtrovat podle `user_id`, date range, a počítat COUNT/SUM podle meeting_type a date vs. today
+- Odstranit `activity_records` dependency pro statistiky
+
+### 2. Dashboard.tsx — Mobile stats (řádky 493-560)
+- Nahradit `activity_records` query za `client_meetings` query filtrovanou na týden
+- Odebrat upsert mutaci do `activity_records` (mobilní +/- tlačítka v God Mode zůstávají, ale budou editovat `client_meetings` nebo se odeberou, protože data se zadávají přes formulář schůzek)
+- Mobilní karty budou read-only (actual/planned se počítají z meetings)
+
+### 3. Dashboard.tsx — BJ gauges
+- `personalMonthlyBj`: SUM(podepsane_bj) z `client_meetings` WHERE user_id = me, NOT cancelled, date v production period
+- `vedouciMonthlyBj`: SUM(podepsane_bj) z `client_meetings` WHERE NOT cancelled, date v production period (all visible via RLS)
+- `totalBjAllTime`: SUM(podepsane_bj) z `client_meetings` WHERE user_id = me, NOT cancelled
+
+### 4. Mobilní +/- tlačítka
+Protože data se nyní počítají z meetings, mobilní +/- tlačítka (God Mode) pro ruční editaci activity_records ztratí smysl. Odeberou se. Mobilní stat karty budou čistě zobrazovací.
+
+### 5. Přidat Poradenství do stat karet
+Aktuálně Dashboard zobrazuje: Analýzy, Pohovory, Poradka (SER), Doporučení. Po refaktoru přidám i POR jako samostatnou kartu "Poradenství", aby odpovídala struktuře v Byznys případech.
+
+## Soubory k úpravě
+- `src/pages/Dashboard.tsx` — hlavní změna, přepojení všech queries
+
+## Co se NEMĚNÍ
+- Tabulka `activity_records` zůstane v DB (nebude smazána)
+- `sync_activity_from_meetings` trigger zůstane (pro zpětnou kompatibilitu)
+- Stránka ObchodniPripady, Kalendar — beze změn
+- BJ goal editace (Vedoucí) — zůstává stejná
+
