@@ -798,18 +798,36 @@ export default function Kalendar() {
           position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 40,
           display: "flex", flexDirection: "column", gap: 8,
         }}>
-          <button
-            onClick={() => {
-              setMeetingFormInitial(defaultMeetingForm(mobileDayStr));
-              setEditingMeetingId(null);
-              setMeetingFormOpen(true);
-            }}
-            className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
-            style={{ boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
-          >
-            <Plus size={18} />
-            Přidat schůzku
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => {
+                setMeetingFormInitial(defaultMeetingForm(mobileDayStr));
+                setEditingMeetingId(null);
+                setMeetingFormOpen(true);
+              }}
+              className="btn btn-primary btn-md flex items-center justify-center gap-2"
+              style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
+            >
+              <Plus size={18} />
+              Přidat schůzku
+            </button>
+            <button
+              onClick={() => !isToday && setMobileDay(new Date())}
+              disabled={isToday}
+              style={{
+                height: 40, padding: "0 16px", borderRadius: 12, border: "none",
+                background: isToday ? (isDark ? "rgba(255,255,255,0.08)" : "#dde8ea") : "#00abbd",
+                color: isToday ? (isDark ? "rgba(255,255,255,0.3)" : "#a0b4b8") : "#fff",
+                fontWeight: 600, fontSize: 13, cursor: isToday ? "default" : "pointer",
+                fontFamily: "Poppins, sans-serif",
+                boxShadow: isToday ? "none" : "0 -2px 16px rgba(0,0,0,0.06)",
+                transition: "all 0.2s",
+                flexShrink: 0,
+              }}
+            >
+              Dnes
+            </button>
+          </div>
           <div ref={mobileDayPickerRef} style={{
             background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
             backdropFilter: "blur(20px) saturate(1.8)", WebkitBackdropFilter: "blur(20px) saturate(1.8)",
