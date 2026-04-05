@@ -947,6 +947,8 @@ export default function ObchodniPripady() {
         open={!!detailMeeting}
         onClose={() => setDetailMeeting(null)}
         meeting={detailMeeting}
+        onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
+        savingOutcome={outcomeMutation.isPending}
         onEdit={() => {
           if (detailMeeting) {
             openEditMeeting(detailMeeting);
