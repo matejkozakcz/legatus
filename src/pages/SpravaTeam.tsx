@@ -214,6 +214,28 @@ const SpravaTeam = () => {
         .update({ status: "approved", reviewed_by: profile!.id, reviewed_at: new Date().toISOString() })
         .eq("id", requestId);
       if (reqError) throw reqError;
+
+      // Send notification to the promoted user
+      const roleLabel = roleBadge[newRole]?.label || newRole;
+      const { data: notifData } = await supabase.from("notifications").insert({
+        sender_id: profile!.id,
+        recipient_id: userId,
+        type: "promotion_eligible",
+        title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
+        body: `Vedoucí schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
+        deadline: new Date().toISOString().split("T")[0],
+      }).select("id").single();
+
+      // Trigger push
+      if (notifData?.id) {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+          body: JSON.stringify({ notification_id: notifData.id }),
+        }).catch(() => {});
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
