@@ -1,52 +1,51 @@
 
 
-# Dashboard data z client_meetings
+# Upozornění Vedoucího při nároku na povýšení
+
+## Současný stav
+- `SpravaTeam.tsx` už obsahuje `checkPromotions()` — při otevření stránky Správa týmu detekuje Získatele splňující kritéria (≥1000 BJ + ≥2 ve struktuře) a vytvoří záznam v `promotion_requests`
+- Vedoucí vidí čekající povýšení jako karty v sekci "Čekající povýšení" na stránce Správa týmu
+- Existuje tabulka `notifications` s typem, title, body, recipient_id, sender_id
+- `NotificationBell` zobrazuje notifikace s ikonou podle typu
 
 ## Problém
-Dashboard aktuálně čte data z tabulky `activity_records`, která je odvozená (syncovaná triggerem). Uživatel chce, aby jediným zdrojem dat byly `client_meetings` (Byznys případy).
+Vedoucí se o nároku dozví **pouze** když otevře Správu týmu. Žádná notifikace se mu nezobrazí ve zvonečku.
 
-## Nový datový model
+## Řešení
 
-Místo čtení z `activity_records` bude Dashboard počítat vše přímo z `client_meetings`:
+### 1. Při vytvoření promotion_request vytvořit notifikaci pro Vedoucího
 
-| Metrika | Actual (proběhlé) | Planned (naplánované) |
-|---------|------|---------|
-| Analýzy (FSA) | COUNT kde `meeting_type='FSA'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='FSA'`, `NOT cancelled`, `date >= today` |
-| Pohovory (POH) | COUNT kde `meeting_type='POH'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='POH'`, `NOT cancelled`, `date >= today` |
-| Servisy (SER) | COUNT kde `meeting_type='SER'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='SER'`, `NOT cancelled`, `date >= today` |
-| Poradenství (POR) | COUNT kde `meeting_type='POR'`, `NOT cancelled`, `date < today` | COUNT kde `meeting_type='POR'`, `NOT cancelled`, `date >= today` |
-| Doporučení | SUM(doporuceni_fsa + doporuceni_poradenstvi + doporuceni_pohovor) z proběhlých | SUM z naplánovaných |
-| BJ | SUM(podepsane_bj) z proběhlých, NOT cancelled | — |
+V `SpravaTeam.tsx` v `checkPromotions()` — po úspěšném upsertu do `promotion_requests` vložit záznam do `notifications`:
+- `type: "promotion_eligible"` 
+- `recipient_id: profile.id` (Vedoucí)
+- `sender_id: candidate.id` (Získatel)
+- `title: "{jméno} splňuje podmínky pro povýšení na Garanta"`
+- `body: "Kumulativní BJ: X · Y lidí ve struktuře"`
 
-## Změny
+Důležité: upsert `promotion_requests` používá `ignoreDuplicates: true`, takže se nevytvoří duplicitní request. Pro notifikaci je potřeba ověřit, zda promotion_request **skutečně vznikl nově** (nebyl ignorován). Toho dosáhnu kontrolou, zda pro daného kandidáta + roli + status "pending" už notifikace existuje.
 
-### 1. Dashboard.tsx — Desktop stats (řádky 345-369)
-- Nahradit query na `activity_records` za query na `client_meetings`
-- Filtrovat podle `user_id`, date range, a počítat COUNT/SUM podle meeting_type a date vs. today
-- Odstranit `activity_records` dependency pro statistiky
+### 2. Přidat ikonu pro nový typ notifikace
 
-### 2. Dashboard.tsx — Mobile stats (řádky 493-560)
-- Nahradit `activity_records` query za `client_meetings` query filtrovanou na týden
-- Odebrat upsert mutaci do `activity_records` (mobilní +/- tlačítka v God Mode zůstávají, ale budou editovat `client_meetings` nebo se odeberou, protože data se zadávají přes formulář schůzek)
-- Mobilní karty budou read-only (actual/planned se počítají z meetings)
+V `NotificationBell.tsx` přidat do `TYPE_ICONS`:
+- `promotion_eligible: <TrendingUp />` s teal barvou (konzistentní se sekcí v SpravaTeam)
 
-### 3. Dashboard.tsx — BJ gauges
-- `personalMonthlyBj`: SUM(podepsane_bj) z `client_meetings` WHERE user_id = me, NOT cancelled, date v production period
-- `vedouciMonthlyBj`: SUM(podepsane_bj) z `client_meetings` WHERE NOT cancelled, date v production period (all visible via RLS)
-- `totalBjAllTime`: SUM(podepsane_bj) z `client_meetings` WHERE user_id = me, NOT cancelled
+### 3. RLS – INSERT politika
 
-### 4. Mobilní +/- tlačítka
-Protože data se nyní počítají z meetings, mobilní +/- tlačítka (God Mode) pro ruční editaci activity_records ztratí smysl. Odeberou se. Mobilní stat karty budou čistě zobrazovací.
+Aktuální INSERT politika na `notifications` vyžaduje, aby příjemce byl přímý podřízený odesílatele. V tomto případě je odesílatel Vedoucí sám sobě — `sender_id = recipient_id = profile.id`. Toto je povoleno stávající RLS, protože Vedoucí je ve svém vlastním subtree. Případně nastavím `sender_id` na kandidáta — ten je podřízený Vedoucího, což splňuje podmínku.
 
-### 5. Přidat Poradenství do stat karet
-Aktuálně Dashboard zobrazuje: Analýzy, Pohovory, Poradka (SER), Doporučení. Po refaktoru přidám i POR jako samostatnou kartu "Poradenství", aby odpovídala struktuře v Byznys případech.
+Aktuálně INSERT check vyžaduje: `auth.uid() = sender_id` AND recipient je podřízený. Takže nastavím `sender_id = profile.id` (Vedoucí) a `recipient_id = profile.id` (Vedoucí). Ale RLS check říká recipient musí být podřízený senderu — Vedoucí není podřízený sám sobě v tom filtru. Budu muset buď:
+- Přidat RLS politiku pro self-notifications (sender = recipient = auth.uid())
+- Nebo použít jiný přístup
+
+Přidám novou INSERT RLS politiku: "Users can insert self notifications" — `auth.uid() = sender_id AND auth.uid() = recipient_id`.
 
 ## Soubory k úpravě
-- `src/pages/Dashboard.tsx` — hlavní změna, přepojení všech queries
+- `src/pages/SpravaTeam.tsx` — po upsert promotion_request vložit notifikaci
+- `src/components/NotificationBell.tsx` — ikona pro `promotion_eligible`
+- **Migrace** — nová RLS politika na `notifications` pro self-notifications
 
-## Co se NEMĚNÍ
-- Tabulka `activity_records` zůstane v DB (nebude smazána)
-- `sync_activity_from_meetings` trigger zůstane (pro zpětnou kompatibilitu)
-- Stránka ObchodniPripady, Kalendar — beze změn
-- BJ goal editace (Vedoucí) — zůstává stejná
+## Co se nemění
+- Tabulka `promotion_requests` — beze změn
+- Schvalování/zamítání — zůstává stejné
+- Detekční logika — zůstává stejná, jen přidáme notifikaci
 
