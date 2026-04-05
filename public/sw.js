@@ -21,6 +21,8 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
+  // OAuth callback musí vždy projít na síť
+  if (url.pathname.startsWith("/~oauth")) return;
   // Supabase requesty necháme projít vždy online
   if (url.hostname.includes("supabase.co")) return;
 
