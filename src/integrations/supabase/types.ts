@@ -236,37 +236,49 @@ export type Database = {
       }
       notifications: {
         Row: {
+          body: string | null
           created_at: string
           deadline: string
           id: string
           message: string
           read: boolean
           recipient_id: string
+          related_case_id: string | null
+          related_meeting_id: string | null
           reminder_sent: boolean
           sender_id: string
           title: string
+          type: string
         }
         Insert: {
+          body?: string | null
           created_at?: string
           deadline: string
           id?: string
           message?: string
           read?: boolean
           recipient_id: string
+          related_case_id?: string | null
+          related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id: string
           title: string
+          type?: string
         }
         Update: {
+          body?: string | null
           created_at?: string
           deadline?: string
           id?: string
           message?: string
           read?: boolean
           recipient_id?: string
+          related_case_id?: string | null
+          related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id?: string
           title?: string
+          type?: string
         }
         Relationships: [
           {
@@ -274,6 +286,20 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_case_id_fkey"
+            columns: ["related_case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_meeting_id_fkey"
+            columns: ["related_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "client_meetings"
             referencedColumns: ["id"]
           },
           {
