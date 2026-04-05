@@ -7,13 +7,19 @@ import { useEffect } from "react";
 export function useBodyScrollLock(locked: boolean) {
   useEffect(() => {
     if (!locked) return;
-    const original = document.body.style.overflow;
-    const originalTouchAction = document.body.style.touchAction;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+    const scrollY = window.scrollY;
+    const original = document.body.style.cssText;
+    document.body.style.cssText = `
+      overflow: hidden;
+      position: fixed;
+      top: -${scrollY}px;
+      left: 0;
+      right: 0;
+      width: 100%;
+    `;
     return () => {
-      document.body.style.overflow = original;
-      document.body.style.touchAction = originalTouchAction;
+      document.body.style.cssText = original;
+      window.scrollTo(0, scrollY);
     };
   }, [locked]);
 }
