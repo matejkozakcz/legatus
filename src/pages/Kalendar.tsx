@@ -613,12 +613,13 @@ export default function Kalendar() {
                       onClick={() => handleSlotClick(dayIdx, hour, true)}
                     />
 
-                    {/* Meeting blocks */}
+                    {/* Meeting blocks — render only in the row matching the meeting's start hour */}
                     {dayMeetings.map((m) => {
                       if (!m.meeting_time) return null;
                       const [h, min] = m.meeting_time.split(":").map(Number);
                       if (h < 7 || h > 21) return null;
-                      const topOffset = ((h - 7) * 60 + min) * (SLOT_HEIGHT / 30);
+                      if (h !== hour) return null;
+                      const topOffset = min * (SLOT_HEIGHT / 30);
                       const duration = m.duration_minutes || 60;
                       const blockHeight = Math.max(duration * (SLOT_HEIGHT / 30), SLOT_HEIGHT * 0.8);
                       const colors = getTypeColor(m.meeting_type);
