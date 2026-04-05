@@ -26,6 +26,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
+import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
@@ -190,100 +191,7 @@ function CaseModal({
   );
 }
 
-// ─── Meeting Detail Modal (read-only) ────────────────────────────────────────
-
-function MeetingDetailModal({
-  open,
-  onClose,
-  meeting,
-  onEdit,
-  onCancel,
-}: {
-  open: boolean;
-  onClose: () => void;
-  meeting: Meeting | null;
-  onEdit: () => void;
-  onCancel: () => void;
-}) {
-  if (!open || !meeting) return null;
-  const m = meeting;
-  const row = (label: string, value: React.ReactNode) => (
-    <div className="flex justify-between py-1.5 border-b border-border last:border-0">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-        {value}
-      </span>
-    </div>
-  );
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div
-        className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
-        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-          <X className="h-5 w-5" />
-        </button>
-        <h2 className="font-heading text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
-          Detail schůzky
-        </h2>
-        <div className="space-y-0">
-          {row("Datum", m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs }))}
-          {m.meeting_time && row("Čas", m.meeting_time.slice(0, 5))}
-          {m.duration_minutes != null && row("Délka", `${m.duration_minutes} min`)}
-          {row("Typ", meetingTypeLabel(m.meeting_type))}
-          {m.location_type && row("Místo", m.location_type === "osobne" ? "Osobně" : "Online")}
-          {m.location_detail && row(m.location_type === "osobne" ? "Adresa" : "Platforma", m.location_detail)}
-          {m.cancelled && row("Stav", "Zrušená")}
-          {!m.cancelled && m.meeting_type === "FSA" && m.potencial_bj != null && row("Potenciál BJ", m.potencial_bj)}
-          {!m.cancelled && m.has_poradenstvi && (
-            <>
-              {row(
-                "Poradenství",
-                m.poradenstvi_status === "probehle"
-                  ? "Proběhlé"
-                  : m.poradenstvi_status === "zrusene"
-                    ? "Zrušené"
-                    : "Ano",
-              )}
-              {m.poradenstvi_date &&
-                row("Datum poradenství", format(parseISO(m.poradenstvi_date), "d. M. yyyy", { locale: cs }))}
-              {row("Podepsané BJ", m.podepsane_bj)}
-              {row("Doporučení (poradko)", m.doporuceni_poradenstvi)}
-            </>
-          )}
-          {!m.cancelled && m.has_pohovor && (
-            <>
-              {row(
-                "Pohovor",
-                m.pohovor_jde_dal === true ? "Jde dál" : m.pohovor_jde_dal === false ? "Nejde dál" : "Ano",
-              )}
-              {m.pohovor_date && row("Datum pohovoru", format(parseISO(m.pohovor_date), "d. M. yyyy", { locale: cs }))}
-              {row("Doporučení (pohovor)", m.doporuceni_pohovor)}
-            </>
-          )}
-          {!m.cancelled && row("Doporučení (schůzka)", m.doporuceni_fsa)}
-          {m.poznamka && row("Poznámka", m.poznamka)}
-        </div>
-        <div className="flex gap-3 mt-5">
-          {!m.cancelled && (
-            <button
-              onClick={onCancel}
-              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
-            >
-              <X className="h-4 w-4" /> Zrušit schůzku
-            </button>
-          )}
-          <button onClick={onEdit} className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2">
-            <Pencil className="h-4 w-4" /> Upravit schůzku
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// MeetingDetailModal moved to shared component @/components/MeetingDetailModal
 
 // ─── Meeting Form Modal ──────────────────────────────────────────────────────
 
@@ -588,6 +496,22 @@ export default function ObchodniPripady() {
       }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
+  });
+
+  // ── Outcome mutation (save meeting results) ──
+  const outcomeMutation = useMutation({
+    mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
+      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
+      if (error) throw error;
+      return { meetingId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_records"] });
+      setDetailMeeting(null);
+      toast.success("Výsledek uložen");
+    },
+    onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
   });
 
   const deleteMutation = useMutation({
@@ -1023,6 +947,8 @@ export default function ObchodniPripady() {
         open={!!detailMeeting}
         onClose={() => setDetailMeeting(null)}
         meeting={detailMeeting}
+        onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
+        savingOutcome={outcomeMutation.isPending}
         onEdit={() => {
           if (detailMeeting) {
             openEditMeeting(detailMeeting);
