@@ -1049,7 +1049,7 @@ export default function ObchodniPripady() {
 
   // ── Meeting mutations ──
   const saveMeetingMutation = useMutation({
-    mutationFn: async ({ form, id }: { form: MeetingForm; id?: string }) => {
+    mutationFn: async ({ form, id }: { form: MeetingForm; id?: string; skipFollowUp?: boolean }) => {
       const payload: Record<string, unknown> = {
         user_id: profile!.id,
         case_id: form.case_id || null,
