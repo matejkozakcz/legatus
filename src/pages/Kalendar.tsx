@@ -672,10 +672,14 @@ export default function Kalendar() {
                         className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                         <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
+                            {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
                             {m.cancelled && " • Zrušená"}
+                            {needsFollowUp(m) && " • Doplň výsledek"}
                           </div>
                         </div>
                       </button>
