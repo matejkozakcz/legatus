@@ -530,7 +530,7 @@ function MeetingModal({
                 className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${form.meeting_type === t ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
                 style={form.meeting_type === t ? { background: "#00abbd" } : {}}
               >
-                {t === "FSA" ? "Analýza" : t === "POH" ? "Pohovor" : "Servis"}
+                {meetingTypeLabel(t)}
               </button>
             ))}
           </div>
