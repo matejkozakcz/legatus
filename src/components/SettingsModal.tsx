@@ -647,7 +647,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
           {tabContent[activeTab]()}
 
           {/* Logout button — mobile only */}
