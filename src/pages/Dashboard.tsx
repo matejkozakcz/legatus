@@ -135,6 +135,30 @@ const Dashboard = () => {
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [viewingUserName, setViewingUserName] = useState<string>("");
 
+  // Transition state for smooth view switching
+  const [transitioning, setTransitioning] = useState(false);
+  const pendingSwitch = useRef<{ userId: string | null; userName: string } | null>(null);
+
+  const handlePersonSwitch = (userId: string | null, userName: string) => {
+    if (userId === viewingUserId) return;
+    setTransitioning(true);
+    pendingSwitch.current = { userId, userName };
+  };
+
+  useEffect(() => {
+    if (!transitioning) return;
+    const timer = setTimeout(() => {
+      if (pendingSwitch.current) {
+        setViewingUserId(pendingSwitch.current.userId);
+        setViewingUserName(pendingSwitch.current.userName);
+        pendingSwitch.current = null;
+      }
+      // Fade back in after a brief delay for data to settle
+      requestAnimationFrame(() => setTransitioning(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [transitioning]);
+
   // The ID used for all data queries — either impersonated user or self
   const activeUserId = viewingUserId || profile?.id || "";
   const isImpersonating = !!viewingUserId && viewingUserId !== profile?.id;
