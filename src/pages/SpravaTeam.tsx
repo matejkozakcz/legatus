@@ -382,14 +382,23 @@ const SpravaTeam = () => {
               .ilike("title", `%${candidate.full_name}%garant%`)
               .limit(1);
             if (!existing || existing.length === 0) {
-              await supabase.from("notifications").insert({
+              const { data: notifData } = await supabase.from("notifications").insert({
                 sender_id: profile.id,
                 recipient_id: profile.id,
                 type: "promotion_eligible",
                 title: `${candidate.full_name} splňuje podmínky pro povýšení na Garanta`,
                 body: `Kumulativní BJ: ${cumulativeBj} · ${structureCount} lidí ve struktuře`,
                 deadline: new Date().toISOString().split("T")[0],
-              });
+              }).select("id").single();
+              if (notifData?.id) {
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+                fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+                  body: JSON.stringify({ notification_id: notifData.id }),
+                }).catch(() => {});
+              }
             }
           }
         }
@@ -422,15 +431,24 @@ const SpravaTeam = () => {
             .ilike("title", `%${candidate.full_name}%${roleLabel}%`)
             .limit(1);
           if (!existing || existing.length === 0) {
-            await supabase.from("notifications").insert({
-              sender_id: profile.id,
-              recipient_id: profile.id,
-              type: "promotion_eligible",
-              title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
-              body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
-              deadline: new Date().toISOString().split("T")[0],
-            });
-          }
+              const { data: notifData } = await supabase.from("notifications").insert({
+                sender_id: profile.id,
+                recipient_id: profile.id,
+                type: "promotion_eligible",
+                title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
+                body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
+                deadline: new Date().toISOString().split("T")[0],
+              }).select("id").single();
+              if (notifData?.id) {
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+                fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+                  body: JSON.stringify({ notification_id: notifData.id }),
+                }).catch(() => {});
+              }
+            }
         }
       }
     }
@@ -461,15 +479,24 @@ const SpravaTeam = () => {
             .ilike("title", `%${candidate.full_name}%${roleLabel}%`)
             .limit(1);
           if (!existing || existing.length === 0) {
-            await supabase.from("notifications").insert({
-              sender_id: profile.id,
-              recipient_id: profile.id,
-              type: "promotion_eligible",
-              title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
-              body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
-              deadline: new Date().toISOString().split("T")[0],
-            });
-          }
+              const { data: notifData } = await supabase.from("notifications").insert({
+                sender_id: profile.id,
+                recipient_id: profile.id,
+                type: "promotion_eligible",
+                title: `${candidate.full_name} splňuje podmínky pro povýšení na ${roleLabel}`,
+                body: `${structureCount} lidí ve struktuře · ${directCount} přímých`,
+                deadline: new Date().toISOString().split("T")[0],
+              }).select("id").single();
+              if (notifData?.id) {
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+                fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+                  body: JSON.stringify({ notification_id: notifData.id }),
+                }).catch(() => {});
+              }
+            }
         }
       }
     }
