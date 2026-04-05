@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
+import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -29,7 +29,7 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -85,8 +85,8 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Dark mode toggle — nad čárou nad avatarem */}
-          <div className="mt-auto pt-2">
+          {/* Dark mode toggle */}
+          <div className="mt-auto pt-2 space-y-1">
             <button
               onClick={toggleTheme}
               className="nav-item w-full"
@@ -101,6 +101,14 @@ export function AppSidebar() {
                 <span>{theme === "dark" ? "Světlý režim" : "Tmavý režim"}</span>
               )}
             </button>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="nav-item w-full"
+              title="Nastavení"
+            >
+              <Settings className="h-[18px] w-[18px] flex-shrink-0" />
+              {!collapsed && <span>Nastavení</span>}
+            </button>
           </div>
         </SidebarContent>
 
@@ -108,7 +116,7 @@ export function AppSidebar() {
           <div className="flex items-center gap-3">
             <div
               className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setProfileModalOpen(true)}
+              onClick={() => setSettingsOpen(true)}
             >
               {profile?.avatar_url ? (
                 <img
@@ -149,7 +157,7 @@ export function AppSidebar() {
         </SidebarFooter>
       </Sidebar>
 
-      <ProfileSettingsModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }
