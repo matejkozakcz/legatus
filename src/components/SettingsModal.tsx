@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle, LogOut, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { registerPushSubscription } from "@/lib/pushSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
