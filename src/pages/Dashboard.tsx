@@ -418,10 +418,12 @@ const Dashboard = () => {
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
-    const firstName = toVocative(profile?.full_name?.split(" ")[0] ?? "");
+    const firstName = isImpersonating
+      ? viewingUserName.split(" ")[0]
+      : toVocative(profile?.full_name?.split(" ")[0] ?? "");
     const daysRemaining = daysRemainingInPeriod(now);
 
-    const role = profile?.role ?? "novacek";
+    const role = activeRole;
 
     return (
       <div className="mobile-page" style={{ paddingBottom: 160 }}>
