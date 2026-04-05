@@ -11,8 +11,9 @@ import {
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import {
   Plus, X, Loader2, Pencil, Trash2, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown, ChevronRight as ChevronRightIcon, Bell, Clock, MapPin,
+  ChevronDown, ChevronRight as ChevronRightIcon, Clock, MapPin,
 } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -868,9 +869,7 @@ export default function ObchodniPripady() {
               <h1 className="font-heading font-bold flex-1" style={{ fontSize: 22, color: "var(--text-primary)" }}>
                 Obchodní případy
               </h1>
-              <button onClick={() => {}} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <NotificationBell />
             </div>
           </div>
 
@@ -953,9 +952,7 @@ export default function ObchodniPripady() {
                 Obchodní případy
               </h1>
             </div>
-            <button onClick={() => {}} className="p-2 rounded-xl hover:bg-muted transition-colors">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-            </button>
+            <NotificationBell />
           </div>
 
           {/* Desktop: Period picker + button */}
