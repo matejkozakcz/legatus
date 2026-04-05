@@ -50,7 +50,15 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
 
 const LINE_COLOR = "#c8d8dc";
 
-function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean }) {
+const progressBarColor: Record<string, string> = {
+  vedouci: "#45AABD",
+  budouci_vedouci: "#45AABD",
+  garant: "#3FC55D",
+  ziskatel: "#7c6fcd",
+  novacek: "#F39E0A",
+};
+
+function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -60,6 +68,8 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
 
   const colors = avatarColors[node.role] || avatarColors.novacek;
   const dot = statusDotColor[node.role] || { bg: "#89ADB4", glow: "rgba(137,173,180,0.25)" };
+  const pct = progress != null ? Math.min(Math.max(progress, 0), 100) : undefined;
+  const barColor = progressBarColor[node.role] || "#89ADB4";
 
   return (
     <div
@@ -75,6 +85,7 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
         paddingTop: 10,
         paddingBottom: 14,
         opacity: isClickable || isFocused ? 1 : 0.7,
+        overflow: "hidden",
       }}
     >
       <div
@@ -108,6 +119,29 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
       <p className="font-body text-center" style={{ fontSize: 11, color: "#89ADB4", marginTop: 2 }}>
         {roleBadgeConfig[node.role]?.label || node.role}
       </p>
+
+      {/* Progress bar at bottom edge */}
+      {pct != null && (
+        <div
+          className="absolute"
+          style={{
+            bottom: 0, left: 0, right: 0, height: 3,
+            background: "rgba(0,0,0,0.06)",
+            borderRadius: "0 0 12px 12px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${pct}%`,
+              height: "100%",
+              background: barColor,
+              borderRadius: "0 0 12px 0",
+              transition: "width 0.4s ease-out",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -146,6 +180,7 @@ function ChildrenBranch({
   depth,
   focusUserId,
   isClickableFn,
+  progressMap,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -155,6 +190,7 @@ function ChildrenBranch({
   depth: number;
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
+  progressMap: Map<string, number>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -205,6 +241,7 @@ function ChildrenBranch({
               depth={depth}
               focusUserId={focusUserId}
               isClickableFn={isClickableFn}
+              progressMap={progressMap}
             />
           </div>
         ))}
@@ -222,6 +259,7 @@ function TreeNode({
   depth = 0,
   focusUserId,
   isClickableFn,
+  progressMap,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -231,6 +269,7 @@ function TreeNode({
   depth?: number;
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
+  progressMap: Map<string, number>;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -239,7 +278,7 @@ function TreeNode({
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} />
+      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -262,6 +301,7 @@ function TreeNode({
                 depth={depth + 1}
                 focusUserId={focusUserId}
                 isClickableFn={isClickableFn}
+                progressMap={progressMap}
               />
             </>
           )}
@@ -313,6 +353,60 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     });
     return map;
   }, [profiles]);
+  // Fetch cumulative BJ for all users (for progress bars)
+  const { data: bjData = [] } = useQuery({
+    queryKey: ["org_cumulative_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_records")
+        .select("user_id, bj");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: profiles.length > 0,
+  });
+
+  // Compute structure count per user (recursive)
+  const structureCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    function countBelow(nodeId: string): number {
+      const kids = childrenMap.get(nodeId) || [];
+      let total = kids.length;
+      kids.forEach((k) => { total += countBelow(k.id); });
+      counts.set(nodeId, total);
+      return total;
+    }
+    profiles.forEach((p) => { if (!counts.has(p.id)) countBelow(p.id); });
+    return counts;
+  }, [profiles, childrenMap]);
+
+  // Compute cumulative BJ per user
+  const cumulativeBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    bjData.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (r.bj || 0));
+    });
+    return map;
+  }, [bjData]);
+
+  // Progress: Získatel → cumBJ/1000, Garant → people/5, BV → people/10, Vedoucí → 100%
+  const progressMap = useMemo(() => {
+    const map = new Map<string, number>();
+    profiles.forEach((p) => {
+      let pct: number | undefined;
+      if (p.role === "ziskatel") {
+        pct = ((cumulativeBjMap.get(p.id) || 0) / 1000) * 100;
+      } else if (p.role === "garant") {
+        pct = ((structureCountMap.get(p.id) || 0) / 5) * 100;
+      } else if (p.role === "budouci_vedouci") {
+        pct = ((structureCountMap.get(p.id) || 0) / 10) * 100;
+      } else if (p.role === "vedouci") {
+        pct = 100;
+      }
+      if (pct != null) map.set(p.id, pct);
+    });
+    return map;
+  }, [profiles, cumulativeBjMap, structureCountMap]);
 
   // Compute which nodes should be collapsed by default
   // If focusUserId is set, expand the path to that person + their direct children
@@ -500,6 +594,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
             depth={0}
             focusUserId={focusUserId || currentUserId}
             isClickableFn={isClickableFn}
+            progressMap={progressMap}
           />
         </div>
       </div>
