@@ -24,9 +24,9 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 
-// ─── Typy ────────────────────────────────────────────────────────────────────
+import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
 
-type MeetingType = "FSA" | "POR" | "SER" | "POH";
+type PoradkoStatus = "probehle" | "zrusene" | null;
 
 interface Meeting {
   id: string;
@@ -59,63 +59,9 @@ interface Meeting {
   location_detail: string | null;
 }
 
-interface Case {
-  id: string;
-  user_id: string;
-  nazev_pripadu: string;
-  status: string;
-  poznamka: string | null;
-  created_at: string;
-}
-
-type PoradkoStatus = "probehle" | "zrusene" | null;
-
-interface MeetingForm {
-  date: string;
-  meeting_type: MeetingType;
-  cancelled: boolean;
-  potencial_bj: string;
-  has_poradenstvi: boolean;
-  podepsane_bj: string;
-  doporuceni_poradenstvi: string;
-  poradenstvi_date: string;
-  poradenstvi_status: PoradkoStatus;
-  has_pohovor: boolean;
-  pohovor_jde_dal: boolean | null;
-  doporuceni_pohovor: string;
-  pohovor_date: string;
-  doporuceni_fsa: string;
-  poznamka: string;
-  case_name: string;
-  case_id: string;
-  meeting_time: string;
-  duration_minutes: string;
-  location_type: string;
-  location_detail: string;
-}
-
 const defaultForm = (caseId?: string): MeetingForm => ({
-  date: format(new Date(), "yyyy-MM-dd"),
-  meeting_type: "FSA",
-  cancelled: false,
-  potencial_bj: "",
-  has_poradenstvi: false,
-  podepsane_bj: "",
-  doporuceni_poradenstvi: "0",
-  poradenstvi_date: "",
-  poradenstvi_status: null,
-  has_pohovor: false,
-  pohovor_jde_dal: null,
-  doporuceni_pohovor: "0",
-  pohovor_date: "",
-  doporuceni_fsa: "0",
-  poznamka: "",
-  case_name: "",
+  ...defaultMeetingForm(),
   case_id: caseId || "",
-  meeting_time: "",
-  duration_minutes: "",
-  location_type: "",
-  location_detail: "",
 });
 
 const meetingToForm = (m: Meeting): MeetingForm => ({
