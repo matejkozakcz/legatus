@@ -169,6 +169,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           boxShadow: isDark ? "0 8px 48px rgba(0,0,0,0.5)" : "0 8px 32px rgba(0,85,95,0.22)",
           border: isDark ? "1px solid rgba(255,255,255,0.08)" : "none",
           padding: "32px",
+          paddingBottom: "max(32px, env(safe-area-inset-bottom, 0px))",
         }}
       >
         <img src={legatusLogo} alt="Legatus" className="h-12 mb-1" />

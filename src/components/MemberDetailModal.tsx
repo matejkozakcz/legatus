@@ -98,6 +98,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         className="relative max-w-md w-full mx-4 rounded-2xl shadow-2xl p-6 overflow-y-auto"
         style={{
           maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
           animation: "modalIn 150ms ease-out forwards",
           background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
           border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
