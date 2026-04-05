@@ -1610,6 +1610,16 @@ export default function ObchodniPripady() {
             setDetailMeeting(null);
           }
         }}
+        onCancel={() => {
+          if (detailMeeting) {
+            const cancelForm: MeetingForm = {
+              ...meetingToForm(detailMeeting),
+              cancelled: true,
+            };
+            saveMeetingMutation.mutate({ form: cancelForm, id: detailMeeting.id, skipFollowUp: true });
+            setDetailMeeting(null);
+          }
+        }}
       />
 
       {/* Meeting form modal */}
@@ -1623,6 +1633,12 @@ export default function ObchodniPripady() {
         onSave={(form) => saveMeetingMutation.mutate({ form, id: editMeeting?.id })}
         saving={saveMeetingMutation.isPending}
         cases={cases}
+        isEdit={!!editMeeting}
+        onDelete={editMeeting ? () => {
+          deleteMutation.mutate(editMeeting.id);
+          setMeetingModalOpen(false);
+          setEditMeeting(null);
+        } : undefined}
       />
 
       {/* Follow-up suggestion modal */}
