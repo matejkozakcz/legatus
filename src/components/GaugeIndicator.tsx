@@ -5,9 +5,11 @@ interface GaugeIndicatorProps {
   sublabel?: string;
   placeholder?: boolean;
   dark?: boolean;
+  /** Gauge se vybarví zeleně, pokud je podmínka splněna (value >= max) */
+  completed?: boolean;
 }
 
-export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false }: GaugeIndicatorProps) {
+export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false }: GaugeIndicatorProps) {
   const radius = 70;
   const stroke = 12;
   const cx = 90;
@@ -16,12 +18,27 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
   const ratio = placeholder || max === 0 ? 0 : Math.min(1, value / max);
   const dashOffset = circumference * (1 - ratio);
 
+  const isDone = completed && !placeholder && max > 0 && value >= max;
+
   const bgArc = dark ? "rgba(255,255,255,0.18)" : "#e2eaec";
-  const valueColor = dark ? (placeholder ? "rgba(255,255,255,0.4)" : "#ffffff") : (placeholder ? "#b8cfd4" : "#00555f");
-  const maxColor = dark ? "rgba(255,255,255,0.7)" : "#00abbd";
+
+  const valueColor = isDone
+    ? (dark ? "#86efac" : "#15803d")
+    : dark
+      ? (placeholder ? "rgba(255,255,255,0.4)" : "#ffffff")
+      : (placeholder ? "#b8cfd4" : "#00555f");
+
+  const maxColor = isDone
+    ? (dark ? "#86efac" : "#15803d")
+    : dark ? "rgba(255,255,255,0.7)" : "#00abbd";
+
   const labelColor = dark ? "rgba(255,255,255,0.85)" : "var(--text-secondary)";
   const sublabelColor = dark ? "rgba(255,255,255,0.6)" : "var(--text-muted)";
-  const gradId = dark ? "gaugeGradDark" : "gaugeGrad";
+
+  // Unikátní gradient ID podle kombinace dark + completed
+  const gradId = `gaugeGrad${dark ? "Dark" : ""}${isDone ? "Green" : ""}`;
+  const gradStart = isDone ? "#22c55e" : dark ? "#fc7c71" : "#00555f";
+  const gradEnd   = isDone ? "#16a34a" : dark ? "#ffb4a9" : "#00abbd";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -47,8 +64,8 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
         )}
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={dark ? "#fc7c71" : "#00555f"} />
-            <stop offset="100%" stopColor={dark ? "#ffb4a9" : "#00abbd"} />
+            <stop offset="0%" stopColor={gradStart} />
+            <stop offset="100%" stopColor={gradEnd} />
           </linearGradient>
         </defs>
         <text
