@@ -93,7 +93,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 relative">
+            <div className="absolute top-4 right-6 lg:right-8 z-10">
+              <NotificationBell />
+            </div>
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
               {children}
             </main>
