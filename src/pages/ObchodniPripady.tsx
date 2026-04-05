@@ -394,8 +394,9 @@ function MeetingModal({
   }, [initial]);
   if (!open) return null;
   const set = (patch: Partial<MeetingForm>) => setForm((f) => ({ ...f, ...patch }));
-  const isEdit = !!initial.case_id && initial.date !== format(new Date(), "yyyy-MM-dd");
+  const isEdit = isEditProp ?? (!!initial.case_id && initial.date !== format(new Date(), "yyyy-MM-dd"));
   const activeCases = cases.filter((c) => c.status === "aktivni");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -656,6 +657,39 @@ function MeetingModal({
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
+
+        {isEdit && onDelete && (
+          <>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full mt-3 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                style={{ color: "#fc7c71", background: "transparent", border: "1px solid #fc7c71" }}
+              >
+                <Trash2 className="h-4 w-4" /> Smazat schůzku
+              </button>
+            ) : (
+              <div className="mt-3 p-3 rounded-xl border border-border bg-muted/50">
+                <p className="text-sm text-muted-foreground mb-3">Opravdu smazat? Tato akce je nevratná.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 h-9 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground"
+                  >
+                    Ne
+                  </button>
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); onDelete(); }}
+                    className="flex-1 h-9 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: "#fc7c71" }}
+                  >
+                    Ano, smazat
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
