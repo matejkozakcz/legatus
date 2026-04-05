@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 
-import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel as _meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
