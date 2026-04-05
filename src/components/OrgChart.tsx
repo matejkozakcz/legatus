@@ -50,7 +50,15 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
 
 const LINE_COLOR = "#c8d8dc";
 
-function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean }) {
+const progressBarColor: Record<string, string> = {
+  vedouci: "#45AABD",
+  budouci_vedouci: "#45AABD",
+  garant: "#3FC55D",
+  ziskatel: "#7c6fcd",
+  novacek: "#F39E0A",
+};
+
+function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -60,6 +68,8 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
 
   const colors = avatarColors[node.role] || avatarColors.novacek;
   const dot = statusDotColor[node.role] || { bg: "#89ADB4", glow: "rgba(137,173,180,0.25)" };
+  const pct = progress != null ? Math.min(Math.max(progress, 0), 100) : undefined;
+  const barColor = progressBarColor[node.role] || "#89ADB4";
 
   return (
     <div
@@ -75,6 +85,7 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
         paddingTop: 10,
         paddingBottom: 14,
         opacity: isClickable || isFocused ? 1 : 0.7,
+        overflow: "hidden",
       }}
     >
       <div
@@ -108,6 +119,29 @@ function NodeCard({ node, onClick, isClickable, isFocused }: { node: ProfileNode
       <p className="font-body text-center" style={{ fontSize: 11, color: "#89ADB4", marginTop: 2 }}>
         {roleBadgeConfig[node.role]?.label || node.role}
       </p>
+
+      {/* Progress bar at bottom edge */}
+      {pct != null && (
+        <div
+          className="absolute"
+          style={{
+            bottom: 0, left: 0, right: 0, height: 3,
+            background: "rgba(0,0,0,0.06)",
+            borderRadius: "0 0 12px 12px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${pct}%`,
+              height: "100%",
+              background: barColor,
+              borderRadius: "0 0 12px 0",
+              transition: "width 0.4s ease-out",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
