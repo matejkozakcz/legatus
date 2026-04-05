@@ -175,6 +175,20 @@ Deno.serve(async (req) => {
 
     const pushRes = await sendWebPush(sub.subscription, pushPayload, vapidPublicKey, vapidPrivateKey);
 
+    // 410 = subscription expired, 404 = endpoint not found → delete stale subscription
+    // so the browser re-registers on next login
+    if (pushRes.status === 410 || pushRes.status === 404) {
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("user_id", notif.recipient_id);
+
+      return new Response(
+        JSON.stringify({ ok: true, pushed: false, reason: "subscription_expired", status: pushRes.status }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ ok: true, pushed: true, status: pushRes.status }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

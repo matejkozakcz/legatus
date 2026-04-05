@@ -16,12 +16,16 @@ interface CheckMember {
 const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-async function sendPush(notificationId: string) {
-  fetch(PUSH_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-    body: JSON.stringify({ notification_id: notificationId }),
-  }).catch(() => {});
+async function sendPush(notificationId: string): Promise<void> {
+  try {
+    await fetch(PUSH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({ notification_id: notificationId }),
+    });
+  } catch {
+    // push delivery je best-effort, chyba sítě neblokuje zbytek
+  }
 }
 
 async function ensureNotification(
@@ -29,16 +33,23 @@ async function ensureNotification(
   title: string,
   body: string
 ): Promise<void> {
-  // Dedup: nezasílat pokud oznámení se stejným názvem a příjemcem už existuje
+  // Dedup: pokud oznamení se stejným názvem a příjemcem existuje,
+  // nevytváříme duplikát, ale push znovu odešleme (retry pro případ neúspěšného doručení)
   const { data: existing } = await supabase
     .from("notifications")
-    .select("id")
+    .select("id, read")
     .eq("recipient_id", vedouciId)
     .eq("type", "promotion_eligible")
     .eq("title", title)
     .limit(1);
 
-  if (existing && existing.length > 0) return;
+  if (existing && existing.length > 0) {
+    // Notifikace v DB existuje — pošli push znovu pokud ještě nebyla přečtena
+    if (!existing[0].read) {
+      await sendPush(existing[0].id);
+    }
+    return;
+  }
 
   const { data: notifData } = await supabase
     .from("notifications")

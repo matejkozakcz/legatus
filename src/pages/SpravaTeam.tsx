@@ -188,6 +188,7 @@ const SpravaTeam = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
+  const [isForceChecking, setIsForceChecking] = useState(false);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
@@ -334,6 +335,39 @@ const SpravaTeam = () => {
     if (!isLoading && members.length > 0) checkPromotions();
   }, [isLoading, members.length, checkPromotions]);
 
+  // Force re-check: smaže zaseknuté záznamy a spustí check znovu od nuly
+  const forceCheckPromotions = useCallback(async () => {
+    if (!profile || members.length === 0) return;
+    setIsForceChecking(true);
+    try {
+      const memberIds = members.map((m) => m.id);
+
+      // Smaž pending promotion_requests pro členy týmu
+      await supabase
+        .from("promotion_requests")
+        .delete()
+        .in("user_id", memberIds)
+        .eq("status", "pending");
+
+      // Smaž nepřečtené promotion_eligible notifikace pro vedoucího
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("recipient_id", profile.id)
+        .eq("type", "promotion_eligible")
+        .eq("read", false);
+
+      // Spusť check znovu – vytvoří čerstvé záznamy + odešle push
+      await runCheckPromotions(profile, members);
+      refetchRequests();
+      toast.success("Povýšení zkontrolována – oznámení odeslána");
+    } catch {
+      toast.error("Chyba při kontrole povýšení");
+    } finally {
+      setIsForceChecking(false);
+    }
+  }, [profile, members, refetchRequests]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -341,6 +375,19 @@ const SpravaTeam = () => {
           <Users className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
+        {profile?.role === "vedouci" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={forceCheckPromotions}
+            disabled={isForceChecking || isLoading || members.length === 0}
+            className="flex items-center gap-1.5 text-xs"
+            title="Znovu zkontroluje podmínky povýšení a odešle oznámení"
+          >
+            <Bell className="h-3.5 w-3.5" />
+            {isForceChecking ? "Kontroluji…" : "Zkontrolovat povýšení"}
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
