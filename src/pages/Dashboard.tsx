@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
@@ -131,6 +131,35 @@ const Dashboard = () => {
   const now = new Date();
   const todayStr = format(now, "yyyy-MM-dd");
 
+  // ── Impersonation: view dashboard as another team member ──
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [viewingUserName, setViewingUserName] = useState<string>("");
+
+  // The ID used for all data queries — either impersonated user or self
+  const activeUserId = viewingUserId || profile?.id || "";
+  const isImpersonating = !!viewingUserId && viewingUserId !== profile?.id;
+
+  // Fetch impersonated user's profile for role-dependent sections
+  const { data: viewingProfile } = useQuery({
+    queryKey: ["impersonated_profile", viewingUserId],
+    queryFn: async () => {
+      if (!viewingUserId) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, monthly_bj_goal, personal_bj_goal, osobni_id")
+        .eq("id", viewingUserId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!viewingUserId && viewingUserId !== profile?.id,
+  });
+
+  // Active profile for rendering (impersonated or own)
+  const activeProfile = isImpersonating && viewingProfile
+    ? { ...profile, ...viewingProfile }
+    : profile;
+
   // Mobile week navigation
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
@@ -181,19 +210,19 @@ const Dashboard = () => {
 
   // ── Desktop stats from client_meetings ──────────────────────────────────────
   const { data: desktopMeetings = [] } = useQuery({
-    queryKey: ["dashboard_meetings", profile?.id, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
+    queryKey: ["dashboard_meetings", activeUserId, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
         .lte("date", format(dateRange.to, "yyyy-MM-dd"));
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.id,
+    enabled: !!activeUserId,
   });
 
   const stats = useMemo(() => computeStats(desktopMeetings, todayStr), [desktopMeetings, todayStr]);
@@ -203,100 +232,102 @@ const Dashboard = () => {
   const mobileWeekEndStr = format(mobileWeekEnd, "yyyy-MM-dd");
 
   const { data: mobileMeetings = [] } = useQuery({
-    queryKey: ["dashboard_meetings_mobile", profile?.id, mobileWeekStartStr, mobileWeekEndStr],
+    queryKey: ["dashboard_meetings_mobile", activeUserId, mobileWeekStartStr, mobileWeekEndStr],
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .gte("date", mobileWeekStartStr)
         .lte("date", mobileWeekEndStr);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.id && isMobile,
+    enabled: !!activeUserId && isMobile,
   });
 
   const mobileStats = useMemo(() => computeStats(mobileMeetings, todayStr), [mobileMeetings, todayStr]);
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
+  const activeRole = activeProfile?.role ?? "novacek";
+
   // All-time cumulative BJ (for promotion progress gauge)
   const { data: totalBjAllTime = 0 } = useQuery({
-    queryKey: ["bj_all_time_meetings", profile?.id],
+    queryKey: ["bj_all_time_meetings", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .eq("cancelled", false);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id && profile?.role !== "vedouci" && profile?.role !== "novacek",
+    enabled: !!activeUserId && activeRole !== "vedouci" && activeRole !== "novacek",
   });
 
   // Získatel: lidé ve struktuře (ziskatel_id = profile.id)
   const { data: ziskatelStructureCount = 0 } = useQuery({
-    queryKey: ["ziskatel_structure_count", profile?.id],
+    queryKey: ["ziskatel_structure_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("ziskatel_id", profile.id)
+        .eq("ziskatel_id", activeUserId)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "ziskatel",
+    enabled: !!activeUserId && activeRole === "ziskatel",
   });
 
   // Garant / BV: přímí podřízení (ziskatel_id = profile.id)
   const { data: directSubordinateCount = 0 } = useQuery({
-    queryKey: ["direct_subordinate_count", profile?.id],
+    queryKey: ["direct_subordinate_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("ziskatel_id", profile.id)
+        .eq("ziskatel_id", activeUserId)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
+    enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
 
   // Garant / BV: celá struktura (rekurzivně přes garant_id / vedouci_id)
   const { data: structureCount = 0 } = useQuery({
-    queryKey: ["structure_count", profile?.id],
+    queryKey: ["structure_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .or(`garant_id.eq.${profile.id},vedouci_id.eq.${profile.id}`)
+        .or(`garant_id.eq.${activeUserId},vedouci_id.eq.${activeUserId}`)
         .eq("is_active", true)
-        .neq("id", profile.id);
+        .neq("id", activeUserId);
       return count || 0;
     },
-    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
+    enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
 
   // Vedoucí: počet BV a Vedoucích ve struktuře
   const { data: seniorMemberCount = 0 } = useQuery({
-    queryKey: ["senior_member_count", profile?.id],
+    queryKey: ["senior_member_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("vedouci_id", profile.id)
+        .eq("vedouci_id", activeUserId)
         .in("role", ["budouci_vedouci", "vedouci"])
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!activeUserId && activeRole === "vedouci",
   });
 
   // Vedoucí: monthly BJ for entire subtree
@@ -307,9 +338,9 @@ const Dashboard = () => {
 
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
-    queryKey: ["vedouci_monthly_bj_meetings", profile?.id, periodStartStr],
+    queryKey: ["vedouci_monthly_bj_meetings", activeUserId, periodStartStr],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
@@ -318,29 +349,29 @@ const Dashboard = () => {
         .lte("date", periodEndStr);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!activeUserId && activeRole === "vedouci",
   });
 
   // Personal monthly BJ (current production period) — from client_meetings
   const { data: personalMonthlyBj = 0 } = useQuery({
-    queryKey: ["personal_monthly_bj_meetings", profile?.id, periodStartStr],
+    queryKey: ["personal_monthly_bj_meetings", activeUserId, periodStartStr],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .eq("cancelled", false)
         .gte("date", periodStartStr)
         .lte("date", periodEndStr);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id,
+    enabled: !!activeUserId,
   });
 
   // Vedoucí: monthly_bj_goal from profile
-  const monthlyBjGoal = profile?.monthly_bj_goal || 0;
-  const personalBjGoal = (profile as any)?.personal_bj_goal || 0;
+  const monthlyBjGoal = activeProfile?.monthly_bj_goal || 0;
+  const personalBjGoal = (activeProfile as any)?.personal_bj_goal || 0;
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInputValue, setGoalInputValue] = useState("");
   const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
@@ -387,10 +418,12 @@ const Dashboard = () => {
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
-    const firstName = toVocative(profile?.full_name?.split(" ")[0] ?? "");
+    const firstName = isImpersonating
+      ? viewingUserName.split(" ")[0]
+      : toVocative(profile?.full_name?.split(" ")[0] ?? "");
     const daysRemaining = daysRemainingInPeriod(now);
 
-    const role = profile?.role ?? "novacek";
+    const role = activeRole;
 
     return (
       <div className="mobile-page" style={{ paddingBottom: 160 }}>
@@ -628,7 +661,7 @@ const Dashboard = () => {
   }
 
   // ── DESKTOP render ──────────────────────────────────────────────────────────
-  const role = profile?.role ?? "novacek";
+  const role = activeRole;
 
   const renderStavByznysu = () => {
     if (role === "novacek") {
@@ -738,6 +771,25 @@ const Dashboard = () => {
         </h1>
       </div>
 
+      {/* Impersonation banner */}
+      {isImpersonating && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 rounded-xl"
+          style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
+        >
+          <button
+            onClick={() => { setViewingUserId(null); setViewingUserName(""); }}
+            className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+            style={{ color: "#00abbd" }}
+          >
+            <ArrowLeft size={16} /> Zpět na můj dashboard
+          </button>
+          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+            Prohlížíte dashboard: <strong>{viewingUserName}</strong>
+          </span>
+        </div>
+      )}
+
       <section className="space-y-4">
         <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 350 }}>
           {/* Stav byznysu — 1/4 */}
@@ -763,7 +815,7 @@ const Dashboard = () => {
           {/* Moje struktura — 3/5 */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
-              Moje struktura
+              {isImpersonating ? `Struktura — ${viewingUserName}` : "Moje struktura"}
             </h2>
             <div
               className="legatus-card"
@@ -777,7 +829,15 @@ const Dashboard = () => {
               }}
             >
               <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-                <OrgChart currentUserId={profile?.id || ""} />
+                <OrgChart
+                  currentUserId={profile?.id || ""}
+                  focusUserId={viewingUserId || undefined}
+                  viewerRole={profile?.role}
+                  onPersonClick={(userId, p) => {
+                    setViewingUserId(userId);
+                    setViewingUserName(p.full_name);
+                  }}
+                />
               </div>
             </div>
           </div>
