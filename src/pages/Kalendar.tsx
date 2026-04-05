@@ -432,6 +432,24 @@ export default function Kalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
+  // Mobile: selected day for daily view
+  const [mobileDay, setMobileDay] = useState(new Date());
+  const [mobileDayPickerOpen, setMobileDayPickerOpen] = useState(false);
+  const [mobilePickerMonth, setMobilePickerMonth] = useState(new Date());
+  const mobileDayPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile day picker on outside click
+  useEffect(() => {
+    if (!mobileDayPickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (mobileDayPickerRef.current && !mobileDayPickerRef.current.contains(e.target as Node)) {
+        setMobileDayPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [mobileDayPickerOpen]);
+
   // Modals
   const [meetingFormOpen, setMeetingFormOpen] = useState(false);
   const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultForm());
@@ -444,8 +462,11 @@ export default function Kalendar() {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
 
-  const rangeStart = view === "week" ? weekStart : monthStart;
-  const rangeEnd = view === "week" ? weekEnd : monthEnd;
+  // For mobile: fetch just that day's range
+  const mobileDayStr = format(mobileDay, "yyyy-MM-dd");
+
+  const rangeStart = isMobile ? startOfDay(mobileDay) : (view === "week" ? weekStart : monthStart);
+  const rangeEnd = isMobile ? startOfDay(mobileDay) : (view === "week" ? weekEnd : monthEnd);
 
   // Fetch meetings
   const { data: meetings = [] } = useQuery({
