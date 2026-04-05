@@ -101,6 +101,9 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
   // Oznámení
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(defaultNotifPrefs);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
 
   const fetchIdentities = useCallback(async () => {
     const { data } = await supabase.auth.getUserIdentities();
