@@ -35,7 +35,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
     { title: "Kalendář", url: "/kalendar", icon: Calendar },
-    { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase },
+    { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
 
   if (profile?.role === "vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
@@ -98,15 +98,9 @@ export function AppSidebar() {
               ) : (
                 <Moon className="h-[18px] w-[18px] flex-shrink-0" />
               )}
-              {!collapsed && (
-                <span>{theme === "dark" ? "Světlý režim" : "Tmavý režim"}</span>
-              )}
+              {!collapsed && <span>{theme === "dark" ? "Světlý režim" : "Tmavý režim"}</span>}
             </button>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="nav-item w-full"
-              title="Nastavení"
-            >
+            <button onClick={() => setSettingsOpen(true)} className="nav-item w-full" title="Nastavení">
               <Settings className="h-[18px] w-[18px] flex-shrink-0" />
               {!collapsed && <span>Nastavení</span>}
             </button>
