@@ -1004,7 +1004,7 @@ export default function Kalendar() {
   // ─── Desktop Render ────────────────────────────────────────────────────────
 
   return (
-    <div className={`flex flex-col gap-4${view === "week" ? " h-full" : ""}`}>
+    <div className={`flex flex-col gap-4${view === "week" ? " h-[calc(100vh-4rem)]" : ""}`}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
