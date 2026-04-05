@@ -389,14 +389,15 @@ function MeetingModal({
   onDelete?: () => void;
 }) {
   const [form, setForm] = useState<MeetingForm>(initial);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   useEffect(() => {
     setForm(initial);
+    setShowDeleteConfirm(false);
   }, [initial]);
   if (!open) return null;
   const set = (patch: Partial<MeetingForm>) => setForm((f) => ({ ...f, ...patch }));
   const isEdit = isEditProp ?? (!!initial.case_id && initial.date !== format(new Date(), "yyyy-MM-dd"));
   const activeCases = cases.filter((c) => c.status === "aktivni");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
