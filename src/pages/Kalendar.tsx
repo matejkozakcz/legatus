@@ -375,7 +375,28 @@ export default function Kalendar() {
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
 
-  // Click on empty time slot
+  // Save outcome only
+  const outcomeMutation = useMutation({
+    mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
+      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
+      if (error) throw error;
+      return { meetingId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
+      setDetailOpen(false);
+      toast.success("Výsledek uložen");
+      // Open follow-up
+      if (detailMeeting && !detailMeeting.cancelled && detailMeeting.case_id) {
+        const c = localCases.find((cs) => cs.id === detailMeeting.case_id);
+        if (c) {
+          setFollowUp({ caseId: detailMeeting.case_id, caseName: c.nazev_pripadu, meetingType: detailMeeting.meeting_type });
+        }
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
+  });
+
   const handleSlotClick = (dayIndex: number, hour: number, half: boolean) => {
     const day = addDays(weekStart, dayIndex);
     const time = `${String(hour).padStart(2, "0")}:${half ? "30" : "00"}`;
