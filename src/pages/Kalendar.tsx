@@ -793,6 +793,7 @@ export default function Kalendar() {
             </div>
           )}
         </div>
+        </div>{/* end scrollable */}
 
         {/* Floating button + day picker */}
         <div style={{
