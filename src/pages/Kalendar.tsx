@@ -702,7 +702,7 @@ export default function Kalendar() {
 
   if (isMobile) {
     return (
-      <div className="mobile-page" style={{ paddingBottom: 180, paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
         {/* Header */}
         <div style={{ padding: "0 20px", marginBottom: 16, paddingTop: 16 }}>
           <div className="flex items-center gap-3">
