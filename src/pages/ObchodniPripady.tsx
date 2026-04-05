@@ -1052,6 +1052,28 @@ export default function ObchodniPripady() {
         saving={saveMeetingMutation.isPending}
         cases={cases}
       />
+
+      {/* Follow-up suggestion modal */}
+      <FollowUpModal
+        open={!!followUp}
+        onClose={() => setFollowUp(null)}
+        caseName={followUp?.caseName || ""}
+        caseId={followUp?.caseId || ""}
+        meetingType={followUp?.meetingType || "FSA"}
+        onSchedule={(data) => {
+          const form: MeetingForm = {
+            ...defaultForm(data.case_id),
+            meeting_type: data.meeting_type,
+            date: data.date,
+            meeting_time: data.meeting_time,
+            duration_minutes: data.duration_minutes,
+            location_type: data.location_type,
+            location_detail: data.location_detail,
+          };
+          setFollowUp(null);
+          saveMeetingMutation.mutate({ form });
+        }}
+      />
     </div>
   );
 }
