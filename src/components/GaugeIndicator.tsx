@@ -7,9 +7,11 @@ interface GaugeIndicatorProps {
   dark?: boolean;
   /** Gauge se vybarví zeleně, pokud je podmínka splněna (value >= max) */
   completed?: boolean;
+  /** Přepíše zobrazovanou hodnotu ve středu gauge (místo raw value) */
+  valueLabel?: string;
 }
 
-export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false }: GaugeIndicatorProps) {
+export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false, valueLabel }: GaugeIndicatorProps) {
   const radius = 70;
   const stroke = 12;
   const cx = 90;
@@ -70,13 +72,13 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
         </defs>
         <text
           x={cx}
-          y={cy - 16}
+          y={valueLabel ? cy - 8 : cy - 16}
           textAnchor="middle"
-          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 32, fill: valueColor }}
+          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: valueLabel ? 26 : 32, fill: valueColor }}
         >
-          {placeholder ? "—" : value}
+          {placeholder ? "—" : (valueLabel ?? value)}
         </text>
-        {!placeholder && max > 0 && (
+        {!placeholder && max > 0 && !valueLabel && (
           <text
             x={cx}
             y={cy + 4}
