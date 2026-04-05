@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, startOfMonth, endOfMonth, isSameDay, isSameMonth, getDay } from "date-fns";
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfMonth, endOfMonth, isSameDay, isSameMonth, getDay, startOfDay, getDaysInMonth } from "date-fns";
 import { cs } from "date-fns/locale";
 import {
   Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin,
@@ -432,6 +432,24 @@ export default function Kalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
+  // Mobile: selected day for daily view
+  const [mobileDay, setMobileDay] = useState(new Date());
+  const [mobileDayPickerOpen, setMobileDayPickerOpen] = useState(false);
+  const [mobilePickerMonth, setMobilePickerMonth] = useState(new Date());
+  const mobileDayPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile day picker on outside click
+  useEffect(() => {
+    if (!mobileDayPickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (mobileDayPickerRef.current && !mobileDayPickerRef.current.contains(e.target as Node)) {
+        setMobileDayPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [mobileDayPickerOpen]);
+
   // Modals
   const [meetingFormOpen, setMeetingFormOpen] = useState(false);
   const [meetingFormInitial, setMeetingFormInitial] = useState<MeetingForm>(defaultForm());
@@ -444,8 +462,11 @@ export default function Kalendar() {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
 
-  const rangeStart = view === "week" ? weekStart : monthStart;
-  const rangeEnd = view === "week" ? weekEnd : monthEnd;
+  // For mobile: fetch just that day's range
+  const mobileDayStr = format(mobileDay, "yyyy-MM-dd");
+
+  const rangeStart = isMobile ? startOfDay(mobileDay) : (view === "week" ? weekStart : monthStart);
+  const rangeEnd = isMobile ? startOfDay(mobileDay) : (view === "week" ? weekEnd : monthEnd);
 
   // Fetch meetings
   const { data: meetings = [] } = useQuery({
@@ -766,13 +787,276 @@ export default function Kalendar() {
     ? `${format(weekStart, "d. M.", { locale: cs })} – ${format(weekEnd, "d. M. yyyy", { locale: cs })}`
     : format(currentDate, "LLLL yyyy", { locale: cs });
 
+  // ─── Mobile daily view helpers ──────────────────────────────────────────────
+
+  const mobileDayMeetings = useMemo(() => {
+    return [...meetings]
+      .filter((m) => m.date === mobileDayStr)
+      .sort((a, b) => {
+        const ta = a.meeting_time || "99:99";
+        const tb = b.meeting_time || "99:99";
+        return ta.localeCompare(tb);
+      });
+  }, [meetings, mobileDayStr]);
+
+  const isToday = isSameDay(mobileDay, new Date());
+
+  // Mobile calendar grid for day picker
+  const mobileCalendarGrid = useMemo(() => {
+    const firstDay = startOfMonth(mobilePickerMonth);
+    const lastDay = endOfMonth(mobilePickerMonth);
+    const startDow = (getDay(firstDay) + 6) % 7;
+    const cells: (Date | null)[] = [];
+    for (let i = 0; i < startDow; i++) cells.push(null);
+    let d = firstDay;
+    while (d <= lastDay) {
+      cells.push(d);
+      d = addDays(d, 1);
+    }
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [mobilePickerMonth]);
+
+  // ─── Mobile Render ─────────────────────────────────────────────────────────
+
+  if (isMobile) {
+    return (
+      <div className="mobile-page" style={{ paddingBottom: 180, paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
+        {/* Header */}
+        <div style={{ padding: "0 20px", marginBottom: 16, paddingTop: 16 }}>
+          <div className="flex items-center gap-3">
+            <Calendar className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
+            <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>Kalendář</h1>
+          </div>
+        </div>
+
+        {/* Meeting list for the day */}
+        <div style={{ padding: "0 16px" }}>
+          {mobileDayMeetings.length === 0 ? (
+            <div style={{
+              textAlign: "center",
+              padding: "48px 20px",
+              color: "var(--text-secondary, #6b8a8e)",
+              fontSize: 14,
+            }}>
+              <Calendar className="h-10 w-10 mx-auto mb-3" style={{ color: isDark ? "#2a5a62" : "#c4d8db" }} />
+              <div className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--text-primary)", marginBottom: 4 }}>
+                Žádné schůzky
+              </div>
+              <div>Na {format(mobileDay, "EEEE d. MMMM", { locale: cs })} nemáš naplánované žádné schůzky.</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {mobileDayMeetings.map((m) => {
+                const colors = getTypeColor(m.meeting_type);
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => { setDetailMeeting(m); setDetailOpen(true); }}
+                    style={{
+                      background: isDark ? "rgba(9,29,33,0.6)" : "#fff",
+                      borderRadius: 16,
+                      border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                      borderLeft: `4px solid ${colors.border}`,
+                      padding: "14px 16px",
+                      cursor: "pointer",
+                      opacity: m.cancelled ? 0.55 : 1,
+                      transition: "transform 0.1s",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 15,
+                        color: isDark ? colors.border : colors.text,
+                      }}>
+                        {meetingTypeLabel(m.meeting_type)}
+                      </span>
+                      {m.cancelled && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, color: "#fc7c71",
+                          background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
+                        }}>
+                          Zrušená
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                      {m.meeting_time && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary, #6b8a8e)" }}>
+                          <Clock size={13} />
+                          <span>{m.meeting_time.slice(0, 5)}</span>
+                          {m.duration_minutes != null && <span style={{ fontSize: 11 }}>({m.duration_minutes} min)</span>}
+                        </div>
+                      )}
+                      {m.location_type && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary, #6b8a8e)" }}>
+                          <MapPin size={13} />
+                          <span>{m.location_type === "osobne" ? "Osobně" : "Online"}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {m.case_name && (
+                      <div style={{ fontSize: 12, color: "var(--text-secondary, #6b8a8e)", marginTop: 6 }}>
+                        {m.case_name}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Floating day picker bar */}
+        <div style={{ position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 40 }}>
+          <div ref={mobileDayPickerRef} style={{
+            background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(20px) saturate(1.8)", WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+            borderRadius: 16, padding: "10px 16px",
+            border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(225,233,235,0.8)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative",
+          }}>
+            <button onClick={() => setMobileDay((d) => subDays(d, 1))}
+              style={{ width: 32, height: 32, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+            </button>
+            <button onClick={() => { setMobilePickerMonth(mobileDay); setMobileDayPickerOpen((o) => !o); }}
+              style={{ textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 10 }}>
+              <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
+                {isToday ? "Dnes" : format(mobileDay, "EEEE", { locale: cs })}
+              </div>
+              <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+                {format(mobileDay, "d. MMMM yyyy", { locale: cs })}
+              </div>
+            </button>
+            <button onClick={() => setMobileDay((d) => addDays(d, 1))}
+              style={{ width: 32, height: 32, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+            </button>
+
+            {/* Calendar popup */}
+            {mobileDayPickerOpen && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
+                background: isDark ? "#0a1f23" : "#fff", borderRadius: 14,
+                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                boxShadow: "0 -8px 24px rgba(0,0,0,0.08)", overflow: "hidden",
+              }}>
+                {/* Month navigator */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4" }}>
+                  <button onClick={() => setMobilePickerMonth((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: isDark ? "rgba(255,255,255,0.1)" : "#eef3f4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ChevronLeft size={14} color={isDark ? "#4dd8e8" : "#00555f"} />
+                  </button>
+                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+                    {format(mobilePickerMonth, "LLLL yyyy", { locale: cs })}
+                  </span>
+                  <button onClick={() => setMobilePickerMonth((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: isDark ? "rgba(255,255,255,0.1)" : "#eef3f4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ChevronRight size={14} color={isDark ? "#4dd8e8" : "#00555f"} />
+                  </button>
+                </div>
+
+                {/* Day headers */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 8px 0" }}>
+                  {DAY_NAMES.map((d) => (
+                    <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: isDark ? "#4a7a80" : "#8aadb3", padding: "4px 0" }}>{d}</div>
+                  ))}
+                </div>
+
+                {/* Day grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, padding: "4px 8px 10px" }}>
+                  {mobileCalendarGrid.map((day, idx) => {
+                    if (!day) return <div key={idx} />;
+                    const isSelected = isSameDay(day, mobileDay);
+                    const isTodayCell = isSameDay(day, new Date());
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setMobileDay(day);
+                          setMobileDayPickerOpen(false);
+                        }}
+                        style={{
+                          width: "100%", aspectRatio: "1", borderRadius: 10, border: "none",
+                          background: isSelected ? "#00abbd" : isTodayCell ? (isDark ? "rgba(0,171,189,0.2)" : "rgba(0,171,189,0.1)") : "transparent",
+                          color: isSelected ? "#fff" : isTodayCell ? "#00abbd" : (isDark ? "#c8e0e3" : "#00555f"),
+                          fontWeight: isSelected || isTodayCell ? 700 : 500,
+                          fontSize: 13, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        {format(day, "d")}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modals */}
+        <CalendarMeetingModal
+          open={meetingFormOpen}
+          onClose={() => setMeetingFormOpen(false)}
+          initial={meetingFormInitial}
+          onSave={(form) => saveMutation.mutate(form)}
+          saving={saveMutation.isPending}
+          cases={localCases}
+          onCaseCreated={(c) => setLocalCases((prev) => [c, ...prev])}
+        />
+        <MeetingDetailModal
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
+          meeting={detailMeeting}
+          onEdit={() => {
+            setDetailOpen(false);
+            if (detailMeeting) {
+              setMeetingFormInitial({
+                date: detailMeeting.date,
+                meeting_type: detailMeeting.meeting_type,
+                cancelled: detailMeeting.cancelled,
+                potencial_bj: detailMeeting.potencial_bj?.toString() || "",
+                has_poradenstvi: detailMeeting.has_poradenstvi,
+                podepsane_bj: detailMeeting.podepsane_bj?.toString() || "",
+                doporuceni_poradenstvi: detailMeeting.doporuceni_poradenstvi?.toString() || "0",
+                poradenstvi_date: detailMeeting.poradenstvi_date || "",
+                poradenstvi_status: detailMeeting.poradenstvi_status as any,
+                has_pohovor: detailMeeting.has_pohovor,
+                pohovor_jde_dal: detailMeeting.pohovor_jde_dal,
+                doporuceni_pohovor: detailMeeting.doporuceni_pohovor?.toString() || "0",
+                pohovor_date: detailMeeting.pohovor_date || "",
+                doporuceni_fsa: detailMeeting.doporuceni_fsa?.toString() || "0",
+                poznamka: detailMeeting.poznamka || "",
+                case_name: detailMeeting.case_name || "",
+                case_id: detailMeeting.case_id || "",
+                meeting_time: detailMeeting.meeting_time || "",
+                duration_minutes: detailMeeting.duration_minutes?.toString() || "",
+                location_type: detailMeeting.location_type || "",
+                location_detail: detailMeeting.location_detail || "",
+              });
+              setMeetingFormOpen(true);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ─── Desktop Render ────────────────────────────────────────────────────────
+
   return (
-    <div className={isMobile ? "mobile-page" : "space-y-4"} style={isMobile ? { paddingBottom: 120, paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" } : undefined}>
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Calendar className="h-5 w-5 md:h-6 md:w-6" style={{ color: "var(--text-primary)" }} />
-          <h1 className="font-heading font-bold text-foreground" style={{ fontSize: isMobile ? 22 : 28 }}>Kalendář</h1>
+          <Calendar className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 28 }}>Kalendář</h1>
         </div>
 
         {/* View toggle */}
