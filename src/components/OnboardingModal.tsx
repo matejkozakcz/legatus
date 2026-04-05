@@ -197,6 +197,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const fullName = `${jmeno.trim()} ${prijmeni.trim()}`.trim();
   const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? "";
   const bjNumber = parseFloat(historickyVykon);
+  const vedouciLabel = vedouciOptions.find((v) => v.id === vedouciId)?.label ?? "—";
+  const ziskatelLabel = ziskatelNotInSystem
+    ? (ziskatelName.trim() || "—")
+    : (memberOptions.find((m) => m.id === ziskatelId)?.label ?? "—");
 
   // Shared input style
   const inputStyle = {
@@ -535,6 +539,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 { label: "Jméno", value: fullName },
                 { label: "Email", value: user?.email ?? "" },
                 { label: "Pozice", value: selectedRoleLabel },
+                { label: "Vedoucí", value: vedouciLabel },
+                { label: "Získatel", value: ziskatelLabel },
                 { label: "Historický výkon", value: !isNaN(bjNumber) && bjNumber > 0 ? `${bjNumber} BJ` : "—" },
               ].map((row, i, arr) => (
                 <div
