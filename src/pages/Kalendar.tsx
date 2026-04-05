@@ -394,7 +394,8 @@ export default function Kalendar() {
                       const topOffset = min * (SLOT_HEIGHT / 30);
                       const duration = m.duration_minutes || 60;
                       const blockHeight = Math.max(duration * (SLOT_HEIGHT / 30), SLOT_HEIGHT * 0.8);
-                      const colors = getTypeColor(m.meeting_type);
+                      const status = getMeetingStatus(m);
+                      const borderColor = getTypeBorder(m.meeting_type);
 
                       return (
                         <div
@@ -403,13 +404,13 @@ export default function Kalendar() {
                           style={{
                             top: topOffset,
                             height: blockHeight,
-                            background: isDark ? colors.bg.replace("0.15", "0.25") : colors.bg,
-                            borderLeft: `3px solid ${colors.border}`,
+                            background: getStatusBg(status, isDark),
+                            borderLeft: `4px solid ${borderColor}`,
                             fontSize: 11,
                           }}
                           onClick={(e) => { e.stopPropagation(); handleMeetingClick(m); }}
                         >
-                          <div className="font-semibold truncate" style={{ color: isDark ? colors.border : colors.text }}>
+                          <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
                             {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                           </div>
                           {blockHeight > 30 && m.case_name && (
