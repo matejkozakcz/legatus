@@ -931,8 +931,11 @@ export default function Kalendar() {
           )}
         </div>
 
-        {/* Add meeting button */}
-        <div style={{ position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 41, display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Floating button + day picker */}
+        <div style={{
+          position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 40,
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
           <button
             onClick={() => {
               setMeetingFormInitial(defaultForm(mobileDayStr));
@@ -944,10 +947,6 @@ export default function Kalendar() {
             <Plus size={18} />
             Přidat schůzku
           </button>
-        </div>
-
-        {/* Floating day picker bar */}
-        <div style={{ position: "fixed", bottom: 120, left: 16, right: 16, zIndex: 40 }}>
           <div ref={mobileDayPickerRef} style={{
             background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
             backdropFilter: "blur(20px) saturate(1.8)", WebkitBackdropFilter: "blur(20px) saturate(1.8)",
