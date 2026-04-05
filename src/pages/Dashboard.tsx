@@ -276,7 +276,7 @@ function MobileStatCard({
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, godMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isMobile = useIsMobile();
