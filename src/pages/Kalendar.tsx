@@ -209,7 +209,7 @@ export default function Kalendar() {
 
   // Save meeting
   const saveMutation = useMutation({
-    mutationFn: async (form: MeetingForm) => {
+    mutationFn: async ({ form, skipFollowUp }: { form: MeetingForm; skipFollowUp?: boolean }) => {
       if (!user) throw new Error("Not logged in");
       const weekStartDate = startOfWeek(parseISO(form.date), { weekStartsOn: 1 });
       const payload = {
@@ -244,12 +244,22 @@ export default function Kalendar() {
         const { error } = await supabase.from("client_meetings").insert(payload);
         if (error) throw error;
       }
+      return { form, skipFollowUp };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
       setMeetingFormOpen(false);
+      const wasEdit = !!editingMeetingId;
       setEditingMeetingId(null);
-      toast.success(editingMeetingId ? "Schůzka upravena" : "Schůzka vytvořena");
+      toast.success(wasEdit ? "Schůzka upravena" : "Schůzka vytvořena");
+      // Show follow-up for non-cancelled meetings (not from follow-up itself)
+      const form = result.form;
+      if (!result.skipFollowUp && !form.cancelled && form.case_id) {
+        const c = localCases.find((cs) => cs.id === form.case_id);
+        if (c) {
+          setFollowUp({ caseId: form.case_id, caseName: c.nazev_pripadu, meetingType: form.meeting_type });
+        }
+      }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
   });
