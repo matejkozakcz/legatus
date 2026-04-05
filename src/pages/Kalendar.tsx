@@ -458,6 +458,9 @@ export default function Kalendar() {
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  // Week grid scroll ref
+  const weekGridScrollRef = useRef<HTMLDivElement>(null);
+
   // Week boundaries
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
