@@ -353,6 +353,60 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     });
     return map;
   }, [profiles]);
+  // Fetch cumulative BJ for all users (for progress bars)
+  const { data: bjData = [] } = useQuery({
+    queryKey: ["org_cumulative_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_records")
+        .select("user_id, bj");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: profiles.length > 0,
+  });
+
+  // Compute structure count per user (recursive)
+  const structureCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    function countBelow(nodeId: string): number {
+      const kids = childrenMap.get(nodeId) || [];
+      let total = kids.length;
+      kids.forEach((k) => { total += countBelow(k.id); });
+      counts.set(nodeId, total);
+      return total;
+    }
+    profiles.forEach((p) => { if (!counts.has(p.id)) countBelow(p.id); });
+    return counts;
+  }, [profiles, childrenMap]);
+
+  // Compute cumulative BJ per user
+  const cumulativeBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    bjData.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (r.bj || 0));
+    });
+    return map;
+  }, [bjData]);
+
+  // Progress: Získatel → cumBJ/1000, Garant → people/5, BV → people/10, Vedoucí → 100%
+  const progressMap = useMemo(() => {
+    const map = new Map<string, number>();
+    profiles.forEach((p) => {
+      let pct: number | undefined;
+      if (p.role === "ziskatel") {
+        pct = ((cumulativeBjMap.get(p.id) || 0) / 1000) * 100;
+      } else if (p.role === "garant") {
+        pct = ((structureCountMap.get(p.id) || 0) / 5) * 100;
+      } else if (p.role === "budouci_vedouci") {
+        pct = ((structureCountMap.get(p.id) || 0) / 10) * 100;
+      } else if (p.role === "vedouci") {
+        pct = 100;
+      }
+      if (pct != null) map.set(p.id, pct);
+    });
+    return map;
+  }, [profiles, cumulativeBjMap, structureCountMap]);
 
   // Compute which nodes should be collapsed by default
   // If focusUserId is set, expand the path to that person + their direct children
