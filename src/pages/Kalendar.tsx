@@ -822,9 +822,6 @@ export default function Kalendar() {
                         )}
                       </div>
                     </div>
-                        </span>
-                      )}
-                    </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                       {m.meeting_time && (
