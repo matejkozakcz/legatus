@@ -135,6 +135,30 @@ const Dashboard = () => {
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [viewingUserName, setViewingUserName] = useState<string>("");
 
+  // Transition state for smooth view switching
+  const [transitioning, setTransitioning] = useState(false);
+  const pendingSwitch = useRef<{ userId: string | null; userName: string } | null>(null);
+
+  const handlePersonSwitch = (userId: string | null, userName: string) => {
+    if (userId === viewingUserId) return;
+    setTransitioning(true);
+    pendingSwitch.current = { userId, userName };
+  };
+
+  useEffect(() => {
+    if (!transitioning) return;
+    const timer = setTimeout(() => {
+      if (pendingSwitch.current) {
+        setViewingUserId(pendingSwitch.current.userId);
+        setViewingUserName(pendingSwitch.current.userName);
+        pendingSwitch.current = null;
+      }
+      // Fade back in after a brief delay for data to settle
+      requestAnimationFrame(() => setTransitioning(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [transitioning]);
+
   // The ID used for all data queries — either impersonated user or self
   const activeUserId = viewingUserId || profile?.id || "";
   const isImpersonating = !!viewingUserId && viewingUserId !== profile?.id;
@@ -771,6 +795,11 @@ const Dashboard = () => {
         </h1>
       </div>
 
+      <div style={{
+        transition: "opacity 0.25s ease, transform 0.25s ease",
+        opacity: transitioning ? 0 : 1,
+        transform: transitioning ? "translateY(8px)" : "translateY(0)",
+      }}>
       {/* Impersonation banner */}
       {isImpersonating && (
         <div
@@ -778,7 +807,7 @@ const Dashboard = () => {
           style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
         >
           <button
-            onClick={() => { setViewingUserId(null); setViewingUserName(""); }}
+            onClick={() => handlePersonSwitch(null, "")}
             className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
             style={{ color: "#00abbd" }}
           >
@@ -834,8 +863,7 @@ const Dashboard = () => {
                   focusUserId={viewingUserId || undefined}
                   viewerRole={profile?.role}
                   onPersonClick={(userId, p) => {
-                    setViewingUserId(userId);
-                    setViewingUserName(p.full_name);
+                    handlePersonSwitch(userId, p.full_name);
                   }}
                 />
               </div>
@@ -909,6 +937,7 @@ const Dashboard = () => {
       
 
       <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+      </div>
     </div>
   );
 };
