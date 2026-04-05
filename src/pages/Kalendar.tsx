@@ -592,13 +592,25 @@ export default function Kalendar() {
 
   const today = new Date();
 
+  // Auto-scroll week grid to current hour
+  useEffect(() => {
+    if (view !== "week" || isMobile) return;
+    const el = weekGridScrollRef.current;
+    if (!el) return;
+    const now = new Date();
+    const targetHour = now.getHours();
+    // Scroll so current hour is near top, with 1 hour padding
+    const scrollTo = Math.max(0, (targetHour - 1) * SLOT_HEIGHT * 2);
+    el.scrollTop = scrollTo;
+  }, [view, isMobile, currentDate]);
+
   // ─── Week View ─────────────────────────────────────────────────────────────
 
   const renderWeekView = () => (
-    <div className="flex-1 overflow-auto rounded-2xl border border-border bg-card">
+    <div className="flex-1 rounded-2xl border border-border bg-card overflow-hidden">
       <div className="min-w-[700px]">
         {/* Day headers */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border sticky top-0 z-10 bg-card">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-card">
           <div className="p-2" />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today);
@@ -613,8 +625,12 @@ export default function Kalendar() {
           })}
         </div>
 
-        {/* Time grid */}
-        <div className="relative">
+        {/* Time grid — scrollable, 5-hour visible window */}
+        <div
+          ref={weekGridScrollRef}
+          className="relative overflow-y-auto"
+          style={{ maxHeight: GRID_VISIBLE_HEIGHT }}
+        >
           {HOURS.map((hour) => (
             <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)]" style={{ height: SLOT_HEIGHT * 2 }}>
               <div className="p-1 text-right pr-2 text-xs text-muted-foreground border-r border-border" style={{ height: SLOT_HEIGHT }}>
@@ -639,11 +655,10 @@ export default function Kalendar() {
                       onClick={() => handleSlotClick(dayIdx, hour, true)}
                     />
 
-                    {/* Meeting blocks — render only in the row matching the meeting's start hour */}
+                    {/* Meeting blocks */}
                     {dayMeetings.map((m) => {
                       if (!m.meeting_time) return null;
                       const [h, min] = m.meeting_time.split(":").map(Number);
-                      if (h < 7 || h > 21) return null;
                       if (h !== hour) return null;
                       const topOffset = min * (SLOT_HEIGHT / 30);
                       const duration = m.duration_minutes || 60;
