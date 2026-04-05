@@ -25,7 +25,7 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 };
 
 export function AppSidebar() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, godMode } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -33,7 +33,7 @@ export function AppSidebar() {
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 },
+    ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 }] : []),
     { title: "Kalendář", url: "/kalendar", icon: Calendar },
     { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase },
   ];
