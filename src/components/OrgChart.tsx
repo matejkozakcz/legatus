@@ -397,19 +397,148 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     );
   }
 
+  const [zoom, setZoom] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const didDrag = useRef(false);
+
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.15, 2)), []);
+  const zoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.15, 0.4)), []);
+
+  // Mouse drag to pan
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    const el = containerRef.current;
+    if (!el) return;
+    isDragging.current = true;
+    didDrag.current = false;
+    dragStart.current = { x: e.clientX, y: e.clientY, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop };
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag.current = true;
+      el.scrollLeft = dragStart.current.scrollLeft - dx;
+      el.scrollTop = dragStart.current.scrollTop - dy;
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      el.style.cursor = "grab";
+      el.style.userSelect = "";
+    };
+
+    // Pinch zoom on touch
+    let lastPinchDist = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDist = Math.hypot(dx, dy);
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        if (lastPinchDist > 0) {
+          const scale = dist / lastPinchDist;
+          setZoom((z) => Math.min(Math.max(z * scale, 0.4), 2));
+        }
+        lastPinchDist = dist;
+      }
+    };
+    const onTouchEnd = () => { lastPinchDist = 0; };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
   return (
-    <div className="overflow-auto" style={{ maxHeight: 520 }}>
-      <div className="flex flex-col items-center py-4 px-4 min-w-fit">
-        <TreeNode
-          node={currentUser}
-          childrenMap={childrenMap}
-          collapsedIds={collapsedIds}
-          toggleCollapse={toggleCollapse}
-          onSelect={handleSelect}
-          depth={0}
-          focusUserId={focusUserId || currentUserId}
-          isClickableFn={isClickableFn}
-        />
+    <div className="relative" style={{ width: "100%", height: "100%" }}>
+      <div
+        ref={containerRef}
+        className="overflow-auto"
+        style={{ width: "100%", height: "100%", cursor: "grab" }}
+        onMouseDown={onMouseDown}
+      >
+        <div
+          className="flex flex-col items-center py-4 px-4 min-w-fit"
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: "top center",
+            transition: "transform 0.15s ease-out",
+          }}
+        >
+          <TreeNode
+            node={currentUser}
+            childrenMap={childrenMap}
+            collapsedIds={collapsedIds}
+            toggleCollapse={toggleCollapse}
+            onSelect={handleSelect}
+            depth={0}
+            focusUserId={focusUserId || currentUserId}
+            isClickableFn={isClickableFn}
+          />
+        </div>
+      </div>
+
+      {/* Zoom buttons — bottom right */}
+      <div
+        className="absolute flex flex-col gap-1.5"
+        style={{ bottom: 12, right: 12, zIndex: 10 }}
+      >
+        <button
+          onClick={zoomIn}
+          className="flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95"
+          style={{
+            width: 36, height: 36,
+            background: "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid #E1E9EB",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            cursor: "pointer",
+          }}
+          title="Přiblížit"
+        >
+          <ZoomIn className="h-4 w-4" style={{ color: "#00555f" }} />
+        </button>
+        <button
+          onClick={zoomOut}
+          className="flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95"
+          style={{
+            width: 36, height: 36,
+            background: "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid #E1E9EB",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            cursor: "pointer",
+          }}
+          title="Oddálit"
+        >
+          <ZoomOut className="h-4 w-4" style={{ color: "#00555f" }} />
+        </button>
       </div>
     </div>
   );
