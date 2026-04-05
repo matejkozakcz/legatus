@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfMonth, endOfMonth, isSameDay, isSameMonth, getDay, startOfDay, getDaysInMonth } from "date-fns";
 import { cs } from "date-fns/locale";
 import {
-  Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin,
+  Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
