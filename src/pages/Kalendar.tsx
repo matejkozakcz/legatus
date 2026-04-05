@@ -745,14 +745,24 @@ export default function Kalendar() {
         </div>
 
         {/* Modals */}
-        <CalendarMeetingModal
+        <MeetingFormModal
           open={meetingFormOpen}
           onClose={() => setMeetingFormOpen(false)}
           initial={meetingFormInitial}
           onSave={(form) => saveMutation.mutate(form)}
           saving={saveMutation.isPending}
           cases={localCases}
+          isEdit={!!editingMeetingId}
+          allowCreateCase
           onCaseCreated={(c) => setLocalCases((prev) => [c, ...prev])}
+          createCaseFn={async (name, note) => {
+            const { data, error } = await supabase.from("cases").insert({
+              user_id: user!.id, nazev_pripadu: name, poznamka: note || null,
+            }).select().single();
+            if (error) throw error;
+            toast.success("Případ vytvořen");
+            return data as unknown as Case;
+          }}
         />
         <MeetingDetailModal
           open={detailOpen}
