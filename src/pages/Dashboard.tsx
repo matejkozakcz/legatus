@@ -338,9 +338,9 @@ const Dashboard = () => {
 
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
-    queryKey: ["vedouci_monthly_bj_meetings", profile?.id, periodStartStr],
+    queryKey: ["vedouci_monthly_bj_meetings", activeUserId, periodStartStr],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
@@ -349,24 +349,24 @@ const Dashboard = () => {
         .lte("date", periodEndStr);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!activeUserId && activeRole === "vedouci",
   });
 
   // Personal monthly BJ (current production period) — from client_meetings
   const { data: personalMonthlyBj = 0 } = useQuery({
-    queryKey: ["personal_monthly_bj_meetings", profile?.id, periodStartStr],
+    queryKey: ["personal_monthly_bj_meetings", activeUserId, periodStartStr],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { data } = await supabase
         .from("client_meetings")
         .select("podepsane_bj")
-        .eq("user_id", profile.id)
+        .eq("user_id", activeUserId)
         .eq("cancelled", false)
         .gte("date", periodStartStr)
         .lte("date", periodEndStr);
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
-    enabled: !!profile?.id,
+    enabled: !!activeUserId,
   });
 
   // Vedoucí: monthly_bj_goal from profile
