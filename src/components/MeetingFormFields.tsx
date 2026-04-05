@@ -107,6 +107,7 @@ export function MeetingFormModal({
   isEdit: isEditProp, onDelete,
   allowCreateCase, createCaseFn, onCaseCreated,
 }: MeetingFormModalProps) {
+  useBodyScrollLock(open);
   const [form, setForm] = useState<MeetingForm>(initial);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewCase, setShowNewCase] = useState(false);

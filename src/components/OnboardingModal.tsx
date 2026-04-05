@@ -18,6 +18,7 @@ interface VedouciOption {
 }
 
 export function OnboardingModal({ open }: OnboardingModalProps) {
+  useBodyScrollLock(open);
   const { user, refetchProfile } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";

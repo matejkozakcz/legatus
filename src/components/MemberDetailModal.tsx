@@ -40,6 +40,7 @@ function getWeekStart() {
 }
 
 export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
+  useBodyScrollLock(true);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";

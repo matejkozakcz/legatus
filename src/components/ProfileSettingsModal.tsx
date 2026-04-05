@@ -33,6 +33,7 @@ const AppleIcon = () => (
 );
 
 export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProps) {
+  useBodyScrollLock(open);
   const { user, profile, isAdmin, godMode, toggleGodMode } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);

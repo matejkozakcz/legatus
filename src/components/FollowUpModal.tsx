@@ -176,6 +176,7 @@ function TrackSection({
 // ─── Main modal ──────────────────────────────────────────────────────────────
 
 export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, onSchedule }: FollowUpModalProps) {
+  useBodyScrollLock(open);
   const [clientDone, setClientDone] = useState(false);
   const [recruitDone, setRecruitDone] = useState(false);
 
