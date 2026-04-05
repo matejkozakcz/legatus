@@ -151,6 +151,7 @@ function MobileStatCard({
   editable,
   onIncrement,
   onDecrement,
+  showButtons = true,
 }: {
   label: string;
   actual: number;
@@ -159,6 +160,7 @@ function MobileStatCard({
   editable: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
+  showButtons?: boolean;
 }) {
   const [pressed, setPressed] = useState<"plus" | "minus" | null>(null);
 
