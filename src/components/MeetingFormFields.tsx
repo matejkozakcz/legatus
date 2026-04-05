@@ -329,7 +329,7 @@ export function MeetingFormModal({
         </div>
 
         {/* Save button */}
-        <button onClick={() => onSave(form)} disabled={saving || !form.case_id || !form.date}
+        <button onClick={() => onSave(form)} disabled={saving || !form.case_id || !form.date || !form.meeting_time}
           className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
           {saving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
