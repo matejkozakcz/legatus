@@ -318,6 +318,15 @@ export default function Kalendar() {
   const [localCases, setLocalCases] = useState<Case[]>([]);
   useEffect(() => { setLocalCases(cases); }, [cases]);
 
+  // Enriched meetings — doplní case_name z cases pokud ho schůzka nemá
+  const caseMap = useMemo(() => new Map(cases.map(c => [c.id, (c as any).nazev_pripadu as string])), [cases]);
+  const enrichedMeetings = useMemo(() =>
+    meetings.map(m => ({
+      ...m,
+      case_name: m.case_name || (m.case_id ? (caseMap.get(m.case_id) ?? null) : null),
+    })),
+  [meetings, caseMap]);
+
   // Save meeting
   const saveMutation = useMutation({
     mutationFn: async ({ form, skipFollowUp }: { form: MeetingForm; skipFollowUp?: boolean }) => {
@@ -421,12 +430,12 @@ export default function Kalendar() {
   // Meetings by day (for week view)
   const meetingsByDay = useMemo(() => {
     const map: Record<string, Meeting[]> = {};
-    for (const m of meetings) {
+    for (const m of enrichedMeetings) {
       if (!map[m.date]) map[m.date] = [];
       map[m.date].push(m);
     }
     return map;
-  }, [meetings]);
+  }, [enrichedMeetings]);
 
   // Week days array
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
@@ -562,7 +571,7 @@ export default function Kalendar() {
 
   const renderMonthView = () => {
     const selectedDayMeetings = selectedDay
-      ? meetings.filter((m) => isSameDay(parseISO(m.date), selectedDay))
+      ? enrichedMeetings.filter((m) => isSameDay(parseISO(m.date), selectedDay))
       : [];
 
     return (
@@ -662,14 +671,14 @@ export default function Kalendar() {
   // ─── Mobile daily view helpers ──────────────────────────────────────────────
 
   const mobileDayMeetings = useMemo(() => {
-    return [...meetings]
+    return [...enrichedMeetings]
       .filter((m) => m.date === mobileDayStr)
       .sort((a, b) => {
         const ta = a.meeting_time || "99:99";
         const tb = b.meeting_time || "99:99";
         return ta.localeCompare(tb);
       });
-  }, [meetings, mobileDayStr]);
+  }, [enrichedMeetings, mobileDayStr]);
 
   const isToday = isSameDay(mobileDay, new Date());
 
