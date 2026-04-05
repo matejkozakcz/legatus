@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfMonth, endOfMonth, isSameDay, isSameMonth, getDay, startOfDay, getDaysInMonth } from "date-fns";
 import { cs } from "date-fns/locale";
 import {
-  Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin,
+  Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -60,6 +60,18 @@ function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatu
   if (m.cancelled) return "zrusena";
   const todayStr = format(new Date(), "yyyy-MM-dd");
   return m.date < todayStr ? "probehla" : "naplanovana";
+}
+
+/** Meeting is past, not cancelled, and has no outcome filled in */
+function needsFollowUp(m: Meeting): boolean {
+  if (m.cancelled) return false;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  if (m.date >= todayStr) return false; // not yet past
+  // Check if any result field was filled
+  if (m.meeting_type === "FSA") return m.doporuceni_fsa === 0;
+  if (m.meeting_type === "POR" || m.meeting_type === "SER") return m.podepsane_bj === 0 && m.doporuceni_poradenstvi === 0;
+  if (m.meeting_type === "POH") return m.pohovor_jde_dal === null && m.doporuceni_pohovor === 0;
+  return false;
 }
 
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
@@ -545,13 +557,17 @@ export default function Kalendar() {
                           }}
                           onClick={(e) => { e.stopPropagation(); handleMeetingClick(m); }}
                         >
-                          <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
-                            {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                          <div className="flex items-center gap-0.5">
+                            <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
+                              {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                            </div>
+                            {needsFollowUp(m) && <AlertCircle size={11} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           {blockHeight > 30 && (
                             <div className="text-muted-foreground" style={{ fontSize: 10 }}>
                               {m.meeting_time?.slice(0, 5)}
                               {m.cancelled && " • Zrušená"}
+                              {needsFollowUp(m) && " • Doplň výsledek"}
                             </div>
                           )}
                         </div>
@@ -656,10 +672,14 @@ export default function Kalendar() {
                         className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                         <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
+                            {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
                             {m.cancelled && " • Zrušená"}
+                            {needsFollowUp(m) && " • Doplň výsledek"}
                           </div>
                         </div>
                       </button>
@@ -782,14 +802,25 @@ export default function Kalendar() {
                       }}>
                         {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                       </span>
-                      {m.cancelled && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 600, color: "#fc7c71",
-                          background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
-                        }}>
-                          Zrušená
-                        </span>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {needsFollowUp(m) && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#fc7c71",
+                            background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
+                            display: "flex", alignItems: "center", gap: 3,
+                          }}>
+                            <AlertCircle size={10} /> Doplň výsledek
+                          </span>
+                        )}
+                        {m.cancelled && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#fc7c71",
+                            background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
+                          }}>
+                            Zrušená
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
