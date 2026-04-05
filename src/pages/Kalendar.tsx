@@ -559,6 +559,7 @@ export default function Kalendar() {
     const day = addDays(weekStart, dayIndex);
     const time = `${String(hour).padStart(2, "0")}:${half ? "30" : "00"}`;
     setMeetingFormInitial(defaultForm(format(day, "yyyy-MM-dd"), time));
+    setEditingMeetingId(null);
     setMeetingFormOpen(true);
   };
 
