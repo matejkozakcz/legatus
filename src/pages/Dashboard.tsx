@@ -270,64 +270,64 @@ const Dashboard = () => {
 
   // Získatel: lidé ve struktuře (ziskatel_id = profile.id)
   const { data: ziskatelStructureCount = 0 } = useQuery({
-    queryKey: ["ziskatel_structure_count", profile?.id],
+    queryKey: ["ziskatel_structure_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("ziskatel_id", profile.id)
+        .eq("ziskatel_id", activeUserId)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "ziskatel",
+    enabled: !!activeUserId && activeRole === "ziskatel",
   });
 
   // Garant / BV: přímí podřízení (ziskatel_id = profile.id)
   const { data: directSubordinateCount = 0 } = useQuery({
-    queryKey: ["direct_subordinate_count", profile?.id],
+    queryKey: ["direct_subordinate_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("ziskatel_id", profile.id)
+        .eq("ziskatel_id", activeUserId)
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
+    enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
 
   // Garant / BV: celá struktura (rekurzivně přes garant_id / vedouci_id)
   const { data: structureCount = 0 } = useQuery({
-    queryKey: ["structure_count", profile?.id],
+    queryKey: ["structure_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .or(`garant_id.eq.${profile.id},vedouci_id.eq.${profile.id}`)
+        .or(`garant_id.eq.${activeUserId},vedouci_id.eq.${activeUserId}`)
         .eq("is_active", true)
-        .neq("id", profile.id);
+        .neq("id", activeUserId);
       return count || 0;
     },
-    enabled: !!profile?.id && (profile?.role === "garant" || profile?.role === "budouci_vedouci"),
+    enabled: !!activeUserId && (activeRole === "garant" || activeRole === "budouci_vedouci"),
   });
 
   // Vedoucí: počet BV a Vedoucích ve struktuře
   const { data: seniorMemberCount = 0 } = useQuery({
-    queryKey: ["senior_member_count", profile?.id],
+    queryKey: ["senior_member_count", activeUserId],
     queryFn: async () => {
-      if (!profile?.id) return 0;
+      if (!activeUserId) return 0;
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("vedouci_id", profile.id)
+        .eq("vedouci_id", activeUserId)
         .in("role", ["budouci_vedouci", "vedouci"])
         .eq("is_active", true);
       return count || 0;
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!activeUserId && activeRole === "vedouci",
   });
 
   // Vedoucí: monthly BJ for entire subtree
