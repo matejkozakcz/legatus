@@ -947,6 +947,7 @@ export default function Kalendar() {
           <button
             onClick={() => {
               setMeetingFormInitial(defaultForm(mobileDayStr));
+              setEditingMeetingId(null);
               setMeetingFormOpen(true);
             }}
             className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
