@@ -2,17 +2,17 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ChevronDown, ChevronRight, TrendingUp, Bell } from "lucide-react";
+import { Users, Plus, ChevronDown, ChevronRight, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
-import { OrgChart } from "@/components/OrgChart";
+
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
-import { Button } from "@/components/ui/button";
+
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 
 interface Profile {
