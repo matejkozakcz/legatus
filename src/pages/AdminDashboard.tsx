@@ -1120,13 +1120,15 @@ function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
-  const [sendingTest, setSendingTest] = useState(false);
+  const [sendingTestId, setSendingTestId] = useState<string | null>(null);
 
-  const sendTestNotification = async () => {
-    setSendingTest(true);
+  const sendTestNotification = async (rule: NotifRule) => {
+    setSendingTestId(rule.id);
     try {
+      const title = (rule.title_template || "Test notifikace").replace(/\{\{.*?\}\}/g, "Test");
+      const body = (rule.body_template || "").replace(/\{\{.*?\}\}/g, "Test");
       const { data, error } = await supabase.functions.invoke("test-notification", {
-        body: { title: "🧪 Test notifikace", body: "Toto je testovací notifikace z admin dashboardu." },
+        body: { title, body },
       });
       if (error) throw error;
       if (data?.ok) {
@@ -1137,7 +1139,7 @@ function NotificationRulesTab() {
     } catch (e: any) {
       toast.error("Chyba: " + e.message);
     } finally {
-      setSendingTest(false);
+      setSendingTestId(null);
     }
   };
 
@@ -1265,14 +1267,9 @@ function NotificationRulesTab() {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={sendTestNotification} disabled={sendingTest} className="gap-1.5">
-            <SendHorizontal className="h-4 w-4" /> {sendingTest ? "Odesílám..." : "Test notifikace"}
-          </Button>
-          <Button size="sm" onClick={startNew} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Nové pravidlo
-          </Button>
-        </div>
+        <Button size="sm" onClick={startNew} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Nové pravidlo
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Role matrix header */}
@@ -1318,6 +1315,15 @@ function NotificationRulesTab() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => sendTestNotification(rule)}
+                          disabled={sendingTestId === rule.id}
+                          title="Odeslat testovací notifikaci"
+                        >
+                          <SendHorizontal className="h-3.5 w-3.5" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => startEdit(rule)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
