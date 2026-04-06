@@ -374,38 +374,7 @@ const SpravaTeam = () => {
     if (!isLoading && members.length > 0) checkPromotions();
   }, [isLoading, members.length, checkPromotions]);
 
-  // Force re-check: smaže zaseknuté záznamy a spustí check znovu od nuly
-  const forceCheckPromotions = useCallback(async () => {
-    if (!profile || members.length === 0) return;
-    setIsForceChecking(true);
-    try {
-      const memberIds = members.map((m) => m.id);
 
-      // Smaž pending i not_eligible promotion_requests pro členy týmu
-      await supabase
-        .from("promotion_requests")
-        .delete()
-        .in("user_id", memberIds)
-        .in("status", ["pending", "not_eligible"]);
-
-      // Smaž nepřečtené promotion_eligible notifikace pro vedoucího
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("recipient_id", profile.id)
-        .eq("type", "promotion_eligible")
-        .eq("read", false);
-
-      // Spusť check znovu – vytvoří čerstvé záznamy + odešle push
-      await runCheckPromotions(profile, members);
-      refetchRequests();
-      toast.success("Povýšení zkontrolována – oznámení odeslána");
-    } catch {
-      toast.error("Chyba při kontrole povýšení");
-    } finally {
-      setIsForceChecking(false);
-    }
-  }, [profile, members, refetchRequests]);
 
   return (
     <div className="space-y-6">
