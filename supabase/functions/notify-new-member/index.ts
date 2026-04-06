@@ -157,47 +157,87 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Collect unique recipient IDs (vedoucí, garant, získatel)
-    // Also check if vedoucí has a vedoucí above them (BV scenario — the vedoucí's vedoucí)
-    const recipientIds = new Set<string>();
-    if (vedouci_id) recipientIds.add(vedouci_id);
-    if (garant_id) recipientIds.add(garant_id);
-    if (ziskatel_id) recipientIds.add(ziskatel_id);
+    // Check notification_rules for active new_member rule
+    const { data: rules } = await supabase
+      .from("notification_rules")
+      .select("*")
+      .eq("trigger_event", "new_member")
+      .eq("is_active", true);
 
-    // Check if the vedoucí themselves has a vedoucí (= BV reports upward)
-    if (vedouci_id) {
-      const { data: vedouciProfile } = await supabase
-        .from("profiles")
-        .select("vedouci_id")
-        .eq("id", vedouci_id)
-        .single();
-      if (vedouciProfile?.vedouci_id) {
-        recipientIds.add(vedouciProfile.vedouci_id);
-      }
+    if (!rules || rules.length === 0) {
+      console.log("No active new_member notification rule found, skipping.");
+      return new Response(JSON.stringify({ ok: true, pushed: 0, reason: "rule_disabled" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    if (recipientIds.size === 0) {
+    const rule = rules[0];
+    const allowedRoles = new Set<string>(rule.recipient_roles || []);
+
+    // Build map: hierarchy ID → role
+    const hierarchyMap: { id: string; role?: string }[] = [];
+    if (vedouci_id) hierarchyMap.push({ id: vedouci_id });
+    if (garant_id && garant_id !== vedouci_id) hierarchyMap.push({ id: garant_id });
+    if (ziskatel_id && ziskatel_id !== vedouci_id && ziskatel_id !== garant_id) hierarchyMap.push({ id: ziskatel_id });
+
+    // Fetch profiles to get roles
+    const allIds = hierarchyMap.map((h) => h.id);
+    if (allIds.length === 0) {
       return new Response(JSON.stringify({ ok: true, pushed: 0, reason: "no_recipients" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get push subscriptions for all recipients
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, role, vedouci_id")
+      .in("id", allIds);
+
+    // Also check BV (vedoucí's vedoucí)
+    const vedouciProfile = profiles?.find((p) => p.id === vedouci_id);
+    if (vedouciProfile?.vedouci_id) {
+      const { data: bvProfile } = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", vedouciProfile.vedouci_id)
+        .single();
+      if (bvProfile) {
+        profiles?.push(bvProfile);
+      }
+    }
+
+    // Filter recipients by allowed roles from the rule
+    const recipientIds = (profiles || [])
+      .filter((p) => allowedRoles.has(p.role))
+      .map((p) => p.id);
+
+    if (recipientIds.length === 0) {
+      console.log("No recipients match allowed roles:", Array.from(allowedRoles));
+      return new Response(JSON.stringify({ ok: true, pushed: 0, reason: "no_matching_roles" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get push subscriptions
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("user_id, subscription")
-      .in("user_id", Array.from(recipientIds));
+      .in("user_id", recipientIds);
 
     if (!subs || subs.length === 0) {
-      console.log("No push subscriptions found for recipients:", Array.from(recipientIds));
+      console.log("No push subscriptions found for recipients:", recipientIds);
       return new Response(JSON.stringify({ ok: true, pushed: 0, reason: "no_subscriptions" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Apply template variables
+    const title = (rule.title_template || "Nový člen v týmu").replace("{{member_name}}", member_name);
+    const body = (rule.body_template || "").replace("{{member_name}}", member_name);
+
     const pushPayload = JSON.stringify({
-      title: "Nový člen v týmu",
-      body: `${member_name} se právě zaregistroval/a do vaší struktury.`,
+      title,
+      body,
       data: { type: "new_member" },
     });
 
@@ -209,8 +249,6 @@ Deno.serve(async (req) => {
         const res = await sendWebPush(sub.subscription, pushPayload, vapidPrivateKey);
         console.log(`Push to ${sub.user_id}: ${res.status}`);
         if (res.status === 201) pushed++;
-
-        // Clean up expired subscriptions
         if (res.status === 410 || res.status === 404) {
           await supabase.from("push_subscriptions").delete().eq("user_id", sub.user_id);
         }

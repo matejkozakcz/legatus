@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +79,9 @@ export default function AdminDashboard() {
           <TabsTrigger value="permissions" className="gap-1.5">
             <Lock className="h-4 w-4" /> Logika & Hierarchie
           </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-1.5">
+            <Bell className="h-4 w-4" /> Notifikace
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="promotions">
@@ -92,6 +95,9 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="permissions">
           <PermissionsTab />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationRulesTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -1061,5 +1067,419 @@ function HierarchyEditor() {
         <SqlPreviewBlock sqlPreview={rls.sqlPreview} setSqlPreview={rls.setSqlPreview} applyErrors={rls.applyErrors} />
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Notification Rules Tab ───────────────────────────────────────────────────
+
+const TRIGGER_EVENTS = [
+  { value: "new_member", label: "Nový člen", description: "Při registraci nového člena do struktury" },
+  { value: "promotion_approved", label: "Povýšení", description: "Při schválení povýšení" },
+  { value: "meeting_reminder", label: "Připomínka schůzky", description: "Před plánovanou schůzkou" },
+  { value: "weekly_summary", label: "Týdenní souhrn", description: "Souhrn aktivit na konci týdne" },
+  { value: "goal_achieved", label: "Cíl splněn", description: "Při dosažení nastaveného cíle" },
+  { value: "custom", label: "Vlastní", description: "Vlastní typ notifikace" },
+] as const;
+
+const TEMPLATE_VARS: Record<string, string[]> = {
+  new_member: ["{{member_name}}", "{{role}}"],
+  promotion_approved: ["{{member_name}}", "{{new_role}}", "{{old_role}}"],
+  meeting_reminder: ["{{client_name}}", "{{meeting_time}}", "{{meeting_type}}"],
+  weekly_summary: ["{{fsa_count}}", "{{ser_count}}", "{{poh_count}}", "{{bj_total}}"],
+  goal_achieved: ["{{member_name}}", "{{goal_name}}", "{{goal_value}}"],
+  custom: [],
+};
+
+interface NotifRule {
+  id: string;
+  name: string;
+  description: string | null;
+  trigger_event: string;
+  title_template: string;
+  body_template: string;
+  recipient_roles: string[];
+  is_active: boolean;
+  send_push: boolean;
+  send_in_app: boolean;
+}
+
+function NotificationRulesTab() {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
+
+  const { data: rules = [], isLoading } = useQuery({
+    queryKey: ["notification_rules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notification_rules")
+        .select("*")
+        .order("created_at");
+      if (error) throw error;
+      return data as NotifRule[];
+    },
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: async (rule: Partial<NotifRule>) => {
+      if (rule.id) {
+        const { error } = await supabase
+          .from("notification_rules")
+          .update({
+            name: rule.name,
+            description: rule.description,
+            trigger_event: rule.trigger_event,
+            title_template: rule.title_template,
+            body_template: rule.body_template,
+            recipient_roles: rule.recipient_roles,
+            is_active: rule.is_active,
+            send_push: rule.send_push,
+            send_in_app: rule.send_in_app,
+          })
+          .eq("id", rule.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("notification_rules")
+          .insert({
+            name: rule.name!,
+            trigger_event: rule.trigger_event!,
+            title_template: rule.title_template || "",
+            body_template: rule.body_template || "",
+            recipient_roles: rule.recipient_roles || [],
+            is_active: rule.is_active ?? true,
+            send_push: rule.send_push ?? true,
+            send_in_app: rule.send_in_app ?? true,
+            description: rule.description || null,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification_rules"] });
+      setEditingId(null);
+      setEditForm({});
+      toast.success("Pravidlo uloženo");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notification_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification_rules"] });
+      toast.success("Pravidlo smazáno");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from("notification_rules")
+        .update({ is_active })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification_rules"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEdit = (rule: NotifRule) => {
+    setEditingId(rule.id);
+    setEditForm({ ...rule });
+  };
+
+  const startNew = () => {
+    setEditingId("new");
+    setEditForm({
+      name: "",
+      trigger_event: "custom",
+      title_template: "",
+      body_template: "",
+      recipient_roles: [],
+      is_active: true,
+      send_push: true,
+      send_in_app: true,
+      description: "",
+    });
+  };
+
+  const toggleRole = (role: string) => {
+    const roles = editForm.recipient_roles || [];
+    setEditForm({
+      ...editForm,
+      recipient_roles: roles.includes(role)
+        ? roles.filter((r) => r !== role)
+        : [...roles, role],
+    });
+  };
+
+  const triggerLabel = (event: string) =>
+    TRIGGER_EVENTS.find((t) => t.value === event)?.label || event;
+
+  if (isLoading) return <div className="p-8 text-muted-foreground">Načítání...</div>;
+
+  return (
+    <Card className="border-border">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5" /> Systémové notifikace
+        </CardTitle>
+        <Button size="sm" onClick={startNew} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Nové pravidlo
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Role matrix header */}
+        <div className="text-xs text-muted-foreground mb-2">
+          Matice: kdo dostane notifikaci. Zapněte/vypněte celé pravidlo přepínačem.
+        </div>
+
+        {/* Rules list */}
+        <div className="space-y-3">
+          {rules.map((rule) => {
+            const isEditing = editingId === rule.id;
+            const form = isEditing ? editForm : rule;
+
+            return (
+              <div
+                key={rule.id}
+                className="border border-border rounded-lg p-4 space-y-3"
+                style={{ opacity: rule.is_active ? 1 : 0.6 }}
+              >
+                {isEditing ? (
+                  <EditRuleForm
+                    form={editForm}
+                    setForm={setEditForm}
+                    toggleRole={toggleRole}
+                    onSave={() => upsertMutation.mutate(editForm)}
+                    onCancel={() => { setEditingId(null); setEditForm({}); }}
+                    saving={upsertMutation.isPending}
+                  />
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Switch
+                          checked={rule.is_active}
+                          onCheckedChange={(v) => toggleActive.mutate({ id: rule.id, is_active: v })}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">{rule.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Spouštěč: {triggerLabel(rule.trigger_event)}
+                            {rule.description && ` — ${rule.description}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(rule)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm("Opravdu smazat toto pravidlo?")) {
+                              deleteMutation.mutate(rule.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Role badges */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {ROLES.map((role) => (
+                        <span
+                          key={role}
+                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          style={{
+                            background: rule.recipient_roles.includes(role) ? "#00abbd" : "#e1e9eb",
+                            color: rule.recipient_roles.includes(role) ? "#fff" : "#8e8e93",
+                          }}
+                        >
+                          {ROLE_LABELS[role]}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Push/In-app indicators */}
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      {rule.send_push && <span className="flex items-center gap-1">📱 Push</span>}
+                      {rule.send_in_app && <span className="flex items-center gap-1">🔔 In-app</span>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+
+          {/* New rule form */}
+          {editingId === "new" && (
+            <div className="border border-primary/30 rounded-lg p-4 space-y-3 bg-primary/5">
+              <EditRuleForm
+                form={editForm}
+                setForm={setEditForm}
+                toggleRole={toggleRole}
+                onSave={() => upsertMutation.mutate(editForm)}
+                onCancel={() => { setEditingId(null); setEditForm({}); }}
+                saving={upsertMutation.isPending}
+                isNew
+              />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EditRuleForm({
+  form,
+  setForm,
+  toggleRole,
+  onSave,
+  onCancel,
+  saving,
+  isNew,
+}: {
+  form: Partial<NotifRule>;
+  setForm: (f: Partial<NotifRule>) => void;
+  toggleRole: (role: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  isNew?: boolean;
+}) {
+  const vars = TEMPLATE_VARS[form.trigger_event || "custom"] || [];
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-medium">{isNew ? "Nové pravidlo" : "Upravit pravidlo"}</div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Název</Label>
+          <Input
+            value={form.name || ""}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Název notifikace"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Spouštěč</Label>
+          <Select
+            value={form.trigger_event || "custom"}
+            onValueChange={(v) => setForm({ ...form, trigger_event: v })}
+          >
+            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {TRIGGER_EVENTS.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label} — {t.description}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs">Popis</Label>
+        <Input
+          value={form.description || ""}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          placeholder="Volitelný popis"
+          className="h-8 text-sm"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Titulek notifikace</Label>
+          <Input
+            value={form.title_template || ""}
+            onChange={(e) => setForm({ ...form, title_template: e.target.value })}
+            placeholder="Titulek"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Text notifikace</Label>
+          <Input
+            value={form.body_template || ""}
+            onChange={(e) => setForm({ ...form, body_template: e.target.value })}
+            placeholder="Text s proměnnými"
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+
+      {vars.length > 0 && (
+        <div className="text-xs text-muted-foreground">
+          Dostupné proměnné: {vars.map((v) => (
+            <code key={v} className="bg-muted px-1 rounded mx-0.5">{v}</code>
+          ))}
+        </div>
+      )}
+
+      {/* Role checkboxes */}
+      <div>
+        <Label className="text-xs mb-1.5 block">Příjemci (role)</Label>
+        <div className="flex flex-wrap gap-2">
+          {ROLES.map((role) => {
+            const checked = (form.recipient_roles || []).includes(role);
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => toggleRole(role)}
+                className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                style={{
+                  background: checked ? "#00abbd" : "transparent",
+                  color: checked ? "#fff" : "inherit",
+                  borderColor: checked ? "#00abbd" : "#e1e9eb",
+                }}
+              >
+                {ROLE_LABELS[role]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Delivery toggles */}
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 text-sm">
+          <Switch
+            checked={form.send_push ?? true}
+            onCheckedChange={(v) => setForm({ ...form, send_push: v })}
+          />
+          Push notifikace
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Switch
+            checked={form.send_in_app ?? true}
+            onCheckedChange={(v) => setForm({ ...form, send_in_app: v })}
+          />
+          In-app notifikace
+        </label>
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <Button size="sm" onClick={onSave} disabled={saving || !form.name || !form.trigger_event}>
+          <Save className="h-3.5 w-3.5 mr-1" /> {saving ? "Ukládám..." : "Uložit"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCancel}>Zrušit</Button>
+      </div>
+    </div>
   );
 }
