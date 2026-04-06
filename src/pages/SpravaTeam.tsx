@@ -11,6 +11,7 @@ import { fireConfetti } from "@/lib/confetti";
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
+import { MemberDetailModal } from "@/components/MemberDetailModal";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 
