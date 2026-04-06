@@ -244,6 +244,42 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
               );
             })}
 
+            {/* Textové shrnutí */}
+            {activeGoals.some((g) => (form as any)[g.goalField] > 0) && (
+              <div
+                className="rounded-xl p-3"
+                style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
+              >
+                <div className="text-xs font-semibold text-muted-foreground mb-1.5">Shrnutí cílů</div>
+                <ol className="list-decimal list-inside space-y-0.5">
+                  {activeGoals
+                    .filter((g) => (form as any)[g.goalField] > 0)
+                    .map((g, i) => {
+                      const val = (form as any)[g.goalField];
+                      const isPeople = PEOPLE_GOAL_KEYS.includes(g.key);
+                      const scopeField = `${g.key}_scope` as keyof FormData;
+                      const scope = (form as any)[scopeField] as string;
+
+                      let text = "";
+                      if (g.key === "team_bj") {
+                        text = `Napsat týmově ${val.toLocaleString("cs-CZ")} BJ.`;
+                      } else if (g.key === "personal_bj") {
+                        text = `Napsat osobně ${val.toLocaleString("cs-CZ")} BJ.`;
+                      } else {
+                        const scopeLabel = scope === "direct" ? "v přímé struktuře" : "v celé struktuře";
+                        text = `Mít ${scopeLabel} ${val} ${g.label.replace("Počet ", "")}.`;
+                      }
+
+                      return (
+                        <li key={g.key} className="text-xs" style={{ color: "var(--text-primary)" }}>
+                          {text}
+                        </li>
+                      );
+                    })}
+                </ol>
+              </div>
+            )}
+
             <button
               onClick={handleSave}
               disabled={saving}
