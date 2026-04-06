@@ -444,9 +444,58 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
+  // Vedoucí: počet Garantů ve struktuře
+  const { data: garantCount = 0 } = useQuery({
+    queryKey: ["garant_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "garant")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  // Vedoucí: počet BV ve struktuře
+  const { data: bvCount = 0 } = useQuery({
+    queryKey: ["bv_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "budouci_vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  // Vedoucí: počet Vedoucích (samostatných) ve struktuře
+  const { data: vedouciSubCount = 0 } = useQuery({
+    queryKey: ["vedouci_sub_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
   // Period dates from picker (used by Stav byznysu + Přehled aktivit)
   const periodStartStr = format(selectedPeriod.start, "yyyy-MM-dd");
   const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
+  const periodKey = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
 
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
@@ -481,47 +530,23 @@ const Dashboard = () => {
     enabled: !!activeUserId,
   });
 
-  // Vedoucí: monthly_bj_goal from profile
-  const monthlyBjGoal = activeProfile?.monthly_bj_goal || 0;
-  const personalBjGoal = (activeProfile as any)?.personal_bj_goal || 0;
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [goalInputValue, setGoalInputValue] = useState("");
-  const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
-  const [personalGoalInputValue, setPersonalGoalInputValue] = useState("");
-
-  const updateGoalMutation = useMutation({
-    mutationFn: async (newGoal: number) => {
-      if (!profile?.id) throw new Error("No user");
-      const { error } = await supabase
-        .from("profiles")
-        .update({ monthly_bj_goal: newGoal } as any)
-        .eq("id", profile.id);
-      if (error) throw error;
+  // Vedoucí goals per period
+  const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
+    queryKey: ["vedouci_goals", profile?.id, periodKey],
+    queryFn: async () => {
+      if (!profile?.id) return null;
+      const { data } = await supabase
+        .from("vedouci_goals" as any)
+        .select("*")
+        .eq("user_id", profile.id)
+        .eq("period_key", periodKey)
+        .maybeSingle();
+      return data as any;
     },
-    onSuccess: () => {
-      setEditingGoal(false);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      window.location.reload();
-    },
+    enabled: !!profile?.id && activeRole === "vedouci",
   });
 
-  const updatePersonalGoalMutation = useMutation({
-    mutationFn: async (newGoal: number) => {
-      if (!profile?.id) throw new Error("No user");
-      const { error } = await supabase
-        .from("profiles")
-        .update({ personal_bj_goal: newGoal } as any)
-        .eq("id", profile.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setEditingPersonalGoal(false);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      window.location.reload();
-    },
-  });
-
-  // Filter pills removed — period picker in header drives everything
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
