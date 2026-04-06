@@ -95,6 +95,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fire-and-forget: notify hierarchy about new member
+    try {
+      const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-new-member`;
+      fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify({
+          member_name: full_name,
+          vedouci_id,
+          garant_id,
+          ziskatel_id: ziskatel_id || null,
+        }),
+      }).catch((e) => console.error("notify-new-member fire-and-forget error:", e));
+    } catch (e) {
+      console.error("notify-new-member call error:", e);
+    }
+
     return new Response(JSON.stringify({ user: { id: newUser.user.id, email } }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
