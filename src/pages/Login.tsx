@@ -138,8 +138,6 @@ const Login = () => {
         }
       }
       setSubmitting(false);
-      }
-      setSubmitting(false);
     } else {
       setSubmitting(true);
       const { error } = await signIn(email, password);
