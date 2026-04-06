@@ -13,7 +13,7 @@ import { CreateNotificationDialog } from "@/components/CreateNotificationDialog"
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { Button } from "@/components/ui/button";
-import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
+import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 
 interface Profile {
   id: string;
@@ -218,6 +218,9 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (reqError) throw reqError;
 
+      // Log history
+      await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
+
       // Send notification to the promoted user
       const roleLabel = roleBadge[newRole]?.label || newRole;
       const { data: notifData } = await supabase.from("notifications").insert({
@@ -251,12 +254,13 @@ const SpravaTeam = () => {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async ({ requestId, userId, requestedRole }: { requestId: string; userId: string; requestedRole: string }) => {
       const { error } = await supabase
         .from("promotion_requests")
         .update({ status: "rejected", reviewed_by: profile!.id, reviewed_at: new Date().toISOString() })
         .eq("id", requestId);
       if (error) throw error;
+      await logPromotionHistory(userId, requestedRole, "rejected", undefined, undefined, `Zamítnuto vedoucím ${profile!.full_name}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
