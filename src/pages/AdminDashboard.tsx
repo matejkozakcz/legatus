@@ -1315,6 +1315,15 @@ function NotificationRulesTab() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => sendTestNotification(rule)}
+                          disabled={sendingTestId === rule.id}
+                          title="Odeslat testovací notifikaci"
+                        >
+                          <SendHorizontal className="h-3.5 w-3.5" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => startEdit(rule)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
