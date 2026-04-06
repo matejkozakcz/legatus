@@ -122,7 +122,7 @@ function PromotionRulesTab() {
     mutationFn: async (value: PromotionRules) => {
       const { error } = await supabase
         .from("app_config")
-        .update({ value: value as unknown as Record<string, unknown>, updated_at: new Date().toISOString() })
+        .update({ value: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() })
         .eq("key", "promotion_rules");
       if (error) throw error;
     },
@@ -259,7 +259,7 @@ function PeriodConfigTab() {
       const value = { default: day, december_rule: decRule };
       const { error } = await supabase
         .from("app_config")
-        .update({ value: value as unknown as Record<string, unknown>, updated_at: new Date().toISOString() })
+        .update({ value: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() })
         .eq("key", "period_end_day");
       if (error) throw error;
     },
