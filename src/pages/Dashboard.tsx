@@ -335,6 +335,17 @@ const Dashboard = () => {
 
   const mobileStats = useMemo(() => computeStats(mobileMeetings, todayStr), [mobileMeetings, todayStr]);
 
+  // ── Newly arranged meetings (created_at in displayed week/period) ──────────
+  const mobileNewlyArranged = useMemo(
+    () => computeNewlyArranged(mobileMeetings, mobileWeekStartStr, mobileWeekEndStr),
+    [mobileMeetings, mobileWeekStartStr, mobileWeekEndStr],
+  );
+
+  const desktopNewlyArranged = useMemo(
+    () => computeNewlyArranged(desktopMeetings, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")),
+    [desktopMeetings, dateRange],
+  );
+
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
   const activeRole = activeProfile?.role ?? "novacek";
