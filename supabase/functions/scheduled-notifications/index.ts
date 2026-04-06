@@ -47,10 +47,10 @@ Deno.serve(async (req) => {
       // Parse schedule_time (HH:MM)
       const [schedHour, schedMin] = (rule.schedule_time || "08:00").split(":").map(Number);
 
-      // Check if it's the right time (within 2 min window since cron runs every minute)
-      if (currentHour !== schedHour || Math.abs(currentMinute - schedMin) > 1) continue;
+      // Check EXACT minute match (cron runs every minute)
+      if (currentHour !== schedHour || currentMinute !== schedMin) continue;
 
-      // Check day constraints (null means "every day of week" or "every day of month")
+      // Check day constraints (null means "every day")
       if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
       if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
 
@@ -60,41 +60,57 @@ Deno.serve(async (req) => {
         if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) continue;
       }
 
-      // Get recipients based on recipient_type
-      let recipientIds: string[] = [];
+      // Mark as sent IMMEDIATELY to prevent parallel cron invocations
+      await supabase
+        .from("notification_rules")
+        .update({ last_scheduled_at: now.toISOString() })
+        .eq("id", rule.id);
+
+      // Get recipients with profile data
+      let recipients: { id: string; full_name: string; role: string }[] = [];
 
       if (rule.recipient_type === "by_role" && rule.recipient_roles?.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, role, full_name")
+          .select("id, full_name, role")
           .eq("is_active", true)
           .in("role", rule.recipient_roles);
-        recipientIds = (profiles || []).map((p: any) => p.id);
+        recipients = profiles || [];
       } else {
-        // Default: all active users (for by_role with no roles, or self/hierarchy in scheduled context)
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, full_name, role")
           .eq("is_active", true);
-        recipientIds = (profiles || []).map((p: any) => p.id);
+        recipients = profiles || [];
       }
 
-      if (recipientIds.length === 0) continue;
+      if (recipients.length === 0) continue;
 
-      // Load aggregate data for dynamic templates
-      const templateVars = await loadDynamicVars(supabase);
+      // Load global aggregate data
+      const globalVars = await loadGlobalVars(supabase, pragueTime);
 
-      // Send notifications
+      // Send notifications per recipient with personalized vars
       const fnUrl = `${supabaseUrl}/functions/v1/send-push`;
 
-      for (const recipientId of recipientIds) {
-        const title = renderTemplate(rule.title_template, templateVars);
-        const body = renderTemplate(rule.body_template, templateVars);
+      for (const recipient of recipients) {
+        // Load per-user vars (activity, meetings planned this week)
+        const userVars = await loadUserVars(supabase, recipient.id, pragueTime);
+
+        const allVars: Record<string, string | number> = {
+          ...globalVars,
+          ...userVars,
+          member_name: recipient.full_name,
+          role: recipient.role,
+          role_label: ROLE_LABELS[recipient.role] || recipient.role,
+        };
+
+        const title = renderTemplate(rule.title_template, allVars);
+        const body = renderTemplate(rule.body_template, allVars);
 
         if (rule.send_in_app) {
           const { data: notifData } = await supabase.from("notifications").insert({
-            sender_id: recipientId,
-            recipient_id: recipientId,
+            sender_id: recipient.id,
+            recipient_id: recipient.id,
             type: rule.trigger_event || "scheduled",
             title,
             body,
@@ -115,12 +131,6 @@ Deno.serve(async (req) => {
 
         totalSent++;
       }
-
-      // Mark as sent
-      await supabase
-        .from("notification_rules")
-        .update({ last_scheduled_at: now.toISOString() })
-        .eq("id", rule.id);
     }
 
     return new Response(JSON.stringify({ ok: true, sent: totalSent }), {
@@ -134,16 +144,86 @@ Deno.serve(async (req) => {
   }
 });
 
+const ROLE_LABELS: Record<string, string> = {
+  vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
+  garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
+};
+
 /**
- * Load dynamic variables for scheduled notification templates.
- * These are aggregate values across the system.
+ * Load per-user variables: their planned activities and personal stats for the current week.
  */
-async function loadDynamicVars(supabase: any): Promise<Record<string, string | number>> {
-  const now = new Date();
-  const pragueNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Prague" }));
+async function loadUserVars(supabase: any, userId: string, pragueNow: Date): Promise<Record<string, string | number>> {
   const weekStart = getWeekStart(pragueNow);
 
-  // Team-wide stats for current week
+  // Get user's activity record for this week
+  const { data: activity } = await supabase
+    .from("activity_records")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("week_start", weekStart)
+    .single();
+
+  // Get user's meetings for today
+  const today = `${pragueNow.getFullYear()}-${String(pragueNow.getMonth() + 1).padStart(2, "0")}-${String(pragueNow.getDate()).padStart(2, "0")}`;
+
+  const { data: todayMeetings } = await supabase
+    .from("client_meetings")
+    .select("id, meeting_type, cancelled")
+    .eq("user_id", userId)
+    .eq("date", today)
+    .eq("cancelled", false);
+
+  const meetings = todayMeetings || [];
+  const todayFsa = meetings.filter((m: any) => m.meeting_type === "FSA").length;
+  const todayPoh = meetings.filter((m: any) => m.meeting_type === "POH").length;
+  const todaySer = meetings.filter((m: any) => m.meeting_type === "SER").length;
+  const todayTotal = meetings.length;
+
+  // Get user's profile for goals
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("personal_bj_goal, monthly_bj_goal")
+    .eq("id", userId)
+    .single();
+
+  const a = activity || {};
+
+  return {
+    // Planned values from activity_records
+    fsa_planned: a.fsa_planned ?? 0,
+    ser_planned: a.ser_planned ?? 0,
+    poh_planned: a.poh_planned ?? 0,
+    por_planned: a.por_planned ?? 0,
+    ref_planned: a.ref_planned ?? 0,
+    // Actuals from activity_records
+    fsa_actual: a.fsa_actual ?? 0,
+    ser_actual: a.ser_actual ?? 0,
+    poh_actual: a.poh_actual ?? 0,
+    por_actual: a.por_actual ?? 0,
+    ref_actual: a.ref_actual ?? 0,
+    bj: a.bj ?? 0,
+    bj_fsa_actual: a.bj_fsa_actual ?? 0,
+    bj_ser_actual: a.bj_ser_actual ?? 0,
+    // Today's meetings
+    today_fsa: todayFsa,
+    today_poh: todayPoh,
+    today_ser: todaySer,
+    today_meetings: todayTotal,
+    // Goals
+    personal_bj_goal: profile?.personal_bj_goal ?? 0,
+    monthly_bj_goal: profile?.monthly_bj_goal ?? 0,
+  };
+}
+
+/**
+ * Load global aggregate variables across the whole team.
+ */
+async function loadGlobalVars(supabase: any, pragueNow: Date): Promise<Record<string, string | number>> {
+  const weekStart = getWeekStart(pragueNow);
+
   const { data: weekMeetings } = await supabase
     .from("client_meetings")
     .select("id, meeting_type, podepsane_bj, cancelled")
@@ -157,13 +237,11 @@ async function loadDynamicVars(supabase: any): Promise<Record<string, string | n
   const totalPoh = meetings.filter((m: any) => m.meeting_type === "POH").length;
   const totalMeetings = meetings.length;
 
-  // Active members count
   const { count: memberCount } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("is_active", true);
 
-  // Pending promotion requests
   const { count: pendingPromotions } = await supabase
     .from("promotion_requests")
     .select("id", { count: "exact", head: true })
