@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +79,9 @@ export default function AdminDashboard() {
           <TabsTrigger value="permissions" className="gap-1.5">
             <Lock className="h-4 w-4" /> Logika & Hierarchie
           </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-1.5">
+            <Bell className="h-4 w-4" /> Notifikace
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="promotions">
@@ -92,6 +95,9 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="permissions">
           <PermissionsTab />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationRulesTab />
         </TabsContent>
       </Tabs>
     </div>
