@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -733,6 +733,9 @@ function PermissionMatrixEditor() {
     "permission_matrix",
     []
   );
+  const [sqlPreview, setSqlPreview] = useState<string[] | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applyErrors, setApplyErrors] = useState<string[]>([]);
 
   const toggleAction = (tableIdx: number, role: string, action: PermAction) => {
     update((prev) =>
@@ -751,23 +754,91 @@ function PermissionMatrixEditor() {
     );
   };
 
+  const callApplyRls = async (dryRun: boolean) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Nejsi přihlášen"); return; }
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/apply-rls`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ matrix: rules, dry_run: dryRun }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Chyba");
+    return data;
+  };
+
+  const previewSql = async () => {
+    try {
+      const data = await callApplyRls(true);
+      setSqlPreview(data.statements || []);
+      setApplyErrors(data.errors || []);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const applyToDb = async () => {
+    if (!confirm("⚠️ Tato akce SMAŽE všechny stávající RLS politiky a vytvoří nové. Opravdu pokračovat?")) return;
+    setApplying(true);
+    try {
+      // Save config first
+      await save.mutateAsync(rules);
+      const data = await callApplyRls(false);
+      setApplyErrors(data.errors || []);
+      setSqlPreview(null);
+      toast.success(`RLS politiky aplikovány (${data.applied} příkazů)`);
+    } catch (e: any) {
+      toast.error(`Chyba: ${e.message}`);
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Lock className="h-4 w-4" /> Matice oprávnění (tabulka × role)
           </CardTitle>
-          {dirty && (
-            <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
-              <Save className="h-3 w-3" /> Uložit
+          <div className="flex gap-2 flex-wrap">
+            {dirty && (
+              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+                <Save className="h-3 w-3" /> Uložit konfiguraci
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={previewSql} className="h-7 text-xs gap-1">
+              <FileCode className="h-3 w-3" /> Náhled SQL
             </Button>
-          )}
+            <Button
+              size="sm"
+              variant="default"
+              onClick={applyToDb}
+              disabled={applying}
+              className="h-7 text-xs gap-1 bg-primary hover:bg-primary/90"
+            >
+              <Zap className="h-3 w-3" /> {applying ? "Aplikuji…" : "Aplikovat na DB"}
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
+          <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Klikni na badge pro zapnutí/vypnutí oprávnění. <strong>Náhled SQL</strong> ukáže, jaké příkazy se provedou. 
+            <strong> Aplikovat na DB</strong> smaže stávající RLS politiky a vytvoří nové podle matice. 
+            ⚠️ Špatná konfigurace může zablokovat přístup k datům!
+          </p>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
@@ -815,10 +886,29 @@ function PermissionMatrixEditor() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-muted-foreground mt-3">
-          Klikni na badge pro zapnutí/vypnutí oprávnění. Změny se projeví až po uložení.
-          <br />* Toto je konfigurační reference. Skutečné RLS politiky v databázi je třeba upravit zvlášť.
-        </p>
+
+        {/* SQL Preview */}
+        {sqlPreview && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-heading font-semibold">Náhled SQL příkazů</h4>
+              <Button size="sm" variant="ghost" onClick={() => setSqlPreview(null)} className="h-7 text-xs">Zavřít</Button>
+            </div>
+            <div className="rounded-lg border border-border bg-foreground/5 p-3 max-h-64 overflow-y-auto">
+              <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">
+                {sqlPreview.join("\n\n")}
+              </pre>
+            </div>
+            {applyErrors.length > 0 && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs font-medium text-destructive mb-1">Varování:</p>
+                {applyErrors.map((e, i) => (
+                  <p key={i} className="text-[11px] text-destructive/80">{e}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
