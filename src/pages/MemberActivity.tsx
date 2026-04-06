@@ -143,6 +143,9 @@ const MemberActivity = () => {
     const bjValue = ((rec?.bj_fsa_actual || 0) + (rec?.bj_ser_actual || 0));
     const klFsa = rec?.kl_fsa_actual || 0;
 
+    const formatVal = (actual: number, planned: number) =>
+      planned > 0 ? `${actual} / ${planned}` : `${actual}`;
+
     return (
       <div className="mobile-page">
         {/* Header */}
@@ -216,21 +219,21 @@ const MemberActivity = () => {
         </div>
 
         {/* Activity cards — read-only */}
-        {MOBILE_ACTIVITIES.map(({ label, plannedKey, actualKey, plannedLabel, actualLabel }) => {
+        {MOBILE_ACTIVITIES.map(({ label, plannedKey, actualKey }) => {
           const plannedVal = rec?.[plannedKey] || 0;
           const actualVal = rec?.[actualKey] || 0;
           return (
             <div key={label} className="mobile-activity-card">
               <div style={{
                 fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15,
-                color: "var(--text-primary)", textAlign: "center", marginBottom: 14,
+                color: "var(--text-primary)", textAlign: "center", marginBottom: 10,
               }}>
                 {label}
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1, textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>
-                    {plannedLabel}
+                    Domluveno
                   </div>
                   <div style={{
                     background: "#dde8ea", borderRadius: 12, padding: "8px 0",
@@ -241,7 +244,7 @@ const MemberActivity = () => {
                 </div>
                 <div style={{ flex: 1, textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>
-                    {actualLabel}
+                    Splněno
                   </div>
                   <div style={{
                     background: "#dde8ea", borderRadius: 12, padding: "8px 0",
@@ -258,7 +261,7 @@ const MemberActivity = () => {
         {/* Bottom row: Doporučení, KL z FSA, BJ */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {[
-            { label: "Doporučení", value: `${refActual}/${refPlanned}` },
+            { label: "Doporučení", value: formatVal(refActual, refPlanned) },
             { label: "KL z FSA", value: klFsa },
             { label: "BJ", value: bjValue },
           ].map(({ label, value }) => (
@@ -274,18 +277,39 @@ const MemberActivity = () => {
           ))}
         </div>
 
-        {/* Monthly summary */}
+        {/* Monthly summary — single compact card */}
         <div style={{
-          fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15,
-          color: "var(--text-primary)", marginBottom: 8,
+          background: "#ffffff",
+          borderRadius: 16,
+          padding: "14px 16px",
+          border: "1px solid #e1e9eb",
         }}>
-          Měsíční souhrn
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
-          <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-          <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných" plannedLabel="naplánovaných" />
+          <div style={{
+            fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
+            color: "var(--text-primary)", marginBottom: 12,
+          }}>
+            Měsíční souhrn
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+            {[
+              { label: "Analýzy", actual: stats.fsa.actual, planned: stats.fsa.planned },
+              { label: "Pohovory", actual: stats.poh.actual, planned: stats.poh.planned },
+              { label: "Poradka", actual: stats.ser.actual, planned: stats.ser.planned },
+              { label: "Doporučení", actual: stats.ref.actual, planned: stats.ref.planned },
+            ].map(({ label, actual, planned }) => (
+              <div key={label}>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>
+                  {label}
+                </div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
+                  {actual}
+                  {planned > 0 && (
+                    <span style={{ fontWeight: 600, fontSize: 14, color: "#00abbd" }}> / {planned}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
