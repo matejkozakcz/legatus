@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { registerPushSubscription } from "@/lib/pushSubscription";
+import { registerPushSubscription, unregisterPushSubscription } from "@/lib/pushSubscription";
 
 interface Profile {
   id: string;
@@ -164,6 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Remove push subscription for this device before signing out
+    if (user?.id) {
+      await unregisterPushSubscription(user.id);
+    }
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
