@@ -849,13 +849,11 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3 justify-between">
-        <div className="flex items-center gap-3">
-          <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-            DASHBOARD
-          </h1>
-        </div>
+      <div className="flex items-center gap-4">
+        <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+          DASHBOARD
+        </h1>
         <ProductionMonthPicker
           selectedYear={selectedYear}
           selectedMonth={selectedMonth}
