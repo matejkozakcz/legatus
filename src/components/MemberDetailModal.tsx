@@ -3,8 +3,9 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfWeek, formatISO } from "date-fns";
-import { X, Loader2, ArrowRight } from "lucide-react";
+import { startOfWeek, formatISO, format } from "date-fns";
+import { cs } from "date-fns/locale";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
