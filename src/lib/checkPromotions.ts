@@ -77,6 +77,24 @@ async function ensureNotification(
   }
 }
 
+async function logHistory(
+  userId: string,
+  requestedRole: PromotionRole,
+  event: string,
+  cumulativeBj: number,
+  directZiskatels: number,
+  note?: string
+): Promise<void> {
+  await supabase.from("promotion_history" as any).insert({
+    user_id: userId,
+    requested_role: requestedRole,
+    event,
+    cumulative_bj: cumulativeBj,
+    direct_ziskatels: directZiskatels,
+    note: note || null,
+  });
+}
+
 function getRequestKey(userId: string, requestedRole: PromotionRole): string {
   return `${userId}:${requestedRole}`;
 }
