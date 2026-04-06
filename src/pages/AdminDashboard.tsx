@@ -1267,14 +1267,9 @@ function NotificationRulesTab() {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={sendTestNotification} disabled={sendingTest} className="gap-1.5">
-            <SendHorizontal className="h-4 w-4" /> {sendingTest ? "Odesílám..." : "Test notifikace"}
-          </Button>
-          <Button size="sm" onClick={startNew} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Nové pravidlo
-          </Button>
-        </div>
+        <Button size="sm" onClick={startNew} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Nové pravidlo
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Role matrix header */}
