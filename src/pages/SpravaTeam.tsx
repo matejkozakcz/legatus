@@ -319,7 +319,11 @@ const SpravaTeam = () => {
 
       // God Mode: see ALL users across all structures
       if (!isGodMode) {
-        query = query.eq("vedouci_id", profile.id);
+        if (profile.role === "garant") {
+          query = query.eq("garant_id", profile.id);
+        } else {
+          query = query.eq("vedouci_id", profile.id);
+        }
       }
 
       const { data, error } = await query;
