@@ -181,12 +181,13 @@ Deno.serve(async (req) => {
 
           let sql = `CREATE POLICY "${policyName}" ON public.${rule.table} FOR ${cmd} TO authenticated`;
 
+          const wrapParen = (expr: string) => expr.startsWith("(") ? expr : `(${expr})`;
           if (scope.using && scope.check) {
-            sql += ` USING ${scope.using} WITH CHECK ${scope.check}`;
+            sql += ` USING ${wrapParen(scope.using)} WITH CHECK ${wrapParen(scope.check)}`;
           } else if (scope.using) {
-            sql += ` USING ${scope.using}`;
+            sql += ` USING ${wrapParen(scope.using)}`;
           } else if (scope.check) {
-            sql += ` WITH CHECK ${scope.check}`;
+            sql += ` WITH CHECK ${wrapParen(scope.check)}`;
           }
 
           sql += ";";
