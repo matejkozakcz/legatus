@@ -1202,37 +1202,45 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
               label="Analýzy"
               actual={stats.fsa.actual}
               planned={stats.fsa.planned}
               actualLabel="proběhlých"
-              plannedLabel="domluvenných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Pohovory"
               actual={stats.poh.actual}
               planned={stats.poh.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Servisy"
               actual={stats.ser.actual}
               planned={stats.ser.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Poradenství"
               actual={stats.por.actual}
               planned={stats.por.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="celkem" />
+          </div>
+
+          <h3 className="font-heading font-semibold" style={{ fontSize: 18, color: "var(--text-primary)", marginTop: 8 }}>
+            Nově domluveno v období
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard label="Analýzy" actual={desktopNewlyArranged.fsa} actualLabel="nově domluvených" />
+            <StatCard label="Servisy" actual={desktopNewlyArranged.ser} actualLabel="nově domluvených" />
+            <StatCard label="Pohovory" actual={desktopNewlyArranged.poh} actualLabel="nově domluvených" />
           </div>
         </section>
 
