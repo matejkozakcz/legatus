@@ -1120,6 +1120,26 @@ function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const sendTestNotification = async () => {
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-notification", {
+        body: { title: "🧪 Test notifikace", body: "Toto je testovací notifikace z admin dashboardu." },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success("Testovací notifikace odeslána!");
+      } else {
+        toast.error(data?.message || "Push odběr nenalezen. Povolte si notifikace v prohlížeči.");
+      }
+    } catch (e: any) {
+      toast.error("Chyba: " + e.message);
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["notification_rules"],
