@@ -445,53 +445,48 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
-  // Vedoucí: počet Garantů ve struktuře
-  const { data: garantCount = 0 } = useQuery({
-    queryKey: ["garant_count", activeUserId],
+  // Vedoucí: recursive structure counts (BFS via ziskatel_id)
+  const { data: structureRoleCounts = { garant: 0, budouci_vedouci: 0, vedouci: 0 } } = useQuery({
+    queryKey: ["structure_role_counts", activeUserId],
     queryFn: async () => {
-      if (!activeUserId) return 0;
-      const { count } = await supabase
+      if (!activeUserId) return { garant: 0, budouci_vedouci: 0, vedouci: 0 };
+      const { data: allProfiles } = await supabase
         .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("vedouci_id", activeUserId)
-        .eq("role", "garant")
+        .select("id, role, ziskatel_id")
         .eq("is_active", true);
-      return count || 0;
+      if (!allProfiles) return { garant: 0, budouci_vedouci: 0, vedouci: 0 };
+
+      const childMap = new Map<string, string[]>();
+      allProfiles.forEach((p: any) => {
+        if (p.ziskatel_id) {
+          if (!childMap.has(p.ziskatel_id)) childMap.set(p.ziskatel_id, []);
+          childMap.get(p.ziskatel_id)!.push(p.id);
+        }
+      });
+
+      const counts = { garant: 0, budouci_vedouci: 0, vedouci: 0 };
+      const queue = [...(childMap.get(activeUserId) || [])];
+      const visited = new Set<string>();
+      while (queue.length > 0) {
+        const id = queue.shift()!;
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const profile = allProfiles.find((p: any) => p.id === id);
+        if (profile) {
+          if (profile.role === "garant") counts.garant++;
+          else if (profile.role === "budouci_vedouci") counts.budouci_vedouci++;
+          else if (profile.role === "vedouci") counts.vedouci++;
+        }
+        queue.push(...(childMap.get(id) || []));
+      }
+      return counts;
     },
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
-  // Vedoucí: počet BV ve struktuře
-  const { data: bvCount = 0 } = useQuery({
-    queryKey: ["bv_count", activeUserId],
-    queryFn: async () => {
-      if (!activeUserId) return 0;
-      const { count } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("vedouci_id", activeUserId)
-        .eq("role", "budouci_vedouci")
-        .eq("is_active", true);
-      return count || 0;
-    },
-    enabled: !!activeUserId && activeRole === "vedouci",
-  });
-
-  // Vedoucí: počet Vedoucích (samostatných) ve struktuře
-  const { data: vedouciSubCount = 0 } = useQuery({
-    queryKey: ["vedouci_sub_count", activeUserId],
-    queryFn: async () => {
-      if (!activeUserId) return 0;
-      const { count } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("vedouci_id", activeUserId)
-        .eq("role", "vedouci")
-        .eq("is_active", true);
-      return count || 0;
-    },
-    enabled: !!activeUserId && activeRole === "vedouci",
-  });
+  const garantCount = structureRoleCounts.garant;
+  const bvCount = structureRoleCounts.budouci_vedouci;
+  const vedouciSubCount = structureRoleCounts.vedouci;
 
   // Vedoucí: DIRECT counts (ziskatel_id = me) per role
   const { data: directVedouciCount = 0 } = useQuery({
