@@ -163,6 +163,7 @@ function HierarchyGroup({
             onClick={() => onEdit(parent)}
             onNotify={() => onNotify(parent)}
             depth={0}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -179,6 +180,7 @@ function HierarchyGroup({
                 onEdit={onEdit}
                 onNotify={onNotify}
                 depth={depth + 1}
+                readOnly={readOnly}
               />
             );
           })}
