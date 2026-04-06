@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VAPID_PUBLIC_KEY = "BOVc5KPYLR3HHauDIXxJnySjf3Zw-2sAN61M1Jr9xb81T1sOKZH4mIV4-vO8amKZskwJuCSymmZVxhrWVdsOx3Y";
+const VAPID_PUBLIC_KEY = "BIaU9I8TaOONOF5R8umkxf7XzXiKNGWNxqmnrYcHuwqR4EnQsUGUR9y-q35Rizjtz0kOBrA-KGjjkcSUNhSPLRY";
 
 // --- Base64url helpers ---
 function base64urlToUint8Array(b64url: string): Uint8Array {
