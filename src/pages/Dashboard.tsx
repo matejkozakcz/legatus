@@ -493,6 +493,52 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
+  // Vedoucí: DIRECT counts (ziskatel_id = me) per role
+  const { data: directVedouciCount = 0 } = useQuery({
+    queryKey: ["direct_vedouci_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  const { data: directBvCount = 0 } = useQuery({
+    queryKey: ["direct_bv_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "budouci_vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  const { data: directGarantCount = 0 } = useQuery({
+    queryKey: ["direct_garant_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "garant")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
   // Period dates from picker (used by Stav byznysu + Přehled aktivit)
   const periodStartStr = format(selectedPeriod.start, "yyyy-MM-dd");
   const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
