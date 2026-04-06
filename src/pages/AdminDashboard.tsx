@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1120,6 +1120,26 @@ function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const sendTestNotification = async () => {
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-notification", {
+        body: { title: "🧪 Test notifikace", body: "Toto je testovací notifikace z admin dashboardu." },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success("Testovací notifikace odeslána!");
+      } else {
+        toast.error(data?.message || "Push odběr nenalezen. Povolte si notifikace v prohlížeči.");
+      }
+    } catch (e: any) {
+      toast.error("Chyba: " + e.message);
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["notification_rules"],
@@ -1245,9 +1265,14 @@ function NotificationRulesTab() {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
-        <Button size="sm" onClick={startNew} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nové pravidlo
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={sendTestNotification} disabled={sendingTest} className="gap-1.5">
+            <SendHorizontal className="h-4 w-4" /> {sendingTest ? "Odesílám..." : "Test notifikace"}
+          </Button>
+          <Button size="sm" onClick={startNew} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Nové pravidlo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Role matrix header */}
