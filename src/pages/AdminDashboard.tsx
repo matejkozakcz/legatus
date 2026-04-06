@@ -1542,6 +1542,81 @@ function EditRuleForm({
         />
       </div>
 
+      {/* Schedule type */}
+      <div>
+        <Label className="text-xs mb-1.5 block">Typ spouštěče</Label>
+        <div className="flex flex-wrap gap-2">
+          {SCHEDULE_TYPES.map((st) => {
+            const checked = (form.schedule_type || "event") === st.value;
+            return (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setForm({ ...form, schedule_type: st.value, trigger_event: st.value !== "event" ? (form.trigger_event || "scheduled") : form.trigger_event })}
+                className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                style={{
+                  background: checked ? "hsl(var(--primary))" : "transparent",
+                  color: checked ? "#fff" : "inherit",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
+                }}
+              >
+                {st.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {SCHEDULE_TYPES.find((st) => st.value === (form.schedule_type || "event"))?.description}
+        </div>
+      </div>
+
+      {/* Schedule details — only for scheduled types */}
+      {(form.schedule_type || "event") !== "event" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-md bg-muted/30 border border-border">
+          <div>
+            <Label className="text-xs">Čas odeslání (UTC)</Label>
+            <Input
+              type="time"
+              value={form.schedule_time || "08:00"}
+              onChange={(e) => setForm({ ...form, schedule_time: e.target.value })}
+              className="h-8 text-sm"
+            />
+          </div>
+          {form.schedule_type === "weekly" && (
+            <div>
+              <Label className="text-xs">Den v týdnu</Label>
+              <Select
+                value={String(form.schedule_day_of_week ?? 1)}
+                onValueChange={(v) => setForm({ ...form, schedule_day_of_week: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DAY_NAMES.map((name, i) => (
+                    <SelectItem key={i} value={String(i)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {form.schedule_type === "monthly" && (
+            <div>
+              <Label className="text-xs">Den v měsíci</Label>
+              <Select
+                value={String(form.schedule_day_of_month ?? 1)}
+                onValueChange={(v) => setForm({ ...form, schedule_day_of_month: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}.</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs">Titulek notifikace</Label>
