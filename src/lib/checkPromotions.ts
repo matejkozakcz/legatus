@@ -77,6 +77,35 @@ async function ensureNotification(
   }
 }
 
+export async function logPromotionHistory(
+  userId: string,
+  requestedRole: string,
+  event: string,
+  cumulativeBj?: number,
+  directZiskatels?: number,
+  note?: string
+): Promise<void> {
+  await supabase.from("promotion_history" as any).insert({
+    user_id: userId,
+    requested_role: requestedRole,
+    event,
+    cumulative_bj: cumulativeBj ?? null,
+    direct_ziskatels: directZiskatels ?? null,
+    note: note || null,
+  });
+}
+
+async function logHistory(
+  userId: string,
+  requestedRole: PromotionRole,
+  event: string,
+  cumulativeBj: number,
+  directZiskatels: number,
+  note?: string
+): Promise<void> {
+  await logPromotionHistory(userId, requestedRole, event, cumulativeBj, directZiskatels, note);
+}
+
 function getRequestKey(userId: string, requestedRole: PromotionRole): string {
   return `${userId}:${requestedRole}`;
 }
@@ -111,6 +140,8 @@ async function syncPromotionRequest(
         status: NOT_ELIGIBLE_STATUS,
       });
 
+      await logHistory(userId, requestedRole, "not_eligible", cumulativeBj, directZiskatels, "Podmínky přestaly být splněny");
+
       await supabase
         .from("notifications")
         .delete()
@@ -139,6 +170,7 @@ async function syncPromotionRequest(
       requestByKey.set(key, inserted as ExistingPromotionRequest);
     }
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky poprvé splněny");
     await ensureNotification(profileId, title, body);
     return;
   }
@@ -161,6 +193,7 @@ async function syncPromotionRequest(
       status: PENDING_STATUS,
     });
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky opět splněny");
     await ensureNotification(profileId, title, body);
     return;
   }
@@ -188,6 +221,7 @@ async function syncPromotionRequest(
       requestByKey.set(key, inserted as ExistingPromotionRequest);
     }
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky znovu splněny po zamítnutí");
     await ensureNotification(profileId, title, body);
     return;
   }

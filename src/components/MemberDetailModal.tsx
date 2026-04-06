@@ -3,8 +3,9 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfWeek, formatISO } from "date-fns";
-import { X, Loader2, ArrowRight } from "lucide-react";
+import { startOfWeek, formatISO, format } from "date-fns";
+import { cs } from "date-fns/locale";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
@@ -67,6 +68,28 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: promotionHistory = [], isLoading: isHistoryLoading } = useQuery({
+    queryKey: ["promotion_history", member.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("promotion_history" as any)
+        .select("id, requested_role, event, cumulative_bj, direct_ziskatels, note, created_at")
+        .eq("user_id", member.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as unknown as Array<{
+        id: string;
+        requested_role: string;
+        event: string;
+        cumulative_bj: number | null;
+        direct_ziskatels: number | null;
+        note: string | null;
+        created_at: string;
+      }>;
     },
   });
 
@@ -198,6 +221,84 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
             </div>
           )}
         </div>
+
+        {/* Promotion History */}
+        {promotionHistory.length > 0 && (
+          <>
+            <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+            <div>
+              <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                Historie povýšení
+              </p>
+              {isHistoryLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
+                </div>
+              ) : (
+                <div className="space-y-0 relative">
+                  {/* Timeline line */}
+                  <div
+                    className="absolute left-[11px] top-2 bottom-2"
+                    style={{ width: 2, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }}
+                  />
+                  {promotionHistory.map((entry) => {
+                    const eventConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+                      eligible: { icon: <TrendingUp size={12} />, color: "#00abbd", label: "Splňuje podmínky" },
+                      not_eligible: { icon: <TrendingDown size={12} />, color: "#f59e0b", label: "Podmínky nesplněny" },
+                      approved: { icon: <CheckCircle2 size={12} />, color: "#3FC55D", label: "Schváleno" },
+                      rejected: { icon: <XCircle size={12} />, color: "#ef4444", label: "Zamítnuto" },
+                    };
+                    const cfg = eventConfig[entry.event] || eventConfig.eligible;
+                    const roleLabels: Record<string, string> = {
+                      garant: "Garant",
+                      budouci_vedouci: "Budoucí vedoucí",
+                      vedouci: "Vedoucí",
+                    };
+
+                    return (
+                      <div key={entry.id} className="flex items-start gap-3 py-2 relative">
+                        {/* Dot */}
+                        <div
+                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center z-10"
+                          style={{ background: isDark ? "hsl(188,18%,18%)" : "#ffffff" }}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-white"
+                            style={{ background: cfg.color }}
+                          >
+                            {cfg.icon}
+                          </div>
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+                            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                              → {roleLabels[entry.requested_role] || entry.requested_role}
+                            </span>
+                          </div>
+                          {entry.note && (
+                            <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>{entry.note}</p>
+                          )}
+                          {(entry.cumulative_bj != null || entry.direct_ziskatels != null) && (
+                            <p className="text-[10px] mt-0.5" style={{ color: isDark ? "rgba(255,255,255,0.35)" : "#9ca3af" }}>
+                              {entry.cumulative_bj != null && `BJ: ${entry.cumulative_bj}`}
+                              {entry.cumulative_bj != null && entry.direct_ziskatels != null && " · "}
+                              {entry.direct_ziskatels != null && `Struktura: ${entry.direct_ziskatels}`}
+                            </p>
+                          )}
+                          <p className="text-[10px] mt-0.5" style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#b0b8bc" }}>
+                            {format(new Date(entry.created_at), "d. MMMM yyyy, HH:mm", { locale: cs })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Divider */}
         <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />

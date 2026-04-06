@@ -387,6 +387,47 @@ export type Database = {
           },
         ]
       }
+      promotion_history: {
+        Row: {
+          created_at: string
+          cumulative_bj: number | null
+          direct_ziskatels: number | null
+          event: string
+          id: string
+          note: string | null
+          requested_role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cumulative_bj?: number | null
+          direct_ziskatels?: number | null
+          event: string
+          id?: string
+          note?: string | null
+          requested_role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cumulative_bj?: number | null
+          direct_ziskatels?: number | null
+          event?: string
+          id?: string
+          note?: string | null
+          requested_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotion_requests: {
         Row: {
           cumulative_bj: number | null
