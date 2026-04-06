@@ -36,6 +36,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
+  const [prefilled, setPrefilled] = useState(false);
 
   // Step 1 fields
   const [jmeno, setJmeno] = useState("");
@@ -46,6 +47,33 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [ziskatelName, setZiskatelName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Pre-fill from existing profile data (reactivation with keepData=true)
+  useEffect(() => {
+    if (!open || !user || prefilled) return;
+    supabase
+      .from("profiles")
+      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return;
+        setPrefilled(true);
+        const parts = (data.full_name || "").split(" ");
+        if (parts.length >= 2 && data.full_name !== user.email) {
+          setJmeno(parts[0]);
+          setPrijmeni(parts.slice(1).join(" "));
+        }
+        if (data.vedouci_id) setVedouciId(data.vedouci_id);
+        if (data.ziskatel_id) setZiskatelId(data.ziskatel_id);
+        if (data.ziskatel_name) {
+          setZiskatelNotInSystem(true);
+          setZiskatelName(data.ziskatel_name);
+        }
+        if (data.avatar_url) setAvatarUrl(data.avatar_url);
+        if (data.role && data.role !== "novacek") setSelectedRole(data.role);
+      });
+  }, [open, user, prefilled]);
 
   // Step 2 fields
   const [historickyVykon, setHistorickyVykon] = useState("");
