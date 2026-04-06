@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -601,6 +601,9 @@ function PermissionsTab() {
 
 // ─── Visibility Editor ────────────────────────────────────────────────────────
 
+const ROLE_OPTIONS = ["Admin", "Vedoucí", "Bud. vedoucí", "Garant", "Získatel", "Nováček", "Získatel / Nováček"] as const;
+const SEES_OPTIONS = ["Profily", "Aktivity & Schůzky", "Byznys případy", "Promotion requests", "Vše vlastní", "Vše"] as const;
+
 function VisibilityEditor() {
   const { data: rules, isLoading, dirty, save, update } = useConfigEditor<VisibilityRule[]>(
     "visibility_rules",
@@ -612,7 +615,7 @@ function VisibilityEditor() {
   };
 
   const addRule = () => {
-    update((prev) => [...prev, { role: "", sees: "", scope: "" }]);
+    update((prev) => [...prev, { role: "Nováček", sees: "Vše vlastní", scope: "" }]);
   };
 
   const removeRule = (index: number) => {
@@ -620,6 +623,13 @@ function VisibilityEditor() {
   };
 
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+
+  // Group by role for visual grouping
+  const grouped = rules.reduce<Record<string, { rule: VisibilityRule; idx: number }[]>>((acc, rule, idx) => {
+    if (!acc[rule.role]) acc[rule.role] = [];
+    acc[rule.role].push({ rule, idx });
+    return acc;
+  }, {});
 
   return (
     <Card>
@@ -629,7 +639,9 @@ function VisibilityEditor() {
             <Eye className="h-4 w-4" /> Kdo vidí čí data
           </CardTitle>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs">+ Přidat</Button>
+            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
+              <Plus className="h-3 w-3" /> Pravidlo
+            </Button>
             {dirty && (
               <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
                 <Save className="h-3 w-3" /> Uložit
@@ -639,35 +651,36 @@ function VisibilityEditor() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 font-medium">Role</th>
-                <th className="text-left p-3 font-medium">Vidí</th>
-                <th className="text-left p-3 font-medium">Rozsah</th>
-                <th className="p-3 w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rules.map((r, i) => (
-                <tr key={i} className="hover:bg-muted/30">
-                  <td className="p-2">
-                    <Input className="h-8 text-xs" value={r.role} onChange={(e) => updateRule(i, "role", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Input className="h-8 text-xs" value={r.sees} onChange={(e) => updateRule(i, "sees", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Input className="h-8 text-xs font-mono" value={r.scope} onChange={(e) => updateRule(i, "scope", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-destructive hover:text-destructive">×</Button>
-                  </td>
-                </tr>
+        <div className="grid gap-3 md:grid-cols-2">
+          {Object.entries(grouped).map(([role, items]) => (
+            <div key={role} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-heading font-semibold text-foreground">{role}</span>
+              </div>
+              {items.map(({ rule, idx }) => (
+                <div key={idx} className="flex items-start gap-2 pl-2 border-l-2 border-secondary/30">
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] text-muted-foreground w-10 shrink-0">Vidí</label>
+                      <Select value={rule.sees} onValueChange={(v) => updateRule(idx, "sees", v)}>
+                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SEES_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] text-muted-foreground w-10 shrink-0">Scope</label>
+                      <Input className="h-7 text-xs flex-1" value={rule.scope} onChange={(e) => updateRule(idx, "scope", e.target.value)} placeholder="Popis rozsahu…" />
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => removeRule(idx)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0 mt-0.5">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
@@ -785,12 +798,14 @@ function HierarchyEditor() {
   };
 
   const addRule = () => {
-    update((prev) => [...prev, { relationship: "", meaning: "", whoSets: "" }]);
+    update((prev) => [...prev, { relationship: "", meaning: "", whoSets: "Admin" }]);
   };
 
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const WHO_SETS_OPTIONS = ["Admin", "Vedoucí nebo Admin", "Onboarding", "Onboarding / Vedoucí / Admin", "Systém"];
 
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
 
@@ -802,7 +817,9 @@ function HierarchyEditor() {
             <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
           </CardTitle>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs">+ Přidat</Button>
+            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
+              <Plus className="h-3 w-3" /> Vazba
+            </Button>
             {dirty && (
               <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
                 <Save className="h-3 w-3" /> Uložit
@@ -812,35 +829,39 @@ function HierarchyEditor() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 font-medium">Pole</th>
-                <th className="text-left p-3 font-medium">Význam</th>
-                <th className="text-left p-3 font-medium">Kdo nastavuje</th>
-                <th className="p-3 w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rules.map((r, i) => (
-                <tr key={i} className="hover:bg-muted/30">
-                  <td className="p-2">
-                    <Input className="h-8 text-xs font-mono" value={r.relationship} onChange={(e) => updateRule(i, "relationship", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Input className="h-8 text-xs" value={r.meaning} onChange={(e) => updateRule(i, "meaning", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Input className="h-8 text-xs" value={r.whoSets} onChange={(e) => updateRule(i, "whoSets", e.target.value)} />
-                  </td>
-                  <td className="p-2">
-                    <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-destructive hover:text-destructive">×</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-3 md:grid-cols-2">
+          {rules.map((r, i) => (
+            <div key={i} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <code className="text-sm font-mono font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded">
+                  {r.relationship || "nové_pole"}
+                </code>
+                <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Název pole</label>
+                  <Input className="h-8 text-xs font-mono" value={r.relationship} onChange={(e) => updateRule(i, "relationship", e.target.value)} placeholder="nazev_pole" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Co znamená</label>
+                  <Input className="h-8 text-xs" value={r.meaning} onChange={(e) => updateRule(i, "meaning", e.target.value)} placeholder="Popis významu…" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Kdo nastavuje</label>
+                  <Select value={r.whoSets} onValueChange={(v) => updateRule(i, "whoSets", v)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {WHO_SETS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
