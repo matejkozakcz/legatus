@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar, Search } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +32,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -62,6 +65,39 @@ export function AppSidebar() {
               <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">
                 LEGATUS
               </span>
+            )}
+          </div>
+
+          {/* Search bar */}
+          <div className="mb-3">
+            {collapsed ? (
+              <button
+                onClick={() => navigate("/hledani")}
+                className="nav-item w-full justify-center"
+                title="Hledat"
+              >
+                <Search className="h-[18px] w-[18px] flex-shrink-0" />
+              </button>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim().length >= 2) {
+                    navigate(`/hledani?q=${encodeURIComponent(searchQuery.trim())}`);
+                    setSearchQuery("");
+                  }
+                }}
+                className="relative"
+              >
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Hledat…"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl text-xs font-body text-white placeholder:text-white/40 bg-white/10 border border-white/10 focus:outline-none focus:border-white/25 transition-colors"
+                />
+              </form>
             )}
           </div>
 
