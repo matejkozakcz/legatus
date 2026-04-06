@@ -75,6 +75,9 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
             vedouci_count_goal: d.vedouci_count_goal || 0,
             budouci_vedouci_count_goal: d.budouci_vedouci_count_goal || 0,
             garant_count_goal: d.garant_count_goal || 0,
+            vedouci_count_scope: d.vedouci_count_scope || "direct",
+            budouci_vedouci_count_scope: d.budouci_vedouci_count_scope || "direct",
+            garant_count_scope: d.garant_count_scope || "direct",
           });
         } else {
           setForm(defaultForm);
