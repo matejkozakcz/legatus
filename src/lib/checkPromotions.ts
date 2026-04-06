@@ -85,7 +85,7 @@ export async function logPromotionHistory(
   directZiskatels?: number,
   note?: string
 ): Promise<void> {
-  await supabase.from("promotion_history" as any).insert({
+  await supabase.from("promotion_history").insert({
     user_id: userId,
     requested_role: requestedRole,
     event,

@@ -75,7 +75,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
     queryKey: ["promotion_history", member.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("promotion_history" as any)
+        .from("promotion_history")
         .select("id, requested_role, event, cumulative_bj, direct_ziskatels, note, created_at")
         .eq("user_id", member.id)
         .order("created_at", { ascending: false })
