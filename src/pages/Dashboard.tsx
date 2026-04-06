@@ -681,7 +681,7 @@ const Dashboard = () => {
               </div>
             ) : role === "vedouci" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                {[selectedGoal1, selectedGoal2].map((gk) => {
+                {vedouciGaugeKeys.map((gk) => {
                   const val = getGoalValue(gk);
                   const max = getGoalMax(gk);
                   const done = max > 0 && val >= max;
@@ -866,7 +866,7 @@ const Dashboard = () => {
               <Pencil size={12} /> Upravit cíle
             </button>
           )}
-          {[selectedGoal1, selectedGoal2].map((gk) => {
+          {vedouciGaugeKeys.map((gk) => {
             const val = getGoalValue(gk);
             const max = getGoalMax(gk);
             const done = max > 0 && val >= max;
