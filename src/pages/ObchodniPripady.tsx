@@ -224,19 +224,51 @@ function CaseAccordion({
   const sumBj = activeMeetings.reduce((s, m) => s + (m.podepsane_bj || 0), 0);
 
   return (
-    <div className="legatus-card overflow-hidden">
-      <div className="flex items-center gap-2 p-4 cursor-pointer select-none" onClick={() => setExpanded((e) => !e)}>
-        {expanded ? (
-          <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        ) : (
-          <ChevronRightIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        )}
-        <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
-          {c.nazev_pripadu}
-        </span>
-        {/* Case totals */}
+    <div className="legatus-card overflow-hidden" style={{ padding: 0 }}>
+      <div
+        className="cursor-pointer select-none"
+        style={{ padding: "10px 12px" }}
+        onClick={() => setExpanded((e) => !e)}
+      >
+        {/* Row 1: chevron + name + actions */}
+        <div className="flex items-center gap-2">
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          ) : (
+            <ChevronRightIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          )}
+          <span className="font-heading font-semibold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
+            {c.nazev_pripadu}
+          </span>
+          {c.status === "uzavreny" && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex-shrink-0">
+              Uzavřený
+            </span>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddActivity();
+            }}
+            className="p-1.5 rounded-lg transition-colors hover:bg-muted flex-shrink-0"
+            style={{ color: "#00abbd" }}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditCase();
+            }}
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Row 2: stats badges */}
         {(sumRefs > 0 || sumBj > 0) && (
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 ml-6 mt-1.5">
             {sumRefs > 0 && (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}>
                 {sumRefs} dop.
@@ -249,41 +281,17 @@ function CaseAccordion({
             )}
           </div>
         )}
-        {c.status === "uzavreny" && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-            Uzavřený
-          </span>
-        )}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddActivity();
-          }}
-          className="text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors hover:bg-muted"
-          style={{ color: "#00abbd" }}
-        >
-          + Aktivita
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditCase();
-          }}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-        >
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-        </button>
       </div>
 
       {expanded && (
         <div className="border-t border-border">
           {sorted.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground text-center">Žádné aktivity v tomto období.</p>
+            <p className="p-3 text-sm text-muted-foreground text-center">Žádné aktivity v tomto období.</p>
           ) : (
             sorted.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
                 style={m.cancelled ? { opacity: 0.45, textDecoration: "line-through" } : {}}
                 onClick={() => onClickMeeting(m)}
               >
