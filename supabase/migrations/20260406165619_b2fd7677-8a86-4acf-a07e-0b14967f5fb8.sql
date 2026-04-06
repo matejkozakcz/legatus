@@ -1,0 +1,2 @@
+ALTER TABLE public.notification_rules ADD COLUMN recipient_type text NOT NULL DEFAULT 'by_role';
+COMMENT ON COLUMN public.notification_rules.recipient_type IS 'by_role = send to users matching recipient_roles, self = send to the person who triggered the event, hierarchy = send to superiors of the triggering person filtered by recipient_roles';

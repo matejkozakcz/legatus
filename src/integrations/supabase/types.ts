@@ -267,6 +267,7 @@ export type Database = {
           is_active: boolean
           name: string
           recipient_roles: string[]
+          recipient_type: string
           send_in_app: boolean
           send_push: boolean
           title_template: string
@@ -281,6 +282,7 @@ export type Database = {
           is_active?: boolean
           name: string
           recipient_roles?: string[]
+          recipient_type?: string
           send_in_app?: boolean
           send_push?: boolean
           title_template?: string
@@ -295,6 +297,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           recipient_roles?: string[]
+          recipient_type?: string
           send_in_app?: boolean
           send_push?: boolean
           title_template?: string
