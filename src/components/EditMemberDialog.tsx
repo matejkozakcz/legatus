@@ -224,9 +224,6 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
     mutationFn: async (newRole: string) => {
       if (!member) return;
       const updateData: Record<string, unknown> = { role: newRole };
-      if (newRole === "vedouci") {
-        updateData.vedouci_id = null;
-      }
       const { error } = await supabase
         .from("profiles")
         .update(updateData)
