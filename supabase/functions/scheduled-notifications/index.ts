@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
     const currentDow = pragueTime.getDay(); // 0=Sunday
     const currentDom = pragueTime.getDate();
 
+    console.log(`[scheduled-notifications] Prague time: ${currentHour}:${currentMinute}, dow=${currentDow}, dom=${currentDom}`);
+
     // Load all active scheduled rules
     const { data: rules, error: rulesError } = await supabase
       .from("notification_rules")
