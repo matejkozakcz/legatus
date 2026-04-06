@@ -184,20 +184,25 @@ export function AppSidebar() {
         <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.full_name}
-                  className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,255,255,0.12)" }}
-                >
-                  <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
-                </div>
-              )}
+              <div className={`relative flex-shrink-0 ${godMode ? "god-mode-avatar" : ""}`}>
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.full_name}
+                    className="w-9 h-9 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(255,255,255,0.12)" }}
+                  >
+                    <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
+                  </div>
+                )}
+                {godMode && (
+                  <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>
+                )}
+              </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-heading font-semibold text-white truncate">{profile?.full_name}</p>
