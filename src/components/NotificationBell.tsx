@@ -137,10 +137,8 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
       {open && (
         <div
           ref={panelRef}
-          className="absolute top-full mt-2 min-w-80 max-h-96 overflow-y-auto rounded-2xl border shadow-xl z-50"
+          className="fixed sm:absolute top-16 sm:top-full left-4 right-4 sm:left-auto sm:right-0 mt-0 sm:mt-2 max-h-96 overflow-y-auto rounded-2xl border shadow-xl z-50"
           style={{
-            right: 0,
-            width: "calc(100vw - 32px)",
             maxWidth: 380,
             background: isDark ? "hsl(var(--card))" : "hsl(var(--card))",
             borderColor: isDark ? "rgba(255,255,255,0.1)" : "hsl(var(--border))",
