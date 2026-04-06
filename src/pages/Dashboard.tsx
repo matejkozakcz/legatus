@@ -1123,6 +1123,15 @@ const Dashboard = () => {
         </section>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+        {profile?.id && (
+          <VedouciGoalsModal
+            open={goalsModalOpen}
+            onClose={() => setGoalsModalOpen(false)}
+            userId={profile.id}
+            periodKey={periodKey}
+            onSaved={() => refetchGoals()}
+          />
+        )}
       </div>
     </div>
   );
