@@ -88,7 +88,9 @@ async function createVapidJwt(
   rawSig.set(r, 0);
   rawSig.set(s, 32);
 
-  return `${unsigned}.${uint8ArrayToBase64url(rawSig)}`;
+  const token = `${unsigned}.${uint8ArrayToBase64url(rawSig)}`;
+  console.log(`VAPID JWT aud=${audience} sub=${subject} token_len=${token.length}`);
+  return token;
 }
 
 // --- RFC 8291 Web Push Encryption (aes128gcm) ---
