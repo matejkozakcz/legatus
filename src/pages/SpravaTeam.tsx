@@ -193,6 +193,7 @@ function HierarchyGroup({
 const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
+  const isReadOnly = profile?.role === "garant" && !isGodMode;
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
