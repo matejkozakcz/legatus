@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
     const currentDow = pragueTime.getDay(); // 0=Sunday
     const currentDom = pragueTime.getDate();
 
+    console.log(`[scheduled-notifications] Prague time: ${currentHour}:${currentMinute}, dow=${currentDow}, dom=${currentDom}`);
+
     // Load all active scheduled rules
     const { data: rules, error: rulesError } = await supabase
       .from("notification_rules")
@@ -35,6 +37,7 @@ Deno.serve(async (req) => {
       .neq("schedule_type", "event");
 
     if (rulesError) throw rulesError;
+    console.log(`[scheduled-notifications] Found ${rules?.length ?? 0} scheduled rules`);
     if (!rules || rules.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -50,21 +53,24 @@ Deno.serve(async (req) => {
       // Check EXACT minute match (cron runs every minute)
       if (currentHour !== schedHour || currentMinute !== schedMin) continue;
 
+      console.log(`[scheduled-notifications] Rule "${rule.name}" matched! schedHour=${schedHour}, schedMin=${schedMin}`);
+
       // Check day constraints (null means "every day")
-      if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
-      if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
+      if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) { console.log(`[scheduled-notifications] Skipping: dow mismatch`); continue; }
+      if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) { console.log(`[scheduled-notifications] Skipping: dom mismatch`); continue; }
 
       // Dedup: skip if already sent within the last 23 hours
       if (rule.last_scheduled_at) {
         const lastSent = new Date(rule.last_scheduled_at).getTime();
-        if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) continue;
+        if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) { console.log(`[scheduled-notifications] Skipping: dedup`); continue; }
       }
 
       // Mark as sent IMMEDIATELY to prevent parallel cron invocations
-      await supabase
+      const { error: updateErr } = await supabase
         .from("notification_rules")
         .update({ last_scheduled_at: now.toISOString() })
         .eq("id", rule.id);
+      console.log(`[scheduled-notifications] Mark sent: ${updateErr ? updateErr.message : 'OK'}`);
 
       // Get recipients with profile data
       let recipients: { id: string; full_name: string; role: string }[] = [];
