@@ -684,10 +684,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                           {m.duration_minutes != null && <span style={{ fontSize: 11 }}>({m.duration_minutes} min)</span>}
                         </div>
                       )}
-                      {m.location_type && (
+                      {(m.location_detail || m.location_type) && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary, #6b8a8e)" }}>
                           <MapPin size={13} />
-                          <span>{m.location_type === "osobne" ? "Osobně" : "Online"}</span>
+                          <span>{m.location_detail || (m.location_type === "osobne" ? "Osobně" : "Online")}</span>
                         </div>
                       )}
                     </div>
