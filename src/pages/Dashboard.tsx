@@ -814,88 +814,171 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ── 2×3 STAT GRID (read-only, from meetings) ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <MobileStatCard
-            label="Analýzy"
-            actual={mobileStats.fsa.actual}
-            planned={mobileStats.fsa.planned}
-            sublabel="proběhlých / na týden"
-          />
-          <MobileStatCard
-            label="Pohovory"
-            actual={mobileStats.poh.actual}
-            planned={mobileStats.poh.planned}
-            sublabel="proběhlých / na týden"
-          />
-          <MobileStatCard
-            label="Servisy"
-            actual={mobileStats.ser.actual}
-            planned={mobileStats.ser.planned}
-            sublabel="proběhlých / na týden"
-          />
-          <MobileStatCard
-            label="Poradenství"
-            actual={mobileStats.por.actual}
-            planned={mobileStats.por.planned}
-            sublabel="proběhlých / na týden"
-          />
-          <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
-        </div>
-
-        {/* ── NOVĚ DOMLUVENO CARD ── */}
-        <div
-          style={{
-            background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
-            borderRadius: 16,
-            padding: "14px 16px",
-            marginBottom: 10,
-            border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              color: "#00abbd",
-              marginBottom: 12,
-            }}
-          >
-            Nově domluveno tento týden
-          </div>
-          <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
-            {[
-              { label: "Analýzy", value: mobileNewlyArranged.fsa },
-              { label: "Servisy", value: mobileNewlyArranged.ser },
-              { label: "Pohovory", value: mobileNewlyArranged.poh },
-            ].map((item) => (
-              <div key={item.label} style={{ textAlign: "center" }}>
-                <div
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 28,
-                    color: "#00555f",
-                    lineHeight: 1,
-                  }}
-                >
-                  {item.value}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "var(--text-muted)",
-                    marginTop: 4,
-                  }}
-                >
-                  {item.label}
-                </div>
+        {/* ── STAT CARDS ── */}
+        {(role === "vedouci" || role === "budouci_vedouci") ? (
+          <>
+            {/* 1) Nově domluvené schůzky */}
+            <div
+              style={{
+                background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+                borderRadius: 16,
+                padding: "14px 16px",
+                marginBottom: 10,
+                border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "#00abbd",
+                  marginBottom: 12,
+                }}
+              >
+                Nově domluveno tento týden
               </div>
-            ))}
-          </div>
-        </div>
+              <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
+                {[
+                  { label: "Analýzy", value: mobileNewlyArranged.fsa },
+                  { label: "Pohovory", value: mobileNewlyArranged.poh },
+                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                ].map((item) => (
+                  <div key={item.label} style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 800,
+                        fontSize: 28,
+                        color: "#00555f",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "var(--text-muted)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2-5) Pohovory, Doporučení, Analýzy, Poradenství */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <MobileStatCard
+                label="Pohovory"
+                actual={mobileStats.poh.actual}
+                planned={mobileStats.poh.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
+              <MobileStatCard
+                label="Analýzy"
+                actual={mobileStats.fsa.actual}
+                planned={mobileStats.fsa.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Poradenství"
+                actual={mobileStats.por.actual}
+                planned={mobileStats.por.planned}
+                sublabel="proběhlých / na týden"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <MobileStatCard
+                label="Analýzy"
+                actual={mobileStats.fsa.actual}
+                planned={mobileStats.fsa.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Pohovory"
+                actual={mobileStats.poh.actual}
+                planned={mobileStats.poh.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Servisy"
+                actual={mobileStats.ser.actual}
+                planned={mobileStats.ser.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Poradenství"
+                actual={mobileStats.por.actual}
+                planned={mobileStats.por.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
+            </div>
+
+            {/* Nově domluveno */}
+            <div
+              style={{
+                background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+                borderRadius: 16,
+                padding: "14px 16px",
+                marginBottom: 10,
+                border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "#00abbd",
+                  marginBottom: 12,
+                }}
+              >
+                Nově domluveno tento týden
+              </div>
+              <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
+                {[
+                  { label: "Analýzy", value: mobileNewlyArranged.fsa },
+                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                  { label: "Pohovory", value: mobileNewlyArranged.poh },
+                ].map((item) => (
+                  <div key={item.label} style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 800,
+                        fontSize: 28,
+                        color: "#00555f",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "var(--text-muted)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── WEEK NAVIGATOR (fixed above bottom nav) ── */}
         <div
