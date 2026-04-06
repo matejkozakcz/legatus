@@ -1099,52 +1099,113 @@ const TEMPLATE_VARS: Record<string, string[]> = {
 
 const ALL_TEMPLATE_VARS: { category: string; vars: { name: string; description: string }[] }[] = [
   {
-    category: "Člen",
+    category: "Člen / Profil",
     vars: [
       { name: "{{member_name}}", description: "Celé jméno člena" },
-      { name: "{{role}}", description: "Aktuální role člena (novacek, ziskatel, garant…)" },
-      { name: "{{role_label}}", description: "Česky pojmenovaná cílová role povýšení" },
+      { name: "{{role}}", description: "Aktuální role (novacek, ziskatel…)" },
+      { name: "{{role_label}}", description: "Česky pojmenovaná role" },
+      { name: "{{osobni_id}}", description: "Osobní ID člena" },
+      { name: "{{vedouci_name}}", description: "Jméno vedoucího" },
+      { name: "{{garant_name}}", description: "Jméno garanta" },
+      { name: "{{ziskatel_name}}", description: "Jméno získatele" },
+      { name: "{{avatar_url}}", description: "URL avataru člena" },
+      { name: "{{personal_bj_goal}}", description: "Osobní BJ cíl" },
+      { name: "{{monthly_bj_goal}}", description: "Měsíční BJ cíl" },
     ],
   },
   {
     category: "Povýšení",
     vars: [
-      { name: "{{vedouci_name}}", description: "Jméno vedoucího, který schválil/zamítl" },
       { name: "{{cumulative_bj}}", description: "Kumulativní BJ člena" },
-      { name: "{{structure_info}}", description: "Popis struktury (počet lidí, přímí)" },
+      { name: "{{direct_ziskatels}}", description: "Počet přímých získatelů" },
+      { name: "{{requested_role}}", description: "Požadovaná role povýšení" },
+      { name: "{{structure_info}}", description: "Popis struktury (počty)" },
+      { name: "{{promotion_status}}", description: "Stav žádosti (approved/rejected)" },
     ],
   },
   {
-    category: "Schůzky",
+    category: "Schůzka (detail)",
     vars: [
-      { name: "{{client_name}}", description: "Jméno klienta" },
-      { name: "{{meeting_time}}", description: "Čas schůzky" },
+      { name: "{{client_name}}", description: "Jméno klienta / název případu" },
+      { name: "{{case_name}}", description: "Název obchodního případu" },
       { name: "{{meeting_type}}", description: "Typ schůzky (FSA, SER, POH, POR)" },
+      { name: "{{meeting_date}}", description: "Datum schůzky" },
+      { name: "{{meeting_time}}", description: "Čas schůzky" },
+      { name: "{{location_type}}", description: "Typ místa (kancelář, online…)" },
+      { name: "{{location_detail}}", description: "Detail místa" },
+      { name: "{{duration_minutes}}", description: "Délka schůzky v minutách" },
+      { name: "{{bj}}", description: "BJ ze schůzky" },
+      { name: "{{podepsane_bj}}", description: "Podepsané BJ" },
+      { name: "{{potencial_bj}}", description: "Potenciální BJ" },
+      { name: "{{vizi_spoluprace}}", description: "Vize spolupráce (ano/ne)" },
     ],
   },
   {
-    category: "Cíle",
+    category: "Doporučení ze schůzky",
+    vars: [
+      { name: "{{doporuceni_fsa}}", description: "Počet doporučení na FSA" },
+      { name: "{{doporuceni_pohovor}}", description: "Počet doporučení na pohovor" },
+      { name: "{{doporuceni_poradenstvi}}", description: "Počet doporučení na poradenství" },
+      { name: "{{has_pohovor}}", description: "Naplánován pohovor (ano/ne)" },
+      { name: "{{pohovor_date}}", description: "Datum pohovoru" },
+      { name: "{{has_poradenstvi}}", description: "Naplánováno poradenství (ano/ne)" },
+      { name: "{{poradenstvi_date}}", description: "Datum poradenství" },
+      { name: "{{poradenstvi_status}}", description: "Stav poradenství" },
+    ],
+  },
+  {
+    category: "Týdenní aktivita",
+    vars: [
+      { name: "{{week_start}}", description: "Začátek týdne (datum)" },
+      { name: "{{fsa_planned}}", description: "Plánované FSA" },
+      { name: "{{fsa_actual}}", description: "Skutečné FSA" },
+      { name: "{{ser_planned}}", description: "Plánované SER" },
+      { name: "{{ser_actual}}", description: "Skutečné SER" },
+      { name: "{{poh_planned}}", description: "Plánované POH" },
+      { name: "{{poh_actual}}", description: "Skutečné POH" },
+      { name: "{{por_planned}}", description: "Plánované POR" },
+      { name: "{{por_actual}}", description: "Skutečné POR" },
+      { name: "{{ref_planned}}", description: "Plánovaná doporučení" },
+      { name: "{{ref_actual}}", description: "Skutečná doporučení" },
+      { name: "{{bj_fsa_actual}}", description: "BJ z FSA" },
+      { name: "{{bj_ser_actual}}", description: "BJ ze SER" },
+      { name: "{{kl_fsa_actual}}", description: "Klienti z FSA" },
+      { name: "{{dop_kl_actual}}", description: "Doporučení klientů" },
+    ],
+  },
+  {
+    category: "Cíle vedoucího",
     vars: [
       { name: "{{goal_name}}", description: "Název splněného cíle" },
-      { name: "{{goal_value}}", description: "Hodnota cíle" },
+      { name: "{{goal_value}}", description: "Hodnota / procento cíle" },
+      { name: "{{team_bj_goal}}", description: "Týmový BJ cíl" },
+      { name: "{{vedouci_count_goal}}", description: "Cíl počtu vedoucích" },
+      { name: "{{budouci_vedouci_count_goal}}", description: "Cíl počtu budoucích vedoucích" },
+      { name: "{{garant_count_goal}}", description: "Cíl počtu garantů" },
+    ],
+  },
+  {
+    category: "Obchodní případy",
+    vars: [
+      { name: "{{case_status}}", description: "Stav případu (aktivní, ukončený)" },
+      { name: "{{case_poznamka}}", description: "Poznámka k případu" },
     ],
   },
   {
     category: "Pravidelné (agregáty)",
     vars: [
       { name: "{{total_bj}}", description: "Celkové BJ za aktuální týden" },
-      { name: "{{total_fsa}}", description: "Počet analýz za týden" },
-      { name: "{{total_ser}}", description: "Počet servisů za týden" },
-      { name: "{{total_poh}}", description: "Počet pohovorů za týden" },
+      { name: "{{total_fsa}}", description: "Počet FSA za týden" },
+      { name: "{{total_ser}}", description: "Počet SER za týden" },
+      { name: "{{total_poh}}", description: "Počet POH za týden" },
       { name: "{{total_meetings}}", description: "Celkový počet schůzek za týden" },
       { name: "{{member_count}}", description: "Počet aktivních členů" },
-      { name: "{{pending_promotions}}", description: "Počet čekajících žádostí o povýšení" },
+      { name: "{{pending_promotions}}", description: "Čekající žádosti o povýšení" },
       { name: "{{date}}", description: "Aktuální datum (česky)" },
       { name: "{{day_name}}", description: "Název dne v týdnu (česky)" },
     ],
   },
 ];
-
 const SCHEDULE_TYPES = [
   { value: "event", label: "Událost", description: "Spustí se při výskytu události" },
   { value: "daily", label: "Denně", description: "Každý den v nastavený čas" },
@@ -1541,29 +1602,29 @@ function NotificationRulesTab() {
       </Dialog>
       {/* Variables reference modal */}
       <Dialog open={showVarsModal} onOpenChange={setShowVarsModal}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <FileCode className="h-4 w-4" /> Seznam všech proměnných
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
               Proměnné vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>. Při odeslání se nahradí skutečnou hodnotou.
             </p>
-            {ALL_TEMPLATE_VARS.map((cat) => (
-              <div key={cat.category}>
-                <div className="text-sm font-medium mb-1.5">{cat.category}</div>
-                <div className="space-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ALL_TEMPLATE_VARS.map((cat) => (
+                <div key={cat.category} className="space-y-1">
+                  <div className="text-sm font-semibold border-b pb-1 mb-1">{cat.category}</div>
                   {cat.vars.map((v) => (
-                    <div key={v.name} className="flex items-start gap-2 text-xs">
-                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0">{v.name}</code>
-                      <span className="text-muted-foreground">{v.description}</span>
+                    <div key={v.name} className="text-xs">
+                      <code className="bg-muted px-1 py-0.5 rounded font-mono text-[11px]">{v.name}</code>
+                      <span className="text-muted-foreground ml-1">{v.description}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>Zavřít</Button>
