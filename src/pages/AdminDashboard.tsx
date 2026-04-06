@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -603,6 +603,25 @@ function PermissionsTab() {
 
 const ROLE_OPTIONS = ["Admin", "Vedoucí", "Bud. vedoucí", "Garant", "Získatel", "Nováček", "Získatel / Nováček"] as const;
 const SEES_OPTIONS = ["Profily", "Aktivity & Schůzky", "Byznys případy", "Promotion requests", "Vše vlastní", "Vše"] as const;
+const SCOPE_OPTIONS = [
+  { value: "Celý svůj podstrom (is_in_vedouci_subtree)", label: "Celý podstrom" },
+  { value: "Lidé s vedouci_id = já", label: "Přímý vedoucí (vedouci_id)" },
+  { value: "Lidé s garant_id = já", label: "Moji nováčci (garant_id)" },
+  { value: "Pouze vlastní záznamy (user_id = já)", label: "Pouze vlastní" },
+  { value: "Celá databáze (is_admin())", label: "Celá databáze (admin)" },
+  { value: "Všechny (role = vedouci)", label: "Všichni vedoucí" },
+] as const;
+
+const DEFAULT_VISIBILITY: VisibilityRule[] = [
+  { role: "Vedoucí", sees: "Profily", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Aktivity & Schůzky", scope: "Lidé s vedouci_id = já" },
+  { role: "Vedoucí", sees: "Byznys případy", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Promotion requests", scope: "Všechny (role = vedouci)" },
+  { role: "Garant", sees: "Profily", scope: "Lidé s garant_id = já" },
+  { role: "Garant", sees: "Aktivity & Schůzky", scope: "Lidé s garant_id = já" },
+  { role: "Získatel / Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" },
+  { role: "Admin", sees: "Vše", scope: "Celá databáze (is_admin())" },
+];
 
 function VisibilityEditor() {
   const { data: rules, isLoading, dirty, save, update } = useConfigEditor<VisibilityRule[]>(
@@ -615,16 +634,20 @@ function VisibilityEditor() {
   };
 
   const addRule = () => {
-    update((prev) => [...prev, { role: "Nováček", sees: "Vše vlastní", scope: "" }]);
+    update((prev) => [...prev, { role: "Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" }]);
   };
 
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const resetToDefaults = () => {
+    update(() => [...DEFAULT_VISIBILITY]);
+  };
+
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
 
-  // Group by role for visual grouping
+  // Group by role
   const grouped = rules.reduce<Record<string, { rule: VisibilityRule; idx: number }[]>>((acc, rule, idx) => {
     if (!acc[rule.role]) acc[rule.role] = [];
     acc[rule.role].push({ rule, idx });
@@ -633,12 +656,15 @@ function VisibilityEditor() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Eye className="h-4 w-4" /> Kdo vidí čí data
           </CardTitle>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
+              <RotateCcw className="h-3 w-3" /> Reset
+            </Button>
             <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
               <Plus className="h-3 w-3" /> Pravidlo
             </Button>
@@ -648,6 +674,14 @@ function VisibilityEditor() {
               </Button>
             )}
           </div>
+        </div>
+        <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
+          <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Každý řádek definuje, <strong>jaká data</strong> daná role vidí a <strong>v jakém rozsahu</strong> (scope). 
+            Scope určuje filtr — např. „Celý podstrom" znamená, že Vedoucí vidí data všech lidí pod sebou v hierarchii. 
+            Toto je konfigurační dokumentace — skutečné přístupy řídí databázové politiky.
+          </p>
         </div>
       </CardHeader>
       <CardContent>
@@ -671,7 +705,12 @@ function VisibilityEditor() {
                     </div>
                     <div className="flex items-center gap-2">
                       <label className="text-[11px] text-muted-foreground w-10 shrink-0">Scope</label>
-                      <Input className="h-7 text-xs flex-1" value={rule.scope} onChange={(e) => updateRule(idx, "scope", e.target.value)} placeholder="Popis rozsahu…" />
+                      <Select value={rule.scope} onValueChange={(v) => updateRule(idx, "scope", v)}>
+                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SCOPE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => removeRule(idx)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0 mt-0.5">
@@ -787,6 +826,27 @@ function PermissionMatrixEditor() {
 
 // ─── Hierarchy Editor ─────────────────────────────────────────────────────────
 
+const DEFAULT_HIERARCHY: HierarchyRule[] = [
+  { relationship: "vedouci_id", meaning: "Vedoucí tohoto člena — řídí celý podstrom", whoSets: "Vedoucí nebo Admin" },
+  { relationship: "garant_id", meaning: "Garant tohoto nováčka — přímý mentor", whoSets: "Vedoucí nebo Admin" },
+  { relationship: "ziskatel_id", meaning: "Kdo tohoto člena získal — tvoří strukturu pro povýšení", whoSets: "Onboarding / Vedoucí / Admin" },
+  { relationship: "ziskatel_name", meaning: "Jméno získatele (záloha pokud není v systému)", whoSets: "Onboarding" },
+];
+
+const RELATIONSHIP_OPTIONS = [
+  { value: "vedouci_id", label: "vedouci_id", desc: "Kdo je vedoucí tohoto člena" },
+  { value: "garant_id", label: "garant_id", desc: "Kdo je garant tohoto nováčka" },
+  { value: "ziskatel_id", label: "ziskatel_id", desc: "Kdo tohoto člena získal" },
+  { value: "ziskatel_name", label: "ziskatel_name", desc: "Textové jméno získatele" },
+] as const;
+
+const MEANING_OPTIONS = [
+  "Vedoucí tohoto člena — řídí celý podstrom",
+  "Garant tohoto nováčka — přímý mentor",
+  "Kdo tohoto člena získal — tvoří strukturu pro povýšení",
+  "Jméno získatele (záloha pokud není v systému)",
+] as const;
+
 function HierarchyEditor() {
   const { data: rules, isLoading, dirty, save, update } = useConfigEditor<HierarchyRule[]>(
     "hierarchy_rules",
@@ -798,11 +858,15 @@ function HierarchyEditor() {
   };
 
   const addRule = () => {
-    update((prev) => [...prev, { relationship: "", meaning: "", whoSets: "Admin" }]);
+    update((prev) => [...prev, { relationship: "vedouci_id", meaning: "", whoSets: "Admin" }]);
   };
 
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const resetToDefaults = () => {
+    update(() => [...DEFAULT_HIERARCHY]);
   };
 
   const WHO_SETS_OPTIONS = ["Admin", "Vedoucí nebo Admin", "Onboarding", "Onboarding / Vedoucí / Admin", "Systém"];
@@ -811,12 +875,15 @@ function HierarchyEditor() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
           </CardTitle>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
+              <RotateCcw className="h-3 w-3" /> Reset
+            </Button>
             <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
               <Plus className="h-3 w-3" /> Vazba
             </Button>
@@ -826,6 +893,14 @@ function HierarchyEditor() {
               </Button>
             )}
           </div>
+        </div>
+        <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
+          <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Každá karta představuje jedno <strong>pole v profilu</strong> uživatele, které tvoří hierarchickou vazbu. 
+            <strong> Pole</strong> = název sloupce v databázi. <strong>Co znamená</strong> = popis funkce vazby. 
+            <strong> Kdo nastavuje</strong> = kdo má právo tuto vazbu vytvořit nebo změnit.
+          </p>
         </div>
       </CardHeader>
       <CardContent>
@@ -843,12 +918,27 @@ function HierarchyEditor() {
 
               <div className="space-y-2">
                 <div>
-                  <label className="text-[11px] text-muted-foreground mb-1 block">Název pole</label>
-                  <Input className="h-8 text-xs font-mono" value={r.relationship} onChange={(e) => updateRule(i, "relationship", e.target.value)} placeholder="nazev_pole" />
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Pole v databázi</label>
+                  <Select value={r.relationship} onValueChange={(v) => updateRule(i, "relationship", v)}>
+                    <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {RELATIONSHIP_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          <span className="font-mono">{o.label}</span>
+                          <span className="text-muted-foreground ml-2">— {o.desc}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground mb-1 block">Co znamená</label>
-                  <Input className="h-8 text-xs" value={r.meaning} onChange={(e) => updateRule(i, "meaning", e.target.value)} placeholder="Popis významu…" />
+                  <Select value={r.meaning} onValueChange={(v) => updateRule(i, "meaning", v)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MEANING_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground mb-1 block">Kdo nastavuje</label>
