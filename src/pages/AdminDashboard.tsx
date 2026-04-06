@@ -1191,6 +1191,7 @@ function NotificationRulesTab() {
   const [sendingTestId, setSendingTestId] = useState<string | null>(null);
   const [testRule, setTestRule] = useState<NotifRule | null>(null);
   const [testVars, setTestVars] = useState<Record<string, string>>({});
+  const [showVarsModal, setShowVarsModal] = useState(false);
 
   const extractPlaceholders = (rule: NotifRule): string[] => {
     const combined = `${rule.title_template} ${rule.body_template}`;
