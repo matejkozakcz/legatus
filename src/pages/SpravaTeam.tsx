@@ -457,7 +457,7 @@ const SpravaTeam = () => {
                       Schválit
                     </button>
                     <button
-                      onClick={() => rejectMutation.mutate(req.id)}
+                      onClick={() => rejectMutation.mutate({ requestId: req.id, userId: req.user_id, requestedRole: req.requested_role })}
                       className="btn btn-ghost btn-sm"
                       disabled={rejectMutation.isPending}
                     >
