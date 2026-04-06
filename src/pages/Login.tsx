@@ -130,7 +130,14 @@ const Login = () => {
       setSubmitting(true);
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        setError(error.message);
+        if (error.message.includes("already registered") || error.message.includes("already_exists")) {
+          setError("Tento e-mail je již zaregistrován. Zkus se přihlásit — pokud byl tvůj účet deaktivován, budeš moci pokračovat.");
+          setIsSignUp(false);
+        } else {
+          setError(error.message);
+        }
+      }
+      setSubmitting(false);
       }
       setSubmitting(false);
     } else {
