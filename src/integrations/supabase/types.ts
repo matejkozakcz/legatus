@@ -265,9 +265,14 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          last_scheduled_at: string | null
           name: string
           recipient_roles: string[]
           recipient_type: string
+          schedule_day_of_month: number | null
+          schedule_day_of_week: number | null
+          schedule_time: string | null
+          schedule_type: string
           send_in_app: boolean
           send_push: boolean
           title_template: string
@@ -280,9 +285,14 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          last_scheduled_at?: string | null
           name: string
           recipient_roles?: string[]
           recipient_type?: string
+          schedule_day_of_month?: number | null
+          schedule_day_of_week?: number | null
+          schedule_time?: string | null
+          schedule_type?: string
           send_in_app?: boolean
           send_push?: boolean
           title_template?: string
@@ -295,9 +305,14 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          last_scheduled_at?: string | null
           name?: string
           recipient_roles?: string[]
           recipient_type?: string
+          schedule_day_of_month?: number | null
+          schedule_day_of_week?: number | null
+          schedule_time?: string | null
+          schedule_type?: string
           send_in_app?: boolean
           send_push?: boolean
           title_template?: string
