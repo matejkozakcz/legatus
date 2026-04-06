@@ -120,6 +120,22 @@ function computeStats(meetings: any[], todayStr: string) {
   };
 }
 
+// ─── Helper: compute newly arranged meetings this week ────────────────────────
+
+function computeNewlyArranged(meetings: any[], weekStartStr: string, weekEndStr: string) {
+  const inWeek = meetings.filter((m: any) => {
+    if (m.cancelled || !m.created_at) return false;
+    const createdDate = m.created_at.slice(0, 10);
+    return createdDate >= weekStartStr && createdDate <= weekEndStr;
+  });
+
+  return {
+    fsa: inWeek.filter((m: any) => m.meeting_type === "FSA").length,
+    ser: inWeek.filter((m: any) => m.meeting_type === "SER").length,
+    poh: inWeek.filter((m: any) => m.meeting_type === "POH").length,
+  };
+}
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
@@ -282,7 +298,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
         )
         .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
@@ -306,7 +322,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
         )
         .eq("user_id", activeUserId)
         .gte("date", mobileWeekStartStr)
@@ -318,6 +334,17 @@ const Dashboard = () => {
   });
 
   const mobileStats = useMemo(() => computeStats(mobileMeetings, todayStr), [mobileMeetings, todayStr]);
+
+  // ── Newly arranged meetings (created_at in displayed week/period) ──────────
+  const mobileNewlyArranged = useMemo(
+    () => computeNewlyArranged(mobileMeetings, mobileWeekStartStr, mobileWeekEndStr),
+    [mobileMeetings, mobileWeekStartStr, mobileWeekEndStr],
+  );
+
+  const desktopNewlyArranged = useMemo(
+    () => computeNewlyArranged(desktopMeetings, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")),
+    [desktopMeetings, dateRange],
+  );
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
@@ -793,27 +820,81 @@ const Dashboard = () => {
             label="Analýzy"
             actual={mobileStats.fsa.actual}
             planned={mobileStats.fsa.planned}
-            sublabel="proběhlých / doml."
+            sublabel="proběhlých / na týden"
           />
           <MobileStatCard
             label="Pohovory"
             actual={mobileStats.poh.actual}
             planned={mobileStats.poh.planned}
-            sublabel="proběhlých / naplán."
+            sublabel="proběhlých / na týden"
           />
           <MobileStatCard
             label="Servisy"
             actual={mobileStats.ser.actual}
             planned={mobileStats.ser.planned}
-            sublabel="proběhlých / naplán."
+            sublabel="proběhlých / na týden"
           />
           <MobileStatCard
             label="Poradenství"
             actual={mobileStats.por.actual}
             planned={mobileStats.por.planned}
-            sublabel="proběhlých / naplán."
+            sublabel="proběhlých / na týden"
           />
           <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
+        </div>
+
+        {/* ── NOVĚ DOMLUVENO CARD ── */}
+        <div
+          style={{
+            background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+            borderRadius: 16,
+            padding: "14px 16px",
+            marginBottom: 10,
+            border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "#00abbd",
+              marginBottom: 12,
+            }}
+          >
+            Nově domluveno tento týden
+          </div>
+          <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
+            {[
+              { label: "Analýzy", value: mobileNewlyArranged.fsa },
+              { label: "Servisy", value: mobileNewlyArranged.ser },
+              { label: "Pohovory", value: mobileNewlyArranged.poh },
+            ].map((item) => (
+              <div key={item.label} style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 800,
+                    fontSize: 28,
+                    color: "#00555f",
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "var(--text-muted)",
+                    marginTop: 4,
+                  }}
+                >
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── WEEK NAVIGATOR (fixed above bottom nav) ── */}
@@ -1121,37 +1202,45 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
               label="Analýzy"
               actual={stats.fsa.actual}
               planned={stats.fsa.planned}
               actualLabel="proběhlých"
-              plannedLabel="domluvenných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Pohovory"
               actual={stats.poh.actual}
               planned={stats.poh.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Servisy"
               actual={stats.ser.actual}
               planned={stats.ser.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard
               label="Poradenství"
               actual={stats.por.actual}
               planned={stats.por.planned}
               actualLabel="proběhlých"
-              plannedLabel="naplánovaných"
+              plannedLabel="na období"
             />
             <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="celkem" />
+          </div>
+
+          <h3 className="font-heading font-semibold" style={{ fontSize: 18, color: "var(--text-primary)", marginTop: 8 }}>
+            Nově domluveno v období
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard label="Analýzy" actual={desktopNewlyArranged.fsa} actualLabel="nově domluvených" />
+            <StatCard label="Servisy" actual={desktopNewlyArranged.ser} actualLabel="nově domluvených" />
+            <StatCard label="Pohovory" actual={desktopNewlyArranged.poh} actualLabel="nově domluvených" />
           </div>
         </section>
 
