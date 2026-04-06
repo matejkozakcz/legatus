@@ -143,13 +143,6 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Drop all existing RLS policies on this table
-      const { data: existingPolicies } = await adminClient.rpc("", {}).catch(() => ({ data: null }));
-      
-      // Use raw SQL to list and drop policies
-      const listSql = `SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${rule.table}'`;
-      const { data: policies } = await adminClient.from("app_config").select("key").limit(0); // dummy to test connection
-      
       // Generate DROP statements
       statements.push(`-- === ${rule.table} (${rule.label}) ===`);
       statements.push(`DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${rule.table}' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.${rule.table}', pol.policyname); END LOOP; END $$;`);
@@ -188,12 +181,13 @@ Deno.serve(async (req) => {
 
           let sql = `CREATE POLICY "${policyName}" ON public.${rule.table} FOR ${cmd} TO authenticated`;
 
+          const wrapParen = (expr: string) => expr.startsWith("(") ? expr : `(${expr})`;
           if (scope.using && scope.check) {
-            sql += ` USING ${scope.using} WITH CHECK ${scope.check}`;
+            sql += ` USING ${wrapParen(scope.using)} WITH CHECK ${wrapParen(scope.check)}`;
           } else if (scope.using) {
-            sql += ` USING ${scope.using}`;
+            sql += ` USING ${wrapParen(scope.using)}`;
           } else if (scope.check) {
-            sql += ` WITH CHECK ${scope.check}`;
+            sql += ` WITH CHECK ${wrapParen(scope.check)}`;
           }
 
           sql += ";";
