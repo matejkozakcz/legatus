@@ -50,14 +50,6 @@ async function importVapidPrivateKey(base64url: string): Promise<CryptoKey> {
   );
 }
 
-  return crypto.subtle.importKey(
-    "pkcs8",
-    pkcs8.buffer,
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"]
-  );
-}
 
 async function createVapidJwt(
   audience: string,
