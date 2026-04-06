@@ -120,6 +120,22 @@ function computeStats(meetings: any[], todayStr: string) {
   };
 }
 
+// ─── Helper: compute newly arranged meetings this week ────────────────────────
+
+function computeNewlyArranged(meetings: any[], weekStartStr: string, weekEndStr: string) {
+  const inWeek = meetings.filter((m: any) => {
+    if (m.cancelled || !m.created_at) return false;
+    const createdDate = m.created_at.slice(0, 10);
+    return createdDate >= weekStartStr && createdDate <= weekEndStr;
+  });
+
+  return {
+    fsa: inWeek.filter((m: any) => m.meeting_type === "FSA").length,
+    ser: inWeek.filter((m: any) => m.meeting_type === "SER").length,
+    poh: inWeek.filter((m: any) => m.meeting_type === "POH").length,
+  };
+}
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
