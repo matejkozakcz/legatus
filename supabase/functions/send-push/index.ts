@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VAPID_PUBLIC_KEY = "BOVc5KPYLR3HHauDIXxJnySjf3Zw-2sAN61M1Jr9xb81T1sOKZH4mIV4-vO8amKZskwJuCSymmZVxhrWVdsOx3Y";
+const VAPID_PUBLIC_KEY = "BIaU9I8TaOONOF5R8umkxf7XzXiKNGWNxqmnrYcHuwqR4EnQsUGUR9y-q35Rizjtz0kOBrA-KGjjkcSUNhSPLRY";
 
 // --- Base64url helpers ---
 function base64urlToUint8Array(b64url: string): Uint8Array {
@@ -88,19 +88,7 @@ async function createVapidJwt(
   rawSig.set(r, 0);
   rawSig.set(s, 32);
 
-  const token = `${unsigned}.${uint8ArrayToBase64url(rawSig)}`;
-
-  // Self-verify signature
-  const pubBytes = base64urlToUint8Array(VAPID_PUBLIC_KEY);
-  const pubKey = await crypto.subtle.importKey(
-    "raw", pubBytes, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]
-  );
-  const valid = await crypto.subtle.verify(
-    { name: "ECDSA", hash: "SHA-256" }, pubKey, rawSig, enc.encode(unsigned)
-  );
-  console.log(`VAPID JWT aud=${audience} valid=${valid} sig_len=${rawSig.length}`);
-
-  return token;
+  return `${unsigned}.${uint8ArrayToBase64url(rawSig)}`;
 }
 
 // --- RFC 8291 Web Push Encryption (aes128gcm) ---
