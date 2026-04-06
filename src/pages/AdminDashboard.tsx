@@ -1354,9 +1354,17 @@ function NotificationRulesTab() {
                         />
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate">{rule.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Spouštěč: {triggerLabel(rule.trigger_event)}
-                            {rule.description && ` — ${rule.description}`}
+                          <div className="text-xs text-muted-foreground flex flex-wrap gap-1 items-center">
+                            <span>Spouštěč: {triggerLabel(rule.trigger_event)}</span>
+                            {(rule.schedule_type || "event") !== "event" && (
+                              <span className="inline-flex items-center bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded text-[10px] font-medium">
+                                🔄 {SCHEDULE_TYPES.find(s => s.value === rule.schedule_type)?.label}
+                                {rule.schedule_time && ` ${rule.schedule_time}`}
+                                {rule.schedule_type === "weekly" && rule.schedule_day_of_week != null && ` ${DAY_NAMES[rule.schedule_day_of_week]}`}
+                                {rule.schedule_type === "monthly" && rule.schedule_day_of_month != null && ` ${rule.schedule_day_of_month}.`}
+                              </span>
+                            )}
+                            {rule.description && <span>— {rule.description}</span>}
                           </div>
                         </div>
                       </div>
