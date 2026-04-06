@@ -241,11 +241,7 @@ const SpravaTeam = () => {
             .update({ vedouci_id: userId })
             .in("id", subtreeIds);
         }
-        // Also clear the promoted user's vedouci_id (they are now independent)
-        await supabase
-          .from("profiles")
-          .update({ vedouci_id: null })
-          .eq("id", userId);
+        // vedouci_id is kept so the promoted user remains in the hierarchy
       }
 
       // Log history
