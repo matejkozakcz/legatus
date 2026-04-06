@@ -128,6 +128,7 @@ function HierarchyGroup({
   onEdit,
   onNotify,
   depth,
+  readOnly = false,
 }: {
   parent: Profile;
   children: Profile[];
@@ -135,6 +136,7 @@ function HierarchyGroup({
   onEdit: (m: Profile) => void;
   onNotify: (m: Profile) => void;
   depth: number;
+  readOnly?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
