@@ -493,6 +493,52 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
+  // Vedoucí: DIRECT counts (ziskatel_id = me) per role
+  const { data: directVedouciCount = 0 } = useQuery({
+    queryKey: ["direct_vedouci_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  const { data: directBvCount = 0 } = useQuery({
+    queryKey: ["direct_bv_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "budouci_vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  const { data: directGarantCount = 0 } = useQuery({
+    queryKey: ["direct_garant_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ziskatel_id", activeUserId)
+        .eq("role", "garant")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
   // Period dates from picker (used by Stav byznysu + Přehled aktivit)
   const periodStartStr = format(selectedPeriod.start, "yyyy-MM-dd");
   const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
@@ -549,14 +595,24 @@ const Dashboard = () => {
 
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
-  // Helper: map goal key to current value
+  // Helper: map goal key to current value (scope-aware for people goals)
+  const getGoalScope = (key: GoalKey): string => {
+    if (!vedouciGoals) return "direct";
+    switch (key) {
+      case "vedouci_count": return vedouciGoals.vedouci_count_scope || "direct";
+      case "budouci_vedouci_count": return vedouciGoals.budouci_vedouci_count_scope || "direct";
+      case "garant_count": return vedouciGoals.garant_count_scope || "direct";
+      default: return "direct";
+    }
+  };
   const getGoalValue = (key: GoalKey): number => {
+    const scope = getGoalScope(key);
     switch (key) {
       case "team_bj": return vedouciMonthlyBj;
       case "personal_bj": return personalMonthlyBj;
-      case "vedouci_count": return vedouciSubCount;
-      case "budouci_vedouci_count": return bvCount;
-      case "garant_count": return garantCount;
+      case "vedouci_count": return scope === "direct" ? directVedouciCount : vedouciSubCount;
+      case "budouci_vedouci_count": return scope === "direct" ? directBvCount : bvCount;
+      case "garant_count": return scope === "direct" ? directGarantCount : garantCount;
       default: return 0;
     }
   };
@@ -572,7 +628,11 @@ const Dashboard = () => {
     }
   };
   const getGoalLabel = (key: GoalKey): string => {
-    return GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
+    const base = GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
+    const isPeopleGoal = ["vedouci_count", "budouci_vedouci_count", "garant_count"].includes(key);
+    if (!isPeopleGoal) return base;
+    const scope = getGoalScope(key);
+    return scope === "direct" ? `${base} (přímí)` : `${base} (celkem)`;
   };
   const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
   const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;

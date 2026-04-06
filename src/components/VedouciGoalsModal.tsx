@@ -13,6 +13,9 @@ export const GOAL_OPTIONS: { key: GoalKey; label: string; placeholder: string; g
   { key: "garant_count", label: "Počet Garantů", placeholder: "0", goalField: "garant_count_goal" },
 ];
 
+const PEOPLE_GOAL_KEYS: GoalKey[] = ["vedouci_count", "budouci_vedouci_count", "garant_count"];
+type ScopeValue = "direct" | "structure";
+
 interface FormData {
   selected_goal_1: GoalKey;
   selected_goal_2: GoalKey | "";
@@ -21,6 +24,9 @@ interface FormData {
   vedouci_count_goal: number;
   budouci_vedouci_count_goal: number;
   garant_count_goal: number;
+  vedouci_count_scope: ScopeValue;
+  budouci_vedouci_count_scope: ScopeValue;
+  garant_count_scope: ScopeValue;
 }
 
 const defaultForm: FormData = {
@@ -31,6 +37,9 @@ const defaultForm: FormData = {
   vedouci_count_goal: 0,
   budouci_vedouci_count_goal: 0,
   garant_count_goal: 0,
+  vedouci_count_scope: "direct",
+  budouci_vedouci_count_scope: "direct",
+  garant_count_scope: "direct",
 };
 
 interface Props {
@@ -66,6 +75,9 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
             vedouci_count_goal: d.vedouci_count_goal || 0,
             budouci_vedouci_count_goal: d.budouci_vedouci_count_goal || 0,
             garant_count_goal: d.garant_count_goal || 0,
+            vedouci_count_scope: d.vedouci_count_scope || "direct",
+            budouci_vedouci_count_scope: d.budouci_vedouci_count_scope || "direct",
+            garant_count_scope: d.garant_count_scope || "direct",
           });
         } else {
           setForm(defaultForm);
@@ -193,21 +205,44 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
             </div>
 
             {/* Value inputs for selected goals only */}
-            {activeGoals.map((g) => (
-              <div key={g.key}>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Cíl: {g.label}</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={(form as any)[g.goalField] || ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [g.goalField]: parseInt(e.target.value) || 0 }))
-                  }
-                  placeholder={g.placeholder}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-            ))}
+            {activeGoals.map((g) => {
+              const isPeople = PEOPLE_GOAL_KEYS.includes(g.key);
+              const scopeField = `${g.key}_scope` as keyof FormData;
+              const currentScope = (form as any)[scopeField] as ScopeValue | undefined;
+              return (
+                <div key={g.key}>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Cíl: {g.label}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={(form as any)[g.goalField] || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, [g.goalField]: parseInt(e.target.value) || 0 }))
+                    }
+                    placeholder={g.placeholder}
+                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {isPeople && (
+                    <div className="flex gap-2 mt-2">
+                      {(["direct", "structure"] as ScopeValue[]).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, [scopeField]: s }))}
+                          className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+                          style={{
+                            background: currentScope === s ? "#00abbd" : "var(--muted)",
+                            color: currentScope === s ? "white" : "var(--text-secondary)",
+                          }}
+                        >
+                          {s === "direct" ? "Přímá linka" : "Celá struktura"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             <button
               onClick={handleSave}

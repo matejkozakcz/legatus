@@ -511,8 +511,10 @@ export type Database = {
       vedouci_goals: {
         Row: {
           budouci_vedouci_count_goal: number
+          budouci_vedouci_count_scope: string
           created_at: string
           garant_count_goal: number
+          garant_count_scope: string
           id: string
           period_key: string
           personal_bj_goal: number
@@ -522,11 +524,14 @@ export type Database = {
           updated_at: string
           user_id: string
           vedouci_count_goal: number
+          vedouci_count_scope: string
         }
         Insert: {
           budouci_vedouci_count_goal?: number
+          budouci_vedouci_count_scope?: string
           created_at?: string
           garant_count_goal?: number
+          garant_count_scope?: string
           id?: string
           period_key: string
           personal_bj_goal?: number
@@ -536,11 +541,14 @@ export type Database = {
           updated_at?: string
           user_id: string
           vedouci_count_goal?: number
+          vedouci_count_scope?: string
         }
         Update: {
           budouci_vedouci_count_goal?: number
+          budouci_vedouci_count_scope?: string
           created_at?: string
           garant_count_goal?: number
+          garant_count_scope?: string
           id?: string
           period_key?: string
           personal_bj_goal?: number
@@ -550,6 +558,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vedouci_count_goal?: number
+          vedouci_count_scope?: string
         }
         Relationships: [
           {
