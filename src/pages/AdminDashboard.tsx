@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizonal } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1267,7 +1267,7 @@ function NotificationRulesTab() {
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={sendTestNotification} disabled={sendingTest} className="gap-1.5">
-            <SendHorizonal className="h-4 w-4" /> {sendingTest ? "Odesílám..." : "Test notifikace"}
+            <SendHorizontal className="h-4 w-4" /> {sendingTest ? "Odesílám..." : "Test notifikace"}
           </Button>
           <Button size="sm" onClick={startNew} className="gap-1.5">
             <Plus className="h-4 w-4" /> Nové pravidlo
