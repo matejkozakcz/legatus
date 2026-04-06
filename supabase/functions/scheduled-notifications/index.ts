@@ -20,10 +20,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const now = new Date();
-    const currentHour = now.getUTCHours();
-    const currentMinute = now.getUTCMinutes();
-    const currentDow = now.getUTCDay(); // 0=Sunday
-    const currentDom = now.getUTCDate();
+    // Use Europe/Prague timezone for all schedule comparisons
+    const pragueTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Prague" }));
+    const currentHour = pragueTime.getHours();
+    const currentMinute = pragueTime.getMinutes();
+    const currentDow = pragueTime.getDay(); // 0=Sunday
+    const currentDom = pragueTime.getDate();
 
     // Load all active scheduled rules
     const { data: rules, error: rulesError } = await supabase
@@ -138,7 +140,8 @@ Deno.serve(async (req) => {
  */
 async function loadDynamicVars(supabase: any): Promise<Record<string, string | number>> {
   const now = new Date();
-  const weekStart = getWeekStart(now);
+  const pragueNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Prague" }));
+  const weekStart = getWeekStart(pragueNow);
 
   // Team-wide stats for current week
   const { data: weekMeetings } = await supabase
@@ -175,15 +178,18 @@ async function loadDynamicVars(supabase: any): Promise<Record<string, string | n
     total_meetings: totalMeetings,
     member_count: memberCount || 0,
     pending_promotions: pendingPromotions || 0,
-    date: now.toLocaleDateString("cs-CZ"),
-    day_name: now.toLocaleDateString("cs-CZ", { weekday: "long" }),
+    date: pragueNow.toLocaleDateString("cs-CZ"),
+    day_name: pragueNow.toLocaleDateString("cs-CZ", { weekday: "long" }),
   };
 }
 
 function getWeekStart(d: Date): string {
   const dt = new Date(d);
-  const day = dt.getUTCDay();
+  const day = dt.getDay();
   const diff = day === 0 ? 6 : day - 1;
-  dt.setUTCDate(dt.getUTCDate() - diff);
-  return dt.toISOString().split("T")[0];
+  dt.setDate(dt.getDate() - diff);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
