@@ -81,7 +81,7 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      return (data || []) as Array<{
+      return (data || []) as unknown as Array<{
         id: string;
         requested_role: string;
         event: string;
