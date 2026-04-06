@@ -1,51 +1,69 @@
 
 
-# Upozornění Vedoucího při nároku na povýšení
+# God Mode Admin Dashboard
 
-## Současný stav
-- `SpravaTeam.tsx` už obsahuje `checkPromotions()` — při otevření stránky Správa týmu detekuje Získatele splňující kritéria (≥1000 BJ + ≥2 ve struktuře) a vytvoří záznam v `promotion_requests`
-- Vedoucí vidí čekající povýšení jako karty v sekci "Čekající povýšení" na stránce Správa týmu
-- Existuje tabulka `notifications` s typem, title, body, recipient_id, sender_id
-- `NotificationBell` zobrazuje notifikace s ikonou podle typu
+## Cil
+Vytvorit samostatnou stranku `/admin` pristupnou pouze v God Mode, kde lze rucne menit vsechny business-logic parametry bez zasahu do kodu.
 
-## Problém
-Vedoucí se o nároku dozví **pouze** když otevře Správu týmu. Žádná notifikace se mu nezobrazí ve zvonečku.
+## Co bude konfigurovatelne
 
-## Řešení
+### 1. Pravidla povyseni
+Aktualne hardcoded v `checkPromotions.ts`:
+- Ziskatel → Garant: **1000 BJ** + **2 lidi ve strukture**
+- Garant → BV: **5 lidi ve strukture** + **3 primi**
+- BV → Vedouci: **10 lidi ve strukture** + **6 primych**
 
-### 1. Při vytvoření promotion_request vytvořit notifikaci pro Vedoucího
+### 2. Produkci obdobi
+Aktualne hardcoded v `productionPeriod.ts`:
+- Konec obdobi = 27. den mesice (nebo nasledujici pracovni den)
+- Prosinec = prvni pracovni den ledna
 
-V `SpravaTeam.tsx` v `checkPromotions()` — po úspěšném upsertu do `promotion_requests` vložit záznam do `notifications`:
-- `type: "promotion_eligible"` 
-- `recipient_id: profile.id` (Vedoucí)
-- `sender_id: candidate.id` (Získatel)
-- `title: "{jméno} splňuje podmínky pro povýšení na Garanta"`
-- `body: "Kumulativní BJ: X · Y lidí ve struktuře"`
+### 3. Sprava uzivatelu (primo v tabulce)
+- Editace profilu kohokoliv (role, vedouci_id, garant_id, ziskatel_id, BJ cile, is_active, osobni_id)
+- Rucni zmena role bez promotion flow
 
-Důležité: upsert `promotion_requests` používá `ignoreDuplicates: true`, takže se nevytvoří duplicitní request. Pro notifikaci je potřeba ověřit, zda promotion_request **skutečně vznikl nově** (nebyl ignorován). Toho dosáhnu kontrolou, zda pro daného kandidáta + roli + status "pending" už notifikace existuje.
+### 4. BJ a aktivity
+- Editace activity_records a client_meetings libovolneho uzivatele
+- Korekce BJ hodnot
 
-### 2. Přidat ikonu pro nový typ notifikace
+## Technicke reseni
 
-V `NotificationBell.tsx` přidat do `TYPE_ICONS`:
-- `promotion_eligible: <TrendingUp />` s teal barvou (konzistentní se sekcí v SpravaTeam)
+### Databaze — nova tabulka `app_config`
+```sql
+CREATE TABLE public.app_config (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  key text UNIQUE NOT NULL,
+  value jsonb NOT NULL,
+  description text,
+  updated_at timestamptz DEFAULT now()
+);
+-- RLS: jen admin muze cist/zapisovat
+```
 
-### 3. RLS – INSERT politika
+Klice:
+- `promotion_rules` → `{ "ziskatel_to_garant": { "min_bj": 1000, "min_structure": 2 }, "garant_to_bv": { "min_structure": 5, "min_direct": 3 }, "bv_to_vedouci": { "min_structure": 10, "min_direct": 6 } }`
+- `period_end_day` → `{ "default": 27, "december_rule": "first_working_day_january" }`
 
-Aktuální INSERT politika na `notifications` vyžaduje, aby příjemce byl přímý podřízený odesílatele. V tomto případě je odesílatel Vedoucí sám sobě — `sender_id = recipient_id = profile.id`. Toto je povoleno stávající RLS, protože Vedoucí je ve svém vlastním subtree. Případně nastavím `sender_id` na kandidáta — ten je podřízený Vedoucího, což splňuje podmínku.
+### Kod
+1. **`src/pages/AdminDashboard.tsx`** — nova stranka s taby:
+   - **Pravidla povyseni** — formular pro BJ prahy, pocty lidi; uklada do `app_config`
+   - **Produkci obdobi** — nastaveni dne konce obdobi
+   - **Uzivatele** — tabulka vsech profilu s inline editaci (role, vazby, BJ cile, is_active)
+   - **BJ korekce** — vyhledani uzivatele, zobrazeni jeho activity_records, moznost editace
 
-Aktuálně INSERT check vyžaduje: `auth.uid() = sender_id` AND recipient je podřízený. Takže nastavím `sender_id = profile.id` (Vedoucí) a `recipient_id = profile.id` (Vedoucí). Ale RLS check říká recipient musí být podřízený senderu — Vedoucí není podřízený sám sobě v tom filtru. Budu muset buď:
-- Přidat RLS politiku pro self-notifications (sender = recipient = auth.uid())
-- Nebo použít jiný přístup
+2. **Uprava `checkPromotions.ts`** — nacte prahy z `app_config` misto hardcoded konstant
 
-Přidám novou INSERT RLS politiku: "Users can insert self notifications" — `auth.uid() = sender_id AND auth.uid() = recipient_id`.
+3. **Uprava `productionPeriod.ts`** — nacte den konce obdobi z `app_config` s fallbackem na 27
 
-## Soubory k úpravě
-- `src/pages/SpravaTeam.tsx` — po upsert promotion_request vložit notifikaci
-- `src/components/NotificationBell.tsx` — ikona pro `promotion_eligible`
-- **Migrace** — nová RLS politika na `notifications` pro self-notifications
+4. **Route v `App.tsx`** — `/admin` chranena pres `godMode && isAdmin`
 
-## Co se nemění
-- Tabulka `promotion_requests` — beze změn
-- Schvalování/zamítání — zůstává stejné
-- Detekční logika — zůstává stejná, jen přidáme notifikaci
+5. **Odkaz v `AppSidebar.tsx`** — zobrazit jen kdyz je God Mode aktivni
+
+### Pristup a bezpecnost
+- `app_config` tabulka s RLS: jen `is_admin()` ma SELECT/UPDATE/INSERT
+- Stranka se renderuje jen pri `godMode && isAdmin` — jinak redirect na `/dashboard`
+- Zadne zmeny neni mozne provest bez admin prav
+
+### Rozsah prvni verze
+Zamereni na **pravidla povyseni** a **spravu uzivatelu** — to jsou veci, ktere resite nejcasteji. Produkci obdobi a BJ korekce jako druhy krok.
 
