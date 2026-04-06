@@ -24,12 +24,15 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   needsOnboarding: boolean;
+  needsReactivation: boolean;
+  deactivatedProfile: Profile | null;
   isAdmin: boolean;
   godMode: boolean;
   toggleGodMode: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
+  reactivateProfile: (keepData: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [deactivatedProfile, setDeactivatedProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [godMode, setGodMode] = useState<boolean>(() => {
     try { return localStorage.getItem(GOD_MODE_KEY) === "true"; } catch { return false; }
@@ -64,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAdmin, godMode]);
 
   const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
+    // First try active profile
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -71,17 +76,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("is_active", true)
       .single();
 
-    if (error || !data) {
-      if (retries > 0) {
-        await new Promise((r) => setTimeout(r, 500));
-        return fetchProfile(userId, retries - 1);
-      }
-      // scope: 'local' — odhlásí jen toto zařízení, ne všechny sessions uživatele
-      await supabase.auth.signOut({ scope: 'local' });
+    if (data && !error) {
+      setProfile(data as unknown as Profile);
+      setDeactivatedProfile(null);
+      return;
+    }
+
+    // Check for deactivated profile
+    const { data: inactiveData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .eq("is_active", false)
+      .single();
+
+    if (inactiveData) {
+      // User has a deactivated profile — show reactivation flow
+      setDeactivatedProfile(inactiveData as unknown as Profile);
       setProfile(null);
       return;
     }
-    setProfile(data as unknown as Profile);
+
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 500));
+      return fetchProfile(userId, retries - 1);
+    }
+
+    await supabase.auth.signOut({ scope: 'local' });
+    setProfile(null);
+    setDeactivatedProfile(null);
   }, []);
 
   const refetchProfile = useCallback(async () => {
@@ -141,19 +164,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // scope: 'local' — odhlásí jen toto zařízení, ostatní sessions zůstanou aktivní
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
     setProfile(null);
+    setDeactivatedProfile(null);
     setGodMode(false);
     try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
   };
 
+  const reactivateProfile = useCallback(async (keepData: boolean) => {
+    if (!user || !deactivatedProfile) return;
+    
+    if (keepData) {
+      // Reactivate with existing data, go through onboarding to update info
+      await supabase
+        .from("profiles")
+        .update({ is_active: true, onboarding_completed: false })
+        .eq("id", user.id);
+    } else {
+      // Clear all data and start fresh
+      // Delete activity records and meetings
+      await Promise.all([
+        supabase.from("activity_records").delete().eq("user_id", user.id),
+        supabase.from("client_meetings").delete().eq("user_id", user.id),
+        supabase.from("cases").delete().eq("user_id", user.id),
+        supabase.from("notifications").delete().eq("recipient_id", user.id),
+      ]);
+      // Reset profile
+      await supabase
+        .from("profiles")
+        .update({
+          is_active: true,
+          onboarding_completed: false,
+          role: "novacek",
+          vedouci_id: null,
+          garant_id: null,
+          ziskatel_id: null,
+          ziskatel_name: null,
+          avatar_url: null,
+          monthly_bj_goal: 0,
+          personal_bj_goal: 0,
+          osobni_id: null,
+        })
+        .eq("id", user.id);
+    }
+
+    setDeactivatedProfile(null);
+    await fetchProfile(user.id);
+  }, [user, deactivatedProfile, fetchProfile]);
+
   const needsOnboarding = !!profile && profile.onboarding_completed === false;
+  const needsReactivation = !!session && !profile && !!deactivatedProfile;
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, needsReactivation, deactivatedProfile, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile, reactivateProfile }}>
       {children}
     </AuthContext.Provider>
   );

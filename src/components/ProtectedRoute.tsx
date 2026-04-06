@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading, needsOnboarding } = useAuth();
+  const { session, loading, needsOnboarding, needsReactivation } = useAuth();
 
   if (loading) {
     return (
@@ -12,7 +12,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session || needsOnboarding) {
+  if (!session || needsOnboarding || needsReactivation) {
     return <Navigate to="/login" replace />;
   }
 

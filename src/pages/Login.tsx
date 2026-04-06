@@ -9,7 +9,7 @@ import legatusLogo from "@/assets/legatus-logo-light.png";
 const loginBg = "/login-bg.svg";
 
 const Login = () => {
-  const { session, loading, needsOnboarding, signIn } = useAuth();
+  const { session, loading, needsOnboarding, needsReactivation, deactivatedProfile, reactivateProfile, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,6 +37,57 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#e1e9eb" }}>
         <div className="font-heading text-xl" style={{ color: "#ffffff" }}>
           Načítání...
+        </div>
+      </div>
+    );
+  }
+
+  // Show reactivation choice if deactivated user logs in
+  if (session && needsReactivation && deactivatedProfile) {
+    return (
+      <div
+        className="relative min-h-screen overflow-hidden flex items-center justify-center"
+        style={{
+          backgroundImage: `url(${loginBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: "#00555f",
+        }}
+      >
+        <div
+          className="relative z-10 w-full max-w-[440px] mx-4 flex flex-col items-center"
+          style={{
+            background: "#ffffff",
+            borderRadius: "28px",
+            boxShadow: "0 8px 32px rgba(0,85,95,0.22)",
+            padding: "40px 32px",
+          }}
+        >
+          <img src={legatusLogo} alt="Legatus" className="h-10 mb-6" />
+          <h2 className="font-heading font-bold text-xl mb-2" style={{ color: "#00555f" }}>
+            Vítej zpět, {deactivatedProfile.full_name}!
+          </h2>
+          <p className="text-sm text-center mb-6" style={{ color: "#6b7280" }}>
+            Tvůj účet byl dříve deaktivován. Chceš pokračovat s původními daty, nebo začít úplně od začátku?
+          </p>
+
+          <button
+            onClick={() => reactivateProfile(true)}
+            className="w-full py-3 rounded-xl font-semibold text-white mb-3 transition-all hover:opacity-90"
+            style={{ background: "#00abbd" }}
+          >
+            Použít původní data
+          </button>
+          <button
+            onClick={() => reactivateProfile(false)}
+            className="w-full py-3 rounded-xl font-semibold transition-all hover:opacity-90"
+            style={{ background: "#f3f4f6", color: "#374151" }}
+          >
+            Začít od začátku
+          </button>
+          <p className="text-xs text-center mt-4" style={{ color: "#9ca3af" }}>
+            Při obou volbách projdeš nastavením profilu.
+          </p>
         </div>
       </div>
     );
@@ -79,7 +130,12 @@ const Login = () => {
       setSubmitting(true);
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        setError(error.message);
+        if (error.message.includes("already registered") || error.message.includes("already_exists")) {
+          setError("Tento e-mail je již zaregistrován. Zkus se přihlásit — pokud byl tvůj účet deaktivován, budeš moci pokračovat.");
+          setIsSignUp(false);
+        } else {
+          setError(error.message);
+        }
       }
       setSubmitting(false);
     } else {
