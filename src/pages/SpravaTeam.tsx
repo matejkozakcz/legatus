@@ -324,6 +324,13 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (error) throw error;
       await logPromotionHistory(userId, requestedRole, "rejected", undefined, undefined, `Zamítnuto vedoucím ${profile!.full_name}`);
+
+      // Send rejection notification via notification_rules
+      const roleLabel = roleBadge[requestedRole]?.label || requestedRole;
+      const rule = await getNotificationRule("promotion_rejected");
+      if (rule) {
+        await sendRuleNotification(rule, userId, userId, { role_label: roleLabel, vedouci_name: profile!.full_name });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
