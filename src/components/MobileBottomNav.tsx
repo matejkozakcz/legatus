@@ -77,14 +77,24 @@ export function MobileBottomNav() {
           pointerEvents: "all",
         }}
       >
-        {/* Left: Byznys případy */}
-        <NavButton
-          icon={Briefcase}
-          label="Obchod"
-          active={location.pathname === "/obchodni-pripady"}
-          onClick={() => navigate("/obchodni-pripady")}
-          isDark={isDark}
-        />
+        {/* Left: Vedoucí sees Správa týmu, others see Obchod */}
+        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
+          <NavButton
+            icon={Users}
+            label="Tým"
+            active={location.pathname === "/tym"}
+            onClick={() => navigate("/tym")}
+            isDark={isDark}
+          />
+        ) : (
+          <NavButton
+            icon={Briefcase}
+            label="Obchod"
+            active={location.pathname === "/obchodni-pripady"}
+            onClick={() => navigate("/obchodni-pripady")}
+            isDark={isDark}
+          />
+        )}
 
         {/* Center spacer */}
         <div style={{ flex: 1 }} />
