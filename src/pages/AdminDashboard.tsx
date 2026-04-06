@@ -1097,6 +1097,54 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   custom: [],
 };
 
+const ALL_TEMPLATE_VARS: { category: string; vars: { name: string; description: string }[] }[] = [
+  {
+    category: "Člen",
+    vars: [
+      { name: "{{member_name}}", description: "Celé jméno člena" },
+      { name: "{{role}}", description: "Aktuální role člena (novacek, ziskatel, garant…)" },
+      { name: "{{role_label}}", description: "Česky pojmenovaná cílová role povýšení" },
+    ],
+  },
+  {
+    category: "Povýšení",
+    vars: [
+      { name: "{{vedouci_name}}", description: "Jméno vedoucího, který schválil/zamítl" },
+      { name: "{{cumulative_bj}}", description: "Kumulativní BJ člena" },
+      { name: "{{structure_info}}", description: "Popis struktury (počet lidí, přímí)" },
+    ],
+  },
+  {
+    category: "Schůzky",
+    vars: [
+      { name: "{{client_name}}", description: "Jméno klienta" },
+      { name: "{{meeting_time}}", description: "Čas schůzky" },
+      { name: "{{meeting_type}}", description: "Typ schůzky (FSA, SER, POH, POR)" },
+    ],
+  },
+  {
+    category: "Cíle",
+    vars: [
+      { name: "{{goal_name}}", description: "Název splněného cíle" },
+      { name: "{{goal_value}}", description: "Hodnota cíle" },
+    ],
+  },
+  {
+    category: "Pravidelné (agregáty)",
+    vars: [
+      { name: "{{total_bj}}", description: "Celkové BJ za aktuální týden" },
+      { name: "{{total_fsa}}", description: "Počet analýz za týden" },
+      { name: "{{total_ser}}", description: "Počet servisů za týden" },
+      { name: "{{total_poh}}", description: "Počet pohovorů za týden" },
+      { name: "{{total_meetings}}", description: "Celkový počet schůzek za týden" },
+      { name: "{{member_count}}", description: "Počet aktivních členů" },
+      { name: "{{pending_promotions}}", description: "Počet čekajících žádostí o povýšení" },
+      { name: "{{date}}", description: "Aktuální datum (česky)" },
+      { name: "{{day_name}}", description: "Název dne v týdnu (česky)" },
+    ],
+  },
+];
+
 const SCHEDULE_TYPES = [
   { value: "event", label: "Událost", description: "Spustí se při výskytu události" },
   { value: "daily", label: "Denně", description: "Každý den v nastavený čas" },
