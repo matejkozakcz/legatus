@@ -230,14 +230,34 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (reqError) throw reqError;
 
-      // When promoting to garant, reassign direct subordinates' garant_id
+      // When promoting to garant, reassign garant_id for entire ziskatel subtree
+      // but skip subtrees under another garant
       if (newRole === "garant") {
-        const directReports = members.filter((m) => m.ziskatel_id === userId);
-        if (directReports.length > 0) {
+        const allMembers = members.length > 0 ? members : [];
+        const childMap = new Map<string, string[]>();
+        allMembers.forEach((m) => {
+          if (m.ziskatel_id) {
+            const list = childMap.get(m.ziskatel_id) || [];
+            list.push(m.id);
+            childMap.set(m.ziskatel_id, list);
+          }
+        });
+        const memberMap = new Map(allMembers.map((m) => [m.id, m]));
+        const subtreeIds: string[] = [];
+        const queue = [...(childMap.get(userId) || [])];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          const member = memberMap.get(id);
+          // Skip subtrees under another garant (they have their own garant)
+          if (member && member.role === "garant" && id !== userId) continue;
+          subtreeIds.push(id);
+          queue.push(...(childMap.get(id) || []));
+        }
+        if (subtreeIds.length > 0) {
           await supabase
             .from("profiles")
             .update({ garant_id: userId })
-            .in("id", directReports.map((m) => m.id));
+            .in("id", subtreeIds);
         }
       }
 
@@ -324,28 +344,18 @@ const SpravaTeam = () => {
     onError: () => toast.error("Nepodařilo se zamítnout žádost"),
   });
 
-  const { data: members = [], isLoading } = useQuery({
+  // Fetch all visible profiles, then filter to ziskatel subtree client-side
+  const { data: allVisible = [], isLoading } = useQuery({
     queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
       if (!["vedouci", "budouci_vedouci", "garant", "ziskatel"].includes(profile.role) && !isGodMode) return [];
 
-      let query = supabase
+      const query = supabase
         .from("profiles")
         .select("*")
         .eq("is_active", true)
         .neq("id", profile.id);
-
-      // God Mode: see ALL users across all structures
-      if (!isGodMode) {
-        if (profile.role === "ziskatel") {
-          query = query.eq("ziskatel_id", profile.id);
-        } else if (profile.role === "garant") {
-          query = query.eq("garant_id", profile.id);
-        } else {
-          query = query.eq("vedouci_id", profile.id);
-        }
-      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -353,6 +363,36 @@ const SpravaTeam = () => {
     },
     enabled: !!profile?.id,
   });
+
+  // Build ziskatel subtree from current user (BFS)
+  const members = useMemo(() => {
+    if (isGodMode) return allVisible;
+    if (!profile?.id) return [];
+
+    // Build a map of ziskatel_id -> children
+    const ziskatelChildren = new Map<string, Profile[]>();
+    allVisible.forEach((m) => {
+      if (m.ziskatel_id) {
+        const list = ziskatelChildren.get(m.ziskatel_id) || [];
+        list.push(m);
+        ziskatelChildren.set(m.ziskatel_id, list);
+      }
+    });
+
+    // BFS from current user's id through ziskatel_id hierarchy
+    const result: Profile[] = [];
+    const queue = [...(ziskatelChildren.get(profile.id) || [])];
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const member = queue.shift()!;
+      if (visited.has(member.id)) continue;
+      visited.add(member.id);
+      result.push(member);
+      const children = ziskatelChildren.get(member.id) || [];
+      queue.push(...children);
+    }
+    return result;
+  }, [allVisible, profile?.id, isGodMode]);
 
   const profileMap = new Map(members.map((m) => [m.id, m]));
   if (profile) profileMap.set(profile.id, profile as unknown as Profile);
