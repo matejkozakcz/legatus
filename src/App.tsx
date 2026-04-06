@@ -13,6 +13,7 @@ import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
 import ObchodniPripady from "./pages/ObchodniPripady";
 import Kalendar from "./pages/Kalendar";
+import Hledani from "./pages/Hledani";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Kalendar />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/hledani"
+              element={
+                <AppLayout>
+                  <Hledani />
                 </AppLayout>
               }
             />
