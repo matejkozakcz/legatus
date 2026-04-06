@@ -95,11 +95,12 @@ const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function Kalendar() {
+export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const isMobile = useIsMobile();
+  const isMobileHook = useIsMobile();
+  const isMobile = mobileEmbedded || isMobileHook;
   const queryClient = useQueryClient();
 
   const [view, setView] = useState<"week" | "month">("week");
@@ -598,14 +599,16 @@ export default function Kalendar() {
 
   if (isMobile) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
-        {/* Header */}
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", ...(!mobileEmbedded ? { paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" } : {}) }}>
+        {/* Header — hide when embedded */}
+        {!mobileEmbedded && (
         <div style={{ padding: "16px 20px 12px", flexShrink: 0 }}>
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
             <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>Kalendář</h1>
           </div>
         </div>
+        )}
 
         {/* Scrollable meeting list */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 180 }}>

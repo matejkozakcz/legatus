@@ -322,10 +322,11 @@ function CaseAccordion({
 
 // ─── Hlavní komponenta ────────────────────────────────────────────────────────
 
-export default function ObchodniPripady() {
+export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
+  const isMobileHook = useIsMobile();
+  const isMobile = mobileEmbedded || isMobileHook;
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const now = new Date();
@@ -612,13 +613,14 @@ export default function ObchodniPripady() {
       className={isMobile ? "mobile-page" : "space-y-6"}
       style={
         isMobile
-          ? { paddingBottom: 200, paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }
+          ? { paddingBottom: 200, ...(!mobileEmbedded ? { paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" } : { paddingTop: 8 }) }
           : undefined
       }
     >
       {isMobile ? (
         <>
-          {/* Mobile header */}
+          {/* Mobile header — hide when embedded */}
+          {!mobileEmbedded && (
           <div style={{ marginBottom: 16 }}>
             <div className="flex items-center gap-3">
               <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
@@ -627,6 +629,7 @@ export default function ObchodniPripady() {
               </h1>
             </div>
           </div>
+          )}
 
           {/* Fixed: Create case button + period bar */}
           <div
