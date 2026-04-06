@@ -1362,9 +1362,14 @@ function NotificationRulesTab() {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
-        <Button size="sm" onClick={startNew} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nové pravidlo
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowVarsModal(true)} className="gap-1.5">
+            <Info className="h-4 w-4" /> Proměnné
+          </Button>
+          <Button size="sm" onClick={startNew} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Nové pravidlo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Role matrix header */}
