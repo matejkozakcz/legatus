@@ -1120,13 +1120,15 @@ function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
-  const [sendingTest, setSendingTest] = useState(false);
+  const [sendingTestId, setSendingTestId] = useState<string | null>(null);
 
-  const sendTestNotification = async () => {
-    setSendingTest(true);
+  const sendTestNotification = async (rule: NotifRule) => {
+    setSendingTestId(rule.id);
     try {
+      const title = (rule.title_template || "Test notifikace").replace(/\{\{.*?\}\}/g, "Test");
+      const body = (rule.body_template || "").replace(/\{\{.*?\}\}/g, "Test");
       const { data, error } = await supabase.functions.invoke("test-notification", {
-        body: { title: "🧪 Test notifikace", body: "Toto je testovací notifikace z admin dashboardu." },
+        body: { title, body },
       });
       if (error) throw error;
       if (data?.ok) {
@@ -1137,7 +1139,7 @@ function NotificationRulesTab() {
     } catch (e: any) {
       toast.error("Chyba: " + e.message);
     } finally {
-      setSendingTest(false);
+      setSendingTestId(null);
     }
   };
 
