@@ -537,7 +537,7 @@ const SpravaTeam = () => {
                       parent={member}
                       children={children}
                       childrenMap={childrenMap}
-                      onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                      onEdit={setDetailMember}
                       depth={0}
                       readOnly={isReadOnly}
                     />
@@ -549,6 +549,14 @@ const SpravaTeam = () => {
         </div>
 
         {/* Dialogs */}
+        {detailMember && (
+          <MemberDetailModal
+            member={detailMember}
+            onClose={() => setDetailMember(null)}
+            onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+            onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+          />
+        )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
         {notifyMember && (
           <CreateNotificationDialog
@@ -655,7 +663,7 @@ const SpravaTeam = () => {
                   parent={member}
                   children={children}
                   childrenMap={childrenMap}
-                  onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                  onEdit={setDetailMember}
                   
                   depth={0}
                   readOnly={isReadOnly}
@@ -667,6 +675,14 @@ const SpravaTeam = () => {
       </div>
 
       {/* Dialogs */}
+      {detailMember && (
+        <MemberDetailModal
+          member={detailMember}
+          onClose={() => setDetailMember(null)}
+          onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+          onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+        />
+      )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
       {notifyMember && (
         <CreateNotificationDialog
