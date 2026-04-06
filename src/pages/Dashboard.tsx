@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target } from "lucide-react";
+import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import {
