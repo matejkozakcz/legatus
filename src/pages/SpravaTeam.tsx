@@ -14,6 +14,7 @@ import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
+import { getNotificationRule, sendRuleNotification, renderTemplate } from "@/lib/notificationRules";
 
 interface Profile {
   id: string;
@@ -276,31 +277,33 @@ const SpravaTeam = () => {
       // Log history
       await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
 
-      // Send notification to the promoted user
-      // Use sender_id = userId so the self-notification RLS policy allows insert
-      // (the user may not be a direct subordinate of the current vedouci after subtree reassignment)
+      // Send notification via notification_rules
       const roleLabel = roleBadge[newRole]?.label || newRole;
-      const { data: notifData, error: notifError } = await supabase.from("notifications").insert({
-        sender_id: userId,
-        recipient_id: userId,
-        type: "promotion_approved",
-        title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
-        body: `Vedoucí ${profile!.full_name} schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
-        deadline: new Date().toISOString().split("T")[0],
-      }).select("id").single();
+      const rule = await getNotificationRule("promotion_approved");
+      const vars = { role_label: roleLabel, vedouci_name: profile!.full_name };
 
-      // Trigger push notification
-      if (notifData?.id) {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-          body: JSON.stringify({ notification_id: notifData.id }),
-        }).catch(() => {});
-      }
-      if (notifError) {
-        console.error("Failed to insert promotion notification:", notifError);
+      if (rule) {
+        await sendRuleNotification(rule, userId, userId, vars);
+      } else {
+        // Fallback if no rule exists
+        const { data: notifData } = await supabase.from("notifications").insert({
+          sender_id: userId,
+          recipient_id: userId,
+          type: "promotion_approved",
+          title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
+          body: `Vedoucí ${profile!.full_name} schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
+          deadline: new Date().toISOString().split("T")[0],
+        }).select("id").single();
+
+        if (notifData?.id) {
+          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+            body: JSON.stringify({ notification_id: notifData.id }),
+          }).catch(() => {});
+        }
       }
     },
     onSuccess: (_, vars) => {
@@ -321,6 +324,13 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (error) throw error;
       await logPromotionHistory(userId, requestedRole, "rejected", undefined, undefined, `Zamítnuto vedoucím ${profile!.full_name}`);
+
+      // Send rejection notification via notification_rules
+      const roleLabel = roleBadge[requestedRole]?.label || requestedRole;
+      const rule = await getNotificationRule("promotion_rejected");
+      if (rule) {
+        await sendRuleNotification(rule, userId, userId, { role_label: roleLabel, vedouci_name: profile!.full_name });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
