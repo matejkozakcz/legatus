@@ -95,11 +95,12 @@ const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function Kalendar() {
+export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const isMobile = useIsMobile();
+  const isMobileHook = useIsMobile();
+  const isMobile = mobileEmbedded || isMobileHook;
   const queryClient = useQueryClient();
 
   const [view, setView] = useState<"week" | "month">("week");
