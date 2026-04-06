@@ -124,7 +124,9 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_week");
+  const currentPeriod = getProductionPeriodMonth(now);
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
