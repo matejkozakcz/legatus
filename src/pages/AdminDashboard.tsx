@@ -1741,7 +1741,7 @@ function EditRuleForm({
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Čas odeslání (UTC)</Label>
+              <Label className="text-xs">Čas odeslání (CET/CEST)</Label>
               <Input
                 type="time"
                 value={form.schedule_time || "08:00"}

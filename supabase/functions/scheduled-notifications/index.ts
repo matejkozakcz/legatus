@@ -20,10 +20,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const now = new Date();
-    const currentHour = now.getUTCHours();
-    const currentMinute = now.getUTCMinutes();
-    const currentDow = now.getUTCDay(); // 0=Sunday
-    const currentDom = now.getUTCDate();
+    // Use Europe/Prague timezone for all schedule comparisons
+    const pragueTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Prague" }));
+    const currentHour = pragueTime.getHours();
+    const currentMinute = pragueTime.getMinutes();
+    const currentDow = pragueTime.getDay(); // 0=Sunday
+    const currentDom = pragueTime.getDate();
 
     // Load all active scheduled rules
     const { data: rules, error: rulesError } = await supabase
