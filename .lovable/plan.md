@@ -1,55 +1,64 @@
 
 
-# Member Detail jako vstupní bod v sekci Tým
+# Mobilní redesign stránky Aktivit člena
 
 ## Problem
-Kliknutí na kartu člena rovnou otevře formulář pro úpravu — to je akce, kterou vedoucí dělá jednou za čas. Denně potřebuje hlavně vidět přehled a případně poslat připomínku.
+Stránka `/tym/:userId/aktivity` (MemberActivity) zobrazuje desktopovou tabulku s 15 sloupci. Na mobilu (390px) je to nečitelné — horizontální scroll přes obrovskou tabulku bez jakékoli mobilní optimalizace.
 
-## Navrhované řešení
-Kliknutí na kartu → otevře **MemberDetailModal** (přehled). Z přehledu jsou dostupné akce přes tlačítka.
+## Řešení
+Přidat mobilní větev do `MemberActivity.tsx` inspirovanou existujícím mobilním layoutem v `MojeAktivity.tsx` — ale **read-only** (vedoucí se jen dívá, neupravuje).
 
-## Co uvidí Vedoucí/BV po kliknutí na člena
+## Mobilní layout
 
 ```text
 ┌─────────────────────────────┐
-│  [Avatar]  Jméno            │
-│  Badge: Získatel            │
+│  ← Zpět    Jméno člena      │
+│            Badge             │
 │─────────────────────────────│
-│  Statistiky tohoto týdne    │
-│  FSA: 3/5  POH: 2/3  ...   │
+│  ◀  Týden 7.4. – 13.4.  ▶  │
 │─────────────────────────────│
-│  Nadcházející schůzky (2)   │
-│  · Pondělí 14:00 - Analýza  │
-│  · Středa 10:00 - Pohovor   │
+│  ┌──────────────────────┐   │
+│  │     Analýzy          │   │
+│  │  Domluvené  Proběhlé │   │
+│  │     3    │    2      │   │
+│  └──────────────────────┘   │
+│  ┌──────────────────────┐   │
+│  │     Porádka          │   │
+│  │  Domluvené  Proběhlé │   │
+│  │     1    │    1      │   │
+│  └──────────────────────┘   │
+│  ┌──────────────────────┐   │
+│  │     Pohovory         │   │
+│  │  Domluvené  Proběhlé │   │
+│  │     2    │    1      │   │
+│  └──────────────────────┘   │
+│  ┌─────────┐ ┌─────────┐   │
+│  │Doporuč. │ │   BJ    │   │
+│  │   4     │ │   12    │   │
+│  └─────────┘ └─────────┘   │
 │─────────────────────────────│
-│  Historie povýšení          │
-│  · timeline...              │
-│─────────────────────────────│
-│  [Poslat připomínku]        │
-│  [Zobrazit aktivity →]      │
-│  [Upravit profil ✎]         │
+│  Měsíční souhrn             │
+│  FSA: 8/12  POH: 5/8       │
+│  SER: 3/4   REF: 10/15     │
 └─────────────────────────────┘
 ```
 
 ## Technické kroky
 
-### 1. Rozšířit MemberDetailModal
-- Přidat sekci **Nadcházející schůzky** — query `client_meetings` pro daného člena, filtr na budoucí datum, limit 3
-- Přidat tlačítko **Poslat připomínku** — otevře `CreateNotificationDialog` s předvyplněným příjemcem
-- Přidat tlačítko **Upravit profil** — otevře `EditMemberDialog` (jen pro vedoucí/god mode)
-- Předat `onEdit` a `onNotify` callbacky z rodiče
+### 1. Upravit `MemberActivity.tsx`
+- Přidat `useIsMobile()` hook
+- Přidat navigaci po týdnech (stejný pattern jako MojeAktivity — offset od aktuálního týdne)
+- Mobilní větev: karty s planned/actual hodnotami pro každou aktivitu (read-only, bez counterů)
+- Dole měsíční souhrn jako 2x2 grid StatCardů
+- Desktop větev zůstane beze změny
 
-### 2. Upravit SpravaTeam.tsx
-- Kliknutí na kartu → `setDetailMember(member)` místo `setEditMember(member)`
-- Nový state `detailMember` pro MemberDetailModal
-- Z MemberDetailModal se volá `setEditMember` nebo `setNotifyMember` přes callbacky
-- Garant/Získatel (readonly) uvidí detail bez tlačítka Upravit
+### 2. Header
+- Zpětná šipka + jméno člena + role badge (kompaktnější než desktop verze)
+- Bez ikony BarChart3 na mobilu (zbytečná)
 
-### 3. Bez změn v DB
-- Všechna data (stats, meetings, promotion history) jsou už dostupná přes existující RLS politiky
-- Žádné nové tabulky ani migrace
+### 3. Žádné změny v DB
+- Stejná data, stejné queries, jen jiná prezentace
 
 ## Rozsah
-- 2 soubory: `MemberDetailModal.tsx` (rozšíření), `SpravaTeam.tsx` (přesměrování kliknutí)
-- Stávající `EditMemberDialog` a `CreateNotificationDialog` zůstanou beze změn
+Jeden soubor: `src/pages/MemberActivity.tsx`
 
