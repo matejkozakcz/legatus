@@ -575,7 +575,8 @@ const Dashboard = () => {
     return GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
   };
   const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
-  const selectedGoal2: GoalKey = vedouciGoals?.selected_goal_2 || "personal_bj";
+  const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
+  const vedouciGaugeKeys: GoalKey[] = selectedGoal2 ? [selectedGoal1, selectedGoal2] : [selectedGoal1];
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
@@ -680,7 +681,7 @@ const Dashboard = () => {
               </div>
             ) : role === "vedouci" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                {[selectedGoal1, selectedGoal2].map((gk) => {
+                {vedouciGaugeKeys.map((gk) => {
                   const val = getGoalValue(gk);
                   const max = getGoalMax(gk);
                   const done = max > 0 && val >= max;
@@ -865,7 +866,7 @@ const Dashboard = () => {
               <Pencil size={12} /> Upravit cíle
             </button>
           )}
-          {[selectedGoal1, selectedGoal2].map((gk) => {
+          {vedouciGaugeKeys.map((gk) => {
             const val = getGoalValue(gk);
             const max = getGoalMax(gk);
             const done = max > 0 && val >= max;

@@ -15,7 +15,7 @@ export const GOAL_OPTIONS: { key: GoalKey; label: string; placeholder: string; g
 
 interface FormData {
   selected_goal_1: GoalKey;
-  selected_goal_2: GoalKey;
+  selected_goal_2: GoalKey | "";
   team_bj_goal: number;
   personal_bj_goal: number;
   vedouci_count_goal: number;
@@ -25,7 +25,7 @@ interface FormData {
 
 const defaultForm: FormData = {
   selected_goal_1: "team_bj",
-  selected_goal_2: "personal_bj",
+  selected_goal_2: "",
   team_bj_goal: 0,
   personal_bj_goal: 0,
   vedouci_count_goal: 0,
@@ -60,7 +60,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
           const d = data as any;
           setForm({
             selected_goal_1: d.selected_goal_1 || "team_bj",
-            selected_goal_2: d.selected_goal_2 || "personal_bj",
+            selected_goal_2: d.selected_goal_2 || "",
             team_bj_goal: d.team_bj_goal || 0,
             personal_bj_goal: d.personal_bj_goal || 0,
             vedouci_count_goal: d.vedouci_count_goal || 0,
@@ -74,17 +74,23 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
       });
   }, [open, userId, periodKey]);
 
-  const selectedKeys: GoalKey[] = [form.selected_goal_1, form.selected_goal_2];
+  const selectedKeys: (GoalKey | "")[] = [form.selected_goal_1, form.selected_goal_2].filter(Boolean) as GoalKey[];
 
-  const handleSelectGoal = (slot: 1 | 2, key: GoalKey) => {
+  const handleToggleGoal = (key: GoalKey) => {
     setForm((prev) => {
-      const otherSlot = slot === 1 ? "selected_goal_2" : "selected_goal_1";
-      const thisSlot = slot === 1 ? "selected_goal_1" : "selected_goal_2";
-      // If selecting a key that's already in the other slot, swap
-      if (prev[otherSlot] === key) {
-        return { ...prev, [thisSlot]: key, [otherSlot]: prev[thisSlot] };
+      const keys = [prev.selected_goal_1, prev.selected_goal_2].filter(Boolean);
+      if (keys.includes(key)) {
+        // Deselect — but must keep at least 1
+        if (keys.length <= 1) return prev;
+        if (prev.selected_goal_1 === key) return { ...prev, selected_goal_1: prev.selected_goal_2 as GoalKey, selected_goal_2: "" };
+        return { ...prev, selected_goal_2: "" };
+      } else {
+        // Select — fill empty slot or replace slot 2
+        if (!prev.selected_goal_1) return { ...prev, selected_goal_1: key };
+        if (!prev.selected_goal_2) return { ...prev, selected_goal_2: key };
+        // Already 2 selected, replace slot 2
+        return { ...prev, selected_goal_2: key };
       }
-      return { ...prev, [thisSlot]: key };
     });
   };
 
@@ -149,7 +155,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
         </div>
 
         <p className="text-xs text-muted-foreground mb-4">
-          Období: <strong>{periodKey}</strong> · Vyber 2 cíle
+          Období: <strong>{periodKey}</strong> · Vyber 1–2 cíle
         </p>
 
         {loading ? (
@@ -169,11 +175,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
                     <button
                       key={g.key}
                       type="button"
-                      onClick={() => {
-                        if (isSelected) return; // can't deselect, must swap
-                        // Replace slot 2 with this key
-                        handleSelectGoal(2, g.key);
-                      }}
+                      onClick={() => handleToggleGoal(g.key)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       style={{
                         background: isSelected ? "#00abbd" : "var(--muted)",
