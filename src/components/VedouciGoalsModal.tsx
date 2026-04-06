@@ -155,7 +155,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
         </div>
 
         <p className="text-xs text-muted-foreground mb-4">
-          Období: <strong>{periodKey}</strong> · Vyber 2 cíle
+          Období: <strong>{periodKey}</strong> · Vyber 1–2 cíle
         </p>
 
         {loading ? (
@@ -175,11 +175,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
                     <button
                       key={g.key}
                       type="button"
-                      onClick={() => {
-                        if (isSelected) return; // can't deselect, must swap
-                        // Replace slot 2 with this key
-                        handleSelectGoal(2, g.key);
-                      }}
+                      onClick={() => handleToggleGoal(g.key)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       style={{
                         background: isSelected ? "#00abbd" : "var(--muted)",
