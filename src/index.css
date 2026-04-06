@@ -762,3 +762,10 @@
 .dark .text-muted-foreground {
   color: var(--text-secondary) !important;
 }
+
+/* God Mode avatar glow */
+.god-mode-avatar > img,
+.god-mode-avatar > div {
+  border: 2px solid hsl(var(--coral));
+  box-shadow: 0 0 8px 2px hsl(var(--coral) / 0.5);
+}
