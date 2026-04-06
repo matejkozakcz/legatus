@@ -83,6 +83,14 @@ const App = () => (
               }
             />
             <Route
+              path="/obchod"
+              element={
+                <AppLayout>
+                  <MobileObchod />
+                </AppLayout>
+              }
+            />
+            <Route
               path="/kalendar"
               element={
                 <AppLayout>
