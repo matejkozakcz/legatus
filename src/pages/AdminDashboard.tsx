@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="promotions" className="w-full">
-        <TabsList className="w-full justify-start bg-card border border-border">
+        <TabsList className="w-full justify-start bg-card border border-border flex-wrap">
           <TabsTrigger value="promotions" className="gap-1.5">
             <Settings2 className="h-4 w-4" /> Pravidla povýšení
           </TabsTrigger>
@@ -75,6 +75,9 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-1.5">
             <Users className="h-4 w-4" /> Uživatelé
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5">
+            <Lock className="h-4 w-4" /> Logika & Hierarchie
           </TabsTrigger>
         </TabsList>
 
@@ -86,6 +89,9 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="users">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="permissions">
+          <PermissionsTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -500,6 +506,277 @@ function UsersTab() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ─── Permissions & Hierarchy Tab ──────────────────────────────────────────────
+
+const PERM_ROLES = ["Admin", "Vedoucí", "Bud. vedoucí", "Garant", "Získatel", "Nováček"] as const;
+
+type PermAction = "vidí" | "edituje" | "vytváří" | "maže";
+
+interface PermRule {
+  table: string;
+  label: string;
+  matrix: Record<string, PermAction[]>;
+}
+
+const PERM_DATA: PermRule[] = [
+  {
+    table: "profiles",
+    label: "Profily uživatelů",
+    matrix: {
+      Admin: ["vidí", "edituje"],
+      Vedoucí: ["vidí", "edituje"],
+      "Bud. vedoucí": ["vidí"],
+      Garant: ["vidí", "edituje"],
+      Získatel: ["vidí"],
+      Nováček: ["vidí"],
+    },
+  },
+  {
+    table: "activity_records",
+    label: "Záznamy aktivit",
+    matrix: {
+      Admin: ["vidí", "edituje"],
+      Vedoucí: ["vidí"],
+      "Bud. vedoucí": [],
+      Garant: ["vidí"],
+      Získatel: ["vidí", "edituje", "vytváří", "maže"],
+      Nováček: ["vidí", "edituje", "vytváří", "maže"],
+    },
+  },
+  {
+    table: "client_meetings",
+    label: "Schůzky s klienty",
+    matrix: {
+      Admin: ["vidí"],
+      Vedoucí: ["vidí"],
+      "Bud. vedoucí": [],
+      Garant: ["vidí"],
+      Získatel: ["vidí", "edituje", "vytváří", "maže"],
+      Nováček: ["vidí", "edituje", "vytváří", "maže"],
+    },
+  },
+  {
+    table: "cases",
+    label: "Byznys případy",
+    matrix: {
+      Admin: ["vidí", "edituje"],
+      Vedoucí: ["vidí"],
+      "Bud. vedoucí": [],
+      Garant: [],
+      Získatel: ["vidí", "edituje", "vytváří", "maže"],
+      Nováček: ["vidí", "edituje", "vytváří", "maže"],
+    },
+  },
+  {
+    table: "notifications",
+    label: "Notifikace",
+    matrix: {
+      Admin: [],
+      Vedoucí: ["vidí", "vytváří"],
+      "Bud. vedoucí": [],
+      Garant: ["vytváří"],
+      Získatel: ["vidí", "edituje", "vytváří", "maže"],
+      Nováček: ["vidí", "edituje", "vytváří", "maže"],
+    },
+  },
+  {
+    table: "promotion_requests",
+    label: "Žádosti o povýšení",
+    matrix: {
+      Admin: ["vidí", "edituje"],
+      Vedoucí: ["vidí", "edituje", "maže"],
+      "Bud. vedoucí": [],
+      Garant: [],
+      Získatel: ["vidí"],
+      Nováček: ["vidí"],
+    },
+  },
+  {
+    table: "vedouci_goals",
+    label: "Cíle vedoucího",
+    matrix: {
+      Admin: [],
+      Vedoucí: ["vidí", "edituje", "vytváří", "maže"],
+      "Bud. vedoucí": [],
+      Garant: [],
+      Získatel: [],
+      Nováček: [],
+    },
+  },
+  {
+    table: "app_config",
+    label: "Nastavení aplikace",
+    matrix: {
+      Admin: ["vidí", "edituje", "vytváří"],
+      Vedoucí: [],
+      "Bud. vedoucí": [],
+      Garant: [],
+      Získatel: [],
+      Nováček: [],
+    },
+  },
+];
+
+interface VisibilityRule {
+  role: string;
+  sees: string;
+  scope: string;
+}
+
+const VISIBILITY_RULES: VisibilityRule[] = [
+  { role: "Vedoucí", sees: "Profily", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Aktivity & Schůzky", scope: "Lidé s vedouci_id = já" },
+  { role: "Vedoucí", sees: "Byznys případy", scope: "Celý podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Promotion requests", scope: "Všechny (role = vedouci)" },
+  { role: "Garant", sees: "Profily", scope: "Lidé s garant_id = já" },
+  { role: "Garant", sees: "Aktivity & Schůzky", scope: "Lidé s garant_id = já" },
+  { role: "Získatel / Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" },
+  { role: "Admin", sees: "Vše", scope: "Celá databáze (is_admin())" },
+];
+
+interface HierarchyRule {
+  relationship: string;
+  meaning: string;
+  whoSets: string;
+}
+
+const HIERARCHY_RULES: HierarchyRule[] = [
+  { relationship: "vedouci_id", meaning: "Vedoucí tohoto člena — řídí celý podstrom", whoSets: "Vedoucí nebo Admin" },
+  { relationship: "garant_id", meaning: "Garant tohoto nováčka — přímý mentor", whoSets: "Vedoucí nebo Admin" },
+  { relationship: "ziskatel_id", meaning: "Kdo tohoto člena získal — tvoří strukturu pro povýšení", whoSets: "Onboarding / Vedoucí / Admin" },
+  { relationship: "ziskatel_name", meaning: "Jméno získatele (záloha pokud není v systému)", whoSets: "Onboarding" },
+];
+
+const ACTION_COLORS: Record<PermAction, string> = {
+  vidí: "bg-secondary/20 text-secondary",
+  edituje: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+  vytváří: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+  maže: "bg-destructive/20 text-destructive",
+};
+
+function PermissionsTab() {
+  return (
+    <div className="space-y-6">
+      {/* Visibility rules */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Eye className="h-4 w-4" /> Kdo vidí čí data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 font-medium">Role</th>
+                  <th className="text-left p-3 font-medium">Vidí</th>
+                  <th className="text-left p-3 font-medium">Rozsah</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {VISIBILITY_RULES.map((r, i) => (
+                  <tr key={i} className="hover:bg-muted/30">
+                    <td className="p-3 font-medium">{r.role}</td>
+                    <td className="p-3">{r.sees}</td>
+                    <td className="p-3 text-xs text-muted-foreground font-mono">{r.scope}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Permission matrix per table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Lock className="h-4 w-4" /> Matice oprávnění (tabulka × role)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 font-medium">Tabulka</th>
+                  {PERM_ROLES.map((r) => (
+                    <th key={r} className="text-left p-3 font-medium text-xs">{r}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {PERM_DATA.map((rule) => (
+                  <tr key={rule.table} className="hover:bg-muted/30">
+                    <td className="p-3">
+                      <div className="font-medium">{rule.label}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono">{rule.table}</div>
+                    </td>
+                    {PERM_ROLES.map((role) => (
+                      <td key={role} className="p-3">
+                        <div className="flex flex-wrap gap-1">
+                          {(rule.matrix[role] || []).length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            rule.matrix[role].map((action) => (
+                              <span
+                                key={action}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ACTION_COLORS[action]}`}
+                              >
+                                {action}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            * Oprávnění „vidí/edituje" u Vedoucího a Garanta se vztahuje pouze na jejich podstrom/nováčky (viz tabulka výše). 
+            Vlastní záznamy může každý vidět a editovat vždy.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Hierarchy relationships */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 font-medium">Pole</th>
+                  <th className="text-left p-3 font-medium">Význam</th>
+                  <th className="text-left p-3 font-medium">Kdo nastavuje</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {HIERARCHY_RULES.map((r) => (
+                  <tr key={r.relationship} className="hover:bg-muted/30">
+                    <td className="p-3 font-mono text-xs font-medium">{r.relationship}</td>
+                    <td className="p-3">{r.meaning}</td>
+                    <td className="p-3 text-muted-foreground">{r.whoSets}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
