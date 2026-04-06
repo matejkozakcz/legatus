@@ -36,13 +36,36 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
       });
     }
 
-    // Save to database
+    const subJson = subscription.toJSON();
+    const endpoint = subJson.endpoint;
+
+    // Remove any existing subscription with the same endpoint (different user on same device)
+    if (endpoint) {
+      const { data: existing } = await supabase
+        .from("push_subscriptions" as any)
+        .select("id, user_id, subscription")
+        .neq("user_id", userId);
+
+      if (existing) {
+        const staleIds = existing
+          .filter((row: any) => row.subscription?.endpoint === endpoint)
+          .map((row: any) => row.id);
+        if (staleIds.length > 0) {
+          await supabase
+            .from("push_subscriptions" as any)
+            .delete()
+            .in("id", staleIds);
+        }
+      }
+    }
+
+    // Save/update subscription for the current user
     const { error } = await supabase
       .from("push_subscriptions" as any)
       .upsert(
         {
           user_id: userId,
-          subscription: subscription.toJSON(),
+          subscription: subJson,
         },
         { onConflict: "user_id" }
       );
@@ -56,5 +79,16 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
   } catch (err) {
     console.error("Push registration failed:", err);
     return false;
+  }
+}
+
+export async function unregisterPushSubscription(userId: string): Promise<void> {
+  try {
+    await supabase
+      .from("push_subscriptions" as any)
+      .delete()
+      .eq("user_id", userId);
+  } catch (err) {
+    console.error("Push unregister failed:", err);
   }
 }
