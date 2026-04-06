@@ -184,11 +184,9 @@ const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"seznam" | "orgchart">("seznam");
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
-  const [isForceChecking, setIsForceChecking] = useState(false);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
