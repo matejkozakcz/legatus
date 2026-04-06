@@ -71,6 +71,28 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
     },
   });
 
+  const { data: promotionHistory = [], isLoading: isHistoryLoading } = useQuery({
+    queryKey: ["promotion_history", member.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("promotion_history" as any)
+        .select("id, requested_role, event, cumulative_bj, direct_ziskatels, note, created_at")
+        .eq("user_id", member.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as Array<{
+        id: string;
+        requested_role: string;
+        event: string;
+        cumulative_bj: number | null;
+        direct_ziskatels: number | null;
+        note: string | null;
+        created_at: string;
+      }>;
+    },
+  });
+
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
