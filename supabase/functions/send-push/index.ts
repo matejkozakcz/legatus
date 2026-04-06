@@ -89,7 +89,17 @@ async function createVapidJwt(
   rawSig.set(s, 32);
 
   const token = `${unsigned}.${uint8ArrayToBase64url(rawSig)}`;
-  console.log(`VAPID JWT aud=${audience} sub=${subject} token_len=${token.length}`);
+
+  // Self-verify signature
+  const pubBytes = base64urlToUint8Array(VAPID_PUBLIC_KEY);
+  const pubKey = await crypto.subtle.importKey(
+    "raw", pubBytes, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]
+  );
+  const valid = await crypto.subtle.verify(
+    { name: "ECDSA", hash: "SHA-256" }, pubKey, rawSig, enc.encode(unsigned)
+  );
+  console.log(`VAPID JWT aud=${audience} valid=${valid} sig_len=${rawSig.length}`);
+
   return token;
 }
 
