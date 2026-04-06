@@ -140,7 +140,8 @@ Deno.serve(async (req) => {
  */
 async function loadDynamicVars(supabase: any): Promise<Record<string, string | number>> {
   const now = new Date();
-  const weekStart = getWeekStart(now);
+  const pragueNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Prague" }));
+  const weekStart = getWeekStart(pragueNow);
 
   // Team-wide stats for current week
   const { data: weekMeetings } = await supabase
@@ -177,15 +178,18 @@ async function loadDynamicVars(supabase: any): Promise<Record<string, string | n
     total_meetings: totalMeetings,
     member_count: memberCount || 0,
     pending_promotions: pendingPromotions || 0,
-    date: now.toLocaleDateString("cs-CZ"),
-    day_name: now.toLocaleDateString("cs-CZ", { weekday: "long" }),
+    date: pragueNow.toLocaleDateString("cs-CZ"),
+    day_name: pragueNow.toLocaleDateString("cs-CZ", { weekday: "long" }),
   };
 }
 
 function getWeekStart(d: Date): string {
   const dt = new Date(d);
-  const day = dt.getUTCDay();
+  const day = dt.getDay();
   const diff = day === 0 ? 6 : day - 1;
-  dt.setUTCDate(dt.getUTCDate() - diff);
-  return dt.toISOString().split("T")[0];
+  dt.setDate(dt.getDate() - diff);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
