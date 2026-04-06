@@ -1450,29 +1450,64 @@ function EditRuleForm({
         </div>
       )}
 
-      {/* Role checkboxes */}
+      {/* Recipient type */}
       <div>
-        <Label className="text-xs mb-1.5 block">Příjemci (role)</Label>
+        <Label className="text-xs mb-1.5 block">Komu odeslat</Label>
         <div className="flex flex-wrap gap-2">
-          {ROLES.map((role) => {
-            const checked = (form.recipient_roles || []).includes(role);
+          {RECIPIENT_TYPES.map((rt) => {
+            const checked = (form.recipient_type || "by_role") === rt.value;
             return (
               <button
-                key={role}
+                key={rt.value}
                 type="button"
-                onClick={() => toggleRole(role)}
+                onClick={() => setForm({ ...form, recipient_type: rt.value })}
                 className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
                 style={{
-                  background: checked ? "#00abbd" : "transparent",
+                  background: checked ? "hsl(var(--primary))" : "transparent",
                   color: checked ? "#fff" : "inherit",
-                  borderColor: checked ? "#00abbd" : "#e1e9eb",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
                 }}
               >
-                {ROLE_LABELS[role]}
+                {rt.label}
               </button>
             );
           })}
         </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {RECIPIENT_TYPES.find((rt) => rt.value === (form.recipient_type || "by_role"))?.description}
+        </div>
+      </div>
+
+      {/* Role checkboxes — only for hierarchy and by_role */}
+      {(form.recipient_type || "by_role") !== "self" && (
+        <div>
+          <Label className="text-xs mb-1.5 block">
+            {form.recipient_type === "hierarchy"
+              ? "Které role z nadřízených dostanou notifikaci"
+              : "Příjemci (role)"}
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {ROLES.map((role) => {
+              const checked = (form.recipient_roles || []).includes(role);
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => toggleRole(role)}
+                  className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                  style={{
+                    background: checked ? "#00abbd" : "transparent",
+                    color: checked ? "#fff" : "inherit",
+                    borderColor: checked ? "#00abbd" : "#e1e9eb",
+                  }}
+                >
+                  {ROLE_LABELS[role]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Delivery toggles */}
