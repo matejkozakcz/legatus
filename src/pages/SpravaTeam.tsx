@@ -6,7 +6,6 @@ import { Users, Plus, ChevronDown, ChevronRight, TrendingUp } from "lucide-react
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
-import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
