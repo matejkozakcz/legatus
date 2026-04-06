@@ -6,7 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
-import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth, daysRemainingInPeriod } from "@/lib/productionPeriod";
+import {
+  getProductionPeriodStart,
+  getProductionPeriodEnd,
+  getProductionPeriodForMonth,
+  getProductionPeriodMonth,
+  daysRemainingInPeriod,
+} from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
@@ -17,7 +23,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
-
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -91,10 +96,7 @@ function MobileStatCard({
 function computeStats(meetings: any[], todayStr: string) {
   const count = (type: string, past: boolean) =>
     meetings.filter(
-      (m: any) =>
-        m.meeting_type === type &&
-        !m.cancelled &&
-        (past ? m.date < todayStr : m.date >= todayStr),
+      (m: any) => m.meeting_type === type && !m.cancelled && (past ? m.date < todayStr : m.date >= todayStr),
     ).length;
 
   const sumRefs = (past: boolean) =>
@@ -129,7 +131,10 @@ const Dashboard = () => {
   const currentPeriod = getProductionPeriodMonth(now);
   const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
   const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
-  const selectedPeriod = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
+  const selectedPeriod = useMemo(
+    () => getProductionPeriodForMonth(selectedYear, selectedMonth),
+    [selectedYear, selectedMonth],
+  );
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
@@ -182,9 +187,7 @@ const Dashboard = () => {
   });
 
   // Active profile for rendering (impersonated or own)
-  const activeProfile = isImpersonating && viewingProfile
-    ? { ...profile, ...viewingProfile }
-    : profile;
+  const activeProfile = isImpersonating && viewingProfile ? { ...profile, ...viewingProfile } : profile;
 
   // Mobile week navigation
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
@@ -208,10 +211,7 @@ const Dashboard = () => {
       .eq("is_active", true)
       .then(({ data }) => {
         if (data && data.length > 0) {
-          runCheckPromotions(
-            { id: profile.id, role: profile.role, full_name: profile.full_name },
-            data as any
-          );
+          runCheckPromotions({ id: profile.id, role: profile.role, full_name: profile.full_name }, data as any);
         }
       });
   }, [profile]);
@@ -241,19 +241,29 @@ const Dashboard = () => {
   }, [profile?.role]);
 
   // ── Desktop date range — driven by production period picker ──────────────
-  const dateRange = useMemo(() => ({
-    from: selectedPeriod.start,
-    to: selectedPeriod.end,
-  }), [selectedPeriod]);
+  const dateRange = useMemo(
+    () => ({
+      from: selectedPeriod.start,
+      to: selectedPeriod.end,
+    }),
+    [selectedPeriod],
+  );
 
   // ── Desktop stats from client_meetings ──────────────────────────────────────
   const { data: desktopMeetings = [] } = useQuery({
-    queryKey: ["dashboard_meetings", activeUserId, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")],
+    queryKey: [
+      "dashboard_meetings",
+      activeUserId,
+      format(dateRange.from, "yyyy-MM-dd"),
+      format(dateRange.to, "yyyy-MM-dd"),
+    ],
     queryFn: async () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+        .select(
+          "meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+        )
         .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
         .lte("date", format(dateRange.to, "yyyy-MM-dd"));
@@ -275,7 +285,9 @@ const Dashboard = () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+        .select(
+          "meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+        )
         .eq("user_id", activeUserId)
         .gte("date", mobileWeekStartStr)
         .lte("date", mobileWeekEndStr);
@@ -363,11 +375,7 @@ const Dashboard = () => {
       if (!activeUserId) return 0;
 
       // Zjistíme vedouci_id aktivního uživatele
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("vedouci_id")
-        .eq("id", activeUserId)
-        .single();
+      const { data: me } = await supabase.from("profiles").select("vedouci_id").eq("id", activeUserId).single();
 
       const vedouciId = me?.vedouci_id ?? activeUserId;
 
@@ -548,11 +556,13 @@ const Dashboard = () => {
           >
             {role === "vedouci"
               ? `Zbývá ${daysRemaining} dní a takhle vypadá tvůj byznys:`
-              : role === "novacek" ? "Postup k tvému povýšení na pozici Získatele:"
-              : role === "ziskatel" ? "Postup k tvému povýšení na pozici Garanta:"
-              : role === "garant" ? "Postup k tvému povýšení na pozici Budoucího vedoucího:"
-              : "Postup k tvému povýšení na pozici Vedoucího:"
-            }
+              : role === "novacek"
+                ? "Postup k tvému povýšení na pozici Získatele:"
+                : role === "ziskatel"
+                  ? "Postup k tvému povýšení na pozici Garanta:"
+                  : role === "garant"
+                    ? "Postup k tvému povýšení na pozici Budoucího vedoucího:"
+                    : "Postup k tvému povýšení na pozici Vedoucího:"}
           </div>
         </div>
 
@@ -583,15 +593,73 @@ const Dashboard = () => {
             // Vedoucí: čísla místo gauges
             <>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                <span style={{ fontFamily: "Open Sans, sans-serif", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>Týmové BJ</span>
-                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 48, color: "white", lineHeight: 1 }}>{vedouciMonthlyBj}</span>
-                <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>aktuální produkční období</span>
+                <span
+                  style={{
+                    fontFamily: "Open Sans, sans-serif",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.75)",
+                    marginBottom: 6,
+                  }}
+                >
+                  Týmové BJ
+                </span>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 800,
+                    fontSize: 48,
+                    color: "white",
+                    lineHeight: 1,
+                  }}
+                >
+                  {vedouciMonthlyBj}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "Open Sans, sans-serif",
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.55)",
+                    marginTop: 6,
+                  }}
+                >
+                  aktuální produkční období
+                </span>
               </div>
               <div style={{ width: 1, background: "rgba(255,255,255,0.2)", alignSelf: "stretch", margin: "0 4px" }} />
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                <span style={{ fontFamily: "Open Sans, sans-serif", fontWeight: 600, fontSize: 12, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>BV a Vedoucí</span>
-                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 48, color: "#86efac", lineHeight: 1 }}>{seniorMemberCount}</span>
-                <span style={{ fontFamily: "Open Sans, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>ve struktuře</span>
+                <span
+                  style={{
+                    fontFamily: "Open Sans, sans-serif",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.75)",
+                    marginBottom: 6,
+                  }}
+                >
+                  BV a Vedoucí
+                </span>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 800,
+                    fontSize: 48,
+                    color: "#86efac",
+                    lineHeight: 1,
+                  }}
+                >
+                  {seniorMemberCount}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "Open Sans, sans-serif",
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.55)",
+                    marginTop: 6,
+                  }}
+                >
+                  ve struktuře
+                </span>
               </div>
             </>
           ) : role === "ziskatel" ? (
@@ -603,11 +671,15 @@ const Dashboard = () => {
               return (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
-                    value={composite} max={100}
+                    value={composite}
+                    max={100}
                     valueLabel={`${composite} %`}
                     label="Postup k Garantovi"
-                    sublabel={isComplete ? "✓ Splněno" : `BJ: ${totalBjAllTime}/1000 · Lidé: ${ziskatelStructureCount}/2`}
-                    dark completed={isComplete}
+                    sublabel={
+                      isComplete ? "✓ Splněno" : `BJ: ${totalBjAllTime}/1000 · Lidé: ${ziskatelStructureCount}/2`
+                    }
+                    dark
+                    completed={isComplete}
                   />
                 </div>
               );
@@ -615,28 +687,48 @@ const Dashboard = () => {
           ) : role === "garant" ? (
             <>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={structureCount} max={5} label="Lidé ve struktuře"
+                <GaugeIndicator
+                  value={structureCount}
+                  max={5}
+                  label="Lidé ve struktuře"
                   sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`}
-                  dark completed={structureCount >= 5} />
+                  dark
+                  completed={structureCount >= 5}
+                />
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={directSubordinateCount} max={3} label="Přímá linka"
+                <GaugeIndicator
+                  value={directSubordinateCount}
+                  max={3}
+                  label="Přímá linka"
                   sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`}
-                  dark completed={directSubordinateCount >= 3} />
+                  dark
+                  completed={directSubordinateCount >= 3}
+                />
               </div>
             </>
           ) : (
             // budouci_vedouci
             <>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={structureCount} max={10} label="Lidé ve struktuře"
+                <GaugeIndicator
+                  value={structureCount}
+                  max={10}
+                  label="Lidé ve struktuře"
                   sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`}
-                  dark completed={structureCount >= 10} />
+                  dark
+                  completed={structureCount >= 10}
+                />
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={directSubordinateCount} max={6} label="Přímá linka"
+                <GaugeIndicator
+                  value={directSubordinateCount}
+                  max={6}
+                  label="Přímá linka"
                   sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`}
-                  dark completed={directSubordinateCount >= 6} />
+                  dark
+                  completed={directSubordinateCount >= 6}
+                />
               </div>
             </>
           )}
@@ -668,11 +760,7 @@ const Dashboard = () => {
             planned={mobileStats.por.planned}
             sublabel="proběhlých / naplán."
           />
-          <MobileStatCard
-            label="Doporučení"
-            actual={mobileStats.ref.actual}
-            sublabel="celkem"
-          />
+          <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
         </div>
 
         {/* ── WEEK NAVIGATOR (fixed above bottom nav) ── */}
@@ -715,7 +803,9 @@ const Dashboard = () => {
             <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
               {isMobileWeekEditable ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
             </div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+            <div
+              style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}
+            >
               {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
             </div>
           </div>
@@ -739,7 +829,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
       </div>
     );
@@ -762,16 +851,24 @@ const Dashboard = () => {
       // Vedoucí vidí čísla, ne gauges
       const statStyle = { textAlign: "center" as const, width: "100%" };
       const bigNumStyle = {
-        fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 52,
-        lineHeight: 1, color: "#00555f",
+        fontFamily: "Poppins, sans-serif",
+        fontWeight: 800,
+        fontSize: 52,
+        lineHeight: 1,
+        color: "#00555f",
       };
       const labelStyle = {
-        fontFamily: "Open Sans, sans-serif", fontWeight: 600, fontSize: 12,
-        color: "var(--text-secondary)", marginBottom: 8,
+        fontFamily: "Open Sans, sans-serif",
+        fontWeight: 600,
+        fontSize: 12,
+        color: "var(--text-secondary)",
+        marginBottom: 8,
       };
       const sublabelStyle = {
-        fontFamily: "Open Sans, sans-serif", fontSize: 11,
-        color: "var(--text-muted)", marginTop: 6,
+        fontFamily: "Open Sans, sans-serif",
+        fontSize: 11,
+        color: "var(--text-muted)",
+        marginTop: 6,
       };
       return (
         <>
@@ -799,7 +896,8 @@ const Dashboard = () => {
       return (
         <>
           <GaugeIndicator
-            value={composite} max={100}
+            value={composite}
+            max={100}
             valueLabel={`${composite} %`}
             label="Postup k Garantovi"
             sublabel={isComplete ? "✓ Splněno" : `BJ: ${totalBjAllTime}/1000 · Lidé: ${ziskatelStructureCount}/2`}
@@ -815,13 +913,17 @@ const Dashboard = () => {
       return (
         <>
           <GaugeIndicator
-            value={structureCount} max={5}
-            label="Lidé ve struktuře" sublabel={structDone ? "✓ Splněno" : `${structureCount} z 5`}
+            value={structureCount}
+            max={5}
+            label="Lidé ve struktuře"
+            sublabel={structDone ? "✓ Splněno" : `${structureCount} z 5`}
             completed={structDone}
           />
           <GaugeIndicator
-            value={directSubordinateCount} max={3}
-            label="Přímá linka" sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+            value={directSubordinateCount}
+            max={3}
+            label="Přímá linka"
+            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 3`}
             completed={directDone}
           />
         </>
@@ -834,13 +936,17 @@ const Dashboard = () => {
     return (
       <>
         <GaugeIndicator
-          value={structureCount} max={10}
-          label="Lidé ve struktuře" sublabel={structDone ? "✓ Splněno" : `${structureCount} z 10`}
+          value={structureCount}
+          max={10}
+          label="Lidé ve struktuře"
+          sublabel={structDone ? "✓ Splněno" : `${structureCount} z 10`}
           completed={structDone}
         />
         <GaugeIndicator
-          value={directSubordinateCount} max={6}
-          label="Přímá linka" sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+          value={directSubordinateCount}
+          max={6}
+          label="Přímá linka"
+          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 6`}
           completed={directDone}
         />
       </>
@@ -857,144 +963,151 @@ const Dashboard = () => {
         <ProductionMonthPicker
           selectedYear={selectedYear}
           selectedMonth={selectedMonth}
-          onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+          onChange={(y, m) => {
+            setSelectedYear(y);
+            setSelectedMonth(m);
+          }}
         />
       </div>
 
       <div>
-      {/* Impersonation banner */}
-      {isImpersonating && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 rounded-xl"
-          style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
-        >
-          <button
-            onClick={() => handlePersonSwitch(null, "")}
-            className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
-            style={{ color: "#00abbd" }}
+        {/* Impersonation banner */}
+        {isImpersonating && (
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{ background: "rgba(0,171,189,0.12)", border: "1px solid rgba(0,171,189,0.3)" }}
           >
-            <ArrowLeft size={16} /> Zpět na můj dashboard
-          </button>
-          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
-            Prohlížíte dashboard: <strong>{viewingUserName}</strong>
-          </span>
-        </div>
-      )}
-
-      <section className="space-y-4">
-        <div className="flex gap-6" style={{ alignItems: "stretch", height: 420 }}>
-          {/* Stav byznysu — 1/4 */}
-          <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
-              Stav byznysu
-            </h2>
-            <div
-              className="legatus-card"
-              style={{
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 20,
-                alignItems: "center",
-                flex: 1,
-                overflowY: "auto",
-              }}
+            <button
+              onClick={() => handlePersonSwitch(null, "")}
+              className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+              style={{ color: "#00abbd" }}
             >
-              {renderStavByznysu()}
-            </div>
+              <ArrowLeft size={16} /> Zpět na můj dashboard
+            </button>
+            <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+              Prohlížíte dashboard: <strong>{viewingUserName}</strong>
+            </span>
           </div>
-          {/* Moje struktura — 3/5 */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
-              {isImpersonating ? `Struktura — ${viewingUserName}` : "Moje struktura"}
-            </h2>
-            <div
-              className="legatus-card"
-              style={{
-                padding: 24,
-                flex: 1,
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 0,
-              }}
-            >
-              <div style={{
-                flex: 1, overflowY: "auto", minHeight: 0,
-                transition: "opacity 0.2s ease, transform 0.2s ease",
-                opacity: orgTransitioning ? 0 : 1,
-                transform: orgTransitioning ? "scale(0.97)" : "scale(1)",
-              }}>
-                <OrgChart
-                  currentUserId={profile?.id || ""}
-                  focusUserId={viewingUserId || undefined}
-                  viewerRole={profile?.role}
-                  onPersonClick={(userId, p) => {
-                    handlePersonSwitch(userId, p.full_name);
+        )}
+
+        <section className="space-y-4">
+          <div className="flex gap-6" style={{ alignItems: "stretch", height: 500 }}>
+            {/* Stav byznysu — 1/4 */}
+            <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+              <h2
+                className="font-heading font-semibold"
+                style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
+              >
+                Stav byznysu
+              </h2>
+              <div
+                className="legatus-card"
+                style={{
+                  padding: 24,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 20,
+                  alignItems: "center",
+                  flex: 1,
+                  overflowY: "auto",
+                }}
+              >
+                {renderStavByznysu()}
+              </div>
+            </div>
+            {/* Moje struktura — 3/5 */}
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <h2
+                className="font-heading font-semibold"
+                style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
+              >
+                {isImpersonating ? `Struktura — ${viewingUserName}` : "Moje struktura"}
+              </h2>
+              <div
+                className="legatus-card"
+                style={{
+                  padding: 24,
+                  flex: 1,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    minHeight: 0,
+                    transition: "opacity 0.2s ease, transform 0.2s ease",
+                    opacity: orgTransitioning ? 0 : 1,
+                    transform: orgTransitioning ? "scale(0.97)" : "scale(1)",
                   }}
-                />
+                >
+                  <OrgChart
+                    currentUserId={profile?.id || ""}
+                    focusUserId={viewingUserId || undefined}
+                    viewerRole={profile?.role}
+                    onPersonClick={(userId, p) => {
+                      handlePersonSwitch(userId, p.full_name);
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="space-y-4">
-        <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-          Přehled aktivit
-        </h2>
+        <section className="space-y-4">
+          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
+            Přehled aktivit
+          </h2>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-body text-xs text-muted-foreground">Období od</span>
-          <span className="chip chip-neutral" style={{ cursor: "default" }}>
-            {format(dateRange.from, "d. M. yyyy", { locale: cs })}
-          </span>
-          <span className="font-body text-xs text-muted-foreground">do</span>
-          <span className="chip chip-neutral" style={{ cursor: "default" }}>
-            {format(dateRange.to, "d. M. yyyy", { locale: cs })}
-          </span>
-        </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-body text-xs text-muted-foreground">Období od</span>
+            <span className="chip chip-neutral" style={{ cursor: "default" }}>
+              {format(dateRange.from, "d. M. yyyy", { locale: cs })}
+            </span>
+            <span className="font-body text-xs text-muted-foreground">do</span>
+            <span className="chip chip-neutral" style={{ cursor: "default" }}>
+              {format(dateRange.to, "d. M. yyyy", { locale: cs })}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard
-            label="Analýzy"
-            actual={stats.fsa.actual}
-            planned={stats.fsa.planned}
-            actualLabel="proběhlých"
-            plannedLabel="domluvenných"
-          />
-          <StatCard
-            label="Pohovory"
-            actual={stats.poh.actual}
-            planned={stats.poh.planned}
-            actualLabel="proběhlých"
-            plannedLabel="naplánovaných"
-          />
-          <StatCard
-            label="Servisy"
-            actual={stats.ser.actual}
-            planned={stats.ser.planned}
-            actualLabel="proběhlých"
-            plannedLabel="naplánovaných"
-          />
-          <StatCard
-            label="Poradenství"
-            actual={stats.por.actual}
-            planned={stats.por.planned}
-            actualLabel="proběhlých"
-            plannedLabel="naplánovaných"
-          />
-          <StatCard
-            label="Doporučení"
-            actual={stats.ref.actual}
-            actualLabel="celkem"
-          />
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatCard
+              label="Analýzy"
+              actual={stats.fsa.actual}
+              planned={stats.fsa.planned}
+              actualLabel="proběhlých"
+              plannedLabel="domluvenných"
+            />
+            <StatCard
+              label="Pohovory"
+              actual={stats.poh.actual}
+              planned={stats.poh.planned}
+              actualLabel="proběhlých"
+              plannedLabel="naplánovaných"
+            />
+            <StatCard
+              label="Servisy"
+              actual={stats.ser.actual}
+              planned={stats.ser.planned}
+              actualLabel="proběhlých"
+              plannedLabel="naplánovaných"
+            />
+            <StatCard
+              label="Poradenství"
+              actual={stats.por.actual}
+              planned={stats.por.planned}
+              actualLabel="proběhlých"
+              plannedLabel="naplánovaných"
+            />
+            <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="celkem" />
+          </div>
+        </section>
 
-      
-
-      <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+        <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
       </div>
     </div>
   );
