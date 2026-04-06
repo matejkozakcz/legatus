@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       .neq("schedule_type", "event");
 
     if (rulesError) throw rulesError;
-    console.log(`[scheduled-notifications] Found ${rules?.length ?? 0} scheduled rules`);
+    
     if (!rules || rules.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -53,16 +53,16 @@ Deno.serve(async (req) => {
       // Check EXACT minute match (cron runs every minute)
       if (currentHour !== schedHour || currentMinute !== schedMin) continue;
 
-      console.log(`[scheduled-notifications] Rule "${rule.name}" matched! schedHour=${schedHour}, schedMin=${schedMin}`);
+      console.log(`[scheduled-notifications] Rule "${rule.name}" matched`);
 
       // Check day constraints (null means "every day")
-      if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) { console.log(`[scheduled-notifications] Skipping: dow mismatch`); continue; }
-      if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) { console.log(`[scheduled-notifications] Skipping: dom mismatch`); continue; }
+      if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
+      if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
 
       // Dedup: skip if already sent within the last 23 hours
       if (rule.last_scheduled_at) {
         const lastSent = new Date(rule.last_scheduled_at).getTime();
-        if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) { console.log(`[scheduled-notifications] Skipping: dedup`); continue; }
+        if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) continue;
       }
 
       // Mark as sent IMMEDIATELY to prevent parallel cron invocations
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
         .from("notification_rules")
         .update({ last_scheduled_at: now.toISOString() })
         .eq("id", rule.id);
-      console.log(`[scheduled-notifications] Mark sent: ${updateErr ? updateErr.message : 'OK'}`);
+      if (updateErr) console.error(`[scheduled-notifications] Mark sent error: ${updateErr.message}`);
 
       // Get recipients with profile data
       let recipients: { id: string; full_name: string; role: string }[] = [];
