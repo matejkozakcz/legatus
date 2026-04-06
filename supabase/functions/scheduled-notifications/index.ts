@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
       .neq("schedule_type", "event");
 
     if (rulesError) throw rulesError;
+    console.log(`[scheduled-notifications] Found ${rules?.length ?? 0} scheduled rules`);
     if (!rules || rules.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
