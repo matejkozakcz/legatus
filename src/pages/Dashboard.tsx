@@ -549,6 +549,34 @@ const Dashboard = () => {
 
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
+  // Helper: map goal key to current value
+  const getGoalValue = (key: GoalKey): number => {
+    switch (key) {
+      case "team_bj": return vedouciMonthlyBj;
+      case "personal_bj": return personalMonthlyBj;
+      case "vedouci_count": return vedouciSubCount;
+      case "budouci_vedouci_count": return bvCount;
+      case "garant_count": return garantCount;
+      default: return 0;
+    }
+  };
+  const getGoalMax = (key: GoalKey): number => {
+    if (!vedouciGoals) return 0;
+    switch (key) {
+      case "team_bj": return vedouciGoals.team_bj_goal || 0;
+      case "personal_bj": return vedouciGoals.personal_bj_goal || 0;
+      case "vedouci_count": return vedouciGoals.vedouci_count_goal || 0;
+      case "budouci_vedouci_count": return vedouciGoals.budouci_vedouci_count_goal || 0;
+      case "garant_count": return vedouciGoals.garant_count_goal || 0;
+      default: return 0;
+    }
+  };
+  const getGoalLabel = (key: GoalKey): string => {
+    return GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
+  };
+  const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
+  const selectedGoal2: GoalKey = vedouciGoals?.selected_goal_2 || "personal_bj";
+
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = isImpersonating
