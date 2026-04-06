@@ -13,8 +13,21 @@ interface CheckMember {
   ziskatel_id: string | null;
 }
 
+interface ExistingPromotionRequest {
+  id: string;
+  user_id: string;
+  requested_role: PromotionRole;
+  status: string;
+}
+
+type PromotionRole = "garant" | "budouci_vedouci" | "vedouci";
+
 const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const PROMOTION_NOTIFICATION_TYPE = "promotion_eligible";
+const PENDING_STATUS = "pending";
+const NOT_ELIGIBLE_STATUS = "not_eligible";
+const PROMOTION_ROLES: PromotionRole[] = ["garant", "budouci_vedouci", "vedouci"];
 
 async function sendPush(notificationId: string): Promise<void> {
   try {
@@ -33,24 +46,17 @@ async function ensureNotification(
   title: string,
   body: string
 ): Promise<void> {
-  // Dedup: pokud oznamení se stejným názvem a příjemcem existuje,
-  // nevytváříme duplikát, ale push znovu odešleme (retry pro případ neúspěšného doručení)
   const { data: existing } = await supabase
     .from("notifications")
-    .select("id, read")
+    .select("id")
     .eq("recipient_id", vedouciId)
-    .eq("type", "promotion_eligible")
+    .eq("type", PROMOTION_NOTIFICATION_TYPE)
     .eq("title", title)
+    .eq("read", false)
     .limit(1);
 
   if (existing && existing.length > 0) {
-    if (!existing[0].read) {
-      // Nepřečtená — pošli push znovu (retry)
-      await sendPush(existing[0].id);
-      return;
-    }
-    // Přečtená — smaž starou a vytvoř novou, aby se push odeslal znovu
-    await supabase.from("notifications").delete().eq("id", existing[0].id);
+    return;
   }
 
   const { data: notifData } = await supabase
@@ -58,7 +64,7 @@ async function ensureNotification(
     .insert({
       sender_id: vedouciId,
       recipient_id: vedouciId,
-      type: "promotion_eligible",
+      type: PROMOTION_NOTIFICATION_TYPE,
       title,
       body,
       deadline: new Date().toISOString().split("T")[0],
@@ -71,9 +77,108 @@ async function ensureNotification(
   }
 }
 
+function getRequestKey(userId: string, requestedRole: PromotionRole): string {
+  return `${userId}:${requestedRole}`;
+}
+
+async function syncPromotionRequest(
+  profileId: string,
+  requestByKey: Map<string, ExistingPromotionRequest>,
+  userId: string,
+  requestedRole: PromotionRole,
+  eligible: boolean,
+  title: string,
+  body: string,
+  cumulativeBj: number,
+  directZiskatels: number
+): Promise<void> {
+  const key = getRequestKey(userId, requestedRole);
+  const existingRequest = requestByKey.get(key);
+
+  if (!eligible) {
+    if (existingRequest?.status === PENDING_STATUS) {
+      await supabase
+        .from("promotion_requests")
+        .update({
+          status: NOT_ELIGIBLE_STATUS,
+          cumulative_bj: cumulativeBj,
+          direct_ziskatels: directZiskatels,
+        })
+        .eq("id", existingRequest.id);
+
+      requestByKey.set(key, {
+        ...existingRequest,
+        status: NOT_ELIGIBLE_STATUS,
+      });
+
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("recipient_id", profileId)
+        .eq("type", PROMOTION_NOTIFICATION_TYPE)
+        .eq("title", title)
+        .eq("read", false);
+    }
+    return;
+  }
+
+  if (!existingRequest) {
+    const { data: inserted } = await supabase
+      .from("promotion_requests")
+      .insert({
+        user_id: userId,
+        requested_role: requestedRole,
+        status: PENDING_STATUS,
+        cumulative_bj: cumulativeBj,
+        direct_ziskatels: directZiskatels,
+      })
+      .select("id, user_id, requested_role, status")
+      .single();
+
+    if (inserted) {
+      requestByKey.set(key, inserted as ExistingPromotionRequest);
+    }
+
+    await ensureNotification(profileId, title, body);
+    return;
+  }
+
+  if (existingRequest.status === NOT_ELIGIBLE_STATUS) {
+    await supabase
+      .from("promotion_requests")
+      .update({
+        status: PENDING_STATUS,
+        requested_at: new Date().toISOString(),
+        reviewed_at: null,
+        reviewed_by: null,
+        cumulative_bj: cumulativeBj,
+        direct_ziskatels: directZiskatels,
+      })
+      .eq("id", existingRequest.id);
+
+    requestByKey.set(key, {
+      ...existingRequest,
+      status: PENDING_STATUS,
+    });
+
+    await ensureNotification(profileId, title, body);
+    return;
+  }
+
+  if (existingRequest.status === PENDING_STATUS) {
+    await supabase
+      .from("promotion_requests")
+      .update({
+        cumulative_bj: cumulativeBj,
+        direct_ziskatels: directZiskatels,
+      })
+      .eq("id", existingRequest.id);
+  }
+}
+
 /**
  * Zkontroluje podmínky povýšení pro všechny členy týmu a vytvoří
- * promotion_request + notifikaci Vedoucímu, pokud nejsou dosud vytvořeny.
+ * promotion_request + notifikaci Vedoucímu jen při novém nebo znovu obnoveném nároku.
  *
  * Lze volat z libovolné stránky — stačí předat profile vedoucího a seznam členů.
  */
@@ -105,6 +210,19 @@ export async function checkPromotions(
 
   const countDirect = (id: string): number => (childMap.get(id) || []).length;
 
+  const { data: existingRequests } = await supabase
+    .from("promotion_requests")
+    .select("id, user_id, requested_role, status")
+    .in("user_id", members.map((m) => m.id))
+    .in("requested_role", PROMOTION_ROLES);
+
+  const requestByKey = new Map<string, ExistingPromotionRequest>(
+    (existingRequests || []).map((request) => [
+      getRequestKey(request.user_id, request.requested_role as PromotionRole),
+      request as ExistingPromotionRequest,
+    ])
+  );
+
   // ── Získatel → Garant: 1000 BJ + 2 lidé ve struktuře ──
   const ziskatels = members.filter((m) => m.role === "ziskatel");
   if (ziskatels.length > 0) {
@@ -133,17 +251,17 @@ export async function checkPromotions(
     for (const c of ziskatels) {
       const bj = bjByUser.get(c.id) || 0;
       const struct = countStructure(c.id);
-      if (bj >= 1000 && struct >= 2) {
-        await supabase.from("promotion_requests").upsert(
-          { user_id: c.id, requested_role: "garant", status: "pending", cumulative_bj: bj, direct_ziskatels: struct },
-          { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-        );
-        await ensureNotification(
-          profile.id,
-          `${c.full_name} splňuje podmínky pro povýšení na Garanta`,
-          `Kumulativní BJ: ${bj} · ${struct} lidí ve struktuře`
-        );
-      }
+      await syncPromotionRequest(
+        profile.id,
+        requestByKey,
+        c.id,
+        "garant",
+        bj >= 1000 && struct >= 2,
+        `${c.full_name} splňuje podmínky pro povýšení na Garanta`,
+        `Kumulativní BJ: ${bj} · ${struct} lidí ve struktuře`,
+        bj,
+        struct
+      );
     }
   }
 
@@ -151,33 +269,33 @@ export async function checkPromotions(
   for (const c of members.filter((m) => m.role === "garant")) {
     const direct = countDirect(c.id);
     const struct = countStructure(c.id);
-    if (struct >= 5 && direct >= 3) {
-      await supabase.from("promotion_requests").upsert(
-        { user_id: c.id, requested_role: "budouci_vedouci", status: "pending", direct_ziskatels: direct, cumulative_bj: struct },
-        { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-      );
-      await ensureNotification(
-        profile.id,
-        `${c.full_name} splňuje podmínky pro povýšení na Budoucího vedoucího`,
-        `${struct} lidí ve struktuře · ${direct} přímých`
-      );
-    }
+    await syncPromotionRequest(
+      profile.id,
+      requestByKey,
+      c.id,
+      "budouci_vedouci",
+      struct >= 5 && direct >= 3,
+      `${c.full_name} splňuje podmínky pro povýšení na Budoucího vedoucího`,
+      `${struct} lidí ve struktuře · ${direct} přímých`,
+      struct,
+      direct
+    );
   }
 
-  // ── Budoucí vedoucí → Vedoucí: 10 lidí + 6 přímích ──
+  // ── Budoucí vedoucí → Vedoucí: 10 lidí + 6 přímých ──
   for (const c of members.filter((m) => m.role === "budouci_vedouci")) {
     const direct = countDirect(c.id);
     const struct = countStructure(c.id);
-    if (struct >= 10 && direct >= 6) {
-      await supabase.from("promotion_requests").upsert(
-        { user_id: c.id, requested_role: "vedouci", status: "pending", direct_ziskatels: direct, cumulative_bj: struct },
-        { onConflict: "user_id,requested_role", ignoreDuplicates: true }
-      );
-      await ensureNotification(
-        profile.id,
-        `${c.full_name} splňuje podmínky pro povýšení na Vedoucího`,
-        `${struct} lidí ve struktuře · ${direct} přímých`
-      );
-    }
+    await syncPromotionRequest(
+      profile.id,
+      requestByKey,
+      c.id,
+      "vedouci",
+      struct >= 10 && direct >= 6,
+      `${c.full_name} splňuje podmínky pro povýšení na Vedoucího`,
+      `${struct} lidí ve struktuře · ${direct} přímých`,
+      struct,
+      direct
+    );
   }
 }
