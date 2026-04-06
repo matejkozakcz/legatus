@@ -2,12 +2,10 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ChevronDown, ChevronRight, TrendingUp, Bell } from "lucide-react";
+import { Users, Plus, ChevronDown, ChevronRight, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import { cs } from "date-fns/locale";
+import { toast } from "sonner";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 
