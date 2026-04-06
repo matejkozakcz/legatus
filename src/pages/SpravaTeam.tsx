@@ -218,6 +218,38 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (reqError) throw reqError;
 
+      // When promoting to vedouci, reassign the entire subtree under the new vedouci
+      if (newRole === "vedouci") {
+        // Collect all IDs in the subtree (BFS via ziskatel_id)
+        const allMembers = members.length > 0 ? members : [];
+        const childMap = new Map<string, string[]>();
+        allMembers.forEach((m) => {
+          if (m.ziskatel_id) {
+            const list = childMap.get(m.ziskatel_id) || [];
+            list.push(m.id);
+            childMap.set(m.ziskatel_id, list);
+          }
+        });
+        const subtreeIds: string[] = [];
+        const queue = [...(childMap.get(userId) || [])];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          subtreeIds.push(id);
+          queue.push(...(childMap.get(id) || []));
+        }
+        if (subtreeIds.length > 0) {
+          await supabase
+            .from("profiles")
+            .update({ vedouci_id: userId })
+            .in("id", subtreeIds);
+        }
+        // Also clear the promoted user's vedouci_id (they are now independent)
+        await supabase
+          .from("profiles")
+          .update({ vedouci_id: null })
+          .eq("id", userId);
+      }
+
       // Log history
       await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
 
