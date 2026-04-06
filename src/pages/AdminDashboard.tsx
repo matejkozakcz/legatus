@@ -1405,6 +1405,50 @@ function NotificationRulesTab() {
           )}
         </div>
       </CardContent>
+
+      {/* Test notification dialog */}
+      <Dialog open={!!testRule} onOpenChange={(open) => !open && setTestRule(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Testovací notifikace</DialogTitle>
+          </DialogHeader>
+          {testRule && (() => {
+            const placeholders = extractPlaceholders(testRule);
+            if (placeholders.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
+                </p>
+              );
+            }
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
+                {placeholders.map((key) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
+                    <Input
+                      placeholder={key}
+                      value={testVars[key] || ""}
+                      onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setTestRule(null)}>Zrušit</Button>
+            <Button
+              size="sm"
+              onClick={sendTestNotification}
+              disabled={sendingTestId === testRule?.id}
+            >
+              {sendingTestId === testRule?.id ? "Odesílám…" : "Odeslat"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
