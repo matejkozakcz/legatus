@@ -623,31 +623,93 @@ const DEFAULT_VISIBILITY: VisibilityRule[] = [
   { role: "Admin", sees: "Vše", scope: "Celá databáze (is_admin())" },
 ];
 
-function VisibilityEditor() {
-  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<VisibilityRule[]>(
-    "visibility_rules",
-    []
+// ─── Shared RLS apply hook ────────────────────────────────────────────────────
+
+function useApplyRls(type: string) {
+  const [sqlPreview, setSqlPreview] = useState<string[] | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applyErrors, setApplyErrors] = useState<string[]>([]);
+
+  const callFn = async (payload: Record<string, unknown>, dryRun: boolean) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Nejsi přihlášen"); return; }
+    const res = await fetch(`${supabaseUrl}/functions/v1/apply-rls`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ type, ...payload, dry_run: dryRun }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Chyba");
+    return data;
+  };
+
+  const previewSql = async (payload: Record<string, unknown>) => {
+    try {
+      const data = await callFn(payload, true);
+      setSqlPreview(data.statements || []);
+      setApplyErrors(data.errors || []);
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const applyToDb = async (payload: Record<string, unknown>, saveFn?: () => Promise<void>) => {
+    if (!confirm("⚠️ Tato akce změní RLS politiky v databázi. Opravdu pokračovat?")) return;
+    setApplying(true);
+    try {
+      if (saveFn) await saveFn();
+      const data = await callFn(payload, false);
+      setApplyErrors(data.errors || []);
+      setSqlPreview(null);
+      toast.success(`RLS politiky aplikovány (${data.applied} příkazů)`);
+    } catch (e: any) { toast.error(`Chyba: ${e.message}`); }
+    finally { setApplying(false); }
+  };
+
+  return { sqlPreview, setSqlPreview, applying, applyErrors, previewSql, applyToDb };
+}
+
+function SqlPreviewBlock({ sqlPreview, setSqlPreview, applyErrors }: { sqlPreview: string[] | null; setSqlPreview: (v: null) => void; applyErrors: string[] }) {
+  if (!sqlPreview) return null;
+  return (
+    <div className="space-y-2 mt-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-heading font-semibold">Náhled SQL příkazů</h4>
+        <Button size="sm" variant="ghost" onClick={() => setSqlPreview(null)} className="h-7 text-xs">Zavřít</Button>
+      </div>
+      <div className="rounded-lg border border-border bg-foreground/5 p-3 max-h-64 overflow-y-auto">
+        <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">{sqlPreview.join("\n\n")}</pre>
+      </div>
+      {applyErrors.length > 0 && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+          <p className="text-xs font-medium text-destructive mb-1">Varování:</p>
+          {applyErrors.map((e, i) => <p key={i} className="text-[11px] text-destructive/80">{e}</p>)}
+        </div>
+      )}
+    </div>
   );
+}
+
+// ─── Visibility Editor ────────────────────────────────────────────────────────
+
+function VisibilityEditor() {
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<VisibilityRule[]>("visibility_rules", []);
+  const rls = useApplyRls("visibility");
 
   const updateRule = (index: number, field: keyof VisibilityRule, value: string) => {
     update((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   };
-
   const addRule = () => {
     update((prev) => [...prev, { role: "Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" }]);
   };
-
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
   };
-
   const resetToDefaults = () => {
     update(() => [...DEFAULT_VISIBILITY]);
   };
 
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
 
-  // Group by role
   const grouped = rules.reduce<Record<string, { rule: VisibilityRule; idx: number }[]>>((acc, rule, idx) => {
     if (!acc[rule.role]) acc[rule.role] = [];
     acc[rule.role].push({ rule, idx });
@@ -657,11 +719,11 @@ function VisibilityEditor() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Eye className="h-4 w-4" /> Kdo vidí čí data
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
               <RotateCcw className="h-3 w-3" /> Reset
             </Button>
@@ -673,14 +735,25 @@ function VisibilityEditor() {
                 <Save className="h-3 w-3" /> Uložit
               </Button>
             )}
+            <Button size="sm" variant="outline" onClick={() => rls.previewSql({ rules })} className="h-7 text-xs gap-1">
+              <FileCode className="h-3 w-3" /> Náhled SQL
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => rls.applyToDb({ rules }, () => save.mutateAsync(rules))}
+              disabled={rls.applying}
+              className="h-7 text-xs gap-1 bg-primary hover:bg-primary/90"
+            >
+              <Zap className="h-3 w-3" /> {rls.applying ? "Aplikuji…" : "Aplikovat na DB"}
+            </Button>
           </div>
         </div>
         <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
           <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Každý řádek definuje, <strong>jaká data</strong> daná role vidí a <strong>v jakém rozsahu</strong> (scope). 
-            Scope určuje filtr — např. „Celý podstrom" znamená, že Vedoucí vidí data všech lidí pod sebou v hierarchii. 
-            Toto je konfigurační dokumentace — skutečné přístupy řídí databázové politiky.
+            Každý řádek definuje, <strong>jaká data</strong> daná role vidí a <strong>v jakém rozsahu</strong> (scope).
+            <strong> Náhled SQL</strong> ukáže vygenerované SELECT politiky. <strong>Aplikovat na DB</strong> je zapíše do databáze.
+            ⚠️ Toto přepíše stávající SELECT RLS politiky na dotčených tabulkách!
           </p>
         </div>
       </CardHeader>
@@ -721,6 +794,7 @@ function VisibilityEditor() {
             </div>
           ))}
         </div>
+        <SqlPreviewBlock sqlPreview={rls.sqlPreview} setSqlPreview={rls.setSqlPreview} applyErrors={rls.applyErrors} />
       </CardContent>
     </Card>
   );
@@ -729,13 +803,8 @@ function VisibilityEditor() {
 // ─── Permission Matrix Editor ─────────────────────────────────────────────────
 
 function PermissionMatrixEditor() {
-  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<PermRule[]>(
-    "permission_matrix",
-    []
-  );
-  const [sqlPreview, setSqlPreview] = useState<string[] | null>(null);
-  const [applying, setApplying] = useState(false);
-  const [applyErrors, setApplyErrors] = useState<string[]>([]);
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<PermRule[]>("permission_matrix", []);
+  const rls = useApplyRls("matrix");
 
   const toggleAction = (tableIdx: number, role: string, action: PermAction) => {
     update((prev) =>
@@ -754,50 +823,12 @@ function PermissionMatrixEditor() {
     );
   };
 
-  const callApplyRls = async (dryRun: boolean) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { toast.error("Nejsi přihlášen"); return; }
-
-    const res = await fetch(`${supabaseUrl}/functions/v1/apply-rls`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ matrix: rules, dry_run: dryRun }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Chyba");
-    return data;
-  };
-
   const previewSql = async () => {
-    try {
-      const data = await callApplyRls(true);
-      setSqlPreview(data.statements || []);
-      setApplyErrors(data.errors || []);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    await rls.previewSql({ matrix: rules });
   };
 
   const applyToDb = async () => {
-    if (!confirm("⚠️ Tato akce SMAŽE všechny stávající RLS politiky a vytvoří nové. Opravdu pokračovat?")) return;
-    setApplying(true);
-    try {
-      // Save config first
-      await save.mutateAsync(rules);
-      const data = await callApplyRls(false);
-      setApplyErrors(data.errors || []);
-      setSqlPreview(null);
-      toast.success(`RLS politiky aplikovány (${data.applied} příkazů)`);
-    } catch (e: any) {
-      toast.error(`Chyba: ${e.message}`);
-    } finally {
-      setApplying(false);
-    }
+    await rls.applyToDb({ matrix: rules }, () => save.mutateAsync(rules));
   };
 
   if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
@@ -822,10 +853,10 @@ function PermissionMatrixEditor() {
               size="sm"
               variant="default"
               onClick={applyToDb}
-              disabled={applying}
+              disabled={rls.applying}
               className="h-7 text-xs gap-1 bg-primary hover:bg-primary/90"
             >
-              <Zap className="h-3 w-3" /> {applying ? "Aplikuji…" : "Aplikovat na DB"}
+              <Zap className="h-3 w-3" /> {rls.applying ? "Aplikuji…" : "Aplikovat na DB"}
             </Button>
           </div>
         </div>
@@ -886,29 +917,7 @@ function PermissionMatrixEditor() {
             </tbody>
           </table>
         </div>
-
-        {/* SQL Preview */}
-        {sqlPreview && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-heading font-semibold">Náhled SQL příkazů</h4>
-              <Button size="sm" variant="ghost" onClick={() => setSqlPreview(null)} className="h-7 text-xs">Zavřít</Button>
-            </div>
-            <div className="rounded-lg border border-border bg-foreground/5 p-3 max-h-64 overflow-y-auto">
-              <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">
-                {sqlPreview.join("\n\n")}
-              </pre>
-            </div>
-            {applyErrors.length > 0 && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                <p className="text-xs font-medium text-destructive mb-1">Varování:</p>
-                {applyErrors.map((e, i) => (
-                  <p key={i} className="text-[11px] text-destructive/80">{e}</p>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <SqlPreviewBlock sqlPreview={rls.sqlPreview} setSqlPreview={rls.setSqlPreview} applyErrors={rls.applyErrors} />
       </CardContent>
     </Card>
   );
@@ -938,23 +947,18 @@ const MEANING_OPTIONS = [
 ] as const;
 
 function HierarchyEditor() {
-  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<HierarchyRule[]>(
-    "hierarchy_rules",
-    []
-  );
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<HierarchyRule[]>("hierarchy_rules", []);
+  const rls = useApplyRls("hierarchy");
 
   const updateRule = (index: number, field: keyof HierarchyRule, value: string) => {
     update((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   };
-
   const addRule = () => {
     update((prev) => [...prev, { relationship: "vedouci_id", meaning: "", whoSets: "Admin" }]);
   };
-
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
   };
-
   const resetToDefaults = () => {
     update(() => [...DEFAULT_HIERARCHY]);
   };
@@ -966,11 +970,11 @@ function HierarchyEditor() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
               <RotateCcw className="h-3 w-3" /> Reset
             </Button>
@@ -982,14 +986,25 @@ function HierarchyEditor() {
                 <Save className="h-3 w-3" /> Uložit
               </Button>
             )}
+            <Button size="sm" variant="outline" onClick={() => rls.previewSql({ rules })} className="h-7 text-xs gap-1">
+              <FileCode className="h-3 w-3" /> Náhled SQL
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => rls.applyToDb({ rules }, () => save.mutateAsync(rules))}
+              disabled={rls.applying}
+              className="h-7 text-xs gap-1 bg-primary hover:bg-primary/90"
+            >
+              <Zap className="h-3 w-3" /> {rls.applying ? "Aplikuji…" : "Aplikovat na DB"}
+            </Button>
           </div>
         </div>
         <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
           <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Každá karta představuje jedno <strong>pole v profilu</strong> uživatele, které tvoří hierarchickou vazbu. 
-            <strong> Pole</strong> = název sloupce v databázi. <strong>Co znamená</strong> = popis funkce vazby. 
+            Každá karta představuje jedno <strong>pole v profilu</strong> uživatele, které tvoří hierarchickou vazbu.
             <strong> Kdo nastavuje</strong> = kdo má právo tuto vazbu vytvořit nebo změnit.
+            <strong> Aplikovat na DB</strong> přepíše UPDATE politiky na tabulce profiles.
           </p>
         </div>
       </CardHeader>
@@ -1043,6 +1058,7 @@ function HierarchyEditor() {
             </div>
           ))}
         </div>
+        <SqlPreviewBlock sqlPreview={rls.sqlPreview} setSqlPreview={rls.setSqlPreview} applyErrors={rls.applyErrors} />
       </CardContent>
     </Card>
   );
