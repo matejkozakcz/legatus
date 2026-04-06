@@ -1246,6 +1246,7 @@ interface NotifRule {
 }
 
 function NotificationRulesTab() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
