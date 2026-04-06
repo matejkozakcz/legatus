@@ -230,6 +230,17 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (reqError) throw reqError;
 
+      // When promoting to garant, reassign direct subordinates' garant_id
+      if (newRole === "garant") {
+        const directReports = members.filter((m) => m.ziskatel_id === userId);
+        if (directReports.length > 0) {
+          await supabase
+            .from("profiles")
+            .update({ garant_id: userId })
+            .in("id", directReports.map((m) => m.id));
+        }
+      }
+
       // When promoting to vedouci, reassign the entire subtree under the new vedouci
       if (newRole === "vedouci") {
         // Collect all IDs in the subtree (BFS via ziskatel_id)
@@ -255,7 +266,6 @@ const SpravaTeam = () => {
             .update({ vedouci_id: userId })
             .in("id", subtreeIds);
         }
-        // vedouci_id is kept so the promoted user remains in the hierarchy
       }
 
       // Log history
