@@ -76,15 +76,21 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
 
   const selectedKeys: (GoalKey | "")[] = [form.selected_goal_1, form.selected_goal_2].filter(Boolean) as GoalKey[];
 
-  const handleSelectGoal = (slot: 1 | 2, key: GoalKey) => {
+  const handleToggleGoal = (key: GoalKey) => {
     setForm((prev) => {
-      const otherSlot = slot === 1 ? "selected_goal_2" : "selected_goal_1";
-      const thisSlot = slot === 1 ? "selected_goal_1" : "selected_goal_2";
-      // If selecting a key that's already in the other slot, swap
-      if (prev[otherSlot] === key) {
-        return { ...prev, [thisSlot]: key, [otherSlot]: prev[thisSlot] };
+      const keys = [prev.selected_goal_1, prev.selected_goal_2].filter(Boolean);
+      if (keys.includes(key)) {
+        // Deselect — but must keep at least 1
+        if (keys.length <= 1) return prev;
+        if (prev.selected_goal_1 === key) return { ...prev, selected_goal_1: prev.selected_goal_2 as GoalKey, selected_goal_2: "" };
+        return { ...prev, selected_goal_2: "" };
+      } else {
+        // Select — fill empty slot or replace slot 2
+        if (!prev.selected_goal_1) return { ...prev, selected_goal_1: key };
+        if (!prev.selected_goal_2) return { ...prev, selected_goal_2: key };
+        // Already 2 selected, replace slot 2
+        return { ...prev, selected_goal_2: key };
       }
-      return { ...prev, [thisSlot]: key };
     });
   };
 
