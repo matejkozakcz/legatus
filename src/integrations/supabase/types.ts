@@ -258,6 +258,51 @@ export type Database = {
           },
         ]
       }
+      notification_rules: {
+        Row: {
+          body_template: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          recipient_roles: string[]
+          send_in_app: boolean
+          send_push: boolean
+          title_template: string
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          body_template?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          recipient_roles?: string[]
+          send_in_app?: boolean
+          send_push?: boolean
+          title_template?: string
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          recipient_roles?: string[]
+          send_in_app?: boolean
+          send_push?: boolean
+          title_template?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
