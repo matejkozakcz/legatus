@@ -165,6 +165,33 @@ async function syncPromotionRequest(
     return;
   }
 
+  // Zamítnutá žádost — smaž ji a vytvoř novou (nový pokus o povýšení)
+  if (existingRequest.status === "rejected") {
+    await supabase
+      .from("promotion_requests")
+      .delete()
+      .eq("id", existingRequest.id);
+
+    const { data: inserted } = await supabase
+      .from("promotion_requests")
+      .insert({
+        user_id: userId,
+        requested_role: requestedRole,
+        status: PENDING_STATUS,
+        cumulative_bj: cumulativeBj,
+        direct_ziskatels: directZiskatels,
+      })
+      .select("id, user_id, requested_role, status")
+      .single();
+
+    if (inserted) {
+      requestByKey.set(key, inserted as ExistingPromotionRequest);
+    }
+
+    await ensureNotification(profileId, title, body);
+    return;
+  }
+
   if (existingRequest.status === PENDING_STATUS) {
     await supabase
       .from("promotion_requests")
