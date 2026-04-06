@@ -1508,7 +1508,6 @@ function EditRuleForm({
           </div>
         </div>
       )}
-      </div>
 
       {/* Delivery toggles */}
       <div className="flex gap-6">
