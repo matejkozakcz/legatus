@@ -164,19 +164,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // scope: 'local' — odhlásí jen toto zařízení, ostatní sessions zůstanou aktivní
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
     setProfile(null);
+    setDeactivatedProfile(null);
     setGodMode(false);
     try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
   };
 
+  const reactivateProfile = useCallback(async (keepData: boolean) => {
+    if (!user || !deactivatedProfile) return;
+    
+    if (keepData) {
+      // Reactivate with existing data, go through onboarding to update info
+      await supabase
+        .from("profiles")
+        .update({ is_active: true, onboarding_completed: false })
+        .eq("id", user.id);
+    } else {
+      // Clear all data and start fresh
+      // Delete activity records and meetings
+      await Promise.all([
+        supabase.from("activity_records").delete().eq("user_id", user.id),
+        supabase.from("client_meetings").delete().eq("user_id", user.id),
+        supabase.from("cases").delete().eq("user_id", user.id),
+        supabase.from("notifications").delete().eq("recipient_id", user.id),
+      ]);
+      // Reset profile
+      await supabase
+        .from("profiles")
+        .update({
+          is_active: true,
+          onboarding_completed: false,
+          role: "novacek",
+          vedouci_id: null,
+          garant_id: null,
+          ziskatel_id: null,
+          ziskatel_name: null,
+          avatar_url: null,
+          monthly_bj_goal: 0,
+          personal_bj_goal: 0,
+          osobni_id: null,
+        })
+        .eq("id", user.id);
+    }
+
+    setDeactivatedProfile(null);
+    await fetchProfile(user.id);
+  }, [user, deactivatedProfile, fetchProfile]);
+
   const needsOnboarding = !!profile && profile.onboarding_completed === false;
+  const needsReactivation = !!session && !profile && !!deactivatedProfile;
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, needsReactivation, deactivatedProfile, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile, reactivateProfile }}>
       {children}
     </AuthContext.Provider>
   );
