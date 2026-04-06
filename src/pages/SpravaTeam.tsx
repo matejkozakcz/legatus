@@ -309,7 +309,7 @@ const SpravaTeam = () => {
     queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
-      if (!["vedouci", "budouci_vedouci"].includes(profile.role) && !isGodMode) return [];
+      if (!["vedouci", "budouci_vedouci", "garant"].includes(profile.role) && !isGodMode) return [];
 
       let query = supabase
         .from("profiles")
