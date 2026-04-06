@@ -322,10 +322,11 @@ function CaseAccordion({
 
 // ─── Hlavní komponenta ────────────────────────────────────────────────────────
 
-export default function ObchodniPripady() {
+export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
+  const isMobileHook = useIsMobile();
+  const isMobile = mobileEmbedded || isMobileHook;
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const now = new Date();
