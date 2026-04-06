@@ -377,6 +377,141 @@ const SpravaTeam = () => {
 
 
 
+  if (isMobile) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }}>
+        {/* Header */}
+        <div style={{ padding: "16px 20px 12px", flexShrink: 0 }}>
+          <div className="flex items-center gap-3">
+            <Users className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
+            <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>Správa týmu</h1>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 120 }}>
+          <div style={{ padding: "0 16px" }}>
+            {/* Čekající povýšení */}
+            {profile?.role === "vedouci" && enrichedRequests.length > 0 && (
+              <section style={{ marginBottom: 20 }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
+                  <TrendingUp className="h-4 w-4" style={{ color: "#00abbd" }} />
+                  <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--text-primary)" }}>
+                    Čekající povýšení
+                  </h2>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {enrichedRequests.map((req) => {
+                    if (!req.member) return null;
+                    const currentBadge = roleBadge[req.member.role] || roleBadge.novacek;
+                    const targetBadge = roleBadge[req.requested_role] || roleBadge.novacek;
+                    const initials = req.member.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+                    return (
+                      <div key={req.id} style={{
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)",
+                        borderRadius: 16,
+                        border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                        borderLeft: "4px solid #00abbd",
+                        padding: "14px 14px",
+                      }}>
+                        <div className="flex items-center gap-3" style={{ marginBottom: 8 }}>
+                          {req.member.avatar_url ? (
+                            <img src={req.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-border flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-heading font-semibold">{initials}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body font-medium text-foreground text-sm truncate">{req.member.full_name}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className={currentBadge.className} style={{ fontSize: 10 }}>{currentBadge.label}</span>
+                              <span className="text-xs text-muted-foreground">→</span>
+                              <span className={targetBadge.className} style={{ fontSize: 10 }}>{targetBadge.label}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Stats */}
+                        <div className="text-xs font-body mb-2" style={{ color: "var(--text-muted)" }}>
+                          {req.requested_role === "garant" && req.cumulative_bj != null &&
+                            `Kumulativní BJ: ${req.cumulative_bj} · ${req.direct_ziskatels ?? "?"} ve struktuře`}
+                          {req.requested_role === "budouci_vedouci" && req.direct_ziskatels != null &&
+                            `${req.direct_ziskatels} přímých · ${req.cumulative_bj ?? "?"} ve struktuře`}
+                          {req.requested_role === "vedouci" && req.direct_ziskatels != null &&
+                            `${req.direct_ziskatels} přímých · ${req.cumulative_bj ?? "?"} ve struktuře`}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => approveMutation.mutate({ requestId: req.id, userId: req.user_id, newRole: req.requested_role })}
+                            className="btn btn-primary btn-sm flex-1"
+                            disabled={approveMutation.isPending}
+                          >
+                            Schválit
+                          </button>
+                          <button
+                            onClick={() => rejectMutation.mutate({ requestId: req.id, userId: req.user_id, requestedRole: req.requested_role })}
+                            className="btn btn-ghost btn-sm flex-1"
+                            disabled={rejectMutation.isPending}
+                          >
+                            Zamítnout
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Members list */}
+            {isLoading ? (
+              <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
+                <p className="font-body animate-pulse">Načítání členů...</p>
+              </div>
+            ) : members.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
+                <Users className="h-10 w-10 mx-auto mb-3" style={{ color: isDark ? "#2a5a62" : "#c4d8db" }} />
+                <div className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--text-primary)", marginBottom: 4 }}>
+                  Zatím žádní členové
+                </div>
+                <div className="text-sm">V týmu zatím nemáte žádné členy.</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {rootMembers.map((member) => {
+                  const children = childrenMap.get(member.id) || [];
+                  return (
+                    <HierarchyGroup
+                      key={member.id}
+                      parent={member}
+                      children={children}
+                      childrenMap={childrenMap}
+                      onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                      onNotify={setNotifyMember}
+                      depth={0}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dialogs */}
+        <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
+        {notifyMember && (
+          <CreateNotificationDialog
+            open={!!notifyMember}
+            onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
+            recipientId={notifyMember.id}
+            recipientName={notifyMember.full_name}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ─── Desktop ──────────────────────────────────────────────
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
