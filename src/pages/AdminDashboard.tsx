@@ -1090,6 +1090,18 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   custom: [],
 };
 
+const RECIPIENT_TYPES = [
+  { value: "self", label: "Dotčená osoba", description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)" },
+  { value: "hierarchy", label: "Nadřízení", description: "Notifikaci dostanou nadřízení osoby (vedoucí, BV, garant, získatel) — filtrováno podle vybraných rolí" },
+  { value: "by_role", label: "Podle role", description: "Notifikaci dostanou všichni uživatelé s vybranou rolí bez ohledu na strukturu" },
+] as const;
+
+const RECIPIENT_TYPE_LABELS: Record<string, string> = {
+  self: "Dotčená osoba",
+  hierarchy: "Nadřízení v hierarchii",
+  by_role: "Podle role",
+};
+
 interface NotifRule {
   id: string;
   name: string;
@@ -1098,6 +1110,7 @@ interface NotifRule {
   title_template: string;
   body_template: string;
   recipient_roles: string[];
+  recipient_type: string;
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
