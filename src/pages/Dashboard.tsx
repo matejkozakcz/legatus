@@ -575,7 +575,8 @@ const Dashboard = () => {
     return GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
   };
   const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
-  const selectedGoal2: GoalKey = vedouciGoals?.selected_goal_2 || "personal_bj";
+  const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
+  const vedouciGaugeKeys: GoalKey[] = selectedGoal2 ? [selectedGoal1, selectedGoal2] : [selectedGoal1];
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
