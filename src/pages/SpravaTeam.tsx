@@ -230,14 +230,34 @@ const SpravaTeam = () => {
         .eq("id", requestId);
       if (reqError) throw reqError;
 
-      // When promoting to garant, reassign direct subordinates' garant_id
+      // When promoting to garant, reassign garant_id for entire ziskatel subtree
+      // but skip subtrees under another garant
       if (newRole === "garant") {
-        const directReports = members.filter((m) => m.ziskatel_id === userId);
-        if (directReports.length > 0) {
+        const allMembers = members.length > 0 ? members : [];
+        const childMap = new Map<string, string[]>();
+        allMembers.forEach((m) => {
+          if (m.ziskatel_id) {
+            const list = childMap.get(m.ziskatel_id) || [];
+            list.push(m.id);
+            childMap.set(m.ziskatel_id, list);
+          }
+        });
+        const memberMap = new Map(allMembers.map((m) => [m.id, m]));
+        const subtreeIds: string[] = [];
+        const queue = [...(childMap.get(userId) || [])];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          const member = memberMap.get(id);
+          // Skip subtrees under another garant (they have their own garant)
+          if (member && member.role === "garant" && id !== userId) continue;
+          subtreeIds.push(id);
+          queue.push(...(childMap.get(id) || []));
+        }
+        if (subtreeIds.length > 0) {
           await supabase
             .from("profiles")
             .update({ garant_id: userId })
-            .in("id", directReports.map((m) => m.id));
+            .in("id", subtreeIds);
         }
       }
 
