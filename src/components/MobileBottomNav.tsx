@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Calendar, Briefcase, Users } from "lucide-react";
+import { Calendar, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
@@ -77,24 +77,14 @@ export function MobileBottomNav() {
           pointerEvents: "all",
         }}
       >
-        {/* Left: Vedoucí sees Správa týmu, others see Obchod */}
-        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
-          <NavButton
-            icon={Users}
-            label="Tým"
-            active={location.pathname === "/tym"}
-            onClick={() => navigate("/tym")}
-            isDark={isDark}
-          />
-        ) : (
-          <NavButton
-            icon={Briefcase}
-            label="Obchod"
-            active={location.pathname === "/obchodni-pripady"}
-            onClick={() => navigate("/obchodni-pripady")}
-            isDark={isDark}
-          />
-        )}
+        {/* Left: Obchod */}
+        <NavButton
+          icon={Briefcase}
+          label="Obchod"
+          active={location.pathname === "/obchodni-pripady"}
+          onClick={() => navigate("/obchodni-pripady")}
+          isDark={isDark}
+        />
 
         {/* Center spacer */}
         <div style={{ flex: 1 }} />
