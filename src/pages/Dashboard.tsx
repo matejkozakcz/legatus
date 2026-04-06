@@ -842,40 +842,68 @@ const Dashboard = () => {
     }
 
     if (role === "vedouci") {
-      // Vedoucí vidí čísla, ne gauges
       const statStyle = { textAlign: "center" as const, width: "100%" };
-      const bigNumStyle = {
+      const bigNumStyle: React.CSSProperties = {
         fontFamily: "Poppins, sans-serif",
         fontWeight: 800,
-        fontSize: 52,
+        fontSize: 44,
         lineHeight: 1,
         color: "#00555f",
       };
-      const labelStyle = {
+      const labelStyle: React.CSSProperties = {
         fontFamily: "Open Sans, sans-serif",
         fontWeight: 600,
         fontSize: 12,
         color: "var(--text-secondary)",
-        marginBottom: 8,
+        marginBottom: 6,
       };
-      const sublabelStyle = {
+      const sublabelStyle: React.CSSProperties = {
         fontFamily: "Open Sans, sans-serif",
         fontSize: 11,
         color: "var(--text-muted)",
-        marginTop: 6,
+        marginTop: 4,
       };
+      const goalSub = (goal?: number) =>
+        goal && goal > 0 ? <div style={sublabelStyle}>cíl: {goal}</div> : null;
+
       return (
         <>
+          {!isImpersonating && (
+            <button
+              onClick={() => setGoalsModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold self-end transition-colors hover:opacity-80"
+              style={{ color: "#00abbd", marginBottom: -8 }}
+            >
+              <Pencil size={12} /> Upravit cíle
+            </button>
+          )}
           <div style={statStyle}>
             <div style={labelStyle}>Týmové BJ</div>
             <div style={bigNumStyle}>{vedouciMonthlyBj}</div>
-            <div style={sublabelStyle}>aktuální produkční období</div>
+            {goalSub(vedouciGoals?.team_bj_goal)}
+          </div>
+          <div style={statStyle}>
+            <div style={labelStyle}>Osobní BJ</div>
+            <div style={{ ...bigNumStyle, color: "#00abbd" }}>{personalMonthlyBj}</div>
+            {goalSub(vedouciGoals?.personal_bj_goal)}
           </div>
           <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
-          <div style={statStyle}>
-            <div style={labelStyle}>BV a Vedoucí</div>
-            <div style={{ ...bigNumStyle, color: "#00abbd" }}>{seniorMemberCount}</div>
-            <div style={sublabelStyle}>ve struktuře</div>
+          <div style={{ display: "flex", gap: 8, width: "100%" }}>
+            {[
+              { label: "Vedoucí", value: vedouciSubCount, goal: vedouciGoals?.vedouci_count_goal },
+              { label: "Bud. vedoucí", value: bvCount, goal: vedouciGoals?.budouci_vedouci_count_goal },
+              { label: "Garant", value: garantCount, goal: vedouciGoals?.garant_count_goal },
+            ].map((item, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <div style={labelStyle}>{item.label}</div>
+                <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                  {item.value}
+                  {item.goal != null && item.goal > 0 && (
+                    <span style={{ fontWeight: 500, fontSize: 16, color: "var(--text-muted)" }}> / {item.goal}</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </>
       );
