@@ -15,6 +15,7 @@ import ObchodniPripady from "./pages/ObchodniPripady";
 import Kalendar from "./pages/Kalendar";
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -103,6 +104,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Hledani />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AppLayout>
+                  <AdminDashboard />
                 </AppLayout>
               }
             />
