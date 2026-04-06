@@ -1310,9 +1310,12 @@ function NotificationRulesTab() {
                       </div>
                     </div>
 
-                    {/* Role badges */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {ROLES.map((role) => (
+                    {/* Recipient type + Role badges */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
+                        {RECIPIENT_TYPE_LABELS[rule.recipient_type] || "Podle role"}
+                      </span>
+                      {rule.recipient_type !== "self" && ROLES.map((role) => (
                         <span
                           key={role}
                           className="text-[10px] px-2 py-0.5 rounded-full font-medium"
