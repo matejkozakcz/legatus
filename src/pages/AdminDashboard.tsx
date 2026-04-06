@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="promotions" className="w-full">
-        <TabsList className="w-full justify-start bg-card border border-border">
+        <TabsList className="w-full justify-start bg-card border border-border flex-wrap">
           <TabsTrigger value="promotions" className="gap-1.5">
             <Settings2 className="h-4 w-4" /> Pravidla povýšení
           </TabsTrigger>
@@ -75,6 +75,9 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-1.5">
             <Users className="h-4 w-4" /> Uživatelé
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5">
+            <Lock className="h-4 w-4" /> Logika & Hierarchie
           </TabsTrigger>
         </TabsList>
 
@@ -86,6 +89,9 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="users">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="permissions">
+          <PermissionsTab />
         </TabsContent>
       </Tabs>
     </div>
