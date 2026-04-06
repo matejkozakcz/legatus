@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getNotificationRule, sendRuleNotification, renderTemplate } from "@/lib/notificationRules";
 
 interface CheckProfile {
   id: string;
@@ -22,24 +23,10 @@ interface ExistingPromotionRequest {
 
 type PromotionRole = "garant" | "budouci_vedouci" | "vedouci";
 
-const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const PROMOTION_NOTIFICATION_TYPE = "promotion_eligible";
 const PENDING_STATUS = "pending";
 const NOT_ELIGIBLE_STATUS = "not_eligible";
 const PROMOTION_ROLES: PromotionRole[] = ["garant", "budouci_vedouci", "vedouci"];
-
-async function sendPush(notificationId: string): Promise<void> {
-  try {
-    await fetch(PUSH_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-      body: JSON.stringify({ notification_id: notificationId }),
-    });
-  } catch {
-    // push delivery je best-effort, chyba sítě neblokuje zbytek
-  }
-}
 
 async function ensureNotification(
   vedouciId: string,
@@ -55,9 +42,10 @@ async function ensureNotification(
     .eq("read", false)
     .limit(1);
 
-  if (existing && existing.length > 0) {
-    return;
-  }
+  if (existing && existing.length > 0) return;
+
+  const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
+  const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   const { data: notifData } = await supabase
     .from("notifications")
@@ -73,7 +61,13 @@ async function ensureNotification(
     .single();
 
   if (notifData?.id) {
-    await sendPush(notifData.id);
+    try {
+      await fetch(PUSH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({ notification_id: notifData.id }),
+      });
+    } catch { /* best-effort */ }
   }
 }
 
