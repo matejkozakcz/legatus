@@ -134,11 +134,12 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     if (!file || !user) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { resizeImage } = await import("@/lib/imageResize");
+      const compressed = await resizeImage(file, 800, 0.85);
+      const path = `${user.id}/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true });
+        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
