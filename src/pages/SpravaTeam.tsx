@@ -54,6 +54,22 @@ const roleBadge: Record<string, { label: string; className: string }> = {
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
+const ROLE_BORDER_COLOR: Record<string, string> = {
+  vedouci: "#00555f",
+  budouci_vedouci: "#00555f",
+  garant: "#8b5cf6",
+  ziskatel: "#f97316",
+  novacek: "#3b82f6",
+};
+
+const ROLE_ORDER: Record<string, number> = {
+  vedouci: 0,
+  budouci_vedouci: 1,
+  garant: 2,
+  ziskatel: 3,
+  novacek: 4,
+};
+
 function MemberCard({
   member,
   onClick,
