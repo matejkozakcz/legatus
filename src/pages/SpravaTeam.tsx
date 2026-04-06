@@ -416,32 +416,6 @@ const SpravaTeam = () => {
           <Users className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
-        {profile?.role === "vedouci" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={forceCheckPromotions}
-            disabled={isForceChecking || isLoading || members.length === 0}
-            className="flex items-center gap-1.5 text-xs"
-            title="Znovu zkontroluje podmínky povýšení a odešle oznámení"
-          >
-            <Bell className="h-3.5 w-3.5" />
-            {isForceChecking ? "Kontroluji…" : "Zkontrolovat povýšení"}
-          </Button>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {(["seznam", "orgchart"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`chip ${tab === t ? "chip-teal-active" : "chip-neutral"}`}
-          >
-            {t === "seznam" ? "Seznam" : "Org chart"}
-          </button>
-        ))}
       </div>
 
       {/* Čekající povýšení */}
