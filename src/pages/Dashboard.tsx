@@ -217,6 +217,23 @@ const Dashboard = () => {
       });
   }, [profile]);
 
+  // Trigger check-followups edge function once per session to create meeting notifications
+  const followupCheckDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user || followupCheckDoneRef.current) return;
+    followupCheckDoneRef.current = true;
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    fetch(`${projectUrl}/functions/v1/check-followups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+    }).catch(() => {});
+    fetch(`${projectUrl}/functions/v1/check-reminders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
+    }).catch(() => {});
+  }, [user]);
+
   // First login confetti
   useEffect(() => {
     if (!user || !profile || hasCheckedFirstLogin.current) return;
