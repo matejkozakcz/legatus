@@ -8,11 +8,11 @@ import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
-import { OrgChart } from "@/components/OrgChart";
+
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
-import { Button } from "@/components/ui/button";
+
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 
 interface Profile {
@@ -184,11 +184,9 @@ const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"seznam" | "orgchart">("seznam");
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
-  const [isForceChecking, setIsForceChecking] = useState(false);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
@@ -376,38 +374,7 @@ const SpravaTeam = () => {
     if (!isLoading && members.length > 0) checkPromotions();
   }, [isLoading, members.length, checkPromotions]);
 
-  // Force re-check: smaže zaseknuté záznamy a spustí check znovu od nuly
-  const forceCheckPromotions = useCallback(async () => {
-    if (!profile || members.length === 0) return;
-    setIsForceChecking(true);
-    try {
-      const memberIds = members.map((m) => m.id);
 
-      // Smaž pending i not_eligible promotion_requests pro členy týmu
-      await supabase
-        .from("promotion_requests")
-        .delete()
-        .in("user_id", memberIds)
-        .in("status", ["pending", "not_eligible"]);
-
-      // Smaž nepřečtené promotion_eligible notifikace pro vedoucího
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("recipient_id", profile.id)
-        .eq("type", "promotion_eligible")
-        .eq("read", false);
-
-      // Spusť check znovu – vytvoří čerstvé záznamy + odešle push
-      await runCheckPromotions(profile, members);
-      refetchRequests();
-      toast.success("Povýšení zkontrolována – oznámení odeslána");
-    } catch {
-      toast.error("Chyba při kontrole povýšení");
-    } finally {
-      setIsForceChecking(false);
-    }
-  }, [profile, members, refetchRequests]);
 
   return (
     <div className="space-y-6">
@@ -416,32 +383,6 @@ const SpravaTeam = () => {
           <Users className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
-        {profile?.role === "vedouci" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={forceCheckPromotions}
-            disabled={isForceChecking || isLoading || members.length === 0}
-            className="flex items-center gap-1.5 text-xs"
-            title="Znovu zkontroluje podmínky povýšení a odešle oznámení"
-          >
-            <Bell className="h-3.5 w-3.5" />
-            {isForceChecking ? "Kontroluji…" : "Zkontrolovat povýšení"}
-          </Button>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {(["seznam", "orgchart"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`chip ${tab === t ? "chip-teal-active" : "chip-neutral"}`}
-          >
-            {t === "seznam" ? "Seznam" : "Org chart"}
-          </button>
-        ))}
       </div>
 
       {/* Čekající povýšení */}
@@ -508,40 +449,34 @@ const SpravaTeam = () => {
         </section>
       )}
 
-      {tab === "seznam" ? (
-        <div className="space-y-1">
-          {isLoading ? (
-            <div className="legatus-card p-8 text-center">
-              <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
-            </div>
-          ) : members.length === 0 ? (
-            <div className="legatus-card p-8 text-center">
-              <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {rootMembers.map((member) => {
-                const children = childrenMap.get(member.id) || [];
-                return (
-                  <HierarchyGroup
-                    key={member.id}
-                    parent={member}
-                    children={children}
-                    childrenMap={childrenMap}
-                    onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                    onNotify={setNotifyMember}
-                    depth={0}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="legatus-card">
-          <OrgChart currentUserId={profile?.id || ""} />
-        </div>
-      )}
+      <div className="space-y-1">
+        {isLoading ? (
+          <div className="legatus-card p-8 text-center">
+            <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="legatus-card p-8 text-center">
+            <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {rootMembers.map((member) => {
+              const children = childrenMap.get(member.id) || [];
+              return (
+                <HierarchyGroup
+                  key={member.id}
+                  parent={member}
+                  children={children}
+                  childrenMap={childrenMap}
+                  onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                  onNotify={setNotifyMember}
+                  depth={0}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Dialogs */}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
