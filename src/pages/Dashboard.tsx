@@ -664,27 +664,28 @@ const Dashboard = () => {
               </div>
             </>
           ) : role === "ziskatel" ? (
-            (() => {
-              const bjPct = Math.min(totalBjAllTime / 1000, 1) * 75;
-              const peoplePct = Math.min(ziskatelStructureCount / 2, 1) * 25;
-              const composite = Math.round((bjPct + peoplePct) * 10) / 10;
-              const isComplete = composite >= 100;
-              return (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={composite}
-                    max={100}
-                    valueLabel={`${composite} %`}
-                    label="Postup k Garantovi"
-                    sublabel={
-                      isComplete ? "✓ Splněno" : `BJ: ${totalBjAllTime}/1000 · Lidé: ${ziskatelStructureCount}/2`
-                    }
-                    dark
-                    completed={isComplete}
-                  />
-                </div>
-              );
-            })()
+            <>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <GaugeIndicator
+                  value={totalBjAllTime}
+                  max={1000}
+                  label="Kumulativní BJ"
+                  sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+                  dark
+                  completed={totalBjAllTime >= 1000}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <GaugeIndicator
+                  value={ziskatelStructureCount}
+                  max={2}
+                  label="Lidé ve struktuře"
+                  sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+                  dark
+                  completed={ziskatelStructureCount >= 2}
+                />
+              </div>
+            </>
           ) : role === "garant" ? (
             <>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -889,20 +890,23 @@ const Dashboard = () => {
     }
 
     if (role === "ziskatel") {
-      // Vážený composite: BJ = 75 %, Lidé = 25 %
-      const bjPct = Math.min(totalBjAllTime / 1000, 1) * 75;
-      const peoplePct = Math.min(ziskatelStructureCount / 2, 1) * 25;
-      const composite = Math.round((bjPct + peoplePct) * 10) / 10;
-      const isComplete = composite >= 100;
+      const bjDone = totalBjAllTime >= 1000;
+      const peopleDone = ziskatelStructureCount >= 2;
       return (
         <>
           <GaugeIndicator
-            value={composite}
-            max={100}
-            valueLabel={`${composite} %`}
-            label="Postup k Garantovi"
-            sublabel={isComplete ? "✓ Splněno" : `BJ: ${totalBjAllTime}/1000 · Lidé: ${ziskatelStructureCount}/2`}
-            completed={isComplete}
+            value={totalBjAllTime}
+            max={1000}
+            label="Kumulativní BJ"
+            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+            completed={bjDone}
+          />
+          <GaugeIndicator
+            value={ziskatelStructureCount}
+            max={2}
+            label="Lidé ve struktuře"
+            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+            completed={peopleDone}
           />
         </>
       );

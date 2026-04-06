@@ -385,6 +385,20 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     enabled: profiles.length > 0,
   });
 
+  // Also fetch meeting BJ (podepsane_bj) for accurate totals
+  const { data: meetingBjData = [] } = useQuery({
+    queryKey: ["org_meeting_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: profiles.length > 0,
+  });
+
   // Compute structure count per user (recursive)
   const structureCountMap = useMemo(() => {
     const counts = new Map<string, number>();
@@ -399,22 +413,27 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     return counts;
   }, [profiles, childrenMap]);
 
-  // Compute cumulative BJ per user
+  // Compute cumulative BJ per user (activity_records + client_meetings)
   const cumulativeBjMap = useMemo(() => {
     const map = new Map<string, number>();
     bjData.forEach((r: any) => {
       map.set(r.user_id, (map.get(r.user_id) || 0) + (r.bj || 0));
     });
+    meetingBjData.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
     return map;
-  }, [bjData]);
+  }, [bjData, meetingBjData]);
 
-  // Progress: Získatel → cumBJ/1000, Garant → people/5, BV → people/10, Vedoucí → 100%
+  // Progress: Získatel → composite (BJ 75% + people 25%), Garant → people/5, BV → people/10, Vedoucí → 100%
   const progressMap = useMemo(() => {
     const map = new Map<string, number>();
     profiles.forEach((p) => {
       let pct: number | undefined;
       if (p.role === "ziskatel") {
-        pct = ((cumulativeBjMap.get(p.id) || 0) / 1000) * 100;
+        const bjPct = Math.min((cumulativeBjMap.get(p.id) || 0) / 1000, 1) * 75;
+        const peoplePct = Math.min((structureCountMap.get(p.id) || 0) / 2, 1) * 25;
+        pct = Math.round((bjPct + peoplePct) * 10) / 10;
       } else if (p.role === "garant") {
         pct = ((structureCountMap.get(p.id) || 0) / 5) * 100;
       } else if (p.role === "budouci_vedouci") {
