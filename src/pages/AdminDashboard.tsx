@@ -1075,21 +1075,36 @@ function HierarchyEditor() {
 
 const TRIGGER_EVENTS = [
   { value: "new_member", label: "Nový člen", description: "Při registraci nového člena do struktury" },
-  { value: "promotion_approved", label: "Povýšení", description: "Při schválení povýšení" },
+  { value: "promotion_eligible", label: "Splnění podmínek povýšení", description: "Člen splní podmínky pro povýšení" },
+  { value: "promotion_approved", label: "Povýšení schváleno", description: "Při schválení povýšení" },
+  { value: "promotion_rejected", label: "Povýšení zamítnuto", description: "Při zamítnutí povýšení" },
   { value: "meeting_reminder", label: "Připomínka schůzky", description: "Před plánovanou schůzkou" },
   { value: "weekly_summary", label: "Týdenní souhrn", description: "Souhrn aktivit na konci týdne" },
   { value: "goal_achieved", label: "Cíl splněn", description: "Při dosažení nastaveného cíle" },
+  { value: "scheduled", label: "Pravidelná", description: "Opakovaná notifikace v nastaveném čase" },
   { value: "custom", label: "Vlastní", description: "Vlastní typ notifikace" },
 ] as const;
 
 const TEMPLATE_VARS: Record<string, string[]> = {
   new_member: ["{{member_name}}", "{{role}}"],
-  promotion_approved: ["{{member_name}}", "{{new_role}}", "{{old_role}}"],
+  promotion_eligible: ["{{member_name}}", "{{role_label}}", "{{cumulative_bj}}", "{{structure_info}}"],
+  promotion_approved: ["{{role_label}}", "{{vedouci_name}}"],
+  promotion_rejected: ["{{role_label}}", "{{vedouci_name}}"],
   meeting_reminder: ["{{client_name}}", "{{meeting_time}}", "{{meeting_type}}"],
   weekly_summary: ["{{fsa_count}}", "{{ser_count}}", "{{poh_count}}", "{{bj_total}}"],
   goal_achieved: ["{{member_name}}", "{{goal_name}}", "{{goal_value}}"],
+  scheduled: ["{{total_bj}}", "{{total_fsa}}", "{{total_ser}}", "{{total_poh}}", "{{total_meetings}}", "{{member_count}}", "{{pending_promotions}}", "{{date}}", "{{day_name}}"],
   custom: [],
 };
+
+const SCHEDULE_TYPES = [
+  { value: "event", label: "Událost", description: "Spustí se při výskytu události" },
+  { value: "daily", label: "Denně", description: "Každý den v nastavený čas" },
+  { value: "weekly", label: "Týdně", description: "Jednou týdně v nastavený den a čas" },
+  { value: "monthly", label: "Měsíčně", description: "Jednou měsíčně v nastavený den a čas" },
+] as const;
+
+const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 
 const RECIPIENT_TYPES = [
   { value: "self", label: "Dotčená osoba", description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)" },
@@ -1115,6 +1130,10 @@ interface NotifRule {
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
+  schedule_type: string;
+  schedule_time: string | null;
+  schedule_day_of_week: number | null;
+  schedule_day_of_month: number | null;
 }
 
 function NotificationRulesTab() {
@@ -1190,6 +1209,10 @@ function NotificationRulesTab() {
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
+            schedule_type: rule.schedule_type || "event",
+            schedule_time: rule.schedule_time || "08:00",
+            schedule_day_of_week: rule.schedule_day_of_week ?? null,
+            schedule_day_of_month: rule.schedule_day_of_month ?? null,
           })
           .eq("id", rule.id);
         if (error) throw error;
@@ -1207,6 +1230,10 @@ function NotificationRulesTab() {
             send_push: rule.send_push ?? true,
             send_in_app: rule.send_in_app ?? true,
             description: rule.description || null,
+            schedule_type: rule.schedule_type || "event",
+            schedule_time: rule.schedule_time || "08:00",
+            schedule_day_of_week: rule.schedule_day_of_week ?? null,
+            schedule_day_of_month: rule.schedule_day_of_month ?? null,
           });
         if (error) throw error;
       }
@@ -1327,9 +1354,17 @@ function NotificationRulesTab() {
                         />
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate">{rule.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Spouštěč: {triggerLabel(rule.trigger_event)}
-                            {rule.description && ` — ${rule.description}`}
+                          <div className="text-xs text-muted-foreground flex flex-wrap gap-1 items-center">
+                            <span>Spouštěč: {triggerLabel(rule.trigger_event)}</span>
+                            {(rule.schedule_type || "event") !== "event" && (
+                              <span className="inline-flex items-center bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded text-[10px] font-medium">
+                                🔄 {SCHEDULE_TYPES.find(s => s.value === rule.schedule_type)?.label}
+                                {rule.schedule_time && ` ${rule.schedule_time}`}
+                                {rule.schedule_type === "weekly" && rule.schedule_day_of_week != null && ` ${DAY_NAMES[rule.schedule_day_of_week]}`}
+                                {rule.schedule_type === "monthly" && rule.schedule_day_of_month != null && ` ${rule.schedule_day_of_month}.`}
+                              </span>
+                            )}
+                            {rule.description && <span>— {rule.description}</span>}
                           </div>
                         </div>
                       </div>
@@ -1514,6 +1549,81 @@ function EditRuleForm({
           className="h-8 text-sm"
         />
       </div>
+
+      {/* Schedule type */}
+      <div>
+        <Label className="text-xs mb-1.5 block">Typ spouštěče</Label>
+        <div className="flex flex-wrap gap-2">
+          {SCHEDULE_TYPES.map((st) => {
+            const checked = (form.schedule_type || "event") === st.value;
+            return (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setForm({ ...form, schedule_type: st.value, trigger_event: st.value !== "event" ? (form.trigger_event || "scheduled") : form.trigger_event })}
+                className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                style={{
+                  background: checked ? "hsl(var(--primary))" : "transparent",
+                  color: checked ? "#fff" : "inherit",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
+                }}
+              >
+                {st.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {SCHEDULE_TYPES.find((st) => st.value === (form.schedule_type || "event"))?.description}
+        </div>
+      </div>
+
+      {/* Schedule details — only for scheduled types */}
+      {(form.schedule_type || "event") !== "event" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-md bg-muted/30 border border-border">
+          <div>
+            <Label className="text-xs">Čas odeslání (UTC)</Label>
+            <Input
+              type="time"
+              value={form.schedule_time || "08:00"}
+              onChange={(e) => setForm({ ...form, schedule_time: e.target.value })}
+              className="h-8 text-sm"
+            />
+          </div>
+          {form.schedule_type === "weekly" && (
+            <div>
+              <Label className="text-xs">Den v týdnu</Label>
+              <Select
+                value={String(form.schedule_day_of_week ?? 1)}
+                onValueChange={(v) => setForm({ ...form, schedule_day_of_week: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DAY_NAMES.map((name, i) => (
+                    <SelectItem key={i} value={String(i)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {form.schedule_type === "monthly" && (
+            <div>
+              <Label className="text-xs">Den v měsíci</Label>
+              <Select
+                value={String(form.schedule_day_of_month ?? 1)}
+                onValueChange={(v) => setForm({ ...form, schedule_day_of_month: Number(v) })}
+              >
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}.</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
