@@ -508,6 +508,53 @@ export type Database = {
           },
         ]
       }
+      vedouci_goals: {
+        Row: {
+          budouci_vedouci_count_goal: number
+          created_at: string
+          garant_count_goal: number
+          id: string
+          period_key: string
+          personal_bj_goal: number
+          team_bj_goal: number
+          updated_at: string
+          user_id: string
+          vedouci_count_goal: number
+        }
+        Insert: {
+          budouci_vedouci_count_goal?: number
+          created_at?: string
+          garant_count_goal?: number
+          id?: string
+          period_key: string
+          personal_bj_goal?: number
+          team_bj_goal?: number
+          updated_at?: string
+          user_id: string
+          vedouci_count_goal?: number
+        }
+        Update: {
+          budouci_vedouci_count_goal?: number
+          created_at?: string
+          garant_count_goal?: number
+          id?: string
+          period_key?: string
+          personal_bj_goal?: number
+          team_bj_goal?: number
+          updated_at?: string
+          user_id?: string
+          vedouci_count_goal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vedouci_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import {
@@ -19,6 +19,7 @@ import { OrgChart } from "@/components/OrgChart";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
+import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -443,9 +444,58 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
+  // Vedoucí: počet Garantů ve struktuře
+  const { data: garantCount = 0 } = useQuery({
+    queryKey: ["garant_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "garant")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  // Vedoucí: počet BV ve struktuře
+  const { data: bvCount = 0 } = useQuery({
+    queryKey: ["bv_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "budouci_vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
+  // Vedoucí: počet Vedoucích (samostatných) ve struktuře
+  const { data: vedouciSubCount = 0 } = useQuery({
+    queryKey: ["vedouci_sub_count", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return 0;
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("vedouci_id", activeUserId)
+        .eq("role", "vedouci")
+        .eq("is_active", true);
+      return count || 0;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
   // Period dates from picker (used by Stav byznysu + Přehled aktivit)
   const periodStartStr = format(selectedPeriod.start, "yyyy-MM-dd");
   const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
+  const periodKey = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
 
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
@@ -480,47 +530,23 @@ const Dashboard = () => {
     enabled: !!activeUserId,
   });
 
-  // Vedoucí: monthly_bj_goal from profile
-  const monthlyBjGoal = activeProfile?.monthly_bj_goal || 0;
-  const personalBjGoal = (activeProfile as any)?.personal_bj_goal || 0;
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [goalInputValue, setGoalInputValue] = useState("");
-  const [editingPersonalGoal, setEditingPersonalGoal] = useState(false);
-  const [personalGoalInputValue, setPersonalGoalInputValue] = useState("");
-
-  const updateGoalMutation = useMutation({
-    mutationFn: async (newGoal: number) => {
-      if (!profile?.id) throw new Error("No user");
-      const { error } = await supabase
-        .from("profiles")
-        .update({ monthly_bj_goal: newGoal } as any)
-        .eq("id", profile.id);
-      if (error) throw error;
+  // Vedoucí goals per period
+  const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
+    queryKey: ["vedouci_goals", profile?.id, periodKey],
+    queryFn: async () => {
+      if (!profile?.id) return null;
+      const { data } = await supabase
+        .from("vedouci_goals" as any)
+        .select("*")
+        .eq("user_id", profile.id)
+        .eq("period_key", periodKey)
+        .maybeSingle();
+      return data as any;
     },
-    onSuccess: () => {
-      setEditingGoal(false);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      window.location.reload();
-    },
+    enabled: !!profile?.id && activeRole === "vedouci",
   });
 
-  const updatePersonalGoalMutation = useMutation({
-    mutationFn: async (newGoal: number) => {
-      if (!profile?.id) throw new Error("No user");
-      const { error } = await supabase
-        .from("profiles")
-        .update({ personal_bj_goal: newGoal } as any)
-        .eq("id", profile.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setEditingPersonalGoal(false);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      window.location.reload();
-    },
-  });
-
-  // Filter pills removed — period picker in header drives everything
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
@@ -585,172 +611,112 @@ const Dashboard = () => {
         </div>
 
         {/* ── STAV BYZNYSU GAUGES ── */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
-            borderRadius: 20,
-            padding: "16px 12px 14px",
-            marginBottom: 12,
-            color: "white",
-            boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
-            display: "flex",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          {role === "novacek" ? (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
-              </div>
-            </>
-          ) : role === "vedouci" ? (
-            // Vedoucí: čísla místo gauges
-            <>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                <span
-                  style={{
-                    fontFamily: "Open Sans, sans-serif",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.75)",
-                    marginBottom: 6,
-                  }}
-                >
-                  Týmové BJ
-                </span>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 48,
-                    color: "white",
-                    lineHeight: 1,
-                  }}
-                >
-                  {vedouciMonthlyBj}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "Open Sans, sans-serif",
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.55)",
-                    marginTop: 6,
-                  }}
-                >
-                  aktuální produkční období
-                </span>
-              </div>
-              <div style={{ width: 1, background: "rgba(255,255,255,0.2)", alignSelf: "stretch", margin: "0 4px" }} />
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                <span
-                  style={{
-                    fontFamily: "Open Sans, sans-serif",
-                    fontWeight: 600,
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.75)",
-                    marginBottom: 6,
-                  }}
-                >
-                  BV a Vedoucí
-                </span>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 48,
-                    color: "#86efac",
-                    lineHeight: 1,
-                  }}
-                >
-                  {seniorMemberCount}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "Open Sans, sans-serif",
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.55)",
-                    marginTop: 6,
-                  }}
-                >
-                  ve struktuře
-                </span>
-              </div>
-            </>
-          ) : role === "ziskatel" ? (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={totalBjAllTime}
-                  max={1000}
-                  label="Kumulativní BJ"
-                  sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
-                  dark
-                  completed={totalBjAllTime >= 1000}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={ziskatelStructureCount}
-                  max={2}
-                  label="Lidé ve struktuře"
-                  sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
-                  dark
-                  completed={ziskatelStructureCount >= 2}
-                />
-              </div>
-            </>
-          ) : role === "garant" ? (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={structureCount}
-                  max={5}
-                  label="Lidé ve struktuře"
-                  sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`}
-                  dark
-                  completed={structureCount >= 5}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={directSubordinateCount}
-                  max={3}
-                  label="Přímá linka"
-                  sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`}
-                  dark
-                  completed={directSubordinateCount >= 3}
-                />
-              </div>
-            </>
-          ) : (
-            // budouci_vedouci
-            <>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={structureCount}
-                  max={10}
-                  label="Lidé ve struktuře"
-                  sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`}
-                  dark
-                  completed={structureCount >= 10}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <GaugeIndicator
-                  value={directSubordinateCount}
-                  max={6}
-                  label="Přímá linka"
-                  sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`}
-                  dark
-                  completed={directSubordinateCount >= 6}
-                />
-              </div>
-            </>
+        <div style={{ position: "relative" }}>
+          {role === "vedouci" && !isImpersonating && (
+            <button
+              onClick={() => setGoalsModalOpen(true)}
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 2,
+                background: "rgba(255,255,255,0.15)",
+                border: "none",
+                borderRadius: 8,
+                padding: 6,
+                cursor: "pointer",
+              }}
+            >
+              <Pencil size={14} color="rgba(255,255,255,0.8)" />
+            </button>
           )}
+          <div
+            style={{
+              background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
+              borderRadius: 20,
+              padding: "16px 12px 14px",
+              marginBottom: 12,
+              color: "white",
+              boxShadow: "0 4px 24px rgba(0,85,95,0.28)",
+            }}
+          >
+            {role === "novacek" ? (
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+                </div>
+              </div>
+            ) : role === "vedouci" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Row 1: Týmové BJ + Osobní BJ */}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>Týmové BJ</div>
+                    <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 36, color: "white", lineHeight: 1 }}>{vedouciMonthlyBj}</div>
+                    {vedouciGoals?.team_bj_goal > 0 && (
+                      <div style={{ fontFamily: "Open Sans", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>cíl: {vedouciGoals.team_bj_goal}</div>
+                    )}
+                  </div>
+                  <div style={{ width: 1, background: "rgba(255,255,255,0.15)", alignSelf: "stretch" }} />
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>Osobní BJ</div>
+                    <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 36, color: "#86efac", lineHeight: 1 }}>{personalMonthlyBj}</div>
+                    {vedouciGoals?.personal_bj_goal > 0 && (
+                      <div style={{ fontFamily: "Open Sans", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>cíl: {vedouciGoals.personal_bj_goal}</div>
+                    )}
+                  </div>
+                </div>
+                {/* Row 2: Vedoucí / BV / Garant counts */}
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 10, display: "flex", gap: 4 }}>
+                  {[
+                    { label: "Vedoucí", value: vedouciSubCount, goal: vedouciGoals?.vedouci_count_goal },
+                    { label: "Bud. vedoucí", value: bvCount, goal: vedouciGoals?.budouci_vedouci_count_goal },
+                    { label: "Garant", value: garantCount, goal: vedouciGoals?.garant_count_goal },
+                  ].map((item, i) => (
+                    <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 10, color: "rgba(255,255,255,0.6)", marginBottom: 3 }}>{item.label}</div>
+                      <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 24, color: "white", lineHeight: 1 }}>
+                        {item.value}
+                        {item.goal != null && item.goal > 0 && (
+                          <span style={{ fontWeight: 500, fontSize: 14, color: "rgba(255,255,255,0.45)" }}> / {item.goal}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : role === "ziskatel" ? (
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`} dark completed={totalBjAllTime >= 1000} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={ziskatelStructureCount} max={2} label="Lidé ve struktuře" sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`} dark completed={ziskatelStructureCount >= 2} />
+                </div>
+              </div>
+            ) : role === "garant" ? (
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={structureCount} max={5} label="Lidé ve struktuře" sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`} dark completed={structureCount >= 5} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={directSubordinateCount} max={3} label="Přímá linka" sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`} dark completed={directSubordinateCount >= 3} />
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={structureCount} max={10} label="Lidé ve struktuře" sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`} dark completed={structureCount >= 10} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <GaugeIndicator value={directSubordinateCount} max={6} label="Přímá linka" sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`} dark completed={directSubordinateCount >= 6} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── 2×3 STAT GRID (read-only, from meetings) ── */}
@@ -849,6 +815,15 @@ const Dashboard = () => {
         </div>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+        {profile?.id && (
+          <VedouciGoalsModal
+            open={goalsModalOpen}
+            onClose={() => setGoalsModalOpen(false)}
+            userId={profile.id}
+            periodKey={periodKey}
+            onSaved={() => refetchGoals()}
+          />
+        )}
       </div>
     );
   }
@@ -867,40 +842,68 @@ const Dashboard = () => {
     }
 
     if (role === "vedouci") {
-      // Vedoucí vidí čísla, ne gauges
       const statStyle = { textAlign: "center" as const, width: "100%" };
-      const bigNumStyle = {
+      const bigNumStyle: React.CSSProperties = {
         fontFamily: "Poppins, sans-serif",
         fontWeight: 800,
-        fontSize: 52,
+        fontSize: 44,
         lineHeight: 1,
         color: "#00555f",
       };
-      const labelStyle = {
+      const labelStyle: React.CSSProperties = {
         fontFamily: "Open Sans, sans-serif",
         fontWeight: 600,
         fontSize: 12,
         color: "var(--text-secondary)",
-        marginBottom: 8,
+        marginBottom: 6,
       };
-      const sublabelStyle = {
+      const sublabelStyle: React.CSSProperties = {
         fontFamily: "Open Sans, sans-serif",
         fontSize: 11,
         color: "var(--text-muted)",
-        marginTop: 6,
+        marginTop: 4,
       };
+      const goalSub = (goal?: number) =>
+        goal && goal > 0 ? <div style={sublabelStyle}>cíl: {goal}</div> : null;
+
       return (
         <>
+          {!isImpersonating && (
+            <button
+              onClick={() => setGoalsModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold self-end transition-colors hover:opacity-80"
+              style={{ color: "#00abbd", marginBottom: -8 }}
+            >
+              <Pencil size={12} /> Upravit cíle
+            </button>
+          )}
           <div style={statStyle}>
             <div style={labelStyle}>Týmové BJ</div>
             <div style={bigNumStyle}>{vedouciMonthlyBj}</div>
-            <div style={sublabelStyle}>aktuální produkční období</div>
+            {goalSub(vedouciGoals?.team_bj_goal)}
+          </div>
+          <div style={statStyle}>
+            <div style={labelStyle}>Osobní BJ</div>
+            <div style={{ ...bigNumStyle, color: "#00abbd" }}>{personalMonthlyBj}</div>
+            {goalSub(vedouciGoals?.personal_bj_goal)}
           </div>
           <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
-          <div style={statStyle}>
-            <div style={labelStyle}>BV a Vedoucí</div>
-            <div style={{ ...bigNumStyle, color: "#00abbd" }}>{seniorMemberCount}</div>
-            <div style={sublabelStyle}>ve struktuře</div>
+          <div style={{ display: "flex", gap: 8, width: "100%" }}>
+            {[
+              { label: "Vedoucí", value: vedouciSubCount, goal: vedouciGoals?.vedouci_count_goal },
+              { label: "Bud. vedoucí", value: bvCount, goal: vedouciGoals?.budouci_vedouci_count_goal },
+              { label: "Garant", value: garantCount, goal: vedouciGoals?.garant_count_goal },
+            ].map((item, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <div style={labelStyle}>{item.label}</div>
+                <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                  {item.value}
+                  {item.goal != null && item.goal > 0 && (
+                    <span style={{ fontWeight: 500, fontSize: 16, color: "var(--text-muted)" }}> / {item.goal}</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </>
       );
@@ -1120,6 +1123,15 @@ const Dashboard = () => {
         </section>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+        {profile?.id && (
+          <VedouciGoalsModal
+            open={goalsModalOpen}
+            onClose={() => setGoalsModalOpen(false)}
+            userId={profile.id}
+            periodKey={periodKey}
+            onSaved={() => refetchGoals()}
+          />
+        )}
       </div>
     </div>
   );
