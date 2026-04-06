@@ -538,7 +538,6 @@ const SpravaTeam = () => {
                       children={children}
                       childrenMap={childrenMap}
                       onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                      onNotify={setNotifyMember}
                       depth={0}
                       readOnly={isReadOnly}
                     />
@@ -657,7 +656,7 @@ const SpravaTeam = () => {
                   children={children}
                   childrenMap={childrenMap}
                   onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                  onNotify={setNotifyMember}
+                  
                   depth={0}
                   readOnly={isReadOnly}
                 />
