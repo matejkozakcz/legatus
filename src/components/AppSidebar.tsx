@@ -5,6 +5,8 @@ import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -35,15 +37,30 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
+  // Pending promotion requests count for vedouci
+  const isVedouci = profile?.role === "vedouci";
+  const { data: pendingPromotionCount = 0 } = useQuery({
+    queryKey: ["pending_promotions_count", profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("promotion_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      return count || 0;
+    },
+    enabled: !!profile?.id && isVedouci,
+    refetchInterval: 30000,
+  });
+
   const navItems = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3 }] : []),
-    { title: "Kalendář", url: "/kalendar", icon: Calendar },
-    { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, badge: false },
+    ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3, badge: false }] : []),
+    { title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false },
+    { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
-  if (profile?.role === "vedouci" || profile?.role === "budouci_vedouci") {
-    navItems.push({ title: "Správa týmu", url: "/tym", icon: Users });
+  if (isVedouci || profile?.role === "budouci_vedouci") {
+    navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
   }
 
   const initials =
