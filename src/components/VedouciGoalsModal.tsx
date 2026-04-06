@@ -13,6 +13,9 @@ export const GOAL_OPTIONS: { key: GoalKey; label: string; placeholder: string; g
   { key: "garant_count", label: "Počet Garantů", placeholder: "0", goalField: "garant_count_goal" },
 ];
 
+const PEOPLE_GOAL_KEYS: GoalKey[] = ["vedouci_count", "budouci_vedouci_count", "garant_count"];
+type ScopeValue = "direct" | "structure";
+
 interface FormData {
   selected_goal_1: GoalKey;
   selected_goal_2: GoalKey | "";
@@ -21,6 +24,9 @@ interface FormData {
   vedouci_count_goal: number;
   budouci_vedouci_count_goal: number;
   garant_count_goal: number;
+  vedouci_count_scope: ScopeValue;
+  budouci_vedouci_count_scope: ScopeValue;
+  garant_count_scope: ScopeValue;
 }
 
 const defaultForm: FormData = {
@@ -31,6 +37,9 @@ const defaultForm: FormData = {
   vedouci_count_goal: 0,
   budouci_vedouci_count_goal: 0,
   garant_count_goal: 0,
+  vedouci_count_scope: "direct",
+  budouci_vedouci_count_scope: "direct",
+  garant_count_scope: "direct",
 };
 
 interface Props {
