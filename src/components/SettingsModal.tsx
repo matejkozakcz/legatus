@@ -523,15 +523,19 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
                   ? "Oznámení jsi zablokoval/a v prohlížeči. Povol je v nastavení prohlížeče."
                   : "Pro příjem připomínek a upozornění povol oznámení."}
               </p>
-              {notifPermission !== "denied" && (
-                <button
-                  onClick={handleRequestPermission}
-                  className="btn btn-primary btn-sm mt-3 flex items-center gap-2"
-                >
-                  <Bell className="h-3.5 w-3.5" />
-                  Povolit oznámení
-                </button>
-              )}
+              <button
+                onClick={notifPermission === "denied" ? () => {
+                  toast.info("Otevři nastavení prohlížeče → Oznámení a povol je pro tuto stránku.");
+                } : handleRequestPermission}
+                className="mt-3 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                style={{
+                  background: "hsl(var(--secondary))",
+                  color: "white",
+                }}
+              >
+                <Bell className="h-3.5 w-3.5" />
+                Povolit oznámení
+              </button>
             </div>
           </div>
         </div>
