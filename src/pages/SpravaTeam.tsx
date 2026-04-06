@@ -116,7 +116,6 @@ function HierarchyGroup({
   children,
   childrenMap,
   onEdit,
-  onNotify,
   depth,
   readOnly = false,
 }: {
@@ -124,7 +123,6 @@ function HierarchyGroup({
   children: Profile[];
   childrenMap: Map<string, Profile[]>;
   onEdit: (m: Profile) => void;
-  onNotify: (m: Profile) => void;
   depth: number;
   readOnly?: boolean;
 }) {
@@ -151,7 +149,6 @@ function HierarchyGroup({
           <MemberCard
             member={parent}
             onClick={() => onEdit(parent)}
-            onNotify={() => onNotify(parent)}
             depth={0}
             readOnly={readOnly}
           />
@@ -168,7 +165,6 @@ function HierarchyGroup({
                 children={grandchildren}
                 childrenMap={childrenMap}
                 onEdit={onEdit}
-                onNotify={onNotify}
                 depth={depth + 1}
                 readOnly={readOnly}
               />
