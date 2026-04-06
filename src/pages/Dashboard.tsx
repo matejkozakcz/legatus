@@ -100,7 +100,7 @@ function computeStats(meetings: any[], todayStr: string) {
     meetings.filter((m: any) => m.meeting_type === type && !m.cancelled).length;
 
   const countPast = (type: string) =>
-    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date < todayStr).length;
+    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date <= todayStr).length;
 
   const sumAllRefs = () =>
     meetings
