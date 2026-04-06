@@ -254,17 +254,19 @@ const SpravaTeam = () => {
       await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
 
       // Send notification to the promoted user
+      // Use sender_id = userId so the self-notification RLS policy allows insert
+      // (the user may not be a direct subordinate of the current vedouci after subtree reassignment)
       const roleLabel = roleBadge[newRole]?.label || newRole;
-      const { data: notifData } = await supabase.from("notifications").insert({
-        sender_id: profile!.id,
+      const { data: notifData, error: notifError } = await supabase.from("notifications").insert({
+        sender_id: userId,
         recipient_id: userId,
-        type: "promotion_eligible",
+        type: "promotion_approved",
         title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
-        body: `Vedoucí schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
+        body: `Vedoucí ${profile!.full_name} schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
         deadline: new Date().toISOString().split("T")[0],
       }).select("id").single();
 
-      // Trigger push
+      // Trigger push notification
       if (notifData?.id) {
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -273,6 +275,9 @@ const SpravaTeam = () => {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
           body: JSON.stringify({ notification_id: notifData.id }),
         }).catch(() => {});
+      }
+      if (notifError) {
+        console.error("Failed to insert promotion notification:", notifError);
       }
     },
     onSuccess: (_, vars) => {
