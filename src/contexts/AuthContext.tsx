@@ -24,12 +24,15 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   needsOnboarding: boolean;
+  needsReactivation: boolean;
+  deactivatedProfile: Profile | null;
   isAdmin: boolean;
   godMode: boolean;
   toggleGodMode: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
+  reactivateProfile: (keepData: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
