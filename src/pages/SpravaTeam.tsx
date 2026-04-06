@@ -59,11 +59,13 @@ function MemberCard({
   onClick,
   onNotify,
   depth = 0,
+  readOnly = false,
 }: {
   member: Profile;
   onClick: () => void;
   onNotify: () => void;
   depth?: number;
+  readOnly?: boolean;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const initials = member.full_name
@@ -97,22 +99,24 @@ function MemberCard({
           </p>
         )}
       </div>
-      <div className="flex gap-2 flex-shrink-0">
-        <button
-          onClick={(e) => { e.stopPropagation(); onNotify(); }}
-          className="btn btn-ghost btn-sm"
-          title="Odeslat upozornění"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
-        <Link
-          to={`/tym/${member.id}/aktivity`}
-          onClick={(e) => e.stopPropagation()}
-          className="btn btn-ghost btn-sm"
-        >
-          Aktivity
-        </Link>
-      </div>
+      {!readOnly && (
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); onNotify(); }}
+            className="btn btn-ghost btn-sm"
+            title="Odeslat upozornění"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+          <Link
+            to={`/tym/${member.id}/aktivity`}
+            onClick={(e) => e.stopPropagation()}
+            className="btn btn-ghost btn-sm"
+          >
+            Aktivity
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
