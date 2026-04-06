@@ -193,7 +193,7 @@ function HierarchyGroup({
 const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
-  const isReadOnly = profile?.role === "garant" && !isGodMode;
+  const isReadOnly = (profile?.role === "garant" || profile?.role === "ziskatel") && !isGodMode;
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
@@ -318,7 +318,7 @@ const SpravaTeam = () => {
     queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
-      if (!["vedouci", "budouci_vedouci", "garant"].includes(profile.role) && !isGodMode) return [];
+      if (!["vedouci", "budouci_vedouci", "garant", "ziskatel"].includes(profile.role) && !isGodMode) return [];
 
       let query = supabase
         .from("profiles")
@@ -328,7 +328,9 @@ const SpravaTeam = () => {
 
       // God Mode: see ALL users across all structures
       if (!isGodMode) {
-        if (profile.role === "garant") {
+        if (profile.role === "ziskatel") {
+          query = query.eq("ziskatel_id", profile.id);
+        } else if (profile.role === "garant") {
           query = query.eq("garant_id", profile.id);
         } else {
           query = query.eq("vedouci_id", profile.id);
