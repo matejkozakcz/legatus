@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Calendar, Briefcase } from "lucide-react";
+import { Calendar, Briefcase, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
@@ -77,26 +77,46 @@ export function MobileBottomNav() {
           pointerEvents: "all",
         }}
       >
-        {/* Left: Obchod */}
-        <NavButton
-          icon={Briefcase}
-          label="Obchod"
-          active={location.pathname === "/obchod"}
-          onClick={() => navigate("/obchod")}
-          isDark={isDark}
-        />
+        {/* Left button */}
+        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
+          <NavButton
+            icon={Users}
+            label="Tým"
+            active={location.pathname === "/tym"}
+            onClick={() => navigate("/tym")}
+            isDark={isDark}
+          />
+        ) : (
+          <NavButton
+            icon={Briefcase}
+            label="Obchod"
+            active={location.pathname === "/obchod"}
+            onClick={() => navigate("/obchod")}
+            isDark={isDark}
+          />
+        )}
 
         {/* Center spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Right: Kalendář */}
-        <NavButton
-          icon={Calendar}
-          label="Schůzky"
-          active={location.pathname === "/kalendar"}
-          onClick={() => navigate("/kalendar")}
-          isDark={isDark}
-        />
+        {/* Right button */}
+        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
+          <NavButton
+            icon={Briefcase}
+            label="Obchod"
+            active={location.pathname === "/obchod"}
+            onClick={() => navigate("/obchod")}
+            isDark={isDark}
+          />
+        ) : (
+          <NavButton
+            icon={Calendar}
+            label="Schůzky"
+            active={location.pathname === "/kalendar"}
+            onClick={() => navigate("/kalendar")}
+            isDark={isDark}
+          />
+        )}
 
         {/* Center elevated Dashboard/Avatar button */}
         <div
