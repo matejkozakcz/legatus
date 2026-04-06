@@ -9,7 +9,7 @@ import legatusLogo from "@/assets/legatus-logo-light.png";
 const loginBg = "/login-bg.svg";
 
 const Login = () => {
-  const { session, loading, needsOnboarding, signIn } = useAuth();
+  const { session, loading, needsOnboarding, needsReactivation, deactivatedProfile, reactivateProfile, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
