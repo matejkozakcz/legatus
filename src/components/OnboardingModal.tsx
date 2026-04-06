@@ -211,6 +211,20 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           );
       }
 
+      // Notify hierarchy about new member via push
+      try {
+        await supabase.functions.invoke("notify-new-member", {
+          body: {
+            member_name: fullName,
+            vedouci_id: vedouciId,
+            garant_id: vedouciId,
+            ziskatel_id: finalZiskatelId,
+          },
+        });
+      } catch (e) {
+        console.error("notify-new-member error:", e);
+      }
+
       await refetchProfile();
       toast.success("Účet nastaven!");
     } catch (err: any) {
