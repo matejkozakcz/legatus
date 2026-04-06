@@ -129,6 +129,8 @@ async function syncPromotionRequest(
         status: NOT_ELIGIBLE_STATUS,
       });
 
+      await logHistory(userId, requestedRole, "not_eligible", cumulativeBj, directZiskatels, "Podmínky přestaly být splněny");
+
       await supabase
         .from("notifications")
         .delete()
@@ -157,6 +159,7 @@ async function syncPromotionRequest(
       requestByKey.set(key, inserted as ExistingPromotionRequest);
     }
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky poprvé splněny");
     await ensureNotification(profileId, title, body);
     return;
   }
@@ -179,6 +182,7 @@ async function syncPromotionRequest(
       status: PENDING_STATUS,
     });
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky opět splněny");
     await ensureNotification(profileId, title, body);
     return;
   }
@@ -206,6 +210,7 @@ async function syncPromotionRequest(
       requestByKey.set(key, inserted as ExistingPromotionRequest);
     }
 
+    await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky znovu splněny po zamítnutí");
     await ensureNotification(profileId, title, body);
     return;
   }
