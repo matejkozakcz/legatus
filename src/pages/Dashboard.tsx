@@ -94,14 +94,15 @@ function MobileStatCard({
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
-  const count = (type: string, past: boolean) =>
-    meetings.filter(
-      (m: any) => m.meeting_type === type && !m.cancelled && (past ? m.date < todayStr : m.date >= todayStr),
-    ).length;
+  const countAll = (type: string) =>
+    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled).length;
 
-  const sumRefs = (past: boolean) =>
+  const countPast = (type: string) =>
+    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date < todayStr).length;
+
+  const sumAllRefs = () =>
     meetings
-      .filter((m: any) => !m.cancelled && (past ? m.date < todayStr : m.date >= todayStr))
+      .filter((m: any) => !m.cancelled)
       .reduce(
         (acc: number, m: any) =>
           acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
@@ -109,11 +110,11 @@ function computeStats(meetings: any[], todayStr: string) {
       );
 
   return {
-    fsa: { actual: count("FSA", true), planned: count("FSA", false) },
-    poh: { actual: count("POH", true), planned: count("POH", false) },
-    ser: { actual: count("SER", true), planned: count("SER", false) },
-    por: { actual: count("POR", true), planned: count("POR", false) },
-    ref: { actual: sumRefs(true), planned: sumRefs(false) },
+    fsa: { actual: countPast("FSA"), planned: countAll("FSA") },
+    poh: { actual: countPast("POH"), planned: countAll("POH") },
+    ser: { actual: countPast("SER"), planned: countAll("SER") },
+    por: { actual: countPast("POR"), planned: countAll("POR") },
+    ref: { actual: sumAllRefs(), planned: 0 },
   };
 }
 
@@ -1063,16 +1064,6 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-body text-xs text-muted-foreground">Období od</span>
-            <span className="chip chip-neutral" style={{ cursor: "default" }}>
-              {format(dateRange.from, "d. M. yyyy", { locale: cs })}
-            </span>
-            <span className="font-body text-xs text-muted-foreground">do</span>
-            <span className="chip chip-neutral" style={{ cursor: "default" }}>
-              {format(dateRange.to, "d. M. yyyy", { locale: cs })}
-            </span>
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
