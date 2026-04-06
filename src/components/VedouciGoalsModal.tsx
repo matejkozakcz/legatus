@@ -15,7 +15,7 @@ export const GOAL_OPTIONS: { key: GoalKey; label: string; placeholder: string; g
 
 interface FormData {
   selected_goal_1: GoalKey;
-  selected_goal_2: GoalKey;
+  selected_goal_2: GoalKey | "";
   team_bj_goal: number;
   personal_bj_goal: number;
   vedouci_count_goal: number;
@@ -25,7 +25,7 @@ interface FormData {
 
 const defaultForm: FormData = {
   selected_goal_1: "team_bj",
-  selected_goal_2: "personal_bj",
+  selected_goal_2: "",
   team_bj_goal: 0,
   personal_bj_goal: 0,
   vedouci_count_goal: 0,
@@ -60,7 +60,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
           const d = data as any;
           setForm({
             selected_goal_1: d.selected_goal_1 || "team_bj",
-            selected_goal_2: d.selected_goal_2 || "personal_bj",
+            selected_goal_2: d.selected_goal_2 || "",
             team_bj_goal: d.team_bj_goal || 0,
             personal_bj_goal: d.personal_bj_goal || 0,
             vedouci_count_goal: d.vedouci_count_goal || 0,
@@ -74,7 +74,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved }:
       });
   }, [open, userId, periodKey]);
 
-  const selectedKeys: GoalKey[] = [form.selected_goal_1, form.selected_goal_2];
+  const selectedKeys: (GoalKey | "")[] = [form.selected_goal_1, form.selected_goal_2].filter(Boolean) as GoalKey[];
 
   const handleSelectGoal = (slot: 1 | 2, key: GoalKey) => {
     setForm((prev) => {
