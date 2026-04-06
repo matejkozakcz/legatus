@@ -1097,6 +1097,54 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   custom: [],
 };
 
+const ALL_TEMPLATE_VARS: { category: string; vars: { name: string; description: string }[] }[] = [
+  {
+    category: "Člen",
+    vars: [
+      { name: "{{member_name}}", description: "Celé jméno člena" },
+      { name: "{{role}}", description: "Aktuální role člena (novacek, ziskatel, garant…)" },
+      { name: "{{role_label}}", description: "Česky pojmenovaná cílová role povýšení" },
+    ],
+  },
+  {
+    category: "Povýšení",
+    vars: [
+      { name: "{{vedouci_name}}", description: "Jméno vedoucího, který schválil/zamítl" },
+      { name: "{{cumulative_bj}}", description: "Kumulativní BJ člena" },
+      { name: "{{structure_info}}", description: "Popis struktury (počet lidí, přímí)" },
+    ],
+  },
+  {
+    category: "Schůzky",
+    vars: [
+      { name: "{{client_name}}", description: "Jméno klienta" },
+      { name: "{{meeting_time}}", description: "Čas schůzky" },
+      { name: "{{meeting_type}}", description: "Typ schůzky (FSA, SER, POH, POR)" },
+    ],
+  },
+  {
+    category: "Cíle",
+    vars: [
+      { name: "{{goal_name}}", description: "Název splněného cíle" },
+      { name: "{{goal_value}}", description: "Hodnota cíle" },
+    ],
+  },
+  {
+    category: "Pravidelné (agregáty)",
+    vars: [
+      { name: "{{total_bj}}", description: "Celkové BJ za aktuální týden" },
+      { name: "{{total_fsa}}", description: "Počet analýz za týden" },
+      { name: "{{total_ser}}", description: "Počet servisů za týden" },
+      { name: "{{total_poh}}", description: "Počet pohovorů za týden" },
+      { name: "{{total_meetings}}", description: "Celkový počet schůzek za týden" },
+      { name: "{{member_count}}", description: "Počet aktivních členů" },
+      { name: "{{pending_promotions}}", description: "Počet čekajících žádostí o povýšení" },
+      { name: "{{date}}", description: "Aktuální datum (česky)" },
+      { name: "{{day_name}}", description: "Název dne v týdnu (česky)" },
+    ],
+  },
+];
+
 const SCHEDULE_TYPES = [
   { value: "event", label: "Událost", description: "Spustí se při výskytu události" },
   { value: "daily", label: "Denně", description: "Každý den v nastavený čas" },
@@ -1143,6 +1191,7 @@ function NotificationRulesTab() {
   const [sendingTestId, setSendingTestId] = useState<string | null>(null);
   const [testRule, setTestRule] = useState<NotifRule | null>(null);
   const [testVars, setTestVars] = useState<Record<string, string>>({});
+  const [showVarsModal, setShowVarsModal] = useState(false);
 
   const extractPlaceholders = (rule: NotifRule): string[] => {
     const combined = `${rule.title_template} ${rule.body_template}`;
@@ -1313,9 +1362,14 @@ function NotificationRulesTab() {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
-        <Button size="sm" onClick={startNew} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nové pravidlo
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowVarsModal(true)} className="gap-1.5">
+            <Info className="h-4 w-4" /> Proměnné
+          </Button>
+          <Button size="sm" onClick={startNew} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Nové pravidlo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Role matrix header */}
@@ -1482,6 +1536,37 @@ function NotificationRulesTab() {
             >
               {sendingTestId === testRule?.id ? "Odesílám…" : "Odeslat"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Variables reference modal */}
+      <Dialog open={showVarsModal} onOpenChange={setShowVarsModal}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <FileCode className="h-4 w-4" /> Seznam všech proměnných
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Proměnné vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>. Při odeslání se nahradí skutečnou hodnotou.
+            </p>
+            {ALL_TEMPLATE_VARS.map((cat) => (
+              <div key={cat.category}>
+                <div className="text-sm font-medium mb-1.5">{cat.category}</div>
+                <div className="space-y-1">
+                  {cat.vars.map((v) => (
+                    <div key={v.name} className="flex items-start gap-2 text-xs">
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0">{v.name}</code>
+                      <span className="text-muted-foreground">{v.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>Zavřít</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
