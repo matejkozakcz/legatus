@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal } from "lucide-react";
 
@@ -1121,18 +1122,36 @@ function NotificationRulesTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
   const [sendingTestId, setSendingTestId] = useState<string | null>(null);
+  const [testRule, setTestRule] = useState<NotifRule | null>(null);
+  const [testVars, setTestVars] = useState<Record<string, string>>({});
 
-  const sendTestNotification = async (rule: NotifRule) => {
-    setSendingTestId(rule.id);
+  const extractPlaceholders = (rule: NotifRule): string[] => {
+    const combined = `${rule.title_template} ${rule.body_template}`;
+    const matches = combined.match(/\{\{(\w+)\}\}/g) || [];
+    return [...new Set(matches.map(m => m.replace(/\{\{|\}\}/g, "")))];
+  };
+
+  const openTestDialog = (rule: NotifRule) => {
+    const placeholders = extractPlaceholders(rule);
+    const defaults: Record<string, string> = {};
+    placeholders.forEach(p => { defaults[p] = ""; });
+    setTestVars(defaults);
+    setTestRule(rule);
+  };
+
+  const sendTestNotification = async () => {
+    if (!testRule) return;
+    setSendingTestId(testRule.id);
     try {
-      const title = (rule.title_template || "Test notifikace").replace(/\{\{.*?\}\}/g, "Test");
-      const body = (rule.body_template || "").replace(/\{\{.*?\}\}/g, "Test");
+      const title = (testRule.title_template || "Test").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
+      const body = (testRule.body_template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
       const { data, error } = await supabase.functions.invoke("test-notification", {
         body: { title, body },
       });
       if (error) throw error;
       if (data?.ok) {
         toast.success("Testovací notifikace odeslána!");
+        setTestRule(null);
       } else {
         toast.error(data?.message || "Push odběr nenalezen. Povolte si notifikace v prohlížeči.");
       }
@@ -1318,7 +1337,7 @@ function NotificationRulesTab() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => sendTestNotification(rule)}
+                          onClick={() => openTestDialog(rule)}
                           disabled={sendingTestId === rule.id}
                           title="Odeslat testovací notifikaci"
                         >
@@ -1387,6 +1406,50 @@ function NotificationRulesTab() {
           )}
         </div>
       </CardContent>
+
+      {/* Test notification dialog */}
+      <Dialog open={!!testRule} onOpenChange={(open) => !open && setTestRule(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Testovací notifikace</DialogTitle>
+          </DialogHeader>
+          {testRule && (() => {
+            const placeholders = extractPlaceholders(testRule);
+            if (placeholders.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground">
+                  Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
+                </p>
+              );
+            }
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
+                {placeholders.map((key) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
+                    <Input
+                      placeholder={key}
+                      value={testVars[key] || ""}
+                      onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setTestRule(null)}>Zrušit</Button>
+            <Button
+              size="sm"
+              onClick={sendTestNotification}
+              disabled={sendingTestId === testRule?.id}
+            >
+              {sendingTestId === testRule?.id ? "Odesílám…" : "Odeslat"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
