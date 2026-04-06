@@ -59,7 +59,7 @@ export function AppSidebar() {
     { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
-  if (isVedouci || profile?.role === "budouci_vedouci") {
+  if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant") {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
   }
 

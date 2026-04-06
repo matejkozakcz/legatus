@@ -78,7 +78,7 @@ export function MobileBottomNav() {
         }}
       >
         {/* Left button */}
-        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
+        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" ? (
           <NavButton
             icon={Users}
             label="Tým"
@@ -100,7 +100,7 @@ export function MobileBottomNav() {
         <div style={{ flex: 1 }} />
 
         {/* Right button */}
-        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
+        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" ? (
           <NavButton
             icon={Briefcase}
             label="Obchod"

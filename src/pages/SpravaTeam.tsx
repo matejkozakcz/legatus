@@ -59,11 +59,13 @@ function MemberCard({
   onClick,
   onNotify,
   depth = 0,
+  readOnly = false,
 }: {
   member: Profile;
   onClick: () => void;
   onNotify: () => void;
   depth?: number;
+  readOnly?: boolean;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const initials = member.full_name
@@ -97,22 +99,24 @@ function MemberCard({
           </p>
         )}
       </div>
-      <div className="flex gap-2 flex-shrink-0">
-        <button
-          onClick={(e) => { e.stopPropagation(); onNotify(); }}
-          className="btn btn-ghost btn-sm"
-          title="Odeslat upozornění"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
-        <Link
-          to={`/tym/${member.id}/aktivity`}
-          onClick={(e) => e.stopPropagation()}
-          className="btn btn-ghost btn-sm"
-        >
-          Aktivity
-        </Link>
-      </div>
+      {!readOnly && (
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); onNotify(); }}
+            className="btn btn-ghost btn-sm"
+            title="Odeslat upozornění"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+          <Link
+            to={`/tym/${member.id}/aktivity`}
+            onClick={(e) => e.stopPropagation()}
+            className="btn btn-ghost btn-sm"
+          >
+            Aktivity
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -124,6 +128,7 @@ function HierarchyGroup({
   onEdit,
   onNotify,
   depth,
+  readOnly = false,
 }: {
   parent: Profile;
   children: Profile[];
@@ -131,6 +136,7 @@ function HierarchyGroup({
   onEdit: (m: Profile) => void;
   onNotify: (m: Profile) => void;
   depth: number;
+  readOnly?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
@@ -157,6 +163,7 @@ function HierarchyGroup({
             onClick={() => onEdit(parent)}
             onNotify={() => onNotify(parent)}
             depth={0}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -173,6 +180,7 @@ function HierarchyGroup({
                 onEdit={onEdit}
                 onNotify={onNotify}
                 depth={depth + 1}
+                readOnly={readOnly}
               />
             );
           })}
@@ -185,6 +193,7 @@ function HierarchyGroup({
 const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
+  const isReadOnly = profile?.role === "garant" && !isGodMode;
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
@@ -309,7 +318,7 @@ const SpravaTeam = () => {
     queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
-      if (!["vedouci", "budouci_vedouci"].includes(profile.role) && !isGodMode) return [];
+      if (!["vedouci", "budouci_vedouci", "garant"].includes(profile.role) && !isGodMode) return [];
 
       let query = supabase
         .from("profiles")
@@ -319,7 +328,11 @@ const SpravaTeam = () => {
 
       // God Mode: see ALL users across all structures
       if (!isGodMode) {
-        query = query.eq("vedouci_id", profile.id);
+        if (profile.role === "garant") {
+          query = query.eq("garant_id", profile.id);
+        } else {
+          query = query.eq("vedouci_id", profile.id);
+        }
       }
 
       const { data, error } = await query;
@@ -489,6 +502,7 @@ const SpravaTeam = () => {
                       onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
                       onNotify={setNotifyMember}
                       depth={0}
+                      readOnly={isReadOnly}
                     />
                   );
                 })}
@@ -607,6 +621,7 @@ const SpravaTeam = () => {
                   onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
                   onNotify={setNotifyMember}
                   depth={0}
+                  readOnly={isReadOnly}
                 />
               );
             })}
