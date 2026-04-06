@@ -81,8 +81,8 @@ export function MobileBottomNav() {
         <NavButton
           icon={Briefcase}
           label="Obchod"
-          active={location.pathname === "/obchodni-pripady"}
-          onClick={() => navigate("/obchodni-pripady")}
+          active={location.pathname === "/obchod"}
+          onClick={() => navigate("/obchod")}
           isDark={isDark}
         />
 
