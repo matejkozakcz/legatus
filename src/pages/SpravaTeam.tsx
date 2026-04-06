@@ -186,6 +186,9 @@ const SpravaTeam = () => {
   const { profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
