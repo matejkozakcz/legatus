@@ -1336,7 +1336,7 @@ function NotificationRulesTab() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => sendTestNotification(rule)}
+                          onClick={() => openTestDialog(rule)}
                           disabled={sendingTestId === rule.id}
                           title="Odeslat testovací notifikaci"
                         >
