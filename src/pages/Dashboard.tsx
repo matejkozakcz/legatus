@@ -6,18 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
-import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
+import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth, daysRemainingInPeriod } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
+import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
-
-type TimeFilter = "this_week" | "last_week" | "this_month";
 
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
@@ -125,12 +124,15 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("this_week");
+  const now = new Date();
+  const todayStr = format(now, "yyyy-MM-dd");
+  const currentPeriod = getProductionPeriodMonth(now);
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
+  const selectedPeriod = useMemo(() => getProductionPeriodForMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
-  const now = new Date();
-  const todayStr = format(now, "yyyy-MM-dd");
 
   // ── Impersonation: view dashboard as another team member ──
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
@@ -238,20 +240,11 @@ const Dashboard = () => {
     }
   }, [profile?.role]);
 
-  // ── Desktop date range ──────────────────────────────────────────────────────
-  const dateRange = useMemo(() => {
-    switch (timeFilter) {
-      case "this_week":
-        return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
-      case "last_week":
-        return {
-          from: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
-          to: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }),
-        };
-      case "this_month":
-        return { from: getProductionPeriodStart(now), to: getProductionPeriodEnd(now) };
-    }
-  }, [timeFilter]);
+  // ── Desktop date range — driven by production period picker ──────────────
+  const dateRange = useMemo(() => ({
+    from: selectedPeriod.start,
+    to: selectedPeriod.end,
+  }), [selectedPeriod]);
 
   // ── Desktop stats from client_meetings ──────────────────────────────────────
   const { data: desktopMeetings = [] } = useQuery({
@@ -424,11 +417,9 @@ const Dashboard = () => {
     enabled: !!activeUserId && activeRole === "vedouci",
   });
 
-  // Vedoucí: monthly BJ for entire subtree
-  const periodStart = getProductionPeriodStart(now);
-  const periodEnd = getProductionPeriodEnd(now);
-  const periodStartStr = format(periodStart, "yyyy-MM-dd");
-  const periodEndStr = format(periodEnd, "yyyy-MM-dd");
+  // Period dates from picker (used by Stav byznysu + Přehled aktivit)
+  const periodStartStr = format(selectedPeriod.start, "yyyy-MM-dd");
+  const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
 
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
@@ -503,12 +494,7 @@ const Dashboard = () => {
     },
   });
 
-  // ── Desktop filter pills ────────────────────────────────────────────────────
-  const filterPills: { key: TimeFilter; label: string }[] = [
-    { key: "this_week", label: "Tento týden" },
-    { key: "last_week", label: "Minulý týden" },
-    { key: "this_month", label: "Tento měsíc" },
-  ];
+  // Filter pills removed — period picker in header drives everything
 
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
@@ -863,11 +849,18 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-          DASHBOARD
-        </h1>
+      <div className="flex items-center gap-3 justify-between">
+        <div className="flex items-center gap-3">
+          <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+            DASHBOARD
+          </h1>
+        </div>
+        <ProductionMonthPicker
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+        />
       </div>
 
       <div>
@@ -891,7 +884,7 @@ const Dashboard = () => {
       )}
 
       <section className="space-y-4">
-        <div className="flex gap-6" style={{ alignItems: "stretch", minHeight: 350 }}>
+        <div className="flex gap-6" style={{ alignItems: "stretch", height: 420 }}>
           {/* Stav byznysu — 1/4 */}
           <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}>
@@ -954,16 +947,7 @@ const Dashboard = () => {
         </h2>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {filterPills.map((pill) => (
-            <button
-              key={pill.key}
-              onClick={() => setTimeFilter(pill.key)}
-              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              {pill.label}
-            </button>
-          ))}
-          <span className="font-body text-xs text-muted-foreground ml-1">Období od</span>
+          <span className="font-body text-xs text-muted-foreground">Období od</span>
           <span className="chip chip-neutral" style={{ cursor: "default" }}>
             {format(dateRange.from, "d. M. yyyy", { locale: cs })}
           </span>
