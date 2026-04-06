@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle } from "lucide-react";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
@@ -18,6 +18,8 @@ interface ProfileNode {
 interface MemberDetailModalProps {
   member: ProfileNode;
   onClose: () => void;
+  onEdit?: () => void;
+  onNotify?: () => void;
 }
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
@@ -40,13 +42,12 @@ function getWeekStart() {
   return formatISO(monday, { representation: "date" });
 }
 
-export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
+export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberDetailModalProps) {
   useBodyScrollLock(true);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -68,6 +69,30 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: upcomingMeetings = [], isLoading: isMeetingsLoading } = useQuery({
+    queryKey: ["member_upcoming_meetings", member.id],
+    queryFn: async () => {
+      const today = formatISO(new Date(), { representation: "date" });
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("id, date, meeting_time, meeting_type, case_name, cancelled")
+        .eq("user_id", member.id)
+        .eq("cancelled", false)
+        .gte("date", today)
+        .order("date", { ascending: true })
+        .limit(3);
+      if (error) throw error;
+      return (data || []) as Array<{
+        id: string;
+        date: string;
+        meeting_time: string | null;
+        meeting_type: string;
+        case_name: string | null;
+        cancelled: boolean;
+      }>;
     },
   });
 
@@ -102,7 +127,6 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
 
   const colors = avatarColors[member.role] || avatarColors.novacek;
   const badge = roleBadgeConfig[member.role] || roleBadgeConfig.novacek;
-  const status = { bg: "#3FC55D", shadow: "rgba(63, 197, 93, 0.25)" };
 
   const stats = [
     { label: "Analýzy", actual: record?.fsa_actual ?? 0, planned: record?.fsa_planned ?? 0 },
@@ -110,6 +134,13 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
     { label: "Porádka", actual: record?.por_actual ?? 0, planned: record?.por_planned ?? 0 },
     { label: "Doporučení", actual: record?.ref_actual ?? 0, planned: record?.ref_planned ?? 0 },
   ];
+
+  const meetingTypeLabels: Record<string, string> = {
+    FSA: "Analýza",
+    SER: "Servis",
+    POH: "Pohovor",
+    POR: "Porádka",
+  };
 
   return (
     <div
@@ -161,19 +192,6 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                 <span className="font-heading font-semibold text-xl">{initials}</span>
               </div>
             )}
-            {/* Status dot */}
-            <div
-              className="absolute"
-              style={{
-                bottom: 2,
-                right: 2,
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: status.bg,
-                boxShadow: `0 0 0 3px ${isDark ? "hsl(188,18%,18%)" : "#fff"}, 0 0 0 6px ${status.shadow}`,
-              }}
-            />
           </div>
 
           <h3 className="font-heading text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -222,6 +240,49 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
           )}
         </div>
 
+        {/* Upcoming meetings */}
+        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+        <div>
+          <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+            Nadcházející schůzky
+          </p>
+          {isMeetingsLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
+            </div>
+          ) : upcomingMeetings.length === 0 ? (
+            <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+              Žádné naplánované schůzky
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingMeetings.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-3 rounded-lg"
+                  style={{
+                    padding: "8px 12px",
+                    background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.04)",
+                    border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
+                  }}
+                >
+                  <Calendar size={14} style={{ color: "#00abbd", flexShrink: 0 }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-body font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                      {meetingTypeLabels[m.meeting_type] || m.meeting_type}
+                      {m.case_name && ` — ${m.case_name}`}
+                    </p>
+                    <p className="text-[11px] font-body" style={{ color: "var(--text-muted)" }}>
+                      {format(new Date(m.date), "EEEE d. MMMM", { locale: cs })}
+                      {m.meeting_time && `, ${m.meeting_time.slice(0, 5)}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Promotion History */}
         {promotionHistory.length > 0 && (
           <>
@@ -236,7 +297,6 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                 </div>
               ) : (
                 <div className="space-y-0 relative">
-                  {/* Timeline line */}
                   <div
                     className="absolute left-[11px] top-2 bottom-2"
                     style={{ width: 2, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }}
@@ -257,7 +317,6 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
 
                     return (
                       <div key={entry.id} className="flex items-start gap-3 py-2 relative">
-                        {/* Dot */}
                         <div
                           className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center z-10"
                           style={{ background: isDark ? "hsl(188,18%,18%)" : "#ffffff" }}
@@ -269,7 +328,6 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
                             {cfg.icon}
                           </div>
                         </div>
-                        {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
@@ -303,17 +361,43 @@ export function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
         {/* Divider */}
         <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
 
-        {/* Footer */}
-        <button
-          className="btn btn-md btn-secondary w-full flex items-center justify-center gap-2"
-          onClick={() => {
-            onClose();
-            navigate(`/tym/${member.id}/aktivity`);
-          }}
-        >
-          Zobrazit plnou aktivitu
-          <ArrowRight size={16} />
-        </button>
+        {/* Action buttons */}
+        <div className="flex flex-col gap-2">
+          {onNotify && (
+            <button
+              className="btn btn-md btn-ghost w-full flex items-center justify-center gap-2"
+              onClick={() => {
+                onClose();
+                onNotify();
+              }}
+            >
+              <Bell size={16} />
+              Poslat připomínku
+            </button>
+          )}
+          <button
+            className="btn btn-md btn-secondary w-full flex items-center justify-center gap-2"
+            onClick={() => {
+              onClose();
+              navigate(`/tym/${member.id}/aktivity`);
+            }}
+          >
+            Zobrazit plnou aktivitu
+            <ArrowRight size={16} />
+          </button>
+          {onEdit && (
+            <button
+              className="btn btn-md btn-ghost w-full flex items-center justify-center gap-2"
+              onClick={() => {
+                onClose();
+                onEdit();
+              }}
+            >
+              <Pencil size={16} />
+              Upravit profil
+            </button>
+          )}
+        </div>
       </div>
 
       <style>{`

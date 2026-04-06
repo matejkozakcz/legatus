@@ -11,6 +11,7 @@ import { fireConfetti } from "@/lib/confetti";
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
+import { MemberDetailModal } from "@/components/MemberDetailModal";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 
@@ -184,6 +185,7 @@ const SpravaTeam = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
+  const [detailMember, setDetailMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
@@ -535,7 +537,7 @@ const SpravaTeam = () => {
                       parent={member}
                       children={children}
                       childrenMap={childrenMap}
-                      onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                      onEdit={setDetailMember}
                       depth={0}
                       readOnly={isReadOnly}
                     />
@@ -547,6 +549,14 @@ const SpravaTeam = () => {
         </div>
 
         {/* Dialogs */}
+        {detailMember && (
+          <MemberDetailModal
+            member={detailMember}
+            onClose={() => setDetailMember(null)}
+            onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+            onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+          />
+        )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
         {notifyMember && (
           <CreateNotificationDialog
@@ -653,7 +663,7 @@ const SpravaTeam = () => {
                   parent={member}
                   children={children}
                   childrenMap={childrenMap}
-                  onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                  onEdit={setDetailMember}
                   
                   depth={0}
                   readOnly={isReadOnly}
@@ -665,6 +675,14 @@ const SpravaTeam = () => {
       </div>
 
       {/* Dialogs */}
+      {detailMember && (
+        <MemberDetailModal
+          member={detailMember}
+          onClose={() => setDetailMember(null)}
+          onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+          onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+        />
+      )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
       {notifyMember && (
         <CreateNotificationDialog
