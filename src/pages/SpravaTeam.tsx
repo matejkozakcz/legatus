@@ -396,13 +396,14 @@ const SpravaTeam = () => {
 
   // Root members: those whose ziskatel_id is the current user or not in the members list
   const rootMembers = useMemo(() => {
-    return members.filter((m) => {
-      if (!m.ziskatel_id) return true;
-      if (m.ziskatel_id === profile?.id) return true;
-      if (!profileMap.has(m.ziskatel_id) || m.ziskatel_id === m.id) return true;
-      // Check if parent is not in members (meaning parent is the current user)
-      return !members.some((other) => other.id === m.ziskatel_id);
-    });
+    return members
+      .filter((m) => {
+        if (!m.ziskatel_id) return true;
+        if (m.ziskatel_id === profile?.id) return true;
+        if (!profileMap.has(m.ziskatel_id) || m.ziskatel_id === m.id) return true;
+        return !members.some((other) => other.id === m.ziskatel_id);
+      })
+      .sort((a, b) => (ROLE_ORDER[a.role] ?? 99) - (ROLE_ORDER[b.role] ?? 99));
   }, [members, profile?.id]);
 
   const enrichedRequests: PromotionRequest[] = pendingRequests
