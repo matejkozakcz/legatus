@@ -849,11 +849,18 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-          DASHBOARD
-        </h1>
+      <div className="flex items-center gap-3 justify-between">
+        <div className="flex items-center gap-3">
+          <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+            DASHBOARD
+          </h1>
+        </div>
+        <ProductionMonthPicker
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+        />
       </div>
 
       <div>
@@ -940,16 +947,7 @@ const Dashboard = () => {
         </h2>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {filterPills.map((pill) => (
-            <button
-              key={pill.key}
-              onClick={() => setTimeFilter(pill.key)}
-              className={`chip ${timeFilter === pill.key ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              {pill.label}
-            </button>
-          ))}
-          <span className="font-body text-xs text-muted-foreground ml-1">Období od</span>
+          <span className="font-body text-xs text-muted-foreground">Období od</span>
           <span className="chip chip-neutral" style={{ cursor: "default" }}>
             {format(dateRange.from, "d. M. yyyy", { locale: cs })}
           </span>
