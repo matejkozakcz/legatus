@@ -36,32 +36,23 @@ function concat(...arrays: Uint8Array[]): Uint8Array {
 
 // --- VAPID JWT ---
 async function importVapidPrivateKey(base64url: string): Promise<CryptoKey> {
-  // Import as JWK — more reliable than PKCS#8 wrapping
   const rawBytes = base64urlToUint8Array(base64url);
-  // We need the public key to build a full JWK. Derive it from private key.
-  // For ECDSA signing we can use JWK with just d + x + y.
-  // Generate a temporary key pair, then import with our private key bytes.
-  const jwk = {
-    kty: "EC",
-    crv: "P-256",
-    d: base64url,
-    // x and y will be derived — we import via raw PKCS8 with proper structure
-  };
 
-  // Build proper PKCS#8 DER
-  // SEQUENCE { INTEGER(0), SEQUENCE { OID(ecPublicKey), OID(P-256) }, OCTET STRING { SEQUENCE { INTEGER(1), OCTET STRING(privateKey) } } }
+  // Build proper PKCS#8 DER for P-256 EC private key
+  // ECPrivateKey SEQUENCE: version(1) + privateKey(32 bytes)
   const ecPrivateKey = concat(
-    new Uint8Array([0x30, 0x22, 0x02, 0x01, 0x01, 0x04, 0x20]),
+    new Uint8Array([0x30, 0x25, 0x02, 0x01, 0x01, 0x04, 0x20]),
     rawBytes
   );
+  // Full PKCS#8: version(0) + AlgorithmIdentifier + OCTET STRING(ECPrivateKey)
   const pkcs8 = concat(
     new Uint8Array([
-      0x30, 0x41, // SEQUENCE, 65 bytes
+      0x30, 0x41, // SEQUENCE, 65 bytes total
       0x02, 0x01, 0x00, // INTEGER 0
       0x30, 0x13, // SEQUENCE, 19 bytes
       0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ecPublicKey
       0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID P-256
-      0x04, 0x26, // OCTET STRING, 38 bytes
+      0x04, 0x27, // OCTET STRING, 39 bytes
     ]),
     ecPrivateKey
   );
