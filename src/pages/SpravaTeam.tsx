@@ -342,12 +342,12 @@ const SpravaTeam = () => {
     try {
       const memberIds = members.map((m) => m.id);
 
-      // Smaž pending promotion_requests pro členy týmu
+      // Smaž pending i not_eligible promotion_requests pro členy týmu
       await supabase
         .from("promotion_requests")
         .delete()
         .in("user_id", memberIds)
-        .eq("status", "pending");
+        .in("status", ["pending", "not_eligible"]);
 
       // Smaž nepřečtené promotion_eligible notifikace pro vedoucího
       await supabase
