@@ -1075,21 +1075,36 @@ function HierarchyEditor() {
 
 const TRIGGER_EVENTS = [
   { value: "new_member", label: "Nový člen", description: "Při registraci nového člena do struktury" },
-  { value: "promotion_approved", label: "Povýšení", description: "Při schválení povýšení" },
+  { value: "promotion_eligible", label: "Splnění podmínek povýšení", description: "Člen splní podmínky pro povýšení" },
+  { value: "promotion_approved", label: "Povýšení schváleno", description: "Při schválení povýšení" },
+  { value: "promotion_rejected", label: "Povýšení zamítnuto", description: "Při zamítnutí povýšení" },
   { value: "meeting_reminder", label: "Připomínka schůzky", description: "Před plánovanou schůzkou" },
   { value: "weekly_summary", label: "Týdenní souhrn", description: "Souhrn aktivit na konci týdne" },
   { value: "goal_achieved", label: "Cíl splněn", description: "Při dosažení nastaveného cíle" },
+  { value: "scheduled", label: "Pravidelná", description: "Opakovaná notifikace v nastaveném čase" },
   { value: "custom", label: "Vlastní", description: "Vlastní typ notifikace" },
 ] as const;
 
 const TEMPLATE_VARS: Record<string, string[]> = {
   new_member: ["{{member_name}}", "{{role}}"],
-  promotion_approved: ["{{member_name}}", "{{new_role}}", "{{old_role}}"],
+  promotion_eligible: ["{{member_name}}", "{{role_label}}", "{{cumulative_bj}}", "{{structure_info}}"],
+  promotion_approved: ["{{role_label}}", "{{vedouci_name}}"],
+  promotion_rejected: ["{{role_label}}", "{{vedouci_name}}"],
   meeting_reminder: ["{{client_name}}", "{{meeting_time}}", "{{meeting_type}}"],
   weekly_summary: ["{{fsa_count}}", "{{ser_count}}", "{{poh_count}}", "{{bj_total}}"],
   goal_achieved: ["{{member_name}}", "{{goal_name}}", "{{goal_value}}"],
+  scheduled: ["{{total_bj}}", "{{total_fsa}}", "{{total_ser}}", "{{total_poh}}", "{{total_meetings}}", "{{member_count}}", "{{pending_promotions}}", "{{date}}", "{{day_name}}"],
   custom: [],
 };
+
+const SCHEDULE_TYPES = [
+  { value: "event", label: "Událost", description: "Spustí se při výskytu události" },
+  { value: "daily", label: "Denně", description: "Každý den v nastavený čas" },
+  { value: "weekly", label: "Týdně", description: "Jednou týdně v nastavený den a čas" },
+  { value: "monthly", label: "Měsíčně", description: "Jednou měsíčně v nastavený den a čas" },
+] as const;
+
+const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 
 const RECIPIENT_TYPES = [
   { value: "self", label: "Dotčená osoba", description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)" },
@@ -1115,6 +1130,10 @@ interface NotifRule {
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
+  schedule_type: string;
+  schedule_time: string | null;
+  schedule_day_of_week: number | null;
+  schedule_day_of_month: number | null;
 }
 
 function NotificationRulesTab() {
