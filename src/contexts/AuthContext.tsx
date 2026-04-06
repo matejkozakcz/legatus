@@ -61,11 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAdmin]);
 
   useEffect(() => {
-    if (!isAdmin && godMode) {
+    // Only clear godMode after profile has loaded and user is confirmed non-admin
+    if (profile && !isAdmin && godMode) {
       setGodMode(false);
       try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
     }
-  }, [isAdmin, godMode]);
+  }, [profile, isAdmin, godMode]);
 
   const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
     // First try active profile
