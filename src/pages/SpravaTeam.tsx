@@ -73,17 +73,16 @@ const ROLE_ORDER: Record<string, number> = {
 function MemberCard({
   member,
   onClick,
-  onNotify,
   depth = 0,
   readOnly = false,
 }: {
   member: Profile;
   onClick: () => void;
-  onNotify: () => void;
   depth?: number;
   readOnly?: boolean;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
+  const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
@@ -93,46 +92,21 @@ function MemberCard({
 
   return (
     <div
-      className="legatus-card legatus-card-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
-      style={{ marginLeft: depth * 24 }}
+      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow"
+      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px" }}
       onClick={onClick}
     >
       {member.avatar_url ? (
-        <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+        <img src={member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-border flex items-center justify-center flex-shrink-0">
           <span className="text-xs font-heading font-semibold">{initials}</span>
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-body font-medium text-foreground">{member.full_name}</p>
-          <span className={badge.className}>{badge.label}</span>
-        </div>
-        {member.created_at && (
-          <p className="text-xs text-muted-foreground font-body mt-0.5">
-            Přidán: {format(new Date(member.created_at), "d. M. yyyy", { locale: cs })}
-          </p>
-        )}
+        <p className="font-body font-medium text-foreground text-sm leading-tight">{member.full_name}</p>
+        <span className={`${badge.className} mt-0.5`} style={{ fontSize: 10 }}>{badge.label}</span>
       </div>
-      {!readOnly && (
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); onNotify(); }}
-            className="btn btn-ghost btn-sm"
-            title="Odeslat upozornění"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-          <Link
-            to={`/tym/${member.id}/aktivity`}
-            onClick={(e) => e.stopPropagation()}
-            className="btn btn-ghost btn-sm"
-          >
-            Aktivity
-          </Link>
-        </div>
-      )}
     </div>
   );
 }
