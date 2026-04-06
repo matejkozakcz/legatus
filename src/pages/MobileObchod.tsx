@@ -116,16 +116,20 @@ export default function MobileObchod() {
 
       {/* Content — swipe area */}
       <div
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
         style={{ flex: 1, overflow: "hidden", marginTop: 8 }}
       >
-        <div style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}>
-          {activeTab === "schuzky" ? (
-            <Kalendar mobileEmbedded />
-          ) : (
-            <ObchodniPripady mobileEmbedded />
-          )}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ height: "100%", overflowY: "auto", overflowX: "hidden", minHeight: "100%" }}
+        >
+          <div style={{ minHeight: "100%" }}>
+            {activeTab === "schuzky" ? (
+              <Kalendar mobileEmbedded />
+            ) : (
+              <ObchodniPripady mobileEmbedded />
+            )}
+          </div>
         </div>
       </div>
     </div>
