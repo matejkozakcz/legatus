@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const isDark = theme === "dark";
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -106,6 +108,12 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
     if (!notif.read) {
       await supabase.from("notifications").update({ read: true }).eq("id", notif.id);
       setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
+    }
+    // Promotion notifications → navigate to Správa týmu
+    if (notif.type === "promotion_eligible") {
+      navigate("/tym");
+      setOpen(false);
+      return;
     }
     if (notif.related_meeting_id && onMeetingClick) {
       onMeetingClick(notif.related_meeting_id);

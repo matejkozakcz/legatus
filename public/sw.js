@@ -61,18 +61,21 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// Click on notification → open dashboard
+// Click on notification → route based on type
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const data = event.notification.data || {};
+  // Promotion notifications go to Správa týmu
+  const targetUrl = data.type === "promotion_eligible" ? "/tym" : "/dashboard";
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clients) => {
         if (clients.length > 0) {
           clients[0].focus();
-          clients[0].navigate("/dashboard");
+          clients[0].navigate(targetUrl);
         } else {
-          self.clients.openWindow("/dashboard");
+          self.clients.openWindow(targetUrl);
         }
       })
   );

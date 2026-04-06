@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
     const pushPayload = JSON.stringify({
       title: notif.title,
       body: notif.body || notif.message || "",
-      data: { notification_id: notif.id },
+      data: { notification_id: notif.id, type: notif.type },
     });
 
     console.log(`Sending push to ${notif.recipient_id}, endpoint: ${sub.subscription.endpoint?.slice(0, 60)}...`);
