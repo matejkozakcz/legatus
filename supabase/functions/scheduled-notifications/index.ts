@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       // Check if it's the right time (within 2 min window since cron runs every minute)
       if (currentHour !== schedHour || Math.abs(currentMinute - schedMin) > 1) continue;
 
-      // Check day constraints
+      // Check day constraints (null means "every day of week" or "every day of month")
       if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
       if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
 
@@ -68,8 +68,8 @@ Deno.serve(async (req) => {
           .eq("is_active", true)
           .in("role", rule.recipient_roles);
         recipientIds = (profiles || []).map((p: any) => p.id);
-      } else if (rule.recipient_type === "by_role") {
-        // All active users
+      } else {
+        // Default: all active users (for by_role with no roles, or self/hierarchy in scheduled context)
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id")

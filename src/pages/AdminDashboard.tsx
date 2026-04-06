@@ -1246,6 +1246,7 @@ interface NotifRule {
 }
 
 function NotificationRulesTab() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
@@ -1269,21 +1270,30 @@ function NotificationRulesTab() {
   };
 
   const sendTestNotification = async () => {
-    if (!testRule) return;
+    if (!testRule || !user) return;
     setSendingTestId(testRule.id);
     try {
       const title = (testRule.title_template || "Test").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
       const body = (testRule.body_template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
+
+      // Create in-app notification
+      await supabase.from("notifications").insert({
+        sender_id: user.id,
+        recipient_id: user.id,
+        type: testRule.trigger_event || "test",
+        title,
+        body,
+        deadline: new Date().toISOString().split("T")[0],
+      });
+
+      // Also send push
       const { data, error } = await supabase.functions.invoke("test-notification", {
         body: { title, body },
       });
-      if (error) throw error;
-      if (data?.ok) {
-        toast.success("Testovací notifikace odeslána!");
-        setTestRule(null);
-      } else {
-        toast.error(data?.message || "Push odběr nenalezen. Povolte si notifikace v prohlížeči.");
-      }
+      if (error) console.warn("Push failed:", error);
+
+      toast.success("Testovací notifikace odeslána (in-app" + (data?.ok ? " + push" : "") + ")!");
+      setTestRule(null);
     } catch (e: any) {
       toast.error("Chyba: " + e.message);
     } finally {
