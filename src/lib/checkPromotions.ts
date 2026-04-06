@@ -44,11 +44,13 @@ async function ensureNotification(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    // Notifikace v DB existuje — pošli push znovu pokud ještě nebyla přečtena
     if (!existing[0].read) {
+      // Nepřečtená — pošli push znovu (retry)
       await sendPush(existing[0].id);
+      return;
     }
-    return;
+    // Přečtená — smaž starou a vytvoř novou, aby se push odeslal znovu
+    await supabase.from("notifications").delete().eq("id", existing[0].id);
   }
 
   const { data: notifData } = await supabase
