@@ -1090,6 +1090,18 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   custom: [],
 };
 
+const RECIPIENT_TYPES = [
+  { value: "self", label: "Dotčená osoba", description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)" },
+  { value: "hierarchy", label: "Nadřízení", description: "Notifikaci dostanou nadřízení osoby (vedoucí, BV, garant, získatel) — filtrováno podle vybraných rolí" },
+  { value: "by_role", label: "Podle role", description: "Notifikaci dostanou všichni uživatelé s vybranou rolí bez ohledu na strukturu" },
+] as const;
+
+const RECIPIENT_TYPE_LABELS: Record<string, string> = {
+  self: "Dotčená osoba",
+  hierarchy: "Nadřízení v hierarchii",
+  by_role: "Podle role",
+};
+
 interface NotifRule {
   id: string;
   name: string;
@@ -1098,6 +1110,7 @@ interface NotifRule {
   title_template: string;
   body_template: string;
   recipient_roles: string[];
+  recipient_type: string;
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
@@ -1132,6 +1145,7 @@ function NotificationRulesTab() {
             title_template: rule.title_template,
             body_template: rule.body_template,
             recipient_roles: rule.recipient_roles,
+            recipient_type: rule.recipient_type,
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
@@ -1147,6 +1161,7 @@ function NotificationRulesTab() {
             title_template: rule.title_template || "",
             body_template: rule.body_template || "",
             recipient_roles: rule.recipient_roles || [],
+            recipient_type: rule.recipient_type || "by_role",
             is_active: rule.is_active ?? true,
             send_push: rule.send_push ?? true,
             send_in_app: rule.send_in_app ?? true,
@@ -1204,6 +1219,7 @@ function NotificationRulesTab() {
       is_active: true,
       send_push: true,
       send_in_app: true,
+      recipient_type: "self",
       description: "",
     });
   };
@@ -1294,9 +1310,12 @@ function NotificationRulesTab() {
                       </div>
                     </div>
 
-                    {/* Role badges */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {ROLES.map((role) => (
+                    {/* Recipient type + Role badges */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
+                        {RECIPIENT_TYPE_LABELS[rule.recipient_type] || "Podle role"}
+                      </span>
+                      {rule.recipient_type !== "self" && ROLES.map((role) => (
                         <span
                           key={role}
                           className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -1431,30 +1450,64 @@ function EditRuleForm({
         </div>
       )}
 
-      {/* Role checkboxes */}
+      {/* Recipient type */}
       <div>
-        <Label className="text-xs mb-1.5 block">Příjemci (role)</Label>
+        <Label className="text-xs mb-1.5 block">Komu odeslat</Label>
         <div className="flex flex-wrap gap-2">
-          {ROLES.map((role) => {
-            const checked = (form.recipient_roles || []).includes(role);
+          {RECIPIENT_TYPES.map((rt) => {
+            const checked = (form.recipient_type || "by_role") === rt.value;
             return (
               <button
-                key={role}
+                key={rt.value}
                 type="button"
-                onClick={() => toggleRole(role)}
+                onClick={() => setForm({ ...form, recipient_type: rt.value })}
                 className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
                 style={{
-                  background: checked ? "#00abbd" : "transparent",
+                  background: checked ? "hsl(var(--primary))" : "transparent",
                   color: checked ? "#fff" : "inherit",
-                  borderColor: checked ? "#00abbd" : "#e1e9eb",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
                 }}
               >
-                {ROLE_LABELS[role]}
+                {rt.label}
               </button>
             );
           })}
         </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {RECIPIENT_TYPES.find((rt) => rt.value === (form.recipient_type || "by_role"))?.description}
+        </div>
       </div>
+
+      {/* Role checkboxes — only for hierarchy and by_role */}
+      {(form.recipient_type || "by_role") !== "self" && (
+        <div>
+          <Label className="text-xs mb-1.5 block">
+            {form.recipient_type === "hierarchy"
+              ? "Které role z nadřízených dostanou notifikaci"
+              : "Příjemci (role)"}
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {ROLES.map((role) => {
+              const checked = (form.recipient_roles || []).includes(role);
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => toggleRole(role)}
+                  className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                  style={{
+                    background: checked ? "#00abbd" : "transparent",
+                    color: checked ? "#fff" : "inherit",
+                    borderColor: checked ? "#00abbd" : "#e1e9eb",
+                  }}
+                >
+                  {ROLE_LABELS[role]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Delivery toggles */}
       <div className="flex gap-6">
