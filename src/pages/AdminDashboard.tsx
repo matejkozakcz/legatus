@@ -1121,18 +1121,36 @@ function NotificationRulesTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NotifRule>>({});
   const [sendingTestId, setSendingTestId] = useState<string | null>(null);
+  const [testRule, setTestRule] = useState<NotifRule | null>(null);
+  const [testVars, setTestVars] = useState<Record<string, string>>({});
 
-  const sendTestNotification = async (rule: NotifRule) => {
-    setSendingTestId(rule.id);
+  const extractPlaceholders = (rule: NotifRule): string[] => {
+    const combined = `${rule.title_template} ${rule.body_template}`;
+    const matches = combined.match(/\{\{(\w+)\}\}/g) || [];
+    return [...new Set(matches.map(m => m.replace(/\{\{|\}\}/g, "")))];
+  };
+
+  const openTestDialog = (rule: NotifRule) => {
+    const placeholders = extractPlaceholders(rule);
+    const defaults: Record<string, string> = {};
+    placeholders.forEach(p => { defaults[p] = ""; });
+    setTestVars(defaults);
+    setTestRule(rule);
+  };
+
+  const sendTestNotification = async () => {
+    if (!testRule) return;
+    setSendingTestId(testRule.id);
     try {
-      const title = (rule.title_template || "Test notifikace").replace(/\{\{.*?\}\}/g, "Test");
-      const body = (rule.body_template || "").replace(/\{\{.*?\}\}/g, "Test");
+      const title = (testRule.title_template || "Test").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
+      const body = (testRule.body_template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
       const { data, error } = await supabase.functions.invoke("test-notification", {
         body: { title, body },
       });
       if (error) throw error;
       if (data?.ok) {
         toast.success("Testovací notifikace odeslána!");
+        setTestRule(null);
       } else {
         toast.error(data?.message || "Push odběr nenalezen. Povolte si notifikace v prohlížeči.");
       }
