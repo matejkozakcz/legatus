@@ -185,6 +185,7 @@ const SpravaTeam = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
   const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
+  const [detailMember, setDetailMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
