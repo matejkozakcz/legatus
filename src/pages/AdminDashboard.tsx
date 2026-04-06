@@ -1145,6 +1145,7 @@ function NotificationRulesTab() {
             title_template: rule.title_template,
             body_template: rule.body_template,
             recipient_roles: rule.recipient_roles,
+            recipient_type: rule.recipient_type,
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
@@ -1160,6 +1161,7 @@ function NotificationRulesTab() {
             title_template: rule.title_template || "",
             body_template: rule.body_template || "",
             recipient_roles: rule.recipient_roles || [],
+            recipient_type: rule.recipient_type || "by_role",
             is_active: rule.is_active ?? true,
             send_push: rule.send_push ?? true,
             send_in_app: rule.send_in_app ?? true,
@@ -1217,6 +1219,7 @@ function NotificationRulesTab() {
       is_active: true,
       send_push: true,
       send_in_app: true,
+      recipient_type: "self",
       description: "",
     });
   };
