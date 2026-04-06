@@ -6,18 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft } from "lucide-react";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
-import { getProductionPeriodStart, getProductionPeriodEnd, daysRemainingInPeriod } from "@/lib/productionPeriod";
+import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth, daysRemainingInPeriod } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { OrgChart } from "@/components/OrgChart";
+import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
-
-type TimeFilter = "this_week" | "last_week" | "this_month";
 
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────

@@ -70,6 +70,7 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
   const dot = statusDotColor[node.role] || { bg: "#89ADB4", glow: "rgba(137,173,180,0.25)" };
   const pct = progress != null ? Math.min(Math.max(progress, 0), 100) : undefined;
   const barColor = progressBarColor[node.role] || "#89ADB4";
+  const roleLabel = roleBadgeConfig[node.role]?.label || node.role;
 
   return (
     <div
@@ -88,15 +89,25 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
         overflow: "hidden",
       }}
     >
+      {/* Role chip */}
       <div
         className="absolute"
         style={{
-          top: 12, left: 12, width: 7, height: 7,
-          borderRadius: "50%", background: dot.bg,
-          boxShadow: `0 0 0 4px ${dot.glow}`,
+          top: 8, left: 8,
+          padding: "2px 8px",
+          borderRadius: 20,
+          background: dot.bg,
+          fontSize: 9,
+          fontWeight: 700,
+          color: "#fff",
+          letterSpacing: 0.3,
+          lineHeight: "16px",
+          whiteSpace: "nowrap",
         }}
-      />
-      <div style={{ marginTop: 5 }}>
+      >
+        {roleLabel}
+      </div>
+      <div style={{ marginTop: 14 }}>
         {node.avatar_url ? (
           <img
             src={node.avatar_url}
@@ -115,9 +126,6 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
       </div>
       <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}>
         {node.full_name}
-      </p>
-      <p className="font-body text-center" style={{ fontSize: 11, color: "#89ADB4", marginTop: 2 }}>
-        {roleBadgeConfig[node.role]?.label || node.role}
       </p>
 
       {/* Progress bar at bottom edge */}
