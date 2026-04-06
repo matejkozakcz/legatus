@@ -482,40 +482,34 @@ const SpravaTeam = () => {
         </section>
       )}
 
-      {tab === "seznam" ? (
-        <div className="space-y-1">
-          {isLoading ? (
-            <div className="legatus-card p-8 text-center">
-              <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
-            </div>
-          ) : members.length === 0 ? (
-            <div className="legatus-card p-8 text-center">
-              <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {rootMembers.map((member) => {
-                const children = childrenMap.get(member.id) || [];
-                return (
-                  <HierarchyGroup
-                    key={member.id}
-                    parent={member}
-                    children={children}
-                    childrenMap={childrenMap}
-                    onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                    onNotify={setNotifyMember}
-                    depth={0}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="legatus-card">
-          <OrgChart currentUserId={profile?.id || ""} />
-        </div>
-      )}
+      <div className="space-y-1">
+        {isLoading ? (
+          <div className="legatus-card p-8 text-center">
+            <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="legatus-card p-8 text-center">
+            <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {rootMembers.map((member) => {
+              const children = childrenMap.get(member.id) || [];
+              return (
+                <HierarchyGroup
+                  key={member.id}
+                  parent={member}
+                  children={children}
+                  childrenMap={childrenMap}
+                  onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
+                  onNotify={setNotifyMember}
+                  depth={0}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Dialogs */}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
