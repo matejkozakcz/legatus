@@ -516,6 +516,8 @@ export type Database = {
           id: string
           period_key: string
           personal_bj_goal: number
+          selected_goal_1: string
+          selected_goal_2: string
           team_bj_goal: number
           updated_at: string
           user_id: string
@@ -528,6 +530,8 @@ export type Database = {
           id?: string
           period_key: string
           personal_bj_goal?: number
+          selected_goal_1?: string
+          selected_goal_2?: string
           team_bj_goal?: number
           updated_at?: string
           user_id: string
@@ -540,6 +544,8 @@ export type Database = {
           id?: string
           period_key?: string
           personal_bj_goal?: number
+          selected_goal_1?: string
+          selected_goal_2?: string
           team_bj_goal?: number
           updated_at?: string
           user_id?: string

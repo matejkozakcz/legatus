@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target } from "lucide-react";
+import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import {
@@ -548,6 +549,34 @@ const Dashboard = () => {
 
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
+  // Helper: map goal key to current value
+  const getGoalValue = (key: GoalKey): number => {
+    switch (key) {
+      case "team_bj": return vedouciMonthlyBj;
+      case "personal_bj": return personalMonthlyBj;
+      case "vedouci_count": return vedouciSubCount;
+      case "budouci_vedouci_count": return bvCount;
+      case "garant_count": return garantCount;
+      default: return 0;
+    }
+  };
+  const getGoalMax = (key: GoalKey): number => {
+    if (!vedouciGoals) return 0;
+    switch (key) {
+      case "team_bj": return vedouciGoals.team_bj_goal || 0;
+      case "personal_bj": return vedouciGoals.personal_bj_goal || 0;
+      case "vedouci_count": return vedouciGoals.vedouci_count_goal || 0;
+      case "budouci_vedouci_count": return vedouciGoals.budouci_vedouci_count_goal || 0;
+      case "garant_count": return vedouciGoals.garant_count_goal || 0;
+      default: return 0;
+    }
+  };
+  const getGoalLabel = (key: GoalKey): string => {
+    return GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
+  };
+  const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
+  const selectedGoal2: GoalKey = vedouciGoals?.selected_goal_2 || "personal_bj";
+
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = isImpersonating
@@ -650,43 +679,26 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : role === "vedouci" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Row 1: Týmové BJ + Osobní BJ */}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <div style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>Týmové BJ</div>
-                    <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 36, color: "white", lineHeight: 1 }}>{vedouciMonthlyBj}</div>
-                    {vedouciGoals?.team_bj_goal > 0 && (
-                      <div style={{ fontFamily: "Open Sans", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>cíl: {vedouciGoals.team_bj_goal}</div>
-                    )}
-                  </div>
-                  <div style={{ width: 1, background: "rgba(255,255,255,0.15)", alignSelf: "stretch" }} />
-                  <div style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>Osobní BJ</div>
-                    <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 36, color: "#86efac", lineHeight: 1 }}>{personalMonthlyBj}</div>
-                    {vedouciGoals?.personal_bj_goal > 0 && (
-                      <div style={{ fontFamily: "Open Sans", fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>cíl: {vedouciGoals.personal_bj_goal}</div>
-                    )}
-                  </div>
-                </div>
-                {/* Row 2: Vedoucí / BV / Garant counts */}
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 10, display: "flex", gap: 4 }}>
-                  {[
-                    { label: "Vedoucí", value: vedouciSubCount, goal: vedouciGoals?.vedouci_count_goal },
-                    { label: "Bud. vedoucí", value: bvCount, goal: vedouciGoals?.budouci_vedouci_count_goal },
-                    { label: "Garant", value: garantCount, goal: vedouciGoals?.garant_count_goal },
-                  ].map((item, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ fontFamily: "Open Sans", fontWeight: 600, fontSize: 10, color: "rgba(255,255,255,0.6)", marginBottom: 3 }}>{item.label}</div>
-                      <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 24, color: "white", lineHeight: 1 }}>
-                        {item.value}
-                        {item.goal != null && item.goal > 0 && (
-                          <span style={{ fontWeight: 500, fontSize: 14, color: "rgba(255,255,255,0.45)" }}> / {item.goal}</span>
-                        )}
-                      </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                {[selectedGoal1, selectedGoal2].map((gk) => {
+                  const val = getGoalValue(gk);
+                  const max = getGoalMax(gk);
+                  const done = max > 0 && val >= max;
+                  return (
+                    <div key={gk} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <GaugeIndicator
+                        value={val}
+                        max={max || 1}
+                        label={getGoalLabel(gk)}
+                        sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
+                        dark
+                        completed={done}
+                        placeholder={max === 0}
+                        valueLabel={max === 0 ? String(val) : undefined}
+                      />
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             ) : role === "ziskatel" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
@@ -842,30 +854,6 @@ const Dashboard = () => {
     }
 
     if (role === "vedouci") {
-      const statStyle = { textAlign: "center" as const, width: "100%" };
-      const bigNumStyle: React.CSSProperties = {
-        fontFamily: "Poppins, sans-serif",
-        fontWeight: 800,
-        fontSize: 44,
-        lineHeight: 1,
-        color: "#00555f",
-      };
-      const labelStyle: React.CSSProperties = {
-        fontFamily: "Open Sans, sans-serif",
-        fontWeight: 600,
-        fontSize: 12,
-        color: "var(--text-secondary)",
-        marginBottom: 6,
-      };
-      const sublabelStyle: React.CSSProperties = {
-        fontFamily: "Open Sans, sans-serif",
-        fontSize: 11,
-        color: "var(--text-muted)",
-        marginTop: 4,
-      };
-      const goalSub = (goal?: number) =>
-        goal && goal > 0 ? <div style={sublabelStyle}>cíl: {goal}</div> : null;
-
       return (
         <>
           {!isImpersonating && (
@@ -877,34 +865,23 @@ const Dashboard = () => {
               <Pencil size={12} /> Upravit cíle
             </button>
           )}
-          <div style={statStyle}>
-            <div style={labelStyle}>Týmové BJ</div>
-            <div style={bigNumStyle}>{vedouciMonthlyBj}</div>
-            {goalSub(vedouciGoals?.team_bj_goal)}
-          </div>
-          <div style={statStyle}>
-            <div style={labelStyle}>Osobní BJ</div>
-            <div style={{ ...bigNumStyle, color: "#00abbd" }}>{personalMonthlyBj}</div>
-            {goalSub(vedouciGoals?.personal_bj_goal)}
-          </div>
-          <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
-          <div style={{ display: "flex", gap: 8, width: "100%" }}>
-            {[
-              { label: "Vedoucí", value: vedouciSubCount, goal: vedouciGoals?.vedouci_count_goal },
-              { label: "Bud. vedoucí", value: bvCount, goal: vedouciGoals?.budouci_vedouci_count_goal },
-              { label: "Garant", value: garantCount, goal: vedouciGoals?.garant_count_goal },
-            ].map((item, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                <div style={labelStyle}>{item.label}</div>
-                <div style={{ fontFamily: "Poppins", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
-                  {item.value}
-                  {item.goal != null && item.goal > 0 && (
-                    <span style={{ fontWeight: 500, fontSize: 16, color: "var(--text-muted)" }}> / {item.goal}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {[selectedGoal1, selectedGoal2].map((gk) => {
+            const val = getGoalValue(gk);
+            const max = getGoalMax(gk);
+            const done = max > 0 && val >= max;
+            return (
+              <GaugeIndicator
+                key={gk}
+                value={val}
+                max={max || 1}
+                label={getGoalLabel(gk)}
+                sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
+                completed={done}
+                placeholder={max === 0}
+                valueLabel={max === 0 ? String(val) : undefined}
+              />
+            );
+          })}
         </>
       );
     }
