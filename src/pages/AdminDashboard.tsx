@@ -1539,6 +1539,37 @@ function NotificationRulesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Variables reference modal */}
+      <Dialog open={showVarsModal} onOpenChange={setShowVarsModal}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <FileCode className="h-4 w-4" /> Seznam všech proměnných
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Proměnné vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>. Při odeslání se nahradí skutečnou hodnotou.
+            </p>
+            {ALL_TEMPLATE_VARS.map((cat) => (
+              <div key={cat.category}>
+                <div className="text-sm font-medium mb-1.5">{cat.category}</div>
+                <div className="space-y-1">
+                  {cat.vars.map((v) => (
+                    <div key={v.name} className="flex items-start gap-2 text-xs">
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0">{v.name}</code>
+                      <span className="text-muted-foreground">{v.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>Zavřít</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
