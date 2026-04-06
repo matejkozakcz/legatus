@@ -2,12 +2,9 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, ChevronDown, ChevronRight, TrendingUp, Bell } from "lucide-react";
+import { Users, Plus, ChevronDown, ChevronRight, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 
@@ -54,20 +51,35 @@ const roleBadge: Record<string, { label: string; className: string }> = {
   novacek: { label: "Nováček", className: "role-badge role-badge-novacek" },
 };
 
+const ROLE_BORDER_COLOR: Record<string, string> = {
+  vedouci: "#00555f",
+  budouci_vedouci: "#00555f",
+  garant: "#8b5cf6",
+  ziskatel: "#f97316",
+  novacek: "#3b82f6",
+};
+
+const ROLE_ORDER: Record<string, number> = {
+  vedouci: 0,
+  budouci_vedouci: 1,
+  garant: 2,
+  ziskatel: 3,
+  novacek: 4,
+};
+
 function MemberCard({
   member,
   onClick,
-  onNotify,
   depth = 0,
   readOnly = false,
 }: {
   member: Profile;
   onClick: () => void;
-  onNotify: () => void;
   depth?: number;
   readOnly?: boolean;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
+  const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
@@ -77,46 +89,21 @@ function MemberCard({
 
   return (
     <div
-      className="legatus-card legatus-card-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
-      style={{ marginLeft: depth * 24 }}
+      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow"
+      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px" }}
       onClick={onClick}
     >
       {member.avatar_url ? (
-        <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+        <img src={member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-border flex items-center justify-center flex-shrink-0">
           <span className="text-xs font-heading font-semibold">{initials}</span>
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-body font-medium text-foreground">{member.full_name}</p>
-          <span className={badge.className}>{badge.label}</span>
-        </div>
-        {member.created_at && (
-          <p className="text-xs text-muted-foreground font-body mt-0.5">
-            Přidán: {format(new Date(member.created_at), "d. M. yyyy", { locale: cs })}
-          </p>
-        )}
+        <p className="font-body font-medium text-foreground text-sm leading-tight">{member.full_name}</p>
+        <span className={`${badge.className} mt-0.5`} style={{ fontSize: 10 }}>{badge.label}</span>
       </div>
-      {!readOnly && (
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); onNotify(); }}
-            className="btn btn-ghost btn-sm"
-            title="Odeslat upozornění"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-          <Link
-            to={`/tym/${member.id}/aktivity`}
-            onClick={(e) => e.stopPropagation()}
-            className="btn btn-ghost btn-sm"
-          >
-            Aktivity
-          </Link>
-        </div>
-      )}
     </div>
   );
 }
@@ -126,7 +113,6 @@ function HierarchyGroup({
   children,
   childrenMap,
   onEdit,
-  onNotify,
   depth,
   readOnly = false,
 }: {
@@ -134,7 +120,6 @@ function HierarchyGroup({
   children: Profile[];
   childrenMap: Map<string, Profile[]>;
   onEdit: (m: Profile) => void;
-  onNotify: (m: Profile) => void;
   depth: number;
   readOnly?: boolean;
 }) {
@@ -161,7 +146,6 @@ function HierarchyGroup({
           <MemberCard
             member={parent}
             onClick={() => onEdit(parent)}
-            onNotify={() => onNotify(parent)}
             depth={0}
             readOnly={readOnly}
           />
@@ -178,7 +162,6 @@ function HierarchyGroup({
                 children={grandchildren}
                 childrenMap={childrenMap}
                 onEdit={onEdit}
-                onNotify={onNotify}
                 depth={depth + 1}
                 readOnly={readOnly}
               />
@@ -413,13 +396,14 @@ const SpravaTeam = () => {
 
   // Root members: those whose ziskatel_id is the current user or not in the members list
   const rootMembers = useMemo(() => {
-    return members.filter((m) => {
-      if (!m.ziskatel_id) return true;
-      if (m.ziskatel_id === profile?.id) return true;
-      if (!profileMap.has(m.ziskatel_id) || m.ziskatel_id === m.id) return true;
-      // Check if parent is not in members (meaning parent is the current user)
-      return !members.some((other) => other.id === m.ziskatel_id);
-    });
+    return members
+      .filter((m) => {
+        if (!m.ziskatel_id) return true;
+        if (m.ziskatel_id === profile?.id) return true;
+        if (!profileMap.has(m.ziskatel_id) || m.ziskatel_id === m.id) return true;
+        return !members.some((other) => other.id === m.ziskatel_id);
+      })
+      .sort((a, b) => (ROLE_ORDER[a.role] ?? 99) - (ROLE_ORDER[b.role] ?? 99));
   }, [members, profile?.id]);
 
   const enrichedRequests: PromotionRequest[] = pendingRequests
@@ -552,7 +536,6 @@ const SpravaTeam = () => {
                       children={children}
                       childrenMap={childrenMap}
                       onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                      onNotify={setNotifyMember}
                       depth={0}
                       readOnly={isReadOnly}
                     />
@@ -671,7 +654,7 @@ const SpravaTeam = () => {
                   children={children}
                   childrenMap={childrenMap}
                   onEdit={profile?.role === "vedouci" || isGodMode ? setEditMember : () => {}}
-                  onNotify={setNotifyMember}
+                  
                   depth={0}
                   readOnly={isReadOnly}
                 />
