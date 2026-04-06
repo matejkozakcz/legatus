@@ -130,7 +130,15 @@ export function AppSidebar() {
                         className="nav-item"
                         activeClassName="active"
                       >
-                        <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
+                        <div className="relative flex-shrink-0">
+                          <item.icon className="h-[18px] w-[18px]" />
+                          {item.badge && (
+                            <span
+                              className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2"
+                              style={{ borderColor: "var(--sidebar-bg, hsl(var(--sidebar)))" }}
+                            />
+                          )}
+                        </div>
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
