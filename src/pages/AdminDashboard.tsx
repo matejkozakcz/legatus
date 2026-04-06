@@ -1602,29 +1602,37 @@ function NotificationRulesTab() {
       </Dialog>
       {/* Variables reference modal */}
       <Dialog open={showVarsModal} onOpenChange={setShowVarsModal}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[90vw] w-[900px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base flex items-center gap-2">
               <FileCode className="h-4 w-4" /> Seznam všech proměnných
             </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Proměnné vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>. Při odeslání se nahradí skutečnou hodnotou.
+            <p className="text-xs text-muted-foreground pt-1">
+              Kliknutím na proměnnou ji zkopírujete do schránky. Vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ALL_TEMPLATE_VARS.map((cat) => (
-                <div key={cat.category} className="space-y-1">
-                  <div className="text-sm font-semibold border-b pb-1 mb-1">{cat.category}</div>
+          </DialogHeader>
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-0">
+            {ALL_TEMPLATE_VARS.map((cat) => (
+              <div key={cat.category} className="break-inside-avoid mb-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-primary border-b border-primary/20 pb-1 mb-2">{cat.category}</div>
+                <div className="space-y-0.5">
                   {cat.vars.map((v) => (
-                    <div key={v.name} className="text-xs">
-                      <code className="bg-muted px-1 py-0.5 rounded font-mono text-[11px]">{v.name}</code>
-                      <span className="text-muted-foreground ml-1">{v.description}</span>
-                    </div>
+                    <button
+                      key={v.name}
+                      type="button"
+                      className="flex items-start gap-2 w-full text-left rounded px-1.5 py-1 hover:bg-muted/80 transition-colors group cursor-pointer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(v.name);
+                        toast.success(`Zkopírováno: ${v.name}`);
+                      }}
+                    >
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] whitespace-nowrap flex-shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">{v.name}</code>
+                      <span className="text-[11px] text-muted-foreground leading-tight pt-0.5">{v.description}</span>
+                    </button>
                   ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
           <DialogFooter>
             <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>Zavřít</Button>
