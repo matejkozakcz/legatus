@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar, Search } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar, Search, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,6 +61,10 @@ export function AppSidebar() {
 
   if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
+  }
+
+  if (godMode && profile?.is_admin) {
+    navItems.push({ title: "Admin", url: "/admin", icon: Shield, badge: false });
   }
 
   const initials =

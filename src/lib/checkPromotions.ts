@@ -249,6 +249,26 @@ export async function checkPromotions(
 ): Promise<void> {
   if (profile.role !== "vedouci" || members.length === 0) return;
 
+  // Load promotion rules from app_config (with hardcoded fallbacks)
+  let rules = {
+    ziskatel_to_garant: { min_bj: 1000, min_structure: 2 },
+    garant_to_bv: { min_structure: 5, min_direct: 3 },
+    bv_to_vedouci: { min_structure: 10, min_direct: 6 },
+  };
+
+  try {
+    const { data: configRow } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "promotion_rules")
+      .single();
+    if (configRow?.value) {
+      rules = { ...rules, ...(configRow.value as unknown as typeof rules) };
+    }
+  } catch {
+    // fallback to defaults
+  }
+
   // Sestavení mapy potomků dle ziskatel_id
   const childMap = new Map<string, string[]>();
   members.forEach((m) => {
@@ -284,7 +304,7 @@ export async function checkPromotions(
     ])
   );
 
-  // ── Získatel → Garant: 1000 BJ + 2 lidé ve struktuře ──
+  // ── Získatel → Garant ──
   const ziskatels = members.filter((m) => m.role === "ziskatel");
   if (ziskatels.length > 0) {
     const ids = ziskatels.map((m) => m.id);
@@ -317,7 +337,7 @@ export async function checkPromotions(
         requestByKey,
         c.id,
         "garant",
-        bj >= 1000 && struct >= 2,
+        bj >= rules.ziskatel_to_garant.min_bj && struct >= rules.ziskatel_to_garant.min_structure,
         `${c.full_name} splňuje podmínky pro povýšení na Garanta`,
         `Kumulativní BJ: ${bj} · ${struct} lidí ve struktuře`,
         bj,
@@ -326,7 +346,7 @@ export async function checkPromotions(
     }
   }
 
-  // ── Garant → Budoucí vedoucí: 5 lidí + 3 přímí ──
+  // ── Garant → Budoucí vedoucí ──
   for (const c of members.filter((m) => m.role === "garant")) {
     const direct = countDirect(c.id);
     const struct = countStructure(c.id);
@@ -335,7 +355,7 @@ export async function checkPromotions(
       requestByKey,
       c.id,
       "budouci_vedouci",
-      struct >= 5 && direct >= 3,
+      struct >= rules.garant_to_bv.min_structure && direct >= rules.garant_to_bv.min_direct,
       `${c.full_name} splňuje podmínky pro povýšení na Budoucího vedoucího`,
       `${struct} lidí ve struktuře · ${direct} přímých`,
       struct,
@@ -343,7 +363,7 @@ export async function checkPromotions(
     );
   }
 
-  // ── Budoucí vedoucí → Vedoucí: 10 lidí + 6 přímých ──
+  // ── Budoucí vedoucí → Vedoucí ──
   for (const c of members.filter((m) => m.role === "budouci_vedouci")) {
     const direct = countDirect(c.id);
     const struct = countStructure(c.id);
@@ -352,7 +372,7 @@ export async function checkPromotions(
       requestByKey,
       c.id,
       "vedouci",
-      struct >= 10 && direct >= 6,
+      struct >= rules.bv_to_vedouci.min_structure && direct >= rules.bv_to_vedouci.min_direct,
       `${c.full_name} splňuje podmínky pro povýšení na Vedoucího`,
       `${struct} lidí ve struktuře · ${direct} přímých`,
       struct,
