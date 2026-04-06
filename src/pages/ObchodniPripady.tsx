@@ -629,7 +629,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               </h1>
             </div>
           </div>
-          )
+          )}
 
           {/* Fixed: Create case button + period bar */}
           <div
