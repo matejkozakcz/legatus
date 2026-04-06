@@ -51,12 +51,24 @@ export default function MobileObchod() {
         paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))",
       }}
     >
-      {/* Tab header */}
+      {/* Page header */}
+      <div style={{ padding: "16px 20px 0", flexShrink: 0 }}>
+        <div className="flex items-center gap-3">
+          <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>
+            Obchod
+          </h1>
+        </div>
+      </div>
+
+      {/* Tab switcher */}
       <div
         style={{
           display: "flex",
-          padding: "4px 16px 0",
-          gap: 4,
+          margin: "14px 16px 0",
+          borderRadius: 12,
+          background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,85,95,0.06)",
+          padding: 3,
           flexShrink: 0,
         }}
       >
@@ -73,22 +85,29 @@ export default function MobileObchod() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 6,
-                padding: "10px 0",
+                padding: "8px 0",
                 border: "none",
                 cursor: "pointer",
                 fontFamily: "Poppins, sans-serif",
-                fontWeight: isActive ? 700 : 500,
-                fontSize: 13,
-                color: isActive ? activeColor : inactiveColor,
-                background: "transparent",
-                borderBottom: isActive
-                  ? `2.5px solid ${activeColor}`
-                  : `2.5px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+                fontWeight: isActive ? 600 : 500,
+                fontSize: 12.5,
+                color: isActive
+                  ? isDark ? "#fff" : "#00555f"
+                  : inactiveColor,
+                background: isActive
+                  ? isDark ? "rgba(0,171,189,0.2)" : "#fff"
+                  : "transparent",
+                borderRadius: 10,
+                boxShadow: isActive
+                  ? isDark
+                    ? "0 1px 4px rgba(0,0,0,0.3)"
+                    : "0 1px 4px rgba(0,85,95,0.1)"
+                  : "none",
                 transition: "all 0.2s ease",
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <Icon size={15} />
+              <Icon size={14} color={isActive ? activeColor : inactiveColor} />
               {tab.label}
             </button>
           );
@@ -99,7 +118,7 @@ export default function MobileObchod() {
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        style={{ flex: 1, overflow: "hidden" }}
+        style={{ flex: 1, overflow: "hidden", marginTop: 8 }}
       >
         <div style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}>
           {activeTab === "schuzky" ? (
