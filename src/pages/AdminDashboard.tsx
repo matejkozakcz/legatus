@@ -513,8 +513,8 @@ function UsersTab() {
 // ─── Permissions & Hierarchy Tab ──────────────────────────────────────────────
 
 const PERM_ROLES = ["Admin", "Vedoucí", "Bud. vedoucí", "Garant", "Získatel", "Nováček"] as const;
-
-type PermAction = "vidí" | "edituje" | "vytváří" | "maže";
+const ALL_ACTIONS = ["vidí", "edituje", "vytváří", "maže"] as const;
+type PermAction = (typeof ALL_ACTIONS)[number];
 
 interface PermRule {
   table: string;
@@ -522,121 +522,11 @@ interface PermRule {
   matrix: Record<string, PermAction[]>;
 }
 
-const PERM_DATA: PermRule[] = [
-  {
-    table: "profiles",
-    label: "Profily uživatelů",
-    matrix: {
-      Admin: ["vidí", "edituje"],
-      Vedoucí: ["vidí", "edituje"],
-      "Bud. vedoucí": ["vidí"],
-      Garant: ["vidí", "edituje"],
-      Získatel: ["vidí"],
-      Nováček: ["vidí"],
-    },
-  },
-  {
-    table: "activity_records",
-    label: "Záznamy aktivit",
-    matrix: {
-      Admin: ["vidí", "edituje"],
-      Vedoucí: ["vidí"],
-      "Bud. vedoucí": [],
-      Garant: ["vidí"],
-      Získatel: ["vidí", "edituje", "vytváří", "maže"],
-      Nováček: ["vidí", "edituje", "vytváří", "maže"],
-    },
-  },
-  {
-    table: "client_meetings",
-    label: "Schůzky s klienty",
-    matrix: {
-      Admin: ["vidí"],
-      Vedoucí: ["vidí"],
-      "Bud. vedoucí": [],
-      Garant: ["vidí"],
-      Získatel: ["vidí", "edituje", "vytváří", "maže"],
-      Nováček: ["vidí", "edituje", "vytváří", "maže"],
-    },
-  },
-  {
-    table: "cases",
-    label: "Byznys případy",
-    matrix: {
-      Admin: ["vidí", "edituje"],
-      Vedoucí: ["vidí"],
-      "Bud. vedoucí": [],
-      Garant: [],
-      Získatel: ["vidí", "edituje", "vytváří", "maže"],
-      Nováček: ["vidí", "edituje", "vytváří", "maže"],
-    },
-  },
-  {
-    table: "notifications",
-    label: "Notifikace",
-    matrix: {
-      Admin: [],
-      Vedoucí: ["vidí", "vytváří"],
-      "Bud. vedoucí": [],
-      Garant: ["vytváří"],
-      Získatel: ["vidí", "edituje", "vytváří", "maže"],
-      Nováček: ["vidí", "edituje", "vytváří", "maže"],
-    },
-  },
-  {
-    table: "promotion_requests",
-    label: "Žádosti o povýšení",
-    matrix: {
-      Admin: ["vidí", "edituje"],
-      Vedoucí: ["vidí", "edituje", "maže"],
-      "Bud. vedoucí": [],
-      Garant: [],
-      Získatel: ["vidí"],
-      Nováček: ["vidí"],
-    },
-  },
-  {
-    table: "vedouci_goals",
-    label: "Cíle vedoucího",
-    matrix: {
-      Admin: [],
-      Vedoucí: ["vidí", "edituje", "vytváří", "maže"],
-      "Bud. vedoucí": [],
-      Garant: [],
-      Získatel: [],
-      Nováček: [],
-    },
-  },
-  {
-    table: "app_config",
-    label: "Nastavení aplikace",
-    matrix: {
-      Admin: ["vidí", "edituje", "vytváří"],
-      Vedoucí: [],
-      "Bud. vedoucí": [],
-      Garant: [],
-      Získatel: [],
-      Nováček: [],
-    },
-  },
-];
-
 interface VisibilityRule {
   role: string;
   sees: string;
   scope: string;
 }
-
-const VISIBILITY_RULES: VisibilityRule[] = [
-  { role: "Vedoucí", sees: "Profily", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
-  { role: "Vedoucí", sees: "Aktivity & Schůzky", scope: "Lidé s vedouci_id = já" },
-  { role: "Vedoucí", sees: "Byznys případy", scope: "Celý podstrom (is_in_vedouci_subtree)" },
-  { role: "Vedoucí", sees: "Promotion requests", scope: "Všechny (role = vedouci)" },
-  { role: "Garant", sees: "Profily", scope: "Lidé s garant_id = já" },
-  { role: "Garant", sees: "Aktivity & Schůzky", scope: "Lidé s garant_id = já" },
-  { role: "Získatel / Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" },
-  { role: "Admin", sees: "Vše", scope: "Celá databáze (is_admin())" },
-];
 
 interface HierarchyRule {
   relationship: string;
@@ -644,139 +534,315 @@ interface HierarchyRule {
   whoSets: string;
 }
 
-const HIERARCHY_RULES: HierarchyRule[] = [
-  { relationship: "vedouci_id", meaning: "Vedoucí tohoto člena — řídí celý podstrom", whoSets: "Vedoucí nebo Admin" },
-  { relationship: "garant_id", meaning: "Garant tohoto nováčka — přímý mentor", whoSets: "Vedoucí nebo Admin" },
-  { relationship: "ziskatel_id", meaning: "Kdo tohoto člena získal — tvoří strukturu pro povýšení", whoSets: "Onboarding / Vedoucí / Admin" },
-  { relationship: "ziskatel_name", meaning: "Jméno získatele (záloha pokud není v systému)", whoSets: "Onboarding" },
-];
-
 const ACTION_COLORS: Record<PermAction, string> = {
-  vidí: "bg-secondary/20 text-secondary",
-  edituje: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
-  vytváří: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
-  maže: "bg-destructive/20 text-destructive",
+  vidí: "bg-secondary/20 text-secondary border-secondary/30",
+  edituje: "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  vytváří: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  maže: "bg-destructive/20 text-destructive border-destructive/30",
 };
+
+function useConfigEditor<T>(configKey: string, fallback: T) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["app_config", configKey],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", configKey)
+        .single();
+      return (data?.value as unknown as T) ?? fallback;
+    },
+  });
+
+  const [localData, setLocalData] = useState<T>(fallback);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (data) { setLocalData(data); setDirty(false); }
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: async (value: T) => {
+      const { error } = await supabase
+        .from("app_config")
+        .update({ value: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() })
+        .eq("key", configKey);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_config", configKey] });
+      setDirty(false);
+      toast.success("Uloženo");
+    },
+    onError: () => toast.error("Chyba při ukládání"),
+  });
+
+  const update = (updater: (prev: T) => T) => {
+    setLocalData((prev) => {
+      const next = updater(prev);
+      setDirty(true);
+      return next;
+    });
+  };
+
+  return { data: localData, isLoading, dirty, save, update };
+}
 
 function PermissionsTab() {
   return (
     <div className="space-y-6">
-      {/* Visibility rules */}
-      <Card>
-        <CardHeader className="pb-3">
+      <VisibilityEditor />
+      <PermissionMatrixEditor />
+      <HierarchyEditor />
+    </div>
+  );
+}
+
+// ─── Visibility Editor ────────────────────────────────────────────────────────
+
+function VisibilityEditor() {
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<VisibilityRule[]>(
+    "visibility_rules",
+    []
+  );
+
+  const updateRule = (index: number, field: keyof VisibilityRule, value: string) => {
+    update((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  };
+
+  const addRule = () => {
+    update((prev) => [...prev, { role: "", sees: "", scope: "" }]);
+  };
+
+  const removeRule = (index: number) => {
+    update((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Eye className="h-4 w-4" /> Kdo vidí čí data
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-3 font-medium">Role</th>
-                  <th className="text-left p-3 font-medium">Vidí</th>
-                  <th className="text-left p-3 font-medium">Rozsah</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {VISIBILITY_RULES.map((r, i) => (
-                  <tr key={i} className="hover:bg-muted/30">
-                    <td className="p-3 font-medium">{r.role}</td>
-                    <td className="p-3">{r.sees}</td>
-                    <td className="p-3 text-xs text-muted-foreground font-mono">{r.scope}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs">+ Přidat</Button>
+            {dirty && (
+              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+                <Save className="h-3 w-3" /> Uložit
+              </Button>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left p-3 font-medium">Role</th>
+                <th className="text-left p-3 font-medium">Vidí</th>
+                <th className="text-left p-3 font-medium">Rozsah</th>
+                <th className="p-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rules.map((r, i) => (
+                <tr key={i} className="hover:bg-muted/30">
+                  <td className="p-2">
+                    <Input className="h-8 text-xs" value={r.role} onChange={(e) => updateRule(i, "role", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Input className="h-8 text-xs" value={r.sees} onChange={(e) => updateRule(i, "sees", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Input className="h-8 text-xs font-mono" value={r.scope} onChange={(e) => updateRule(i, "scope", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-destructive hover:text-destructive">×</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Permission matrix per table */}
-      <Card>
-        <CardHeader className="pb-3">
+// ─── Permission Matrix Editor ─────────────────────────────────────────────────
+
+function PermissionMatrixEditor() {
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<PermRule[]>(
+    "permission_matrix",
+    []
+  );
+
+  const toggleAction = (tableIdx: number, role: string, action: PermAction) => {
+    update((prev) =>
+      prev.map((rule, i) => {
+        if (i !== tableIdx) return rule;
+        const current = rule.matrix[role] || [];
+        const has = current.includes(action);
+        return {
+          ...rule,
+          matrix: {
+            ...rule.matrix,
+            [role]: has ? current.filter((a) => a !== action) : [...current, action],
+          },
+        };
+      })
+    );
+  };
+
+  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Lock className="h-4 w-4" /> Matice oprávnění (tabulka × role)
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-3 font-medium">Tabulka</th>
-                  {PERM_ROLES.map((r) => (
-                    <th key={r} className="text-left p-3 font-medium text-xs">{r}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {PERM_DATA.map((rule) => (
-                  <tr key={rule.table} className="hover:bg-muted/30">
-                    <td className="p-3">
-                      <div className="font-medium">{rule.label}</div>
-                      <div className="text-[11px] text-muted-foreground font-mono">{rule.table}</div>
-                    </td>
-                    {PERM_ROLES.map((role) => (
-                      <td key={role} className="p-3">
+          {dirty && (
+            <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+              <Save className="h-3 w-3" /> Uložit
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left p-3 font-medium">Tabulka</th>
+                {PERM_ROLES.map((r) => (
+                  <th key={r} className="text-left p-3 font-medium text-xs">{r}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rules.map((rule, tableIdx) => (
+                <tr key={rule.table} className="hover:bg-muted/30">
+                  <td className="p-3">
+                    <div className="font-medium">{rule.label}</div>
+                    <div className="text-[11px] text-muted-foreground font-mono">{rule.table}</div>
+                  </td>
+                  {PERM_ROLES.map((role) => {
+                    const current = rule.matrix[role] || [];
+                    return (
+                      <td key={role} className="p-2">
                         <div className="flex flex-wrap gap-1">
-                          {(rule.matrix[role] || []).length === 0 ? (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          ) : (
-                            rule.matrix[role].map((action) => (
-                              <span
+                          {ALL_ACTIONS.map((action) => {
+                            const active = current.includes(action);
+                            return (
+                              <button
                                 key={action}
-                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ACTION_COLORS[action]}`}
+                                onClick={() => toggleAction(tableIdx, role, action)}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border transition-all cursor-pointer ${
+                                  active
+                                    ? ACTION_COLORS[action]
+                                    : "bg-transparent text-muted-foreground/40 border-border/50 hover:border-border"
+                                }`}
                               >
                                 {action}
-                              </span>
-                            ))
-                          )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            * Oprávnění „vidí/edituje" u Vedoucího a Garanta se vztahuje pouze na jejich podstrom/nováčky (viz tabulka výše). 
-            Vlastní záznamy může každý vidět a editovat vždy.
-          </p>
-        </CardContent>
-      </Card>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          Klikni na badge pro zapnutí/vypnutí oprávnění. Změny se projeví až po uložení.
+          <br />* Toto je konfigurační reference. Skutečné RLS politiky v databázi je třeba upravit zvlášť.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Hierarchy relationships */}
-      <Card>
-        <CardHeader className="pb-3">
+// ─── Hierarchy Editor ─────────────────────────────────────────────────────────
+
+function HierarchyEditor() {
+  const { data: rules, isLoading, dirty, save, update } = useConfigEditor<HierarchyRule[]>(
+    "hierarchy_rules",
+    []
+  );
+
+  const updateRule = (index: number, field: keyof HierarchyRule, value: string) => {
+    update((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  };
+
+  const addRule = () => {
+    update((prev) => [...prev, { relationship: "", meaning: "", whoSets: "" }]);
+  };
+
+  const removeRule = (index: number) => {
+    update((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-3 font-medium">Pole</th>
-                  <th className="text-left p-3 font-medium">Význam</th>
-                  <th className="text-left p-3 font-medium">Kdo nastavuje</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {HIERARCHY_RULES.map((r) => (
-                  <tr key={r.relationship} className="hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs font-medium">{r.relationship}</td>
-                    <td className="p-3">{r.meaning}</td>
-                    <td className="p-3 text-muted-foreground">{r.whoSets}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs">+ Přidat</Button>
+            {dirty && (
+              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+                <Save className="h-3 w-3" /> Uložit
+              </Button>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left p-3 font-medium">Pole</th>
+                <th className="text-left p-3 font-medium">Význam</th>
+                <th className="text-left p-3 font-medium">Kdo nastavuje</th>
+                <th className="p-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rules.map((r, i) => (
+                <tr key={i} className="hover:bg-muted/30">
+                  <td className="p-2">
+                    <Input className="h-8 text-xs font-mono" value={r.relationship} onChange={(e) => updateRule(i, "relationship", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Input className="h-8 text-xs" value={r.meaning} onChange={(e) => updateRule(i, "meaning", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Input className="h-8 text-xs" value={r.whoSets} onChange={(e) => updateRule(i, "whoSets", e.target.value)} />
+                  </td>
+                  <td className="p-2">
+                    <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-destructive hover:text-destructive">×</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
