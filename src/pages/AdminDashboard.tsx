@@ -1209,6 +1209,10 @@ function NotificationRulesTab() {
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
+            schedule_type: rule.schedule_type || "event",
+            schedule_time: rule.schedule_time || "08:00",
+            schedule_day_of_week: rule.schedule_day_of_week ?? null,
+            schedule_day_of_month: rule.schedule_day_of_month ?? null,
           })
           .eq("id", rule.id);
         if (error) throw error;
@@ -1226,6 +1230,10 @@ function NotificationRulesTab() {
             send_push: rule.send_push ?? true,
             send_in_app: rule.send_in_app ?? true,
             description: rule.description || null,
+            schedule_type: rule.schedule_type || "event",
+            schedule_time: rule.schedule_time || "08:00",
+            schedule_day_of_week: rule.schedule_day_of_week ?? null,
+            schedule_day_of_month: rule.schedule_day_of_month ?? null,
           });
         if (error) throw error;
       }
