@@ -93,6 +93,34 @@ function MobileStatCard({
   );
 }
 
+// ─── ActivityChip — compact pill for desktop stats ────────────────────────────
+
+const CHIP_CONFIG: Record<string, { color: string; label: string }> = {
+  FSA: { color: "#00abbd", label: "FSA" },
+  POH: { color: "#f59e0b", label: "POH" },
+  SER: { color: "#ef4444", label: "SER" },
+  POR: { color: "#8b5cf6", label: "POR" },
+  REF: { color: "#10b981", label: "dop." },
+};
+
+function ActivityChip({ type, value }: { type: string; value: number }) {
+  if (value === 0) return null;
+  const { color, label } = CHIP_CONFIG[type] || { color: "#888", label: type };
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
+      style={{
+        background: `${color}1a`,
+        border: `1px solid ${color}4d`,
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+      <span className="font-semibold text-sm" style={{ color }}>{value}</span>
+      <span className="text-xs text-muted-foreground ml-0.5">{label}</span>
+    </span>
+  );
+}
+
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
