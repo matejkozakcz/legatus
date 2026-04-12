@@ -59,6 +59,7 @@ interface Meeting {
   duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
+  outcome_recorded: boolean;
 }
 
 const defaultForm = (caseId?: string): MeetingForm => ({
