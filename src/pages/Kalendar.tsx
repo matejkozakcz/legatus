@@ -248,7 +248,6 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         case_id: form.case_id || null,
         case_name: form.case_name || null,
         location_type: form.location_type || null,
-        location_type: form.location_type || null,
         location_detail: form.location_detail || null,
       };
       if (editingMeetingId) {
@@ -1049,7 +1048,6 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                 case_name: detailMeeting.case_name || "",
                 case_id: detailMeeting.case_id || "",
                 location_type: detailMeeting.location_type || "",
-                location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
               });
               setEditingMeetingId(detailMeeting.id);
@@ -1190,7 +1188,6 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               poznamka: detailMeeting.poznamka || "",
               case_name: detailMeeting.case_name || "",
               case_id: detailMeeting.case_id || "",
-              location_type: detailMeeting.location_type || "",
               location_type: detailMeeting.location_type || "",
               location_detail: detailMeeting.location_detail || "",
             });

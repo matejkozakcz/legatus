@@ -93,7 +93,6 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
   case_name: m.case_name || "",
   case_id: m.case_id || "",
   location_type: m.location_type || "",
-  location_type: m.location_type || "",
   location_detail: m.location_detail || "",
 });
 
@@ -470,7 +469,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
         location_type: form.location_type || null,
-        location_type: form.location_type || null,
         location_detail: form.location_detail.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
         // BJ: přímo z formuláře pro POR a SER (bez podmínky has_poradenstvi/poradenstvi_status)
@@ -589,7 +587,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         poznamka: editMeeting.poznamka || "",
         case_name: editMeeting.case_name || "",
         case_id: editMeeting.case_id || "",
-        location_type: editMeeting.location_type || "",
         location_type: editMeeting.location_type || "",
         location_detail: editMeeting.location_detail || "",
       }
