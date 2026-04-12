@@ -1147,34 +1147,6 @@ const Dashboard = () => {
               />
               <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
             </div>
-                  { label: "Pohovory", value: mobileNewlyArranged.poh },
-                ].map((item) => (
-                  <div key={item.label} style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 800,
-                        fontSize: 28,
-                        color: "#00555f",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {item.value}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "var(--text-muted)",
-                        marginTop: 4,
-                      }}
-                    >
-                      {item.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </>
         )}
 
