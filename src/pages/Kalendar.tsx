@@ -594,6 +594,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
 
   // ─── Mobile daily view helpers ──────────────────────────────────────────────
 
+  const mobileDayTasks = useMemo(() => onboardingByDay[mobileDayStr] || [], [onboardingByDay, mobileDayStr]);
+
   const mobileDayMeetings = useMemo(() => {
     return [...enrichedMeetings]
       .filter((m) => m.date === mobileDayStr)
