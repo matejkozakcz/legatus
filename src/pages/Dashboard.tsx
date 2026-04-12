@@ -346,6 +346,37 @@ const Dashboard = () => {
     [desktopMeetings, dateRange],
   );
 
+  // ── Newly booked meetings (by created_at, not date) ─────────────────────────
+  const { data: newlyBookedMeetings = [] } = useQuery({
+    queryKey: [
+      "dashboard_newly_booked",
+      activeUserId,
+      dateRange.from.toISOString(),
+      dateRange.to.toISOString(),
+    ],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("meeting_type, cancelled")
+        .eq("user_id", activeUserId)
+        .gte("created_at", dateRange.from.toISOString())
+        .lte("created_at", dateRange.to.toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId,
+  });
+
+  const newlyBooked = useMemo(() => {
+    const active = newlyBookedMeetings.filter((m: any) => !m.cancelled);
+    return {
+      fsa: active.filter((m: any) => m.meeting_type === "FSA").length,
+      poh: active.filter((m: any) => m.meeting_type === "POH").length,
+      ser: active.filter((m: any) => m.meeting_type === "SER").length,
+      por: active.filter((m: any) => m.meeting_type === "POR").length,
+    };
+  }, [newlyBookedMeetings]);
+
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
   const activeRole = activeProfile?.role ?? "novacek";
