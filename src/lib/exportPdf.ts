@@ -108,6 +108,7 @@ export async function exportDashboardPdf(
   period: ExportPeriod,
   selectedYear?: number,
   selectedMonth?: number,
+  viewerRole?: string,
 ) {
   const now = new Date();
   const todayStr = format(now, "yyyy-MM-dd");
