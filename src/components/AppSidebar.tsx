@@ -12,6 +12,7 @@ import {
   Calendar,
   Search,
   Shield,
+  GraduationCap,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -71,7 +72,9 @@ export function AppSidebar() {
     { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
-  if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
+  if (profile?.role === "novacek") {
+    navItems.push({ title: "Zapracování", url: "/zapracovani", icon: GraduationCap, badge: false });
+  } else if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
   }
 
