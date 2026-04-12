@@ -25,12 +25,19 @@ interface MeetingRow {
 interface PersonStats {
   name: string;
   role: string;
+  // Planned (all non-cancelled in period)
+  planFsa: number;
+  planPoh: number;
+  planSer: number;
+  planPor: number;
+  // Done (past, non-cancelled)
   fsa: number;
   poh: number;
   ser: number;
   por: number;
   ref: number;
   bj: number;
+  // Newly booked
   newFsa: number;
   newPoh: number;
   newSer: number;
@@ -50,6 +57,7 @@ function computePersonStats(
   const active = meetings.filter((m) => !m.cancelled);
   const past = active.filter((m) => m.date <= todayStr);
 
+  const countAll = (type: string) => active.filter((m) => m.meeting_type === type).length;
   const countPast = (type: string) => past.filter((m) => m.meeting_type === type).length;
   const refs = active.reduce(
     (acc, m) => acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
@@ -65,6 +73,10 @@ function computePersonStats(
   return {
     name,
     role,
+    planFsa: countAll("FSA"),
+    planPoh: countAll("POH"),
+    planSer: countAll("SER"),
+    planPor: countAll("POR"),
     fsa: countPast("FSA"),
     poh: countPast("POH"),
     ser: countPast("SER"),
@@ -212,36 +224,29 @@ export async function exportDashboardPdf(
   doc.setFont(fontName, "bold");
   doc.text(`Moje aktivity — ${userName}`, 14, 34);
 
-  // Proběhlé
+   // Naplánované + Proběhlé
   doc.setFontSize(10);
   doc.setFont(fontName, "bold");
-  doc.text("Proběhlé", 14, 42);
 
   autoTable(doc, {
-    startY: 45,
-    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ"]],
-    body: [[ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj]],
+    startY: 38,
+    head: [
+      [
+        { content: "Naplánované", colSpan: 4 },
+        { content: "Proběhlé", colSpan: 6 },
+        { content: "Nově domluvené", colSpan: 4 },
+      ],
+      ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
+    ],
+    body: [[
+      ownStats.planFsa, ownStats.planPoh, ownStats.planSer, ownStats.planPor,
+      ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj,
+      ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor,
+    ]],
     theme: "grid",
     styles: { font: fontName },
-    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
-    bodyStyles: { fontSize: 9, font: fontName },
-    margin: { left: 14, right: 14 },
-  });
-
-  // Nově domluvené
-  const afterOwn1 = (doc as any).lastAutoTable?.finalY || 60;
-  doc.setFontSize(10);
-  doc.setFont(fontName, "bold");
-  doc.text("Nově domluvené", 14, afterOwn1 + 7);
-
-  autoTable(doc, {
-    startY: afterOwn1 + 10,
-    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství"]],
-    body: [[ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor]],
-    theme: "grid",
-    styles: { font: fontName },
-    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
-    bodyStyles: { fontSize: 9, font: fontName },
+    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+    bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
     margin: { left: 14, right: 14 },
   });
 
@@ -263,22 +268,26 @@ export async function exportDashboardPdf(
     const teamBody = teamStats.map((s) => [
       s.name,
       ROLE_LABEL[s.role] || s.role,
+      s.planFsa, s.planPoh, s.planSer, s.planPor,
       s.fsa, s.poh, s.ser, s.por, s.ref, s.bj,
       s.newFsa, s.newPoh, s.newSer, s.newPor,
     ]);
 
     const totals = teamStats.reduce(
       (acc, s) => ({
+        planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
+        planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
         fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
         ref: acc.ref + s.ref, bj: acc.bj + s.bj,
         newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
         newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
       }),
-      { fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
+      { planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
     );
 
     teamBody.push([
       "CELKEM", "",
+      totals.planFsa, totals.planPoh, totals.planSer, totals.planPor,
       totals.fsa, totals.poh, totals.ser, totals.por, totals.ref, totals.bj,
       totals.newFsa, totals.newPoh, totals.newSer, totals.newPor,
     ]);
@@ -289,10 +298,11 @@ export async function exportDashboardPdf(
         [
           { content: "Jméno", rowSpan: 2 },
           { content: "Role", rowSpan: 2 },
+          { content: "Naplánované", colSpan: 4 },
           { content: "Proběhlé", colSpan: 6 },
           { content: "Nově domluvené", colSpan: 4 },
         ],
-        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
+        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
       ],
       body: teamBody,
       theme: "grid",
