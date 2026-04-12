@@ -226,9 +226,11 @@ export async function exportDashboardPdf(
     }
   }
 
-  // ── Generate PDF ───────────────────────────────────────────────────────────
+  // ── Fetch PDF config ────────────────────────────────────────────────────
+  const pdfCfg = await fetchPdfConfig();
+  const HEAD_FILL = pdfCfg.head_color as [number, number, number];
 
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: pdfCfg.orientation, unit: "mm", format: "a4" });
   registerFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const fontName = "OpenSans";
