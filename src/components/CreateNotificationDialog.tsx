@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   open: boolean;
@@ -31,11 +25,26 @@ interface Props {
 
 const TEMPLATES = [
   { id: "custom", label: "Vlastní zpráva", title: "", message: "" },
-  { id: "odb", label: "Osobní databáze kontaktů", title: "Osobní databáze kontaktů", message: "Připrav si svou osobní databázi kontaktů." },
-  { id: "analyza", label: "Analýza trhu", title: "Analýza trhu", message: "Zpracuj analýzu trhu do stanoveného termínu." },
+  {
+    id: "odb",
+    label: "Osobní databáze kontaktů",
+    title: "Osobní databáze kontaktů",
+    message: "Připrav si svou osobní databázi kontaktů.",
+  },
+  {
+    id: "analyza",
+    label: "Analýza trhu",
+    title: "Analýza trhu",
+    message: "Zpracuj analýzu trhu do stanoveného termínu.",
+  },
   { id: "fsa", label: "FSA schůzka", title: "FSA schůzka", message: "Naplánuj a absolvuj FSA schůzku." },
   { id: "pohovor", label: "Pohovor", title: "Pohovor", message: "Připrav se na pohovor." },
-  { id: "servis", label: "Servisní schůzka", title: "Servisní schůzka", message: "Naplánuj servisní schůzku s klientem." },
+  {
+    id: "servis",
+    label: "Servisní schůzka",
+    title: "Servisní schůzka",
+    message: "Naplánuj servisní schůzku s člověkem.",
+  },
 ];
 
 export function CreateNotificationDialog({ open, onOpenChange, recipientId, recipientName }: Props) {
@@ -81,7 +90,7 @@ export function CreateNotificationDialog({ open, onOpenChange, recipientId, reci
       // Trigger push notification via edge function
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
+
       fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
         method: "POST",
         headers: {
@@ -89,7 +98,9 @@ export function CreateNotificationDialog({ open, onOpenChange, recipientId, reci
           Authorization: `Bearer ${anonKey}`,
         },
         body: JSON.stringify({ notification_id: notif.id }),
-      }).catch(() => {/* push is best effort */});
+      }).catch(() => {
+        /* push is best effort */
+      });
 
       toast.success(`Upozornění odesláno pro ${recipientName}`);
       onOpenChange(false);
@@ -113,9 +124,7 @@ export function CreateNotificationDialog({ open, onOpenChange, recipientId, reci
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nové upozornění</DialogTitle>
-          <DialogDescription>
-            Odešli upozornění pro {recipientName}
-          </DialogDescription>
+          <DialogDescription>Odešli upozornění pro {recipientName}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -137,11 +146,7 @@ export function CreateNotificationDialog({ open, onOpenChange, recipientId, reci
 
           <div className="space-y-2">
             <Label>Název</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Název úkolu"
-            />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Název úkolu" />
           </div>
 
           <div className="space-y-2">
@@ -156,12 +161,7 @@ export function CreateNotificationDialog({ open, onOpenChange, recipientId, reci
 
           <div className="space-y-2">
             <Label>Deadline</Label>
-            <Input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              min={today}
-            />
+            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} min={today} />
           </div>
         </div>
 

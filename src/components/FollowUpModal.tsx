@@ -38,7 +38,13 @@ function InlineMiniForm({
   onCancel,
   saving,
 }: {
-  onConfirm: (data: { date: string; time: string; duration: string; locationType: string; locationDetail: string }) => void;
+  onConfirm: (data: {
+    date: string;
+    time: string;
+    duration: string;
+    locationType: string;
+    locationDetail: string;
+  }) => void;
   onCancel: () => void;
   saving: boolean;
 }) {
@@ -52,47 +58,73 @@ function InlineMiniForm({
     <div className="space-y-3 mt-3 pt-3 border-t border-border">
       <div>
         <label className="block text-xs font-medium text-muted-foreground mb-1">Datum *</label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
       </div>
       <div className="flex gap-3">
         <div className="flex-1">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Čas schůzky</label>
-          <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
         <div className="flex-1">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Délka (min)</label>
-          <input type="number" min={0} step={1} value={duration} onChange={(e) => setDuration(e.target.value)}
-            placeholder="0" className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="0"
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
       </div>
       <div>
         <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
         <div className="flex gap-2 mb-2">
           {(["osobne", "online"] as const).map((lt) => (
-            <button key={lt} type="button"
+            <button
+              key={lt}
+              type="button"
               onClick={() => setLocationType(locationType === lt ? "" : lt)}
               className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${locationType === lt ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
-              style={locationType === lt ? { background: "#00abbd" } : {}}>
+              style={locationType === lt ? { background: "#00abbd" } : {}}
+            >
               {lt === "osobne" ? "Osobně" : "Online"}
             </button>
           ))}
         </div>
         {locationType && (
-          <input type="text" value={locationDetail} onChange={(e) => setLocationDetail(e.target.value)}
+          <input
+            type="text"
+            value={locationDetail}
+            onChange={(e) => setLocationDetail(e.target.value)}
             placeholder={locationType === "osobne" ? "Adresa…" : "Platforma…"}
-            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         )}
       </div>
       <div className="flex gap-3 pt-1">
-        <button onClick={onCancel}
-          className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+        <button
+          onClick={onCancel}
+          className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+        >
           Zrušit
         </button>
-        <button onClick={() => onConfirm({ date, time, duration, locationType, locationDetail })}
+        <button
+          onClick={() => onConfirm({ date, time, duration, locationType, locationDetail })}
           disabled={!date || saving}
-          className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-1">
+          className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-1"
+        >
           {saving && <Loader2 className="h-3 w-3 animate-spin" />} Naplánovat
         </button>
       </div>
@@ -136,12 +168,16 @@ function TrackSection({
       <label className="block text-xs font-semibold text-muted-foreground mb-2">{label}</label>
       {state === "idle" && (
         <div className="space-y-1">
-          <button onClick={() => setState("expanded")}
-            className="w-full h-10 rounded-xl border border-input bg-background text-sm font-semibold text-foreground hover:border-ring transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={() => setState("expanded")}
+            className="w-full h-10 rounded-xl border border-input bg-background text-sm font-semibold text-foreground hover:border-ring transition-colors flex items-center justify-center gap-2"
+          >
             <Plus className="h-4 w-4" /> {buttonLabel}
           </button>
-          <button onClick={() => setState("skipped")}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
+          <button
+            onClick={() => setState("skipped")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
             Přeskočit
           </button>
         </div>
@@ -210,7 +246,10 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
       <div className="absolute inset-0 bg-black/40" />
       <div
         className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
-        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+        style={{
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
@@ -223,7 +262,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
         <div className="space-y-5">
           {showClient && clientSuggestion && (
             <TrackSection
-              label="Klientská stopa"
+              label="Náborová stopa"
               buttonLabel={clientSuggestion.label}
               caseId={caseId}
               meetingType={clientSuggestion.type}

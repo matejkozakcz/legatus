@@ -74,14 +74,28 @@ export const defaultMeetingForm = (date?: string, time?: string): MeetingForm =>
 
 // ─── Shared sub-components ───────────────────────────────────────────────────
 
-function NumberInput({ label, value, onChange, step = 1 }: {
-  label: string; value: string; onChange: (v: string) => void; step?: number;
+function NumberInput({
+  label,
+  value,
+  onChange,
+  step = 1,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  step?: number;
 }) {
   return (
     <div>
       <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} step={step} min={0}
-        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        step={step}
+        min={0}
+        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      />
     </div>
   );
 }
@@ -129,7 +143,7 @@ function ClientAutocomplete({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Jméno klienta…"
+        placeholder="Jméno člověka…"
         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         autoComplete="off"
       />
@@ -173,8 +187,14 @@ interface MeetingFormModalProps {
 }
 
 export function MeetingFormModal({
-  open, onClose, initial, onSave, saving, cases,
-  isEdit: isEditProp, onDelete,
+  open,
+  onClose,
+  initial,
+  onSave,
+  saving,
+  cases,
+  isEdit: isEditProp,
+  onDelete,
   createCaseFn,
 }: MeetingFormModalProps) {
   useBodyScrollLock(open);
@@ -188,11 +208,7 @@ export function MeetingFormModal({
   const { data: meetingDefaults } = useQuery({
     queryKey: ["app_config", "meeting_defaults"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "meeting_defaults")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "meeting_defaults").single();
       return (data?.value as unknown as Record<string, number>) ?? null;
     },
     staleTime: 5 * 60 * 1000,
@@ -226,7 +242,10 @@ export function MeetingFormModal({
       // Auto-fill duration when meeting type changes on new meetings
       if (patch.meeting_type && !isEditProp && meetingDefaults) {
         const defDuration = meetingDefaults[patch.meeting_type];
-        if (defDuration && (!f.duration_minutes || f.duration_minutes === String(meetingDefaults[f.meeting_type] || ""))) {
+        if (
+          defDuration &&
+          (!f.duration_minutes || f.duration_minutes === String(meetingDefaults[f.meeting_type] || ""))
+        ) {
           next.duration_minutes = String(defDuration);
         }
       }
@@ -281,7 +300,10 @@ export function MeetingFormModal({
       <div className="absolute inset-0 bg-black/40" />
       <div
         className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
-        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+        style={{
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
@@ -307,17 +329,19 @@ export function MeetingFormModal({
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2 items-center">
             <div className="flex gap-2 flex-1">
-              {(["FSA", "POR", "SER", "POH"] as MeetingType[]).filter((t) => t !== "POR" || isEdit).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => set({ meeting_type: t })}
-                  className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${form.meeting_type === t ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
-                  style={form.meeting_type === t ? { background: "#00abbd" } : {}}
-                >
-                  {meetingTypeLabel(t)}
-                </button>
-              ))}
+              {(["FSA", "POR", "SER", "POH"] as MeetingType[])
+                .filter((t) => t !== "POR" || isEdit)
+                .map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => set({ meeting_type: t })}
+                    className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-colors ${form.meeting_type === t ? "border-transparent text-white" : "border-input bg-background text-muted-foreground hover:border-ring"}`}
+                    style={form.meeting_type === t ? { background: "#00abbd" } : {}}
+                  >
+                    {meetingTypeLabel(t)}
+                  </button>
+                ))}
             </div>
             {form.cancelled && (
               <span
@@ -334,13 +358,24 @@ export function MeetingFormModal({
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-            <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })}
-              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set({ date: e.target.value })}
+              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Čas <span className="text-destructive">*</span></label>
-            <input type="time" value={form.meeting_time} onChange={(e) => set({ meeting_time: e.target.value })} required
-              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Čas <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="time"
+              value={form.meeting_time}
+              onChange={(e) => set({ meeting_time: e.target.value })}
+              required
+              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
         </div>
 
@@ -357,33 +392,49 @@ export function MeetingFormModal({
         {moreOpen && (
           <div className="space-y-4 mb-4 animate-in fade-in slide-in-from-top-1 duration-150">
             {/* Délka */}
-            <NumberInput label="Délka (min)" value={form.duration_minutes} onChange={(v) => set({ duration_minutes: v })} />
+            <NumberInput
+              label="Délka (min)"
+              value={form.duration_minutes}
+              onChange={(v) => set({ duration_minutes: v })}
+            />
 
             {/* Místo */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
               <div className="flex gap-2 mb-2">
                 {(["osobne", "online"] as const).map((lt) => (
-                  <button key={lt} type="button" onClick={() => set({ location_type: form.location_type === lt ? "" : lt })}
+                  <button
+                    key={lt}
+                    type="button"
+                    onClick={() => set({ location_type: form.location_type === lt ? "" : lt })}
                     className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${form.location_type === lt ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
-                    style={form.location_type === lt ? { background: "#00abbd" } : {}}>
+                    style={form.location_type === lt ? { background: "#00abbd" } : {}}
+                  >
                     {lt === "osobne" ? "Osobně" : "Online"}
                   </button>
                 ))}
               </div>
               {form.location_type && (
-                <input type="text" value={form.location_detail} onChange={(e) => set({ location_detail: e.target.value })}
+                <input
+                  type="text"
+                  value={form.location_detail}
+                  onChange={(e) => set({ location_detail: e.target.value })}
                   placeholder={form.location_type === "osobne" ? "Adresa…" : "Platforma…"}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               )}
             </div>
 
             {/* Poznámka */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Poznámka</label>
-              <textarea value={form.poznamka} onChange={(e) => set({ poznamka: e.target.value })}
-                rows={2} placeholder="Volitelné…"
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              <textarea
+                value={form.poznamka}
+                onChange={(e) => set({ poznamka: e.target.value })}
+                rows={2}
+                placeholder="Volitelné…"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
             </div>
           </div>
         )}
@@ -394,16 +445,29 @@ export function MeetingFormModal({
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
             {form.meeting_type === "FSA" && (
-              <NumberInput label="Doporučení" value={form.doporuceni_fsa} onChange={(v) => set({ doporuceni_fsa: v })} />
+              <NumberInput
+                label="Doporučení"
+                value={form.doporuceni_fsa}
+                onChange={(v) => set({ doporuceni_fsa: v })}
+              />
             )}
 
             {(form.meeting_type === "POR" || form.meeting_type === "SER") && (
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <NumberInput label="Podepsané BJ" value={form.podepsane_bj} onChange={(v) => set({ podepsane_bj: v })} step={0.5} />
+                  <NumberInput
+                    label="Podepsané BJ"
+                    value={form.podepsane_bj}
+                    onChange={(v) => set({ podepsane_bj: v })}
+                    step={0.5}
+                  />
                 </div>
                 <div className="flex-1">
-                  <NumberInput label="Doporučení" value={form.doporuceni_poradenstvi} onChange={(v) => set({ doporuceni_poradenstvi: v })} />
+                  <NumberInput
+                    label="Doporučení"
+                    value={form.doporuceni_poradenstvi}
+                    onChange={(v) => set({ doporuceni_poradenstvi: v })}
+                  />
                 </div>
               </div>
             )}
@@ -430,31 +494,40 @@ export function MeetingFormModal({
                     ))}
                   </div>
                 </div>
-                <NumberInput label="Doporučení" value={form.doporuceni_pohovor} onChange={(v) => set({ doporuceni_pohovor: v })} />
+                <NumberInput
+                  label="Doporučení"
+                  value={form.doporuceni_pohovor}
+                  onChange={(v) => set({ doporuceni_pohovor: v })}
+                />
               </div>
             )}
           </div>
         )}
 
         {/* Save button */}
-        <button onClick={handleSave} disabled={isSaving || !canSave}
-          className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
+        <button
+          onClick={handleSave}
+          disabled={isSaving || !canSave}
+          className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
+        >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
 
         {/* Cancel / Restore toggle — jen při editaci */}
-        {isEdit && <button
-          type="button"
-          onClick={() => set({ cancelled: !form.cancelled })}
-          className="w-full mt-3 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
-          style={
-            form.cancelled
-              ? { color: "#00abbd", background: "transparent", border: "1px solid #00abbd" }
-              : { color: "#fc7c71", background: "transparent", border: "1px solid #fc7c71" }
-          }
-        >
-          {form.cancelled ? "Obnovit schůzku" : "Schůzka zrušena"}
-        </button>}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={() => set({ cancelled: !form.cancelled })}
+            className="w-full mt-3 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+            style={
+              form.cancelled
+                ? { color: "#00abbd", background: "transparent", border: "1px solid #00abbd" }
+                : { color: "#fc7c71", background: "transparent", border: "1px solid #fc7c71" }
+            }
+          >
+            {form.cancelled ? "Obnovit schůzku" : "Schůzka zrušena"}
+          </button>
+        )}
 
         {/* Delete (edit mode only) */}
         {isEdit && onDelete && (
@@ -471,13 +544,17 @@ export function MeetingFormModal({
               <div className="mt-3 p-3 rounded-xl border border-destructive space-y-2">
                 <p className="text-sm text-center text-muted-foreground">Opravdu smazat?</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 h-9 rounded-lg border border-input text-sm font-semibold">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 h-9 rounded-lg border border-input text-sm font-semibold"
+                  >
                     Zrušit
                   </button>
-                  <button onClick={onDelete}
+                  <button
+                    onClick={onDelete}
                     className="flex-1 h-9 rounded-lg text-sm font-semibold text-white"
-                    style={{ background: "#fc7c71" }}>
+                    style={{ background: "#fc7c71" }}
+                  >
                     Smazat
                   </button>
                 </div>
