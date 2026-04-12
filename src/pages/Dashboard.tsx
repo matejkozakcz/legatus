@@ -1479,6 +1479,36 @@ const Dashboard = () => {
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
               Přehled aktivit
             </h2>
+
+            {/* Desktop week picker — centered */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDesktopWeekOffset((o) => o - 1)}
+                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
+                style={{ width: 30, height: 30 }}
+              >
+                <ChevronLeft size={14} style={{ color: "#00555f" }} />
+              </button>
+              <div style={{ textAlign: "center", minWidth: 160 }}>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, lineHeight: 1.2 }}>
+                  {isDesktopWeekCurrent ? "Aktuální týden" : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+                </div>
+                <div
+                  style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.3 }}
+                >
+                  {format(desktopWeekStart, "d.M.", { locale: cs })} – {format(desktopWeekEnd, "d.M.", { locale: cs })}
+                </div>
+              </div>
+              <button
+                onClick={() => setDesktopWeekOffset((o) => Math.min(0, o + 1))}
+                disabled={desktopWeekOffset >= 0}
+                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
+                style={{ width: 30, height: 30, opacity: desktopWeekOffset >= 0 ? 0.3 : 1 }}
+              >
+                <ChevronRight size={14} style={{ color: "#00555f" }} />
+              </button>
+            </div>
+
             {!isMobile && (
               <div className="relative">
                 <button
@@ -1517,22 +1547,22 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <ActivityCard
               label="Analýzy"
-              actual={stats.fsa.actual}
-              total={stats.fsa.planned}
+              actual={desktopWeekStats.fsa.actual}
+              total={desktopWeekStats.fsa.planned}
               newly={newlyBooked.fsa}
               color="#00abbd"
             />
             <ActivityCard
               label="Pohovory"
-              actual={stats.poh.actual}
-              total={stats.poh.planned}
+              actual={desktopWeekStats.poh.actual}
+              total={desktopWeekStats.poh.planned}
               newly={newlyBooked.poh}
               color="#f59e0b"
             />
             <ActivityCard
               label="Servisy"
-              actual={stats.ser.actual}
-              total={stats.ser.planned}
+              actual={desktopWeekStats.ser.actual}
+              total={desktopWeekStats.ser.planned}
               newly={newlyBooked.ser}
               color="#ef4444"
             />
