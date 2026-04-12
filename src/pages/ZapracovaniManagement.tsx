@@ -454,6 +454,10 @@ function AssignTemplateModal({
       queryClient.invalidateQueries({ queryKey: ["onboarding_all_tasks"] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_tasks"] });
       toast.success(`Plán zapracování přidělen: ${novacek.full_name}`);
+      // Notify nováček + garant
+      supabase.functions.invoke("check-onboarding", {
+        body: { type: "plan_assigned", novacek_id: novacek.id, sender_id: profile?.id },
+      }).catch(() => {});
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
