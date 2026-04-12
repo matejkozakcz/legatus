@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, startOfMonth, endOfMonth, isSameDay, isSameMonth, getDay, startOfDay, getDaysInMonth } from "date-fns";
 import { cs } from "date-fns/locale";
+import { GraduationCap } from "lucide-react";
 import {
   Plus, X, Loader2, Pencil, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, AlertCircle,
 } from "lucide-react";
@@ -174,6 +175,33 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
     },
     enabled: !!user,
   });
+
+  // Fetch onboarding tasks (for nováčci — tasks with deadlines show in calendar)
+  interface OnboardingCalTask { id: string; title: string; deadline: string | null; deadline_time: string | null; completed: boolean; }
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["calendar_onboarding_tasks", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("id, title, deadline, deadline_time, completed")
+        .eq("novacek_id", user.id)
+        .not("deadline", "is", null);
+      if (error) throw error;
+      return (data || []) as OnboardingCalTask[];
+    },
+    enabled: !!user,
+  });
+
+  const onboardingByDay = useMemo(() => {
+    const map: Record<string, OnboardingCalTask[]> = {};
+    for (const t of onboardingTasks) {
+      if (!t.deadline) continue;
+      if (!map[t.deadline]) map[t.deadline] = [];
+      map[t.deadline].push(t);
+    }
+    return map;
+  }, [onboardingTasks]);
 
   const [localCases, setLocalCases] = useState<Case[]>([]);
   useEffect(() => { setLocalCases(cases); }, [cases]);
@@ -438,6 +466,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
     const selectedDayMeetings = selectedDay
       ? enrichedMeetings.filter((m) => isSameDay(parseISO(m.date), selectedDay))
       : [];
+    const selectedDayTasks = selectedDay
+      ? (onboardingByDay[format(selectedDay, "yyyy-MM-dd")] || [])
+      : [];
 
     return (
       <div className="space-y-4">
@@ -466,9 +497,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             {monthGrid.map((day, i) => {
               if (!day) return <div key={i} className="p-2 border-b border-r border-border min-h-[70px]" />;
               const dateStr = format(day, "yyyy-MM-dd");
-              const dayMeetings = meetingsByDay[dateStr] || [];
-              const isToday = isSameDay(day, today);
-              const isSelected = selectedDay && isSameDay(day, selectedDay);
+               const dayMeetings = meetingsByDay[dateStr] || [];
+               const dayTasks = onboardingByDay[dateStr] || [];
+               const isToday = isSameDay(day, today);
+               const isSelected = selectedDay && isSameDay(day, selectedDay);
 
               return (
                 <div
@@ -480,6 +512,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                     {format(day, "d")}
                   </div>
                   <div className="flex flex-wrap gap-1">
+                    {dayTasks.filter(t => !t.completed).map((t) => (
+                      <div key={t.id} className="w-2 h-2 rounded-full" style={{ background: "#8b5cf6" }} />
+                    ))}
                     {dayMeetings.slice(0, 3).map((m) => (
                       <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: getTypeBorder(m.meeting_type) }} />
                     ))}
@@ -510,8 +545,28 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               </button>
             </div>
             <div className="overflow-y-auto px-4 pb-4">
-              {selectedDayMeetings.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Žádné schůzky</p>
+              {/* Onboarding tasks */}
+              {selectedDayTasks.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {selectedDayTasks.map((t) => (
+                    <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ opacity: t.completed ? 0.5 : 1 }}>
+                      <div className="w-1 h-8 rounded-full" style={{ background: "#8b5cf6" }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap size={13} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                          <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: t.completed ? "line-through" : undefined }}>{t.title}</span>
+                          {t.completed && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: "#3FC55D", background: "rgba(63,197,93,0.12)" }}>Splněno</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Zapracování{t.deadline_time ? ` • ${t.deadline_time.slice(0, 5)}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedDayMeetings.length === 0 && selectedDayTasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Žádné události</p>
               ) : (
                 <div className="space-y-2">
                   {selectedDayMeetings.map((m) => {
@@ -566,6 +621,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
 
   // ─── Mobile daily view helpers ──────────────────────────────────────────────
 
+  const mobileDayTasks = useMemo(() => onboardingByDay[mobileDayStr] || [], [onboardingByDay, mobileDayStr]);
+
   const mobileDayMeetings = useMemo(() => {
     return [...enrichedMeetings]
       .filter((m) => m.date === mobileDayStr)
@@ -612,7 +669,48 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         {/* Scrollable meeting list */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 180 }}>
         <div style={{ padding: "0 16px" }}>
-          {mobileDayMeetings.length === 0 ? (
+          {/* Onboarding tasks for this day */}
+          {mobileDayTasks.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: mobileDayMeetings.length > 0 ? 12 : 0 }}>
+              {mobileDayTasks.map((t) => (
+                <div
+                  key={t.id}
+                  style={{
+                    background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+                    borderRadius: 16,
+                    border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+                    borderLeft: "4px solid #8b5cf6",
+                    padding: "12px 16px",
+                    opacity: t.completed ? 0.5 : 1,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <GraduationCap size={15} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                    <span style={{
+                      fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14,
+                      color: "var(--text-primary)",
+                      textDecoration: t.completed ? "line-through" : undefined,
+                    }}>
+                      {t.title}
+                    </span>
+                    {t.completed && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#3FC55D", background: "rgba(63,197,93,0.12)", borderRadius: 8, padding: "2px 8px" }}>
+                        Splněno
+                      </span>
+                    )}
+                  </div>
+                  {t.deadline_time && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary, #6b8a8e)", marginTop: 4 }}>
+                      <Clock size={12} />
+                      <span>{t.deadline_time.slice(0, 5)}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {mobileDayMeetings.length === 0 && mobileDayTasks.length === 0 ? (
             <div style={{
               textAlign: "center",
               padding: "48px 20px",
