@@ -247,7 +247,7 @@ export async function exportDashboardPdf(
 
   // ── Team stats ──────────────────────────────────────────────────────────
 
-  if (isLeader && teamStats.length > 0) {
+  if (showTeam && teamStats.length > 0) {
     const afterOwn2 = (doc as any).lastAutoTable?.finalY || 90;
     let teamStartY = afterOwn2 + 12;
 
