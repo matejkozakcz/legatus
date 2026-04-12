@@ -866,7 +866,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             if (detailMeeting) {
               const form: MeetingForm = {
                 ...defaultMeetingForm(data.date, data.meeting_time),
-                meeting_type: data.meeting_type,
+                meeting_type: data.meeting_type as MeetingType,
                 case_id: detailMeeting.case_id || "",
                 case_name: detailMeeting.case_name || "",
               };
