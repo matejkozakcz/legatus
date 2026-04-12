@@ -466,6 +466,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
     const selectedDayMeetings = selectedDay
       ? enrichedMeetings.filter((m) => isSameDay(parseISO(m.date), selectedDay))
       : [];
+    const selectedDayTasks = selectedDay
+      ? (onboardingByDay[format(selectedDay, "yyyy-MM-dd")] || [])
+      : [];
 
     return (
       <div className="space-y-4">
