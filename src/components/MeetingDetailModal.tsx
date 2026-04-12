@@ -362,6 +362,57 @@ export function MeetingDetailModal({
           </div>
         )}
 
+        {/* Next step after outcome save */}
+        {showNextStep && onScheduleFollowUp && !showReschedule && (() => {
+          const nextType = m.meeting_type === "FSA" ? "POR"
+            : m.meeting_type === "POR" ? "SER"
+            : m.meeting_type === "POH" && pohDal === true ? "FSA"
+            : null;
+          const nextLabel = nextType ? meetingTypeLabel(nextType as MeetingType) : null;
+          if (!nextType || !nextLabel) return null;
+          return (
+            <div className="mt-4 p-3 rounded-xl border border-input space-y-3" style={{ borderColor: "rgba(0,171,189,0.3)", background: "rgba(0,171,189,0.04)" }}>
+              <label className="block text-xs font-semibold" style={{ color: "#00abbd" }}>
+                Naplánovat další krok — {nextLabel}?
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+                  <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
+                  <input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    onScheduleFollowUp({
+                      meeting_type: nextType,
+                      date: rescheduleDate,
+                      meeting_time: rescheduleTime,
+                    });
+                    onClose();
+                  }}
+                  disabled={!rescheduleDate}
+                  className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2"
+                >
+                  <CalendarPlus className="h-4 w-4" /> Naplánovat {nextLabel}
+                </button>
+                <button
+                  onClick={() => setShowNextStep(false)}
+                  className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Přeskočit
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Reschedule section after cancel */}
         {showReschedule && onScheduleFollowUp && (
           <div className="mt-4 p-3 rounded-xl border border-input space-y-3">
