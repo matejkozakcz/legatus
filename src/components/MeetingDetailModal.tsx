@@ -152,6 +152,98 @@ export function MeetingDetailModal({
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
 
+        {/* Progress indicator — only for non-cancelled, non-POH meetings */}
+        {!m.cancelled && m.meeting_type !== "POH" && (() => {
+          const processSteps = [
+            { key: "FSA", label: "Analýza", icon: Users },
+            { key: "POR", label: "Poradenství", icon: FileText },
+            { key: "SER", label: "Servis", icon: Shield },
+          ];
+          const currentProcessIdx = processSteps.findIndex(s => s.key === m.meeting_type);
+
+          const todayStr = format(new Date(), "yyyy-MM-dd");
+          const statusSteps = [
+            { key: "planned", label: "Naplánována", icon: Clock },
+            { key: "done", label: "Proběhla", icon: Check },
+            { key: "outcome", label: "Výsledek", icon: ClipboardCheck },
+          ];
+          let currentStatusIdx = 0;
+          if (m.date <= todayStr) currentStatusIdx = 1;
+          if (m.outcome_recorded) currentStatusIdx = 2;
+
+          const renderAxis = (steps: { key: string; label: string; icon: React.ElementType }[], activeIdx: number) => (
+            <div className="flex items-center w-full">
+              {steps.map((step, i) => {
+                const Icon = step.icon;
+                const isActive = i === activeIdx;
+                const isPast = i < activeIdx;
+                const color = isActive ? "#00abbd" : isPast ? "#00abbd" : "var(--text-muted, #8aadb3)";
+                const opacity = isActive ? 1 : isPast ? 0.5 : 0.3;
+                return (
+                  <div key={step.key} className="flex items-center" style={{ flex: i < steps.length - 1 ? 1 : undefined }}>
+                    <div className="flex flex-col items-center" style={{ minWidth: 40 }}>
+                      <div
+                        className="flex items-center justify-center rounded-full transition-all"
+                        style={{
+                          width: isActive ? 28 : 22,
+                          height: isActive ? 28 : 22,
+                          background: isActive ? "rgba(0,171,189,0.15)" : isPast ? "rgba(0,171,189,0.08)" : "transparent",
+                          border: `2px solid ${color}`,
+                          opacity,
+                        }}
+                      >
+                        {isPast ? (
+                          <Check size={isActive ? 14 : 11} style={{ color }} />
+                        ) : (
+                          <Icon size={isActive ? 14 : 11} style={{ color }} />
+                        )}
+                      </div>
+                      <span
+                        className="mt-1 text-center leading-tight"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: isActive ? 700 : 500,
+                          color,
+                          opacity: isActive ? 1 : isPast ? 0.7 : 0.5,
+                        }}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div
+                        className="flex-1 mx-1"
+                        style={{
+                          height: 2,
+                          background: i < activeIdx ? "#00abbd" : "var(--border, #e1e9eb)",
+                          opacity: i < activeIdx ? 0.5 : 0.3,
+                          borderRadius: 1,
+                          marginBottom: 16,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+
+          return (
+            <div className="mt-4 space-y-3">
+              {currentProcessIdx >= 0 && (
+                <div>
+                  <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Proces</span>
+                  {renderAxis(processSteps, currentProcessIdx)}
+                </div>
+              )}
+              <div>
+                <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Stav</span>
+                {renderAxis(statusSteps, currentStatusIdx)}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Outcome read-only summary */}
         {showOutcomeSummary && renderOutcomeSummary()}
 
