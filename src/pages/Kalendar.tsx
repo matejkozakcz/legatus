@@ -64,16 +64,12 @@ function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatu
   return m.date < todayStr ? "probehla" : "naplanovana";
 }
 
-/** Meeting is past, not cancelled, and has no outcome filled in */
+/** Meeting is past, not cancelled, and has no outcome recorded */
 function needsFollowUp(m: Meeting): boolean {
   if (m.cancelled) return false;
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  if (m.date >= todayStr) return false; // not yet past
-  // Check if any result field was filled
-  if (m.meeting_type === "FSA") return m.doporuceni_fsa === 0;
-  if (m.meeting_type === "POR" || m.meeting_type === "SER") return m.podepsane_bj === 0 && m.doporuceni_poradenstvi === 0;
-  if (m.meeting_type === "POH") return m.pohovor_jde_dal === null && m.doporuceni_pohovor === 0;
-  return false;
+  if (m.date >= todayStr) return false;
+  return !m.outcome_recorded;
 }
 
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
