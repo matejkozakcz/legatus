@@ -24,7 +24,14 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 
-import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
+import {
+  MeetingFormModal,
+  type MeetingForm,
+  type MeetingType,
+  type Case,
+  meetingTypeLabel,
+  defaultMeetingForm,
+} from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 
@@ -96,7 +103,6 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
 function totalRefs(m: Meeting): number {
   return (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0);
 }
-
 
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
@@ -196,7 +202,6 @@ function CaseModal({
 
 // ─── Meeting Form Modal ──────────────────────────────────────────────────────
 
-
 // ─── Follow-Up Suggestion Modal ──────────────────────────────────────────────
 
 // Old FollowUpModal removed — using shared component from @/components/FollowUpModal
@@ -271,12 +276,18 @@ function CaseAccordion({
         {(sumRefs > 0 || sumBj > 0) && (
           <div className="flex items-center gap-1.5 ml-6 mt-1.5">
             {sumRefs > 0 && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}>
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
+              >
                 {sumRefs} dop.
               </span>
             )}
             {sumBj > 0 && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}>
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}
+              >
                 {sumBj} BJ
               </span>
             )}
@@ -465,14 +476,16 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         location_detail: form.location_detail.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
         // BJ: přímo z formuláře pro POR a SER (bez podmínky has_poradenstvi/poradenstvi_status)
-        podepsane_bj: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
-          ? parseFloat(form.podepsane_bj) || 0
-          : 0,
+        podepsane_bj:
+          !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+            ? parseFloat(form.podepsane_bj) || 0
+            : 0,
         // Doporučení podle typu
         doporuceni_fsa: !form.cancelled && form.meeting_type === "FSA" ? parseInt(form.doporuceni_fsa) || 0 : 0,
-        doporuceni_poradenstvi: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
-          ? parseInt(form.doporuceni_poradenstvi) || 0
-          : 0,
+        doporuceni_poradenstvi:
+          !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
+            ? parseInt(form.doporuceni_poradenstvi) || 0
+            : 0,
         doporuceni_pohovor: !form.cancelled && form.meeting_type === "POH" ? parseInt(form.doporuceni_pohovor) || 0 : 0,
         // POH výsledek
         pohovor_jde_dal: !form.cancelled && form.meeting_type === "POH" ? form.pohovor_jde_dal : null,
@@ -541,7 +554,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   });
 
   // ── Handlers ──
-   // openCreateCase removed — cases are now auto-created from meeting form
+  // openCreateCase removed — cases are now auto-created from meeting form
   const openEditCase = (c: Case) => {
     setEditCase(c);
     setCaseModalOpen(true);
@@ -622,7 +635,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       className={isMobile ? "mobile-page" : "space-y-6"}
       style={
         isMobile
-          ? { paddingBottom: 200, ...(!mobileEmbedded ? { paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" } : { paddingTop: 8 }) }
+          ? {
+              paddingBottom: 200,
+              ...(!mobileEmbedded
+                ? { paddingTop: "max(32px, calc(env(safe-area-inset-top, 32px) + 16px))" }
+                : { paddingTop: 8 }),
+            }
           : undefined
       }
     >
@@ -630,14 +648,14 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         <>
           {/* Mobile header — hide when embedded */}
           {!mobileEmbedded && (
-          <div style={{ marginBottom: 16 }}>
-            <div className="flex items-center gap-3">
-              <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
-              <h1 className="font-heading font-bold flex-1" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-                Byznys případy
-              </h1>
+            <div style={{ marginBottom: 16 }}>
+              <div className="flex items-center gap-3">
+                <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
+                <h1 className="font-heading font-bold flex-1" style={{ fontSize: 22, color: "var(--text-primary)" }}>
+                  Obchodní případy
+                </h1>
+              </div>
             </div>
-          </div>
           )}
 
           {/* Fixed: Create case button + period bar */}
@@ -845,7 +863,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             <div className="flex items-center gap-3">
               <Briefcase className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
               <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-                Byznys případy
+                Obchodní případy
               </h1>
             </div>
           </div>
@@ -876,7 +894,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       ) : cases.length === 0 ? (
         <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-          Zatím žádné Byznys případy. Nový případ se vytvoří automaticky při založení schůzky.
+          Zatím žádné Obchodní případy. Nový případ se vytvoří automaticky při založení schůzky.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -988,11 +1006,15 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         saving={saveMeetingMutation.isPending}
         cases={cases}
         isEdit={!!editMeeting}
-        onDelete={editMeeting ? () => {
-          deleteMutation.mutate(editMeeting.id);
-          setMeetingModalOpen(false);
-          setEditMeeting(null);
-        } : undefined}
+        onDelete={
+          editMeeting
+            ? () => {
+                deleteMutation.mutate(editMeeting.id);
+                setMeetingModalOpen(false);
+                setEditMeeting(null);
+              }
+            : undefined
+        }
       />
 
       {/* Follow-up suggestion modal */}
@@ -1013,10 +1035,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             location_detail: data.location_detail,
           };
           await new Promise<void>((resolve, reject) => {
-            saveMeetingMutation.mutate({ form, skipFollowUp: true }, {
-              onSuccess: () => resolve(),
-              onError: (err) => reject(err),
-            });
+            saveMeetingMutation.mutate(
+              { form, skipFollowUp: true },
+              {
+                onSuccess: () => resolve(),
+                onError: (err) => reject(err),
+              },
+            );
           });
         }}
       />

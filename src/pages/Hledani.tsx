@@ -26,9 +26,19 @@ export default function Hledani() {
   const queryClient = useQueryClient();
 
   // Modal states
-  const [selectedMember, setSelectedMember] = useState<{ id: string; full_name: string; role: string; avatar_url: string | null } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{
+    id: string;
+    full_name: string;
+    role: string;
+    avatar_url: string | null;
+  } | null>(null);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingDetailData | null>(null);
-  const [selectedCase, setSelectedCase] = useState<{ id: string; nazev_pripadu: string; status: string; poznamka: string | null } | null>(null);
+  const [selectedCase, setSelectedCase] = useState<{
+    id: string;
+    nazev_pripadu: string;
+    status: string;
+    poznamka: string | null;
+  } | null>(null);
 
   const { data: results = [], isLoading } = useQuery({
     queryKey: ["global-search", query],
@@ -98,14 +108,16 @@ export default function Hledani() {
             subtitle: c.status === "aktivni" ? "Aktivní" : c.status === "uzavreny" ? "Uzavřený" : c.status,
             url: "/obchodni-pripady",
             raw: c,
-          })
+          }),
         );
       }
 
       // Search meetings by case_name or poznamka
       const { data: meetings } = await supabase
         .from("client_meetings")
-        .select("id, date, meeting_type, case_name, case_id, poznamka, user_id, meeting_time, duration_minutes, location_type, location_detail, cancelled, doporuceni_fsa, podepsane_bj, doporuceni_poradenstvi, pohovor_jde_dal, doporuceni_pohovor, outcome_recorded")
+        .select(
+          "id, date, meeting_type, case_name, case_id, poznamka, user_id, meeting_time, duration_minutes, location_type, location_detail, cancelled, doporuceni_fsa, podepsane_bj, doporuceni_poradenstvi, pohovor_jde_dal, doporuceni_pohovor, outcome_recorded",
+        )
         .or(`case_name.ilike.%${q}%,poznamka.ilike.%${q}%`)
         .order("date", { ascending: false })
         .limit(20);
@@ -120,7 +132,7 @@ export default function Hledani() {
             subtitle: `${typeLabels[m.meeting_type] || m.meeting_type} · ${format(new Date(m.date), "d. M. yyyy")}`,
             url: "/kalendar",
             raw: m,
-          })
+          }),
         );
       }
 
@@ -167,23 +179,18 @@ export default function Hledani() {
   };
   const sectionLabels = {
     person: "Lidé",
-    case: "Byznys případy",
+    case: "Obchodní případy",
     meeting: "Schůzky",
   };
 
   return (
     <div className="max-w-[720px] mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-xl hover:bg-muted transition-colors"
-        >
+        <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-muted transition-colors">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <Search className="h-6 w-6 text-foreground" />
-        <h1 className="font-heading font-bold text-[28px] text-foreground">
-          Výsledky hledání
-        </h1>
+        <h1 className="font-heading font-bold text-[28px] text-foreground">Výsledky hledání</h1>
       </div>
 
       {/* Search input */}
@@ -210,9 +217,7 @@ export default function Hledani() {
       )}
 
       {!isLoading && query.length >= 2 && results.length === 0 && (
-        <p className="text-muted-foreground text-sm font-body text-center py-12">
-          Žádné výsledky pro „{query}".
-        </p>
+        <p className="text-muted-foreground text-sm font-body text-center py-12">Žádné výsledky pro „{query}".</p>
       )}
 
       {!isLoading && results.length > 0 && (
@@ -238,13 +243,9 @@ export default function Hledani() {
                       className="w-full text-left px-4 py-3 rounded-xl hover:bg-accent/10 transition-colors flex items-center gap-3 group bg-card/50"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-body text-sm font-medium text-foreground truncate">
-                          {item.title}
-                        </p>
+                        <p className="font-body text-sm font-medium text-foreground truncate">{item.title}</p>
                         {item.subtitle && (
-                          <p className="font-body text-xs text-muted-foreground truncate mt-0.5">
-                            {item.subtitle}
-                          </p>
+                          <p className="font-body text-xs text-muted-foreground truncate mt-0.5">{item.subtitle}</p>
                         )}
                       </div>
                       <ArrowLeft className="h-4 w-4 text-muted-foreground rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -258,12 +259,7 @@ export default function Hledani() {
       )}
 
       {/* Member detail modal */}
-      {selectedMember && (
-        <MemberDetailModal
-          member={selectedMember}
-          onClose={() => setSelectedMember(null)}
-        />
-      )}
+      {selectedMember && <MemberDetailModal member={selectedMember} onClose={() => setSelectedMember(null)} />}
 
       {/* Meeting detail modal */}
       <MeetingDetailModal
@@ -283,7 +279,10 @@ export default function Hledani() {
             className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setSelectedCase(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setSelectedCase(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
               <X className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">

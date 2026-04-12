@@ -12,7 +12,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal, Clock, FileText } from "lucide-react";
+import {
+  Save,
+  Shield,
+  Users,
+  Settings2,
+  Search,
+  Eye,
+  Lock,
+  GitBranch,
+  Plus,
+  Trash2,
+  ChevronDown,
+  RotateCcw,
+  Info,
+  Zap,
+  FileCode,
+  Bell,
+  Pencil,
+  SendHorizontal,
+  Clock,
+  FileText,
+} from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,11 +145,7 @@ function PromotionRulesTab() {
   const { data: rules, isLoading } = useQuery({
     queryKey: ["app_config", "promotion_rules"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "promotion_rules")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "promotion_rules").single();
       return (data?.value as unknown as PromotionRules) ?? null;
     },
   });
@@ -260,11 +277,7 @@ function PeriodConfigTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ["app_config", "period_end_day"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "period_end_day")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "period_end_day").single();
       return (data?.value as unknown as PeriodConfig) ?? null;
     },
   });
@@ -306,12 +319,16 @@ function PeriodConfigTab() {
         <div>
           <Label>Den konce období</Label>
           <Input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Number(e.target.value))} />
-          <p className="text-xs text-muted-foreground mt-1">Pokud den není pracovní, posune se na další pracovní den.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Pokud den není pracovní, posune se na další pracovní den.
+          </p>
         </div>
         <div>
           <Label>Pravidlo pro prosinec</Label>
           <Select value={decRule} onValueChange={setDecRule}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="first_working_day_january">První pracovní den ledna</SelectItem>
               <SelectItem value="same_as_default">Stejný den jako ostatní měsíce</SelectItem>
@@ -339,7 +356,9 @@ function UsersTab() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, role, is_active, is_admin, vedouci_id, garant_id, ziskatel_id, osobni_id, monthly_bj_goal, personal_bj_goal")
+        .select(
+          "id, full_name, role, is_active, is_admin, vedouci_id, garant_id, ziskatel_id, osobni_id, monthly_bj_goal, personal_bj_goal",
+        )
         .order("full_name");
       return (data || []) as ProfileRow[];
     },
@@ -358,10 +377,11 @@ function UsersTab() {
     onError: (e) => toast.error(`Chyba: ${e.message}`),
   });
 
-  const filtered = profiles.filter((p) =>
-    p.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    p.role.toLowerCase().includes(search.toLowerCase()) ||
-    (p.osobni_id || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = profiles.filter(
+    (p) =>
+      p.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      p.role.toLowerCase().includes(search.toLowerCase()) ||
+      (p.osobni_id || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   const startEdit = (p: ProfileRow) => {
@@ -421,10 +441,14 @@ function UsersTab() {
                   <td className="p-3">
                     {isEditing ? (
                       <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v }))}>
-                        <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-8 w-36">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           {ROLES.map((r) => (
-                            <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                            <SelectItem key={r} value={r}>
+                              {ROLE_LABELS[r]}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -452,7 +476,9 @@ function UsersTab() {
                         onChange={(e) => setEditForm((f) => ({ ...f, vedouci_id: e.target.value || null }))}
                       />
                     ) : (
-                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">{p.vedouci_id ? p.vedouci_id.slice(0, 8) + "…" : "–"}</span>
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">
+                        {p.vedouci_id ? p.vedouci_id.slice(0, 8) + "…" : "–"}
+                      </span>
                     )}
                   </td>
                   <td className="p-3">
@@ -464,7 +490,9 @@ function UsersTab() {
                         onChange={(e) => setEditForm((f) => ({ ...f, garant_id: e.target.value || null }))}
                       />
                     ) : (
-                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">{p.garant_id ? p.garant_id.slice(0, 8) + "…" : "–"}</span>
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">
+                        {p.garant_id ? p.garant_id.slice(0, 8) + "…" : "–"}
+                      </span>
                     )}
                   </td>
                   <td className="p-3">
@@ -476,7 +504,9 @@ function UsersTab() {
                         onChange={(e) => setEditForm((f) => ({ ...f, ziskatel_id: e.target.value || null }))}
                       />
                     ) : (
-                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">{p.ziskatel_id ? p.ziskatel_id.slice(0, 8) + "…" : "–"}</span>
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[100px] block">
+                        {p.ziskatel_id ? p.ziskatel_id.slice(0, 8) + "…" : "–"}
+                      </span>
                     )}
                   </td>
                   <td className="p-3">
@@ -506,7 +536,13 @@ function UsersTab() {
                   <td className="p-3">
                     {isEditing ? (
                       <div className="flex gap-1">
-                        <Button size="sm" variant="default" onClick={saveEdit} disabled={mutation.isPending} className="h-7 text-xs">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={saveEdit}
+                          disabled={mutation.isPending}
+                          className="h-7 text-xs"
+                        >
                           Uložit
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="h-7 text-xs">
@@ -565,11 +601,7 @@ function useConfigEditor<T>(configKey: string, fallback: T) {
   const { data, isLoading } = useQuery({
     queryKey: ["app_config", configKey],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", configKey)
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", configKey).single();
       return (data?.value as unknown as T) ?? fallback;
     },
   });
@@ -578,7 +610,10 @@ function useConfigEditor<T>(configKey: string, fallback: T) {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (data) { setLocalData(data); setDirty(false); }
+    if (data) {
+      setLocalData(data);
+      setDirty(false);
+    }
   }, [data]);
 
   const save = useMutation({
@@ -620,8 +655,23 @@ function PermissionsTab() {
 
 // ─── Visibility Editor ────────────────────────────────────────────────────────
 
-const ROLE_OPTIONS = ["Admin", "Vedoucí", "Bud. vedoucí", "Garant", "Získatel", "Nováček", "Získatel / Nováček"] as const;
-const SEES_OPTIONS = ["Profily", "Aktivity & Schůzky", "Byznys případy", "Promotion requests", "Vše vlastní", "Vše"] as const;
+const ROLE_OPTIONS = [
+  "Admin",
+  "Vedoucí",
+  "Bud. vedoucí",
+  "Garant",
+  "Získatel",
+  "Nováček",
+  "Získatel / Nováček",
+] as const;
+const SEES_OPTIONS = [
+  "Profily",
+  "Aktivity & Schůzky",
+  "Byznys případy",
+  "Promotion requests",
+  "Vše vlastní",
+  "Vše",
+] as const;
 const SCOPE_OPTIONS = [
   { value: "Celý svůj podstrom (is_in_vedouci_subtree)", label: "Celý podstrom" },
   { value: "Lidé s vedouci_id = já", label: "Přímý vedoucí (vedouci_id)" },
@@ -634,7 +684,7 @@ const SCOPE_OPTIONS = [
 const DEFAULT_VISIBILITY: VisibilityRule[] = [
   { role: "Vedoucí", sees: "Profily", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
   { role: "Vedoucí", sees: "Aktivity & Schůzky", scope: "Lidé s vedouci_id = já" },
-  { role: "Vedoucí", sees: "Byznys případy", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Obchodní případy", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
   { role: "Vedoucí", sees: "Promotion requests", scope: "Všechny (role = vedouci)" },
   { role: "Garant", sees: "Profily", scope: "Lidé s garant_id = já" },
   { role: "Garant", sees: "Aktivity & Schůzky", scope: "Lidé s garant_id = já" },
@@ -651,8 +701,13 @@ function useApplyRls(type: string) {
 
   const callFn = async (payload: Record<string, unknown>, dryRun: boolean) => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { toast.error("Nejsi přihlášen"); return; }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Nejsi přihlášen");
+      return;
+    }
     const res = await fetch(`${supabaseUrl}/functions/v1/apply-rls`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
@@ -668,7 +723,9 @@ function useApplyRls(type: string) {
       const data = await callFn(payload, true);
       setSqlPreview(data.statements || []);
       setApplyErrors(data.errors || []);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const applyToDb = async (payload: Record<string, unknown>, saveFn?: () => Promise<void>) => {
@@ -680,28 +737,47 @@ function useApplyRls(type: string) {
       setApplyErrors(data.errors || []);
       setSqlPreview(null);
       toast.success(`RLS politiky aplikovány (${data.applied} příkazů)`);
-    } catch (e: any) { toast.error(`Chyba: ${e.message}`); }
-    finally { setApplying(false); }
+    } catch (e: any) {
+      toast.error(`Chyba: ${e.message}`);
+    } finally {
+      setApplying(false);
+    }
   };
 
   return { sqlPreview, setSqlPreview, applying, applyErrors, previewSql, applyToDb };
 }
 
-function SqlPreviewBlock({ sqlPreview, setSqlPreview, applyErrors }: { sqlPreview: string[] | null; setSqlPreview: (v: null) => void; applyErrors: string[] }) {
+function SqlPreviewBlock({
+  sqlPreview,
+  setSqlPreview,
+  applyErrors,
+}: {
+  sqlPreview: string[] | null;
+  setSqlPreview: (v: null) => void;
+  applyErrors: string[];
+}) {
   if (!sqlPreview) return null;
   return (
     <div className="space-y-2 mt-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-heading font-semibold">Náhled SQL příkazů</h4>
-        <Button size="sm" variant="ghost" onClick={() => setSqlPreview(null)} className="h-7 text-xs">Zavřít</Button>
+        <Button size="sm" variant="ghost" onClick={() => setSqlPreview(null)} className="h-7 text-xs">
+          Zavřít
+        </Button>
       </div>
       <div className="rounded-lg border border-border bg-foreground/5 p-3 max-h-64 overflow-y-auto">
-        <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">{sqlPreview.join("\n\n")}</pre>
+        <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">
+          {sqlPreview.join("\n\n")}
+        </pre>
       </div>
       {applyErrors.length > 0 && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
           <p className="text-xs font-medium text-destructive mb-1">Varování:</p>
-          {applyErrors.map((e, i) => <p key={i} className="text-[11px] text-destructive/80">{e}</p>)}
+          {applyErrors.map((e, i) => (
+            <p key={i} className="text-[11px] text-destructive/80">
+              {e}
+            </p>
+          ))}
         </div>
       )}
     </div>
@@ -718,7 +794,10 @@ function VisibilityEditor() {
     update((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
   };
   const addRule = () => {
-    update((prev) => [...prev, { role: "Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" }]);
+    update((prev) => [
+      ...prev,
+      { role: "Nováček", sees: "Vše vlastní", scope: "Pouze vlastní záznamy (user_id = já)" },
+    ]);
   };
   const removeRule = (index: number) => {
     update((prev) => prev.filter((_, i) => i !== index));
@@ -727,7 +806,12 @@ function VisibilityEditor() {
     update(() => [...DEFAULT_VISIBILITY]);
   };
 
-  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+  if (isLoading)
+    return (
+      <Card>
+        <CardContent className="p-4 text-muted-foreground">Načítání…</CardContent>
+      </Card>
+    );
 
   const grouped = rules.reduce<Record<string, { rule: VisibilityRule; idx: number }[]>>((acc, rule, idx) => {
     if (!acc[rule.role]) acc[rule.role] = [];
@@ -743,14 +827,24 @@ function VisibilityEditor() {
             <Eye className="h-4 w-4" /> Kdo vidí čí data
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={resetToDefaults}
+              className="h-7 text-xs gap-1 text-muted-foreground"
+            >
               <RotateCcw className="h-3 w-3" /> Reset
             </Button>
             <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
               <Plus className="h-3 w-3" /> Pravidlo
             </Button>
             {dirty && (
-              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+              <Button
+                size="sm"
+                onClick={() => save.mutate(rules)}
+                disabled={save.isPending}
+                className="h-7 text-xs gap-1"
+              >
                 <Save className="h-3 w-3" /> Uložit
               </Button>
             )}
@@ -771,8 +865,8 @@ function VisibilityEditor() {
           <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             Každý řádek definuje, <strong>jaká data</strong> daná role vidí a <strong>v jakém rozsahu</strong> (scope).
-            <strong> Náhled SQL</strong> ukáže vygenerované SELECT politiky. <strong>Aplikovat na DB</strong> je zapíše do databáze.
-            ⚠️ Toto přepíše stávající SELECT RLS politiky na dotčených tabulkách!
+            <strong> Náhled SQL</strong> ukáže vygenerované SELECT politiky. <strong>Aplikovat na DB</strong> je zapíše
+            do databáze. ⚠️ Toto přepíše stávající SELECT RLS politiky na dotčených tabulkách!
           </p>
         </div>
       </CardHeader>
@@ -789,23 +883,40 @@ function VisibilityEditor() {
                     <div className="flex items-center gap-2">
                       <label className="text-[11px] text-muted-foreground w-10 shrink-0">Vidí</label>
                       <Select value={rule.sees} onValueChange={(v) => updateRule(idx, "sees", v)}>
-                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-7 text-xs flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {SEES_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                          {SEES_OPTIONS.map((o) => (
+                            <SelectItem key={o} value={o}>
+                              {o}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex items-center gap-2">
                       <label className="text-[11px] text-muted-foreground w-10 shrink-0">Scope</label>
                       <Select value={rule.scope} onValueChange={(v) => updateRule(idx, "scope", v)}>
-                        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-7 text-xs flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {SCOPE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                          {SCOPE_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => removeRule(idx)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0 mt-0.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => removeRule(idx)}
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0 mt-0.5"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -838,7 +949,7 @@ function PermissionMatrixEditor() {
             [role]: has ? current.filter((a) => a !== action) : [...current, action],
           },
         };
-      })
+      }),
     );
   };
 
@@ -850,7 +961,12 @@ function PermissionMatrixEditor() {
     await rls.applyToDb({ matrix: rules }, () => save.mutateAsync(rules));
   };
 
-  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+  if (isLoading)
+    return (
+      <Card>
+        <CardContent className="p-4 text-muted-foreground">Načítání…</CardContent>
+      </Card>
+    );
 
   return (
     <Card>
@@ -861,7 +977,12 @@ function PermissionMatrixEditor() {
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
             {dirty && (
-              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+              <Button
+                size="sm"
+                onClick={() => save.mutate(rules)}
+                disabled={save.isPending}
+                className="h-7 text-xs gap-1"
+              >
                 <Save className="h-3 w-3" /> Uložit konfiguraci
               </Button>
             )}
@@ -882,9 +1003,9 @@ function PermissionMatrixEditor() {
         <div className="flex items-start gap-1.5 mt-2 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
           <Info className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Klikni na badge pro zapnutí/vypnutí oprávnění. <strong>Náhled SQL</strong> ukáže, jaké příkazy se provedou. 
-            <strong> Aplikovat na DB</strong> smaže stávající RLS politiky a vytvoří nové podle matice. 
-            ⚠️ Špatná konfigurace může zablokovat přístup k datům!
+            Klikni na badge pro zapnutí/vypnutí oprávnění. <strong>Náhled SQL</strong> ukáže, jaké příkazy se provedou.
+            <strong> Aplikovat na DB</strong> smaže stávající RLS politiky a vytvoří nové podle matice. ⚠️ Špatná
+            konfigurace může zablokovat přístup k datům!
           </p>
         </div>
       </CardHeader>
@@ -895,7 +1016,9 @@ function PermissionMatrixEditor() {
               <tr>
                 <th className="text-left p-3 font-medium">Tabulka</th>
                 {PERM_ROLES.map((r) => (
-                  <th key={r} className="text-left p-3 font-medium text-xs">{r}</th>
+                  <th key={r} className="text-left p-3 font-medium text-xs">
+                    {r}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -947,7 +1070,11 @@ function PermissionMatrixEditor() {
 const DEFAULT_HIERARCHY: HierarchyRule[] = [
   { relationship: "vedouci_id", meaning: "Vedoucí tohoto člena — řídí celý podstrom", whoSets: "Vedoucí nebo Admin" },
   { relationship: "garant_id", meaning: "Garant tohoto nováčka — přímý mentor", whoSets: "Vedoucí nebo Admin" },
-  { relationship: "ziskatel_id", meaning: "Kdo tohoto člena získal — tvoří strukturu pro povýšení", whoSets: "Onboarding / Vedoucí / Admin" },
+  {
+    relationship: "ziskatel_id",
+    meaning: "Kdo tohoto člena získal — tvoří strukturu pro povýšení",
+    whoSets: "Onboarding / Vedoucí / Admin",
+  },
   { relationship: "ziskatel_name", meaning: "Jméno získatele (záloha pokud není v systému)", whoSets: "Onboarding" },
 ];
 
@@ -984,7 +1111,12 @@ function HierarchyEditor() {
 
   const WHO_SETS_OPTIONS = ["Admin", "Vedoucí nebo Admin", "Onboarding", "Onboarding / Vedoucí / Admin", "Systém"];
 
-  if (isLoading) return <Card><CardContent className="p-4 text-muted-foreground">Načítání…</CardContent></Card>;
+  if (isLoading)
+    return (
+      <Card>
+        <CardContent className="p-4 text-muted-foreground">Načítání…</CardContent>
+      </Card>
+    );
 
   return (
     <Card>
@@ -994,14 +1126,24 @@ function HierarchyEditor() {
             <GitBranch className="h-4 w-4" /> Hierarchie — vazby v profilu
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={resetToDefaults} className="h-7 text-xs gap-1 text-muted-foreground">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={resetToDefaults}
+              className="h-7 text-xs gap-1 text-muted-foreground"
+            >
               <RotateCcw className="h-3 w-3" /> Reset
             </Button>
             <Button size="sm" variant="outline" onClick={addRule} className="h-7 text-xs gap-1">
               <Plus className="h-3 w-3" /> Vazba
             </Button>
             {dirty && (
-              <Button size="sm" onClick={() => save.mutate(rules)} disabled={save.isPending} className="h-7 text-xs gap-1">
+              <Button
+                size="sm"
+                onClick={() => save.mutate(rules)}
+                disabled={save.isPending}
+                className="h-7 text-xs gap-1"
+              >
                 <Save className="h-3 w-3" /> Uložit
               </Button>
             )}
@@ -1035,7 +1177,12 @@ function HierarchyEditor() {
                 <code className="text-sm font-mono font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded">
                   {r.relationship || "nové_pole"}
                 </code>
-                <Button size="sm" variant="ghost" onClick={() => removeRule(i)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => removeRule(i)}
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -1044,7 +1191,9 @@ function HierarchyEditor() {
                 <div>
                   <label className="text-[11px] text-muted-foreground mb-1 block">Pole v databázi</label>
                   <Select value={r.relationship} onValueChange={(v) => updateRule(i, "relationship", v)}>
-                    <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs font-mono">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {RELATIONSHIP_OPTIONS.map((o) => (
                         <SelectItem key={o.value} value={o.value}>
@@ -1058,18 +1207,30 @@ function HierarchyEditor() {
                 <div>
                   <label className="text-[11px] text-muted-foreground mb-1 block">Co znamená</label>
                   <Select value={r.meaning} onValueChange={(v) => updateRule(i, "meaning", v)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {MEANING_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      {MEANING_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground mb-1 block">Kdo nastavuje</label>
                   <Select value={r.whoSets} onValueChange={(v) => updateRule(i, "whoSets", v)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {WHO_SETS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      {WHO_SETS_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1105,7 +1266,17 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   meeting_reminder: ["{{client_name}}", "{{meeting_time}}", "{{meeting_type}}"],
   weekly_summary: ["{{fsa_count}}", "{{ser_count}}", "{{poh_count}}", "{{bj_total}}"],
   goal_achieved: ["{{member_name}}", "{{goal_name}}", "{{goal_value}}"],
-  scheduled: ["{{total_bj}}", "{{total_fsa}}", "{{total_ser}}", "{{total_poh}}", "{{total_meetings}}", "{{member_count}}", "{{pending_promotions}}", "{{date}}", "{{day_name}}"],
+  scheduled: [
+    "{{total_bj}}",
+    "{{total_fsa}}",
+    "{{total_ser}}",
+    "{{total_poh}}",
+    "{{total_meetings}}",
+    "{{member_count}}",
+    "{{pending_promotions}}",
+    "{{date}}",
+    "{{day_name}}",
+  ],
   custom: [],
 };
 
@@ -1228,9 +1399,22 @@ const SCHEDULE_TYPES = [
 const DAY_NAMES = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 
 const RECIPIENT_TYPES = [
-  { value: "self", label: "Dotčená osoba", description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)" },
-  { value: "hierarchy", label: "Nadřízení", description: "Notifikaci dostanou nadřízení osoby (vedoucí, BV, garant, získatel) — filtrováno podle vybraných rolí" },
-  { value: "by_role", label: "Podle role", description: "Notifikaci dostanou všichni uživatelé s vybranou rolí bez ohledu na strukturu" },
+  {
+    value: "self",
+    label: "Dotčená osoba",
+    description: "Notifikaci dostane přímo osoba, které se událost týká (např. nový člen dostane uvítací zprávu)",
+  },
+  {
+    value: "hierarchy",
+    label: "Nadřízení",
+    description:
+      "Notifikaci dostanou nadřízení osoby (vedoucí, BV, garant, získatel) — filtrováno podle vybraných rolí",
+  },
+  {
+    value: "by_role",
+    label: "Podle role",
+    description: "Notifikaci dostanou všichni uživatelé s vybranou rolí bez ohledu na strukturu",
+  },
 ] as const;
 
 const RECIPIENT_TYPE_LABELS: Record<string, string> = {
@@ -1270,13 +1454,15 @@ function NotificationRulesTab() {
   const extractPlaceholders = (rule: NotifRule): string[] => {
     const combined = `${rule.title_template} ${rule.body_template}`;
     const matches = combined.match(/\{\{(\w+)\}\}/g) || [];
-    return [...new Set(matches.map(m => m.replace(/\{\{|\}\}/g, "")))];
+    return [...new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, "")))];
   };
 
   const openTestDialog = (rule: NotifRule) => {
     const placeholders = extractPlaceholders(rule);
     const defaults: Record<string, string> = {};
-    placeholders.forEach(p => { defaults[p] = ""; });
+    placeholders.forEach((p) => {
+      defaults[p] = "";
+    });
     setTestVars(defaults);
     setTestRule(rule);
   };
@@ -1316,10 +1502,7 @@ function NotificationRulesTab() {
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["notification_rules"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notification_rules")
-        .select("*")
-        .order("created_at");
+      const { data, error } = await supabase.from("notification_rules").select("*").order("created_at");
       if (error) throw error;
       return data as NotifRule[];
     },
@@ -1349,24 +1532,22 @@ function NotificationRulesTab() {
           .eq("id", rule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("notification_rules")
-          .insert({
-            name: rule.name!,
-            trigger_event: rule.trigger_event!,
-            title_template: rule.title_template || "",
-            body_template: rule.body_template || "",
-            recipient_roles: rule.recipient_roles || [],
-            recipient_type: rule.recipient_type || "by_role",
-            is_active: rule.is_active ?? true,
-            send_push: rule.send_push ?? true,
-            send_in_app: rule.send_in_app ?? true,
-            description: rule.description || null,
-            schedule_type: rule.schedule_type || "event",
-            schedule_time: rule.schedule_time || "08:00",
-            schedule_day_of_week: rule.schedule_day_of_week ?? null,
-            schedule_day_of_month: rule.schedule_day_of_month ?? null,
-          });
+        const { error } = await supabase.from("notification_rules").insert({
+          name: rule.name!,
+          trigger_event: rule.trigger_event!,
+          title_template: rule.title_template || "",
+          body_template: rule.body_template || "",
+          recipient_roles: rule.recipient_roles || [],
+          recipient_type: rule.recipient_type || "by_role",
+          is_active: rule.is_active ?? true,
+          send_push: rule.send_push ?? true,
+          send_in_app: rule.send_in_app ?? true,
+          description: rule.description || null,
+          schedule_type: rule.schedule_type || "event",
+          schedule_time: rule.schedule_time || "08:00",
+          schedule_day_of_week: rule.schedule_day_of_week ?? null,
+          schedule_day_of_month: rule.schedule_day_of_month ?? null,
+        });
         if (error) throw error;
       }
     },
@@ -1393,10 +1574,7 @@ function NotificationRulesTab() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from("notification_rules")
-        .update({ is_active })
-        .eq("id", id);
+      const { error } = await supabase.from("notification_rules").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification_rules"] }),
@@ -1428,14 +1606,11 @@ function NotificationRulesTab() {
     const roles = editForm.recipient_roles || [];
     setEditForm({
       ...editForm,
-      recipient_roles: roles.includes(role)
-        ? roles.filter((r) => r !== role)
-        : [...roles, role],
+      recipient_roles: roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role],
     });
   };
 
-  const triggerLabel = (event: string) =>
-    TRIGGER_EVENTS.find((t) => t.value === event)?.label || event;
+  const triggerLabel = (event: string) => TRIGGER_EVENTS.find((t) => t.value === event)?.label || event;
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Načítání...</div>;
 
@@ -1478,7 +1653,10 @@ function NotificationRulesTab() {
                     setForm={setEditForm}
                     toggleRole={toggleRole}
                     onSave={() => upsertMutation.mutate(editForm)}
-                    onCancel={() => { setEditingId(null); setEditForm({}); }}
+                    onCancel={() => {
+                      setEditingId(null);
+                      setEditForm({});
+                    }}
                     saving={upsertMutation.isPending}
                   />
                 ) : (
@@ -1495,10 +1673,14 @@ function NotificationRulesTab() {
                             <span>Spouštěč: {triggerLabel(rule.trigger_event)}</span>
                             {(rule.schedule_type || "event") !== "event" && (
                               <span className="inline-flex items-center bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded text-[10px] font-medium">
-                                🔄 {SCHEDULE_TYPES.find(s => s.value === rule.schedule_type)?.label}
+                                🔄 {SCHEDULE_TYPES.find((s) => s.value === rule.schedule_type)?.label}
                                 {rule.schedule_time && ` ${rule.schedule_time}`}
-                                {rule.schedule_type === "weekly" && rule.schedule_day_of_week != null && ` ${DAY_NAMES[rule.schedule_day_of_week]}`}
-                                {rule.schedule_type === "monthly" && rule.schedule_day_of_month != null && ` ${rule.schedule_day_of_month}.`}
+                                {rule.schedule_type === "weekly" &&
+                                  rule.schedule_day_of_week != null &&
+                                  ` ${DAY_NAMES[rule.schedule_day_of_week]}`}
+                                {rule.schedule_type === "monthly" &&
+                                  rule.schedule_day_of_month != null &&
+                                  ` ${rule.schedule_day_of_month}.`}
                               </span>
                             )}
                             {rule.description && <span>— {rule.description}</span>}
@@ -1537,18 +1719,19 @@ function NotificationRulesTab() {
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
                         {RECIPIENT_TYPE_LABELS[rule.recipient_type] || "Podle role"}
                       </span>
-                      {rule.recipient_type !== "self" && ROLES.map((role) => (
-                        <span
-                          key={role}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            background: rule.recipient_roles.includes(role) ? "#00abbd" : "#e1e9eb",
-                            color: rule.recipient_roles.includes(role) ? "#fff" : "#8e8e93",
-                          }}
-                        >
-                          {ROLE_LABELS[role]}
-                        </span>
-                      ))}
+                      {rule.recipient_type !== "self" &&
+                        ROLES.map((role) => (
+                          <span
+                            key={role}
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                            style={{
+                              background: rule.recipient_roles.includes(role) ? "#00abbd" : "#e1e9eb",
+                              color: rule.recipient_roles.includes(role) ? "#fff" : "#8e8e93",
+                            }}
+                          >
+                            {ROLE_LABELS[role]}
+                          </span>
+                        ))}
                     </div>
 
                     {/* Push/In-app indicators */}
@@ -1570,7 +1753,10 @@ function NotificationRulesTab() {
                 setForm={setEditForm}
                 toggleRole={toggleRole}
                 onSave={() => upsertMutation.mutate(editForm)}
-                onCancel={() => { setEditingId(null); setEditForm({}); }}
+                onCancel={() => {
+                  setEditingId(null);
+                  setEditForm({});
+                }}
                 saving={upsertMutation.isPending}
                 isNew
               />
@@ -1585,38 +1771,37 @@ function NotificationRulesTab() {
           <DialogHeader>
             <DialogTitle className="text-base">Testovací notifikace</DialogTitle>
           </DialogHeader>
-          {testRule && (() => {
-            const placeholders = extractPlaceholders(testRule);
-            if (placeholders.length === 0) {
+          {testRule &&
+            (() => {
+              const placeholders = extractPlaceholders(testRule);
+              if (placeholders.length === 0) {
+                return (
+                  <p className="text-sm text-muted-foreground">
+                    Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
+                  </p>
+                );
+              }
               return (
-                <p className="text-sm text-muted-foreground">
-                  Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
+                  {placeholders.map((key) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
+                      <Input
+                        placeholder={key}
+                        value={testVars[key] || ""}
+                        onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  ))}
+                </div>
               );
-            }
-            return (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
-                {placeholders.map((key) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
-                    <Input
-                      placeholder={key}
-                      value={testVars[key] || ""}
-                      onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
-                    />
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+            })()}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setTestRule(null)}>Zrušit</Button>
-            <Button
-              size="sm"
-              onClick={sendTestNotification}
-              disabled={sendingTestId === testRule?.id}
-            >
+            <Button variant="outline" size="sm" onClick={() => setTestRule(null)}>
+              Zrušit
+            </Button>
+            <Button size="sm" onClick={sendTestNotification} disabled={sendingTestId === testRule?.id}>
               {sendingTestId === testRule?.id ? "Odesílám…" : "Odeslat"}
             </Button>
           </DialogFooter>
@@ -1630,13 +1815,16 @@ function NotificationRulesTab() {
               <FileCode className="h-4 w-4" /> Seznam všech proměnných
             </DialogTitle>
             <p className="text-xs text-muted-foreground pt-1">
-              Kliknutím na proměnnou ji zkopírujete do schránky. Vkládejte do šablon ve formátu <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>.
+              Kliknutím na proměnnou ji zkopírujete do schránky. Vkládejte do šablon ve formátu{" "}
+              <code className="bg-muted px-1 rounded">{"{{nazev}}"}</code>.
             </p>
           </DialogHeader>
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-0">
             {ALL_TEMPLATE_VARS.map((cat) => (
               <div key={cat.category} className="break-inside-avoid mb-5">
-                <div className="text-xs font-bold uppercase tracking-wider text-primary border-b border-primary/20 pb-1 mb-2">{cat.category}</div>
+                <div className="text-xs font-bold uppercase tracking-wider text-primary border-b border-primary/20 pb-1 mb-2">
+                  {cat.category}
+                </div>
                 <div className="space-y-0.5">
                   {cat.vars.map((v) => (
                     <button
@@ -1648,7 +1836,9 @@ function NotificationRulesTab() {
                         toast.success(`Zkopírováno: ${v.name}`);
                       }}
                     >
-                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] whitespace-nowrap flex-shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">{v.name}</code>
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] whitespace-nowrap flex-shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                        {v.name}
+                      </code>
                       <span className="text-[11px] text-muted-foreground leading-tight pt-0.5">{v.description}</span>
                     </button>
                   ))}
@@ -1657,7 +1847,9 @@ function NotificationRulesTab() {
             ))}
           </div>
           <DialogFooter>
-            <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>Zavřít</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowVarsModal(false)}>
+              Zavřít
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1711,7 +1903,9 @@ function EditRuleForm({
               });
             }}
           >
-            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {TRIGGER_EVENTS.map((t) => (
                 <SelectItem key={t.value} value={t.value}>
@@ -1744,7 +1938,9 @@ function EditRuleForm({
                 value={form.schedule_type || "daily"}
                 onValueChange={(v) => setForm({ ...form, schedule_type: v })}
               >
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Denně</SelectItem>
                   <SelectItem value="weekly">Týdně</SelectItem>
@@ -1768,10 +1964,14 @@ function EditRuleForm({
                   value={String(form.schedule_day_of_week ?? 1)}
                   onValueChange={(v) => setForm({ ...form, schedule_day_of_week: Number(v) })}
                 >
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {DAY_NAMES.map((name, i) => (
-                      <SelectItem key={i} value={String(i)}>{name}</SelectItem>
+                      <SelectItem key={i} value={String(i)}>
+                        {name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1784,10 +1984,14 @@ function EditRuleForm({
                   value={String(form.schedule_day_of_month ?? 1)}
                   onValueChange={(v) => setForm({ ...form, schedule_day_of_month: Number(v) })}
                 >
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 28 }, (_, i) => (
-                      <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}.</SelectItem>
+                      <SelectItem key={i + 1} value={String(i + 1)}>
+                        {i + 1}.
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1795,8 +1999,11 @@ function EditRuleForm({
             )}
           </div>
           <div className="text-xs text-muted-foreground">
-            Dostupné proměnné pro šablonu: {(TEMPLATE_VARS["scheduled"] || []).map((v) => (
-              <code key={v} className="bg-muted px-1 rounded mx-0.5">{v}</code>
+            Dostupné proměnné pro šablonu:{" "}
+            {(TEMPLATE_VARS["scheduled"] || []).map((v) => (
+              <code key={v} className="bg-muted px-1 rounded mx-0.5">
+                {v}
+              </code>
             ))}
           </div>
         </div>
@@ -1825,8 +2032,11 @@ function EditRuleForm({
 
       {vars.length > 0 && (
         <div className="text-xs text-muted-foreground">
-          Dostupné proměnné: {vars.map((v) => (
-            <code key={v} className="bg-muted px-1 rounded mx-0.5">{v}</code>
+          Dostupné proměnné:{" "}
+          {vars.map((v) => (
+            <code key={v} className="bg-muted px-1 rounded mx-0.5">
+              {v}
+            </code>
           ))}
         </div>
       )}
@@ -1863,9 +2073,7 @@ function EditRuleForm({
       {(form.recipient_type || "by_role") !== "self" && (
         <div>
           <Label className="text-xs mb-1.5 block">
-            {form.recipient_type === "hierarchy"
-              ? "Které role z nadřízených dostanou notifikaci"
-              : "Příjemci (role)"}
+            {form.recipient_type === "hierarchy" ? "Které role z nadřízených dostanou notifikaci" : "Příjemci (role)"}
           </Label>
           <div className="flex flex-wrap gap-2">
             {ROLES.map((role) => {
@@ -1893,17 +2101,11 @@ function EditRuleForm({
       {/* Delivery toggles */}
       <div className="flex gap-6">
         <label className="flex items-center gap-2 text-sm">
-          <Switch
-            checked={form.send_push ?? true}
-            onCheckedChange={(v) => setForm({ ...form, send_push: v })}
-          />
+          <Switch checked={form.send_push ?? true} onCheckedChange={(v) => setForm({ ...form, send_push: v })} />
           Push notifikace
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <Switch
-            checked={form.send_in_app ?? true}
-            onCheckedChange={(v) => setForm({ ...form, send_in_app: v })}
-          />
+          <Switch checked={form.send_in_app ?? true} onCheckedChange={(v) => setForm({ ...form, send_in_app: v })} />
           In-app notifikace
         </label>
       </div>
@@ -1912,7 +2114,9 @@ function EditRuleForm({
         <Button size="sm" onClick={onSave} disabled={saving || !form.name || !form.trigger_event}>
           <Save className="h-3.5 w-3.5 mr-1" /> {saving ? "Ukládám..." : "Uložit"}
         </Button>
-        <Button size="sm" variant="outline" onClick={onCancel}>Zrušit</Button>
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          Zrušit
+        </Button>
       </div>
     </div>
   );
@@ -1932,11 +2136,7 @@ function MeetingDefaultsTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ["app_config", "meeting_defaults"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "meeting_defaults")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "meeting_defaults").single();
       return (data?.value as unknown as MeetingDefaults) ?? null;
     },
   });
@@ -2015,11 +2215,7 @@ function PdfExportTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ["app_config", "pdf_export"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "pdf_export")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "pdf_export").single();
       return (data?.value as unknown as PdfExportConfig) ?? null;
     },
   });
@@ -2064,16 +2260,18 @@ function PdfExportTab() {
       <CardContent className="space-y-5">
         <div>
           <Label>Název firmy v hlavičce</Label>
-          <Input
-            value={form.company_name}
-            onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
-          />
+          <Input value={form.company_name} onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))} />
         </div>
 
         <div>
           <Label>Orientace stránky</Label>
-          <Select value={form.orientation} onValueChange={(v: "landscape" | "portrait") => setForm((f) => ({ ...f, orientation: v }))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={form.orientation}
+            onValueChange={(v: "landscape" | "portrait") => setForm((f) => ({ ...f, orientation: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="landscape">Na šířku</SelectItem>
               <SelectItem value="portrait">Na výšku</SelectItem>
@@ -2103,10 +2301,7 @@ function PdfExportTab() {
         <div className="space-y-3">
           <Label>Zobrazované sekce</Label>
           <div className="flex items-center gap-3">
-            <Switch
-              checked={form.show_planned}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, show_planned: v }))}
-            />
+            <Switch checked={form.show_planned} onCheckedChange={(v) => setForm((f) => ({ ...f, show_planned: v }))} />
             <span className="text-sm">Naplánované</span>
           </div>
           <div className="flex items-center gap-3">

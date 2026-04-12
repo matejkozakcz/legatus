@@ -7,10 +7,19 @@ const corsHeaders = {
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-const wrapParen = (expr: string) => expr.startsWith("(") ? expr : `(${expr})`;
+const wrapParen = (expr: string) => (expr.startsWith("(") ? expr : `(${expr})`);
 
 // Tables managed by the system
-const MANAGED_TABLES = ["profiles", "activity_records", "client_meetings", "cases", "notifications", "promotion_requests", "vedouci_goals", "app_config"];
+const MANAGED_TABLES = [
+  "profiles",
+  "activity_records",
+  "client_meetings",
+  "cases",
+  "notifications",
+  "promotion_requests",
+  "vedouci_goals",
+  "app_config",
+];
 
 async function verifyAdmin(req: Request) {
   const authHeader = req.headers.get("authorization") ?? "";
@@ -21,15 +30,13 @@ async function verifyAdmin(req: Request) {
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
-  const { data: { user } } = await userClient.auth.getUser();
+  const {
+    data: { user },
+  } = await userClient.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
   const adminClient = createClient(supabaseUrl, serviceKey);
-  const { data: profile } = await adminClient
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
+  const { data: profile } = await adminClient.from("profiles").select("is_admin").eq("id", user.id).single();
 
   if (!profile?.is_admin) throw new Error("Forbidden: admin only");
   return adminClient;
@@ -37,7 +44,7 @@ async function verifyAdmin(req: Request) {
 
 async function executeSql(statements: string[]) {
   const dbUrl = Deno.env.get("SUPABASE_DB_URL")!;
-  const fullSql = statements.filter(s => !s.startsWith("--")).join("\n");
+  const fullSql = statements.filter((s) => !s.startsWith("--")).join("\n");
   const { default: postgres } = await import("https://deno.land/x/postgresjs@v3.4.5/mod.js");
   const sql = postgres(dbUrl);
   try {
@@ -62,12 +69,9 @@ type ScopeFn = (table: string, cmd: string) => { using?: string; check?: string 
 
 const ROLE_SCOPES: Record<string, ScopeFn> = {
   Admin: (_table, cmd) => {
-    if (cmd === "SELECT" || cmd === "UPDATE")
-      return { using: "public.is_admin()" };
-    if (cmd === "INSERT")
-      return { check: "public.is_admin()" };
-    if (cmd === "DELETE")
-      return { using: "public.is_admin()" };
+    if (cmd === "SELECT" || cmd === "UPDATE") return { using: "public.is_admin()" };
+    if (cmd === "INSERT") return { check: "public.is_admin()" };
+    if (cmd === "DELETE") return { using: "public.is_admin()" };
     return null;
   },
   Vedoucí: (table, cmd) => {
@@ -100,17 +104,13 @@ const ROLE_SCOPES: Record<string, ScopeFn> = {
     return null;
   },
   Získatel: (_table, cmd) => {
-    if (cmd === "SELECT" || cmd === "UPDATE" || cmd === "DELETE")
-      return { using: "(auth.uid() = user_id)" };
-    if (cmd === "INSERT")
-      return { check: "(auth.uid() = user_id)" };
+    if (cmd === "SELECT" || cmd === "UPDATE" || cmd === "DELETE") return { using: "(auth.uid() = user_id)" };
+    if (cmd === "INSERT") return { check: "(auth.uid() = user_id)" };
     return null;
   },
   Nováček: (_table, cmd) => {
-    if (cmd === "SELECT" || cmd === "UPDATE" || cmd === "DELETE")
-      return { using: "(auth.uid() = user_id)" };
-    if (cmd === "INSERT")
-      return { check: "(auth.uid() = user_id)" };
+    if (cmd === "SELECT" || cmd === "UPDATE" || cmd === "DELETE") return { using: "(auth.uid() = user_id)" };
+    if (cmd === "INSERT") return { check: "(auth.uid() = user_id)" };
     return null;
   },
 };
@@ -143,7 +143,9 @@ function generateMatrixStatements(matrix: PermRule[]): { statements: string[]; e
     }
 
     statements.push(`-- === ${rule.table} (${rule.label}) ===`);
-    statements.push(`DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${rule.table}' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.${rule.table}', pol.policyname); END LOOP; END $$;`);
+    statements.push(
+      `DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${rule.table}' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.${rule.table}', pol.policyname); END LOOP; END $$;`,
+    );
     statements.push(`ALTER TABLE public.${rule.table} ENABLE ROW LEVEL SECURITY;`);
 
     for (const [role, actions] of Object.entries(rule.matrix)) {
@@ -195,12 +197,21 @@ interface VisibilityRule {
 
 // Map "sees" label to actual table names
 const SEES_TO_TABLES: Record<string, string[]> = {
-  "Profily": ["profiles"],
+  Profily: ["profiles"],
   "Aktivity & Schůzky": ["activity_records", "client_meetings"],
-  "Byznys případy": ["cases"],
+  "Obchodní případy": ["cases"],
   "Promotion requests": ["promotion_requests"],
   "Vše vlastní": ["profiles", "activity_records", "client_meetings", "cases", "notifications", "vedouci_goals"],
-  "Vše": ["profiles", "activity_records", "client_meetings", "cases", "notifications", "promotion_requests", "vedouci_goals", "app_config"],
+  Vše: [
+    "profiles",
+    "activity_records",
+    "client_meetings",
+    "cases",
+    "notifications",
+    "promotion_requests",
+    "vedouci_goals",
+    "app_config",
+  ],
 };
 
 // Map scope text to SQL USING expression per table
@@ -238,7 +249,10 @@ function scopeToSql(scope: string, table: string): string {
   return `(auth.uid() = ${userCol})`;
 }
 
-function generateVisibilityStatements(rules: VisibilityRule[], targetTables?: string[]): { statements: string[]; errors: string[] } {
+function generateVisibilityStatements(
+  rules: VisibilityRule[],
+  targetTables?: string[],
+): { statements: string[]; errors: string[] } {
   const statements: string[] = [];
   const errors: string[] = [];
 
@@ -246,7 +260,7 @@ function generateVisibilityStatements(rules: VisibilityRule[], targetTables?: st
   const affectedTables = new Set<string>();
   for (const rule of rules) {
     const tables = SEES_TO_TABLES[rule.sees] || [];
-    tables.forEach(t => affectedTables.add(t));
+    tables.forEach((t) => affectedTables.add(t));
   }
 
   const tablesToProcess = targetTables || Array.from(affectedTables);
@@ -255,7 +269,9 @@ function generateVisibilityStatements(rules: VisibilityRule[], targetTables?: st
   for (const table of tablesToProcess) {
     if (!MANAGED_TABLES.includes(table)) continue;
     statements.push(`-- === Visibility: ${table} ===`);
-    statements.push(`DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${table}' AND cmd_name = 'SELECT' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.${table}', pol.policyname); END LOOP; END $$;`);
+    statements.push(
+      `DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = '${table}' AND cmd_name = 'SELECT' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.${table}', pol.policyname); END LOOP; END $$;`,
+    );
     statements.push(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`);
   }
 
@@ -285,7 +301,7 @@ function generateVisibilityStatements(rules: VisibilityRule[], targetTables?: st
       policyNames.add(uniqueName);
 
       statements.push(
-        `CREATE POLICY "${uniqueName}" ON public.${table} FOR SELECT TO authenticated USING ${wrapParen(using)};`
+        `CREATE POLICY "${uniqueName}" ON public.${table} FOR SELECT TO authenticated USING ${wrapParen(using)};`,
       );
     }
   }
@@ -327,7 +343,9 @@ function generateHierarchyStatements(rules: HierarchyRule[]): { statements: stri
   statements.push(`-- === Hierarchy: profiles UPDATE policies ===`);
 
   // Drop existing UPDATE policies on profiles
-  statements.push(`DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND cmd_name = 'UPDATE' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;`);
+  statements.push(
+    `DO $$ DECLARE pol record; BEGIN FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND cmd_name = 'UPDATE' LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;`,
+  );
   statements.push(`ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;`);
 
   // Collect all unique "whoSets" values and create combined policies
@@ -341,22 +359,22 @@ function generateHierarchyStatements(rules: HierarchyRule[]): { statements: stri
 
   // Always allow users to update their own profile (basic fields)
   statements.push(
-    `CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);`
+    `CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);`,
   );
 
   // Admin can update all
   statements.push(
-    `CREATE POLICY "Admin can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());`
+    `CREATE POLICY "Admin can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());`,
   );
 
   // Vedoucí can update subtree
   statements.push(
-    `CREATE POLICY "Vedouci can update subtree" ON public.profiles FOR UPDATE TO authenticated USING (public.get_user_role(auth.uid()) = 'vedouci' AND public.is_in_vedouci_subtree(auth.uid(), id)) WITH CHECK (public.get_user_role(auth.uid()) = 'vedouci' AND public.is_in_vedouci_subtree(auth.uid(), id));`
+    `CREATE POLICY "Vedouci can update subtree" ON public.profiles FOR UPDATE TO authenticated USING (public.get_user_role(auth.uid()) = 'vedouci' AND public.is_in_vedouci_subtree(auth.uid(), id)) WITH CHECK (public.get_user_role(auth.uid()) = 'vedouci' AND public.is_in_vedouci_subtree(auth.uid(), id));`,
   );
 
   // Garant can update their novacci
   statements.push(
-    `CREATE POLICY "Garant can update novacci" ON public.profiles FOR UPDATE TO authenticated USING (public.get_user_role(auth.uid()) = 'garant' AND garant_id = auth.uid()) WITH CHECK (public.get_user_role(auth.uid()) = 'garant' AND garant_id = auth.uid());`
+    `CREATE POLICY "Garant can update novacci" ON public.profiles FOR UPDATE TO authenticated USING (public.get_user_role(auth.uid()) = 'garant' AND garant_id = auth.uid()) WITH CHECK (public.get_user_role(auth.uid()) = 'garant' AND garant_id = auth.uid());`,
   );
 
   // Log which rules were processed
@@ -416,7 +434,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ success: true, applied: statements.length, errors }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), {
       status: 400,
