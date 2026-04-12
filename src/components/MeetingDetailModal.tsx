@@ -21,6 +21,7 @@ export interface MeetingDetailData {
   doporuceni_poradenstvi: number;
   pohovor_jde_dal: boolean | null;
   doporuceni_pohovor: number;
+  outcome_recorded: boolean;
 }
 
 interface MeetingDetailModalProps {
@@ -28,10 +29,8 @@ interface MeetingDetailModalProps {
   onClose: () => void;
   meeting: MeetingDetailData | null;
   onEdit: () => void;
-  /** Optional: save outcome (results) for past meetings */
   onSaveOutcome?: (meetingId: string, data: Record<string, unknown>) => void;
   savingOutcome?: boolean;
-  /** Optional: cancel meeting button */
   onCancel?: () => void;
 }
 
@@ -47,6 +46,7 @@ export function MeetingDetailModal({
   const [dopPor, setDopPor] = useState("0");
   const [pohDal, setPohDal] = useState<boolean | null>(null);
   const [dopPoh, setDopPoh] = useState("0");
+  const [editingOutcome, setEditingOutcome] = useState(false);
 
   useEffect(() => {
     if (meeting) {
@@ -55,13 +55,16 @@ export function MeetingDetailModal({
       setDopPor(meeting.doporuceni_poradenstvi?.toString() || "0");
       setPohDal(meeting.pohovor_jde_dal ?? null);
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
+      setEditingOutcome(false);
     }
   }, [meeting]);
 
   if (!open || !meeting) return null;
   const m = meeting;
   const today = format(new Date(), "yyyy-MM-dd");
-  const showOutcome = onSaveOutcome && !m.cancelled && m.date <= today;
+  const isPast = !m.cancelled && m.date <= today;
+  const showOutcomeForm = onSaveOutcome && isPast && (!m.outcome_recorded || editingOutcome);
+  const showOutcomeSummary = isPast && m.outcome_recorded && !editingOutcome;
 
   const row = (label: string, value: React.ReactNode) => (
     <div className="flex justify-between py-1.5 border-b border-border last:border-0">
@@ -72,7 +75,7 @@ export function MeetingDetailModal({
 
   const handleSaveOutcome = () => {
     if (!onSaveOutcome) return;
-    const data: Record<string, unknown> = {};
+    const data: Record<string, unknown> = { outcome_recorded: true };
     if (m.meeting_type === "FSA") {
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
@@ -83,6 +86,39 @@ export function MeetingDetailModal({
       data.doporuceni_pohovor = parseInt(dopPoh) || 0;
     }
     onSaveOutcome(m.id, data);
+  };
+
+  const renderOutcomeSummary = () => {
+    const rows: { label: string; value: string }[] = [];
+    if (m.meeting_type === "FSA") {
+      rows.push({ label: "Doporučení FSA", value: String(m.doporuceni_fsa) });
+    } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
+      rows.push({ label: "Podepsané BJ", value: String(m.podepsane_bj) });
+      rows.push({ label: "Doporučení", value: String(m.doporuceni_poradenstvi) });
+    } else if (m.meeting_type === "POH") {
+      rows.push({ label: "Jde dál?", value: m.pohovor_jde_dal === true ? "Ano" : m.pohovor_jde_dal === false ? "Ne" : "—" });
+      rows.push({ label: "Doporučení", value: String(m.doporuceni_pohovor) });
+    }
+    if (rows.length === 0) return null;
+    return (
+      <div className="mt-4 p-3 rounded-xl border border-input">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-muted-foreground">Výsledek schůzky</span>
+          {onSaveOutcome && (
+            <button
+              onClick={() => setEditingOutcome(true)}
+              className="text-xs font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+              style={{ color: "#00abbd" }}
+            >
+              <Pencil className="h-3 w-3" /> Upravit
+            </button>
+          )}
+        </div>
+        <div className="space-y-0">
+          {rows.map((r) => row(r.label, r.value))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -116,8 +152,11 @@ export function MeetingDetailModal({
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
 
-        {/* Outcome form — for past, non-cancelled meetings */}
-        {showOutcome && (
+        {/* Outcome read-only summary */}
+        {showOutcomeSummary && renderOutcomeSummary()}
+
+        {/* Outcome form — for past, non-cancelled meetings without recorded outcome */}
+        {showOutcomeForm && (
           <div className="mt-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
