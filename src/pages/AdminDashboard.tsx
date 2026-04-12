@@ -83,6 +83,12 @@ export default function AdminDashboard() {
           <TabsTrigger value="notifications" className="gap-1.5">
             <Bell className="h-4 w-4" /> Notifikace
           </TabsTrigger>
+          <TabsTrigger value="meetings" className="gap-1.5">
+            <Clock className="h-4 w-4" /> Schůzky
+          </TabsTrigger>
+          <TabsTrigger value="pdf" className="gap-1.5">
+            <FileText className="h-4 w-4" /> PDF Export
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="promotions">
@@ -99,6 +105,12 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationRulesTab />
+        </TabsContent>
+        <TabsContent value="meetings">
+          <MeetingDefaultsTab />
+        </TabsContent>
+        <TabsContent value="pdf">
+          <PdfExportTab />
         </TabsContent>
       </Tabs>
     </div>
