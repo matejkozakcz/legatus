@@ -29,8 +29,6 @@ export default function Zapracovani() {
   const isDark = theme === "dark";
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [editingNote, setEditingNote] = useState<string | null>(null);
-  const [noteValue, setNoteValue] = useState("");
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["onboarding_tasks", profile?.id],
@@ -59,22 +57,6 @@ export default function Zapracovani() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_tasks"] });
       toast.success("Úkol splněn! 🎉");
-    },
-  });
-
-  const saveNoteMutation = useMutation({
-    mutationFn: async ({ taskId, note }: { taskId: string; note: string }) => {
-      const { error } = await supabase
-        .from("onboarding_tasks")
-        .update({ description: note || null })
-        .eq("id", taskId)
-        .eq("novacek_id", profile?.id || "");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks"] });
-      setEditingNote(null);
-      toast.success("Poznámka uložena");
     },
   });
 
