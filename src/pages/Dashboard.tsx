@@ -15,7 +15,7 @@ import {
   daysRemainingInPeriod,
 } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
-import { StatCard } from "@/components/StatCard";
+
 import { OrgChart } from "@/components/OrgChart";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { fireConfetti } from "@/lib/confetti";
@@ -90,6 +90,34 @@ function MobileStatCard({
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── ActivityChip — compact pill for desktop stats ────────────────────────────
+
+const CHIP_CONFIG: Record<string, { color: string; label: string }> = {
+  FSA: { color: "#00abbd", label: "FSA" },
+  POH: { color: "#f59e0b", label: "POH" },
+  SER: { color: "#ef4444", label: "SER" },
+  POR: { color: "#8b5cf6", label: "POR" },
+  REF: { color: "#10b981", label: "dop." },
+};
+
+function ActivityChip({ type, value }: { type: string; value: number }) {
+  if (value === 0) return null;
+  const { color, label } = CHIP_CONFIG[type] || { color: "#888", label: type };
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
+      style={{
+        background: `${color}1a`,
+        border: `1px solid ${color}4d`,
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+      <span className="font-semibold text-sm" style={{ color }}>{value}</span>
+      <span className="text-xs text-muted-foreground ml-0.5">{label}</span>
+    </span>
   );
 }
 
@@ -345,6 +373,37 @@ const Dashboard = () => {
     () => computeNewlyArranged(desktopMeetings, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")),
     [desktopMeetings, dateRange],
   );
+
+  // ── Newly booked meetings (by created_at, not date) ─────────────────────────
+  const { data: newlyBookedMeetings = [] } = useQuery({
+    queryKey: [
+      "dashboard_newly_booked",
+      activeUserId,
+      dateRange.from.toISOString(),
+      dateRange.to.toISOString(),
+    ],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("meeting_type, cancelled")
+        .eq("user_id", activeUserId)
+        .gte("created_at", dateRange.from.toISOString())
+        .lte("created_at", dateRange.to.toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId,
+  });
+
+  const newlyBooked = useMemo(() => {
+    const active = newlyBookedMeetings.filter((m: any) => !m.cancelled);
+    return {
+      fsa: active.filter((m: any) => m.meeting_type === "FSA").length,
+      poh: active.filter((m: any) => m.meeting_type === "POH").length,
+      ser: active.filter((m: any) => m.meeting_type === "SER").length,
+      por: active.filter((m: any) => m.meeting_type === "POR").length,
+    };
+  }, [newlyBookedMeetings]);
 
   // ── Queries for Stav byznysu card (all roles, desktop + mobile) ───────────
 
@@ -1285,45 +1344,24 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <StatCard
-              label="Analýzy"
-              actual={stats.fsa.actual}
-              planned={stats.fsa.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Pohovory"
-              actual={stats.poh.actual}
-              planned={stats.poh.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Servisy"
-              actual={stats.ser.actual}
-              planned={stats.ser.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Poradenství"
-              actual={stats.por.actual}
-              planned={stats.por.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="celkem" />
-          </div>
-
-          <h3 className="font-heading font-semibold" style={{ fontSize: 18, color: "var(--text-primary)", marginTop: 8 }}>
-            Nově domluveno v období
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Analýzy" actual={desktopNewlyArranged.fsa} actualLabel="nově domluvených" />
-            <StatCard label="Servisy" actual={desktopNewlyArranged.ser} actualLabel="nově domluvených" />
-            <StatCard label="Pohovory" actual={desktopNewlyArranged.poh} actualLabel="nově domluvených" />
+          <div className="space-y-2">
+            {/* Row 1 — meetings that happened */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground w-24 shrink-0">Proběhlo</span>
+              <ActivityChip type="FSA" value={stats.fsa.actual} />
+              <ActivityChip type="POH" value={stats.poh.actual} />
+              <ActivityChip type="SER" value={stats.ser.actual} />
+              <ActivityChip type="POR" value={stats.por.actual} />
+              <ActivityChip type="REF" value={stats.ref.actual} />
+            </div>
+            {/* Row 2 — meetings newly booked this period */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground w-24 shrink-0">Nově domluveno</span>
+              <ActivityChip type="FSA" value={newlyBooked.fsa} />
+              <ActivityChip type="POH" value={newlyBooked.poh} />
+              <ActivityChip type="SER" value={newlyBooked.ser} />
+              <ActivityChip type="POR" value={newlyBooked.por} />
+            </div>
           </div>
         </section>
 
