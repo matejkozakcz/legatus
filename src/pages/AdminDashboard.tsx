@@ -1269,6 +1269,7 @@ const TRIGGER_EVENTS = [
   { value: "promotion_approved", label: "Povýšení schváleno", description: "Při schválení povýšení" },
   { value: "promotion_rejected", label: "Povýšení zamítnuto", description: "Při zamítnutí povýšení" },
   { value: "meeting_reminder", label: "Připomínka schůzky", description: "Před plánovanou schůzkou" },
+  { value: "followup_needed", label: "Doplnit výsledek schůzky", description: "Schůzka bez vyplněného výsledku" },
   { value: "weekly_summary", label: "Týdenní souhrn", description: "Souhrn aktivit na konci týdne" },
   { value: "goal_achieved", label: "Cíl splněn", description: "Při dosažení nastaveného cíle" },
   { value: "onboarding_new_task", label: "Nový úkol zapracování", description: "Nováčkovi byl přidělen nový úkol" },
@@ -1276,7 +1277,7 @@ const TRIGGER_EVENTS = [
   { value: "onboarding_deadline_soon", label: "Blížící se deadline zapracování", description: "Úkol zapracování má deadline za 2 dny" },
   { value: "onboarding_overdue", label: "Zpoždění v zapracování", description: "Úkol zapracování je po deadline" },
   { value: "onboarding_task_completed", label: "Úkol zapracování splněn", description: "Nováček splnil úkol zapracování" },
-  { value: "onboarding_completed", label: "Zapracování dokončeno", description: "Nováček dokončil všechny úkoly zapracování (100%)" },
+  { value: "onboarding_all_completed", label: "Zapracování dokončeno (100%)", description: "Nováček dokončil všechny úkoly zapracování a má nárok na povýšení" },
   { value: "scheduled", label: "Pravidelná", description: "Opakovaná notifikace v nastaveném čase" },
   { value: "custom", label: "Vlastní", description: "Vlastní typ notifikace" },
 ] as const;
@@ -1294,7 +1295,8 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   onboarding_deadline_soon: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
   onboarding_overdue: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
   onboarding_task_completed: ["{{member_name}}", "{{task_title}}"],
-  onboarding_completed: ["{{member_name}}"],
+  onboarding_all_completed: ["{{member_name}}"],
+  followup_needed: ["{{client_name}}", "{{meeting_type}}", "{{meeting_date}}"],
   scheduled: [
     "{{total_bj}}",
     "{{total_fsa}}",
