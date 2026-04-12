@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target, FileDown, Loader2 } from "lucide-react";
+import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
 import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
@@ -182,6 +183,8 @@ const Dashboard = () => {
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
+  const [exportingPdf, setExportingPdf] = useState<ExportPeriod | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // ── Impersonation: view dashboard as another team member ──
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
@@ -1231,6 +1234,27 @@ const Dashboard = () => {
     );
   };
 
+
+  const handleExport = async (period: ExportPeriod) => {
+    if (!activeUserId || !activeProfile) return;
+    setExportingPdf(period);
+    setShowExportMenu(false);
+    try {
+      await exportDashboardPdf(
+        activeUserId,
+        activeProfile.role,
+        activeProfile.full_name,
+        period,
+        selectedYear,
+        selectedMonth,
+      );
+    } catch (e) {
+      console.error("PDF export failed", e);
+    } finally {
+      setExportingPdf(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4">
@@ -1246,6 +1270,40 @@ const Dashboard = () => {
             setSelectedMonth(m);
           }}
         />
+        {/* PDF export — desktop only */}
+        {!isMobile && (
+          <div className="relative ml-auto">
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              disabled={!!exportingPdf}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+            >
+              {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+              Export PDF
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-input bg-card shadow-lg py-1">
+                  <button
+                    onClick={() => handleExport("week")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Týdenní přehled
+                  </button>
+                  <button
+                    onClick={() => handleExport("month")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Měsíční přehled
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div>
