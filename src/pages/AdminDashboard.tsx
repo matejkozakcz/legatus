@@ -1295,7 +1295,8 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   onboarding_deadline_soon: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
   onboarding_overdue: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
   onboarding_task_completed: ["{{member_name}}", "{{task_title}}"],
-  onboarding_completed: ["{{member_name}}"],
+  onboarding_all_completed: ["{{member_name}}"],
+  followup_needed: ["{{client_name}}", "{{meeting_type}}", "{{meeting_date}}"],
   scheduled: [
     "{{total_bj}}",
     "{{total_fsa}}",
