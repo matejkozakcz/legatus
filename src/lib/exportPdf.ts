@@ -238,7 +238,7 @@ export async function exportDashboardPdf(
   // Header
   doc.setFontSize(18);
   doc.setFont(fontName, "bold");
-  doc.text("LEGATUS", 14, 16);
+  doc.text(pdfCfg.company_name, 14, 16);
   doc.setFontSize(10);
   doc.setFont(fontName, "normal");
   doc.setTextColor(120);
