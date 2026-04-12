@@ -66,6 +66,7 @@ async function insertNotificationAndPush(
   notifType: string,
   title: string,
   bodyText: string,
+  redirectUrl?: string | null,
 ) {
   const { data: notif } = await supabase.from("notifications").insert({
     sender_id: senderId,
@@ -74,6 +75,7 @@ async function insertNotificationAndPush(
     title,
     body: bodyText,
     deadline: new Date().toISOString().split("T")[0],
+    redirect_url: redirectUrl || null,
   }).select("id").single();
 
   if (notif?.id) {
