@@ -623,6 +623,7 @@ const SpravaTeam = () => {
                       <span className="text-xs text-muted-foreground">→</span>
                       <span className={targetBadge.className}>{targetBadge.label}</span>
                       <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+                        {req.requested_role === "ziskatel" && "100 % zapracování dokončeno"}
                         {req.requested_role === "garant" && req.cumulative_bj != null &&
                           `Kumulativní BJ: ${req.cumulative_bj} · ${req.direct_ziskatels ?? "?"} ve struktuře`}
                         {req.requested_role === "budouci_vedouci" && req.direct_ziskatels != null &&
