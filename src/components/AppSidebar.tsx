@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, BarChart3, Users, LogOut, Briefcase, Moon, Sun, Settings, Calendar, Search, Shield } from "lucide-react";
+import {
+  LayoutDashboard,
+  BarChart3,
+  Users,
+  LogOut,
+  Briefcase,
+  Moon,
+  Sun,
+  Settings,
+  Calendar,
+  Search,
+  Shield,
+} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +68,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, badge: false },
     ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3, badge: false }] : []),
     { title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false },
-    { title: "Byznys případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
+    { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
   if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
@@ -92,11 +104,7 @@ export function AppSidebar() {
           {/* Search bar */}
           <div className="mb-3">
             {collapsed ? (
-              <button
-                onClick={() => navigate("/hledani")}
-                className="nav-item w-full justify-center"
-                title="Hledat"
-              >
+              <button onClick={() => navigate("/hledani")} className="nav-item w-full justify-center" title="Hledat">
                 <Search className="h-[18px] w-[18px] flex-shrink-0" />
               </button>
             ) : (
@@ -170,11 +178,7 @@ export function AppSidebar() {
               <Settings className="h-[18px] w-[18px] flex-shrink-0" />
               {!collapsed && <span>Nastavení</span>}
             </button>
-            <button
-              onClick={signOut}
-              className="nav-item w-full"
-              title="Odhlásit"
-            >
+            <button onClick={signOut} className="nav-item w-full" title="Odhlásit">
               <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
               {!collapsed && <span>Odhlásit</span>}
             </button>
@@ -186,11 +190,7 @@ export function AppSidebar() {
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className={`relative flex-shrink-0 ${godMode ? "god-mode-avatar" : ""}`}>
                 {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name}
-                    className="w-9 h-9 rounded-full object-cover"
-                  />
+                  <img src={profile.avatar_url} alt={profile.full_name} className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center"
@@ -199,9 +199,7 @@ export function AppSidebar() {
                     <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
                   </div>
                 )}
-                {godMode && (
-                  <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>
-                )}
+                {godMode && <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
