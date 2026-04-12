@@ -407,16 +407,40 @@ const Dashboard = () => {
     [desktopMeetings, dateRange],
   );
 
-  // ── Newly booked meetings (by created_at, not date) ─────────────────────────
+  // ── Desktop week-based meetings for Přehled aktivit ──────────────────────────
+  const desktopWeekStartStr = format(desktopWeekStart, "yyyy-MM-dd");
+  const desktopWeekEndStr = format(desktopWeekEnd, "yyyy-MM-dd");
+
+  const { data: desktopWeekMeetings = [] } = useQuery({
+    queryKey: ["dashboard_meetings_desktop_week", activeUserId, desktopWeekStartStr, desktopWeekEndStr],
+    queryFn: async () => {
+      if (!activeUserId) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+        )
+        .eq("user_id", activeUserId)
+        .gte("date", desktopWeekStartStr)
+        .lte("date", desktopWeekEndStr);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId && !isMobile,
+  });
+
+  const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
+
+  // ── Newly booked meetings (by created_at in the desktop week) ───────────────
   const { data: newlyBookedMeetings = [] } = useQuery({
-    queryKey: ["dashboard_newly_booked", activeUserId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["dashboard_newly_booked", activeUserId, desktopWeekStartStr, desktopWeekEndStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled")
         .eq("user_id", activeUserId)
-        .gte("created_at", dateRange.from.toISOString())
-        .lte("created_at", dateRange.to.toISOString());
+        .gte("created_at", desktopWeekStart.toISOString())
+        .lte("created_at", desktopWeekEnd.toISOString());
       if (error) throw error;
       return data || [];
     },
