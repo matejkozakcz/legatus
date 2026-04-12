@@ -7,6 +7,7 @@ import {
   getProductionPeriodForMonth,
   getProductionPeriodMonth,
 } from "@/lib/productionPeriod";
+import { OPEN_SANS_REGULAR, OPEN_SANS_BOLD } from "@/lib/fonts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,17 @@ const ROLE_LABEL: Record<string, string> = {
   novacek: "Nováček",
 };
 
+function registerFonts(doc: jsPDF) {
+  doc.addFileToVFS("OpenSans-Regular.ttf", OPEN_SANS_REGULAR);
+  doc.addFileToVFS("OpenSans-Bold.ttf", OPEN_SANS_BOLD);
+  doc.addFont("OpenSans-Regular.ttf", "OpenSans", "normal");
+  doc.addFont("OpenSans-Bold.ttf", "OpenSans", "bold");
+  doc.setFont("OpenSans", "normal");
+}
+
+const HEAD_FILL: [number, number, number] = [0, 85, 95];
+const TOTALS_FILL: [number, number, number] = [240, 245, 246];
+
 // ─── Main export function ────────────────────────────────────────────────────
 
 export type ExportPeriod = "week" | "month";
@@ -94,7 +106,6 @@ export async function exportDashboardPdf(
   userRole: string,
   userName: string,
   period: ExportPeriod,
-  /** For month export — which production period */
   selectedYear?: number,
   selectedMonth?: number,
 ) {
@@ -139,7 +150,6 @@ export async function exportDashboardPdf(
   let teamStats: PersonStats[] = [];
 
   if (isLeader) {
-    // Get subordinates based on role
     let subordinateQuery = supabase
       .from("profiles")
       .select("id, full_name, role")
@@ -154,7 +164,6 @@ export async function exportDashboardPdf(
     const { data: subordinates = [] } = await subordinateQuery;
 
     if (subordinates && subordinates.length > 0) {
-      // Fetch meetings for all subordinates
       const subIds = subordinates.map((s: any) => s.id);
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
@@ -169,7 +178,6 @@ export async function exportDashboardPdf(
           computePersonStats(subMeetings, todayStr, periodFrom, periodTo, sub.full_name, sub.role),
         );
       }
-      // Sort alphabetically
       teamStats.sort((a, b) => a.name.localeCompare(b.name, "cs"));
     }
   }
@@ -177,118 +185,120 @@ export async function exportDashboardPdf(
   // ── Generate PDF ───────────────────────────────────────────────────────────
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  registerFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
+  const fontName = "OpenSans";
 
   // Header
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(fontName, "bold");
   doc.text("LEGATUS", 14, 16);
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(fontName, "normal");
   doc.setTextColor(120);
   doc.text(periodLabel, 14, 23);
   doc.text(`Vygenerováno: ${format(now, "d. M. yyyy HH:mm", { locale: cs })}`, pageWidth - 14, 23, { align: "right" });
   doc.setTextColor(0);
 
-  // Personal stats table
+  // ── Personal stats ──────────────────────────────────────────────────────
+
   doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(fontName, "bold");
   doc.text(`Moje aktivity — ${userName}`, 14, 34);
 
+  // Proběhlé
+  doc.setFontSize(10);
+  doc.setFont(fontName, "bold");
+  doc.text("Proběhlé", 14, 42);
+
   autoTable(doc, {
-    startY: 38,
-    head: [["", "FSA", "POH", "SER", "POR", "Doporučení", "BJ"]],
-    body: [
-      ["Proběhlo", ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj],
-      ["Nově doml.", ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor, "–", "–"],
-    ],
+    startY: 45,
+    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ"]],
+    body: [[ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj]],
     theme: "grid",
-    headStyles: { fillColor: [0, 85, 95], textColor: 255, fontSize: 9, fontStyle: "bold" },
-    bodyStyles: { fontSize: 9 },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 28 } },
+    styles: { font: fontName },
+    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
+    bodyStyles: { fontSize: 9, font: fontName },
     margin: { left: 14, right: 14 },
   });
 
-  // Team stats table
-  if (isLeader && teamStats.length > 0) {
-    const finalY = (doc as any).lastAutoTable?.finalY || 70;
-    const teamStartY = finalY + 12;
+  // Nově domluvené
+  const afterOwn1 = (doc as any).lastAutoTable?.finalY || 60;
+  doc.setFontSize(10);
+  doc.setFont(fontName, "bold");
+  doc.text("Nově domluvené", 14, afterOwn1 + 7);
 
-    // Check if we need a new page
+  autoTable(doc, {
+    startY: afterOwn1 + 10,
+    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství"]],
+    body: [[ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor]],
+    theme: "grid",
+    styles: { font: fontName },
+    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
+    bodyStyles: { fontSize: 9, font: fontName },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ── Team stats ──────────────────────────────────────────────────────────
+
+  if (isLeader && teamStats.length > 0) {
+    const afterOwn2 = (doc as any).lastAutoTable?.finalY || 90;
+    let teamStartY = afterOwn2 + 12;
+
     if (teamStartY > doc.internal.pageSize.getHeight() - 40) {
       doc.addPage();
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.text("Výsledky týmu", 14, 16);
-    } else {
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.text("Výsledky týmu", 14, teamStartY);
+      teamStartY = 16;
     }
+
+    doc.setFontSize(13);
+    doc.setFont(fontName, "bold");
+    doc.text("Výsledky týmu", 14, teamStartY);
 
     const teamBody = teamStats.map((s) => [
       s.name,
       ROLE_LABEL[s.role] || s.role,
-      s.fsa,
-      s.poh,
-      s.ser,
-      s.por,
-      s.ref,
-      s.bj,
-      s.newFsa,
-      s.newPoh,
-      s.newSer,
-      s.newPor,
+      s.fsa, s.poh, s.ser, s.por, s.ref, s.bj,
+      s.newFsa, s.newPoh, s.newSer, s.newPor,
     ]);
 
-    // Totals row
     const totals = teamStats.reduce(
       (acc, s) => ({
-        fsa: acc.fsa + s.fsa,
-        poh: acc.poh + s.poh,
-        ser: acc.ser + s.ser,
-        por: acc.por + s.por,
-        ref: acc.ref + s.ref,
-        bj: acc.bj + s.bj,
-        newFsa: acc.newFsa + s.newFsa,
-        newPoh: acc.newPoh + s.newPoh,
-        newSer: acc.newSer + s.newSer,
-        newPor: acc.newPor + s.newPor,
+        fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
+        ref: acc.ref + s.ref, bj: acc.bj + s.bj,
+        newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
+        newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
       }),
       { fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
     );
 
     teamBody.push([
-      "CELKEM",
-      "",
-      totals.fsa,
-      totals.poh,
-      totals.ser,
-      totals.por,
-      totals.ref,
-      totals.bj,
-      totals.newFsa,
-      totals.newPoh,
-      totals.newSer,
-      totals.newPor,
+      "CELKEM", "",
+      totals.fsa, totals.poh, totals.ser, totals.por, totals.ref, totals.bj,
+      totals.newFsa, totals.newPoh, totals.newSer, totals.newPor,
     ]);
 
-    const startY2 = teamStartY > doc.internal.pageSize.getHeight() - 40 ? 20 : teamStartY + 4;
-
     autoTable(doc, {
-      startY: startY2,
-      head: [["Jméno", "Role", "FSA", "POH", "SER", "POR", "Dop.", "BJ", "+FSA", "+POH", "+SER", "+POR"]],
+      startY: teamStartY + 4,
+      head: [
+        [
+          { content: "Jméno", rowSpan: 2 },
+          { content: "Role", rowSpan: 2 },
+          { content: "Proběhlé", colSpan: 6 },
+          { content: "Nově domluvené", colSpan: 4 },
+        ],
+        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
+      ],
       body: teamBody,
       theme: "grid",
-      headStyles: { fillColor: [0, 85, 95], textColor: 255, fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      styles: { font: fontName },
+      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      bodyStyles: { fontSize: 8, font: fontName },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 35 }, 1: { cellWidth: 28 } },
       margin: { left: 14, right: 14 },
       didParseCell: (data: any) => {
-        // Bold totals row
-        if (data.row.index === teamBody.length - 1) {
+        if (data.section === "body" && data.row.index === teamBody.length - 1) {
           data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [240, 245, 246];
+          data.cell.styles.fillColor = TOTALS_FILL;
         }
       },
     });
@@ -299,6 +309,7 @@ export async function exportDashboardPdf(
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
+    doc.setFont(fontName, "normal");
     doc.setTextColor(160);
     doc.text(
       `Strana ${i} z ${pageCount}`,
