@@ -726,6 +726,29 @@ const Dashboard = () => {
     enabled: !!profile?.id && activeRole === "vedouci",
   });
 
+  // Onboarding tasks for Nováček progress bar
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["onboarding_tasks_progress", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return [];
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("id, title, deadline, completed, sort_order")
+        .eq("novacek_id", activeUserId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId && activeRole === "novacek",
+  });
+
+  const onboardingProgress = useMemo(() => {
+    const total = onboardingTasks.length;
+    const done = onboardingTasks.filter((t: any) => t.completed).length;
+    const nextTask = onboardingTasks.find((t: any) => !t.completed);
+    return { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0, nextTask };
+  }, [onboardingTasks]);
+
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
   // Helper: map goal key to current value (scope-aware for people goals)
