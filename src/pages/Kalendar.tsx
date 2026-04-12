@@ -41,8 +41,6 @@ interface Meeting {
   poradenstvi_date: string | null;
   pohovor_date: string | null;
   case_id: string | null;
-  meeting_time: string | null;
-  duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
   outcome_recorded: boolean;
@@ -409,12 +407,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
 
                     {/* Meeting blocks */}
                     {dayMeetings.map((m) => {
-                      if (!m.meeting_time) return null;
-                      const [h, min] = m.meeting_time.split(":").map(Number);
-                      if (h !== hour) return null;
-                      const topOffset = min * (SLOT_HEIGHT / 30);
-                      const duration = m.duration_minutes || 60;
-                      const blockHeight = Math.max(duration * (SLOT_HEIGHT / 30), SLOT_HEIGHT * 0.8);
+                      const topOffset = 0;
+                      const blockHeight = SLOT_HEIGHT * 2;
                       const status = getMeetingStatus(m);
                       const borderColor = getTypeBorder(m.meeting_type);
 
@@ -440,8 +434,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                           </div>
                           {blockHeight > 30 && (
                             <div className="text-muted-foreground" style={{ fontSize: 10 }}>
-                              {m.meeting_time?.slice(0, 5)}
-                              {m.cancelled && " • Zrušená"}
+                              {m.cancelled && "Zrušená"}
                               {needsFollowUp(m) && " • Doplň výsledek"}
                             </div>
                           )}
@@ -637,7 +630,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                              {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
+                            {format(parseISO(m.date), "d. M.", { locale: cs })}
                             {m.cancelled && " • Zrušená"}
                             {needsFollowUp(m) && " • Doplň výsledek"}
                           </div>
@@ -681,11 +674,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
   const mobileDayMeetings = useMemo(() => {
     return [...enrichedMeetings]
       .filter((m) => m.date === mobileDayStr)
-      .sort((a, b) => {
-        const ta = a.meeting_time || "99:99";
-        const tb = b.meeting_time || "99:99";
-        return ta.localeCompare(tb);
-      });
+      .sort((a, b) => a.date.localeCompare(b.date));
   }, [enrichedMeetings, mobileDayStr]);
 
   const isToday = isSameDay(mobileDay, new Date());
@@ -832,13 +821,6 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                      {m.meeting_time && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary, #6b8a8e)" }}>
-                          <Clock size={13} />
-                          <span>{m.meeting_time.slice(0, 5)}</span>
-                          {m.duration_minutes != null && <span style={{ fontSize: 11 }}>({m.duration_minutes} min)</span>}
-                        </div>
-                      )}
                       {(m.location_detail || m.location_type) && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary, #6b8a8e)" }}>
                           <MapPin size={13} />
