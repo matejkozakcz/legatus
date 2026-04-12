@@ -176,6 +176,33 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
     enabled: !!user,
   });
 
+  // Fetch onboarding tasks (for nováčci — tasks with deadlines show in calendar)
+  interface OnboardingCalTask { id: string; title: string; deadline: string | null; deadline_time: string | null; completed: boolean; }
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["calendar_onboarding_tasks", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("id, title, deadline, deadline_time, completed")
+        .eq("novacek_id", user.id)
+        .not("deadline", "is", null);
+      if (error) throw error;
+      return (data || []) as OnboardingCalTask[];
+    },
+    enabled: !!user,
+  });
+
+  const onboardingByDay = useMemo(() => {
+    const map: Record<string, OnboardingCalTask[]> = {};
+    for (const t of onboardingTasks) {
+      if (!t.deadline) continue;
+      if (!map[t.deadline]) map[t.deadline] = [];
+      map[t.deadline].push(t);
+    }
+    return map;
+  }, [onboardingTasks]);
+
   const [localCases, setLocalCases] = useState<Case[]>([]);
   useEffect(() => { setLocalCases(cases); }, [cases]);
 
