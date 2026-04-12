@@ -13,6 +13,7 @@ interface NotificationRule {
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
+  redirect_url: string | null;
 }
 
 /**
@@ -22,7 +23,7 @@ interface NotificationRule {
 export async function getNotificationRule(triggerEvent: string): Promise<NotificationRule | null> {
   const { data } = await supabase
     .from("notification_rules")
-    .select("id, trigger_event, title_template, body_template, recipient_type, recipient_roles, is_active, send_push, send_in_app")
+    .select("id, trigger_event, title_template, body_template, recipient_type, recipient_roles, is_active, send_push, send_in_app, redirect_url")
     .eq("trigger_event", triggerEvent)
     .eq("is_active", true)
     .limit(1)
@@ -76,6 +77,7 @@ export async function sendRuleNotification(
         title,
         body,
         deadline: new Date().toISOString().split("T")[0],
+        redirect_url: rule.redirect_url || null,
       })
       .select("id")
       .single();
