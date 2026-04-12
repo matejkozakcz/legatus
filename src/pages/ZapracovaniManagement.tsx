@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   GraduationCap, Plus, Trash2, Check, Pencil, AlertTriangle, ChevronDown, ChevronUp,
-  Loader2, Copy, Users, Clock, X, Save,
+  Loader2, Copy, Users, X, Save, GripVertical, FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -13,6 +13,182 @@ import { toast } from "sonner";
 
 interface TemplateItem {
   title: string;
+  note: string;
+}
+
+interface AssignItem {
+  title: string;
+  note: string;
+  deadline: string;
+  deadline_time: string;
+}
+
+// ─── Draggable Task Card ──────────────────────────────────────────────────────
+
+function DraggableTaskCard({
+  index,
+  isDark,
+  children,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  index: number;
+  isDark: boolean;
+  children: React.ReactNode;
+  onDragStart: (idx: number) => void;
+  onDragOver: (e: React.DragEvent, idx: number) => void;
+  onDrop: (idx: number) => void;
+  onDragEnd: () => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={() => onDrop(index)}
+      onDragEnd={onDragEnd}
+      style={{
+        position: "relative",
+        paddingLeft: 24,
+      }}
+    >
+      {/* Vertical line */}
+      <div
+        style={{
+          position: "absolute",
+          left: 7,
+          top: 0,
+          bottom: 0,
+          width: 2,
+          background: isDark ? "rgba(0,171,189,0.2)" : "rgba(0,171,189,0.15)",
+        }}
+      />
+      {/* Dot on the line */}
+      <div
+        style={{
+          position: "absolute",
+          left: 2,
+          top: 20,
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+          background: "#00abbd",
+          border: `2px solid ${isDark ? "hsl(188,18%,18%)" : "#ffffff"}`,
+          zIndex: 1,
+        }}
+      />
+      <div
+        style={{
+          background: isDark ? "rgba(255,255,255,0.04)" : "#f8fafa",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E1E9EB",
+          borderRadius: 14,
+          padding: "14px 16px",
+          cursor: "grab",
+          transition: "box-shadow 0.15s",
+        }}
+        className="hover:shadow-md"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── useDragReorder Hook ──────────────────────────────────────────────────────
+
+function useDragReorder<T>(items: T[], setItems: (items: T[]) => void) {
+  const dragIdx = useRef<number | null>(null);
+
+  const onDragStart = useCallback((idx: number) => {
+    dragIdx.current = idx;
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent, _idx: number) => {
+    e.preventDefault();
+  }, []);
+
+  const onDrop = useCallback(
+    (targetIdx: number) => {
+      if (dragIdx.current === null || dragIdx.current === targetIdx) return;
+      const next = [...items];
+      const [moved] = next.splice(dragIdx.current, 1);
+      next.splice(targetIdx, 0, moved);
+      setItems(next);
+      dragIdx.current = null;
+    },
+    [items, setItems]
+  );
+
+  const onDragEnd = useCallback(() => {
+    dragIdx.current = null;
+  }, []);
+
+  return { onDragStart, onDragOver, onDrop, onDragEnd };
+}
+
+// ─── Confirmation Dialog ──────────────────────────────────────────────────────
+
+function ConfirmDialog({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  isDark,
+  isLoading,
+}: {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDark: boolean;
+  isLoading?: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onClick={onCancel}
+    >
+      <div
+        className="max-w-sm w-full mx-4 rounded-2xl shadow-2xl p-6"
+        style={{
+          background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
+          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h4 className="font-heading font-semibold text-base mb-2" style={{ color: "var(--text-primary)" }}>
+          {title}
+        </h4>
+        <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>{message}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+            style={{
+              background: "transparent",
+              border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #d0d8da",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            Zrušit
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ background: "#00abbd", color: "white", border: "none", cursor: "pointer" }}
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+            Potvrdit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Template Editor ──────────────────────────────────────────────────────────
@@ -30,8 +206,11 @@ function TemplateEditor({
   const queryClient = useQueryClient();
   const [name, setName] = useState(existingTemplate?.name || "");
   const [items, setItems] = useState<TemplateItem[]>(
-    existingTemplate?.items || [{ title: "" }]
+    existingTemplate?.items?.map((i: any) => ({ title: i.title || "", note: i.note || "" })) || [{ title: "", note: "" }]
   );
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const { onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(items, setItems);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -60,90 +239,160 @@ function TemplateEditor({
     onError: (e: any) => toast.error(e.message),
   });
 
+  const canSave = name.trim() && items.some((i) => i.title.trim());
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
-      onClick={onClose}
-    >
+    <>
       <div
-        className="relative max-w-lg w-full mx-4 rounded-2xl shadow-2xl p-6 overflow-y-auto"
-        style={{
-          maxHeight: "80dvh",
-          background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
-          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
-        }}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
+        onClick={onClose}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100">
-          <X size={18} style={{ color: "#89ADB4" }} />
-        </button>
+        <div
+          className="relative max-w-lg w-full mx-4 rounded-2xl shadow-2xl p-6 overflow-y-auto"
+          style={{
+            maxHeight: "85dvh",
+            background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
+            border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted transition-colors" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+            <X size={18} style={{ color: "var(--text-muted)" }} />
+          </button>
 
-        <h3 className="font-heading text-lg font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
-          {existingTemplate ? "Upravit šablonu" : "Nová šablona zapracování"}
-        </h3>
+          <h3 className="font-heading text-lg font-semibold mb-5" style={{ color: "var(--text-primary)" }}>
+            {existingTemplate ? "Upravit šablonu" : "Nová šablona zapracování"}
+          </h3>
 
-        <div className="mb-4">
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Název šablony</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="např. Standardní zapracování"
-            className="w-full text-sm rounded-xl border border-input bg-background px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-muted)" }}>Úkoly</label>
-          <div className="space-y-2">
-            {items.map((item, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
-                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)", minWidth: 20 }}>
-                  {idx + 1}.
-                </span>
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) => {
-                    const next = [...items];
-                    next[idx] = { title: e.target.value };
-                    setItems(next);
-                  }}
-                  placeholder="Název úkolu"
-                  className="flex-1 text-sm rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
-                />
-                <button
-                  onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                >
-                  <Trash2 size={14} style={{ color: "#fc7c71" }} />
-                </button>
-              </div>
-            ))}
+          {/* Name */}
+          <div className="mb-5">
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Název šablony
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="např. Standardní zapracování"
+              className="w-full text-sm rounded-xl border border-input bg-background px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00abbd]/30"
+              style={{ fontWeight: 500 }}
+            />
           </div>
-          <button
-            onClick={() => setItems([...items, { title: "" }])}
-            className="mt-2 flex items-center gap-1.5 text-xs font-semibold"
-            style={{ color: "#00abbd" }}
-          >
-            <Plus size={14} /> Přidat úkol
-          </button>
-        </div>
 
-        <div className="flex gap-2 mt-4">
-          <button onClick={onClose} className="btn btn-md btn-ghost flex-1">Zrušit</button>
-          <button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-            className="btn btn-md flex-1"
-            style={{ background: "#00abbd", color: "white", border: "none" }}
-          >
-            {saveMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-            <span className="ml-2">Uložit</span>
-          </button>
+          {/* Tasks timeline */}
+          <div className="mb-4">
+            <label className="text-xs font-semibold mb-3 block" style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Úkoly ({items.filter((i) => i.title.trim()).length})
+            </label>
+            <div className="space-y-3">
+              {items.map((item, idx) => (
+                <DraggableTaskCard
+                  key={idx}
+                  index={idx}
+                  isDark={isDark}
+                  onDragStart={onDragStart}
+                  onDragOver={onDragOver}
+                  onDrop={onDrop}
+                  onDragEnd={onDragEnd}
+                >
+                  <div className="flex items-start gap-2">
+                    <GripVertical size={14} style={{ color: "var(--text-muted)", opacity: 0.4, marginTop: 4, flexShrink: 0, cursor: "grab" }} />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold" style={{ color: "#00abbd", minWidth: 18 }}>{idx + 1}.</span>
+                        <input
+                          type="text"
+                          value={item.title}
+                          onChange={(e) => {
+                            const next = [...items];
+                            next[idx] = { ...next[idx], title: e.target.value };
+                            setItems(next);
+                          }}
+                          placeholder="Název úkolu"
+                          className="flex-1 text-sm font-medium rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                        />
+                      </div>
+                      <div className="flex items-start gap-2 ml-5">
+                        <FileText size={12} style={{ color: "var(--text-muted)", opacity: 0.5, marginTop: 6, flexShrink: 0 }} />
+                        <input
+                          type="text"
+                          value={item.note}
+                          onChange={(e) => {
+                            const next = [...items];
+                            next[idx] = { ...next[idx], note: e.target.value };
+                            setItems(next);
+                          }}
+                          placeholder="Poznámka (volitelné) — odkaz, instrukce..."
+                          className="flex-1 text-xs rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                          style={{ color: "var(--text-secondary)" }}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                      className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                      style={{ border: "none", background: "transparent", cursor: "pointer", marginTop: 2 }}
+                    >
+                      <Trash2 size={14} style={{ color: "#fc7c71" }} />
+                    </button>
+                  </div>
+                </DraggableTaskCard>
+              ))}
+            </div>
+            <button
+              onClick={() => setItems([...items, { title: "", note: "" }])}
+              className="mt-3 ml-6 flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-lg hover:bg-muted transition-colors"
+              style={{ color: "#00abbd", border: "none", background: "transparent", cursor: "pointer" }}
+            >
+              <Plus size={14} /> Přidat úkol
+            </button>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{
+                background: "transparent",
+                border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #d0d8da",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+              }}
+            >
+              Zrušit
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={!canSave}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{
+                background: "#00abbd",
+                color: "white",
+                border: "none",
+                cursor: canSave ? "pointer" : "not-allowed",
+                opacity: canSave ? 1 : 0.4,
+              }}
+            >
+              <Save size={14} />
+              Uložit šablonu
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showConfirm && (
+        <ConfirmDialog
+          title="Uložit šablonu?"
+          message={`Šablona "${name.trim()}" s ${items.filter((i) => i.title.trim()).length} úkoly bude ${existingTemplate ? "aktualizována" : "vytvořena"}.`}
+          onConfirm={() => { setShowConfirm(false); saveMutation.mutate(); }}
+          onCancel={() => setShowConfirm(false)}
+          isDark={isDark}
+          isLoading={saveMutation.isPending}
+        />
+      )}
+    </>
   );
 }
 
@@ -163,7 +412,10 @@ function AssignTemplateModal({
   const isDark = theme === "dark";
   const queryClient = useQueryClient();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [items, setItems] = useState<Array<{ title: string; deadline: string; deadline_time: string }>>([]);
+  const [items, setItems] = useState<AssignItem[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const { onDragStart, onDragOver, onDrop, onDragEnd } = useDragReorder(items, setItems);
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -171,6 +423,7 @@ function AssignTemplateModal({
     if (template) {
       const templateItems = (template.items as TemplateItem[]).map((item) => ({
         title: item.title,
+        note: item.note || "",
         deadline: "",
         deadline_time: "",
       }));
@@ -178,7 +431,7 @@ function AssignTemplateModal({
     }
   };
 
-  const allDatesSet = items.length > 0 && items.every((i) => i.deadline);
+  const allDatesSet = items.length > 0 && items.every((i) => i.title.trim() && i.deadline);
 
   const assignMutation = useMutation({
     mutationFn: async () => {
@@ -187,6 +440,7 @@ function AssignTemplateModal({
         .map((item, idx) => ({
           novacek_id: novacek.id,
           title: item.title,
+          description: item.note || null,
           deadline: item.deadline,
           deadline_time: item.deadline_time || null,
           sort_order: idx,
@@ -206,104 +460,191 @@ function AssignTemplateModal({
   });
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
-      onClick={onClose}
-    >
+    <>
       <div
-        className="relative max-w-lg w-full mx-4 rounded-2xl shadow-2xl p-6 overflow-y-auto"
-        style={{
-          maxHeight: "80dvh",
-          background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
-          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
-        }}
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
+        onClick={onClose}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100">
-          <X size={18} style={{ color: "#89ADB4" }} />
-        </button>
-
-        <h3 className="font-heading text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
-          Přidělit plán zapracování
-        </h3>
-        <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-          {novacek.full_name}
-        </p>
-
-        <div className="mb-4">
-          <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Vyberte šablonu</label>
-          <select
-            value={selectedTemplate}
-            onChange={(e) => handleTemplateSelect(e.target.value)}
-            className="w-full text-sm rounded-xl border border-input bg-background px-3 py-2"
-          >
-            <option value="">Vyberte šablonu…</option>
-            {templates.map((t: any) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {items.length > 0 && (
-          <div className="mb-4">
-            <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-muted)" }}>
-              Nastavte termíny pro {novacek.full_name.split(" ")[0]}
-            </label>
-            <div className="space-y-2">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-1 p-2 rounded-lg" style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#f8fafa" }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold" style={{ color: "var(--text-muted)", minWidth: 20 }}>{idx + 1}.</span>
-                    <span className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>{item.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-5">
-                    <input
-                      type="date"
-                      value={item.deadline}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx] = { ...next[idx], deadline: e.target.value };
-                        setItems(next);
-                      }}
-                      className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-36"
-                      required
-                    />
-                    <input
-                      type="time"
-                      value={item.deadline_time}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx] = { ...next[idx], deadline_time: e.target.value };
-                        setItems(next);
-                      }}
-                      className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-24"
-                      placeholder="Čas"
-                    />
-                    {!item.deadline && (
-                      <span className="text-[10px] font-semibold" style={{ color: "#fc7c71" }}>*povinné</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-2 mt-4">
-          <button onClick={onClose} className="btn btn-md btn-ghost flex-1">Zrušit</button>
-          <button
-            onClick={() => assignMutation.mutate()}
-            disabled={assignMutation.isPending || !allDatesSet}
-            className="btn btn-md flex-1"
-            style={{ background: "#00abbd", color: "white", border: "none", opacity: !allDatesSet ? 0.4 : 1 }}
-          >
-            {assignMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
-            <span className="ml-2">Přidělit plán</span>
+        <div
+          className="relative max-w-lg w-full mx-4 rounded-2xl shadow-2xl p-6 overflow-y-auto"
+          style={{
+            maxHeight: "85dvh",
+            background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
+            border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted transition-colors" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+            <X size={18} style={{ color: "var(--text-muted)" }} />
           </button>
+
+          <h3 className="font-heading text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+            Přidělit plán zapracování
+          </h3>
+          <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
+            {novacek.full_name}
+          </p>
+
+          {/* Template select */}
+          <div className="mb-5">
+            <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Vyberte šablonu
+            </label>
+            <select
+              value={selectedTemplate}
+              onChange={(e) => handleTemplateSelect(e.target.value)}
+              className="w-full text-sm rounded-xl border border-input bg-background px-4 py-2.5"
+              style={{ fontWeight: 500 }}
+            >
+              <option value="">Vyberte šablonu…</option>
+              {templates.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tasks timeline */}
+          {items.length > 0 && (
+            <div className="mb-4">
+              <label className="text-xs font-semibold mb-3 block" style={{ color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Nastavte termíny ({items.filter((i) => i.deadline).length}/{items.length})
+              </label>
+              <div className="space-y-3">
+                {items.map((item, idx) => (
+                  <DraggableTaskCard
+                    key={idx}
+                    index={idx}
+                    isDark={isDark}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onDragEnd={onDragEnd}
+                  >
+                    <div className="flex items-start gap-2">
+                      <GripVertical size={14} style={{ color: "var(--text-muted)", opacity: 0.4, marginTop: 4, flexShrink: 0, cursor: "grab" }} />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold" style={{ color: "#00abbd", minWidth: 18 }}>{idx + 1}.</span>
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => {
+                              const next = [...items];
+                              next[idx] = { ...next[idx], title: e.target.value };
+                              setItems(next);
+                            }}
+                            placeholder="Název úkolu"
+                            className="flex-1 text-sm font-medium rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                          />
+                        </div>
+                        <div className="flex items-start gap-2 ml-5">
+                          <FileText size={12} style={{ color: "var(--text-muted)", opacity: 0.5, marginTop: 6, flexShrink: 0 }} />
+                          <input
+                            type="text"
+                            value={item.note}
+                            onChange={(e) => {
+                              const next = [...items];
+                              next[idx] = { ...next[idx], note: e.target.value };
+                              setItems(next);
+                            }}
+                            placeholder="Poznámka (volitelné)"
+                            className="flex-1 text-xs rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                            style={{ color: "var(--text-secondary)" }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 ml-5">
+                          <input
+                            type="date"
+                            value={item.deadline}
+                            onChange={(e) => {
+                              const next = [...items];
+                              next[idx] = { ...next[idx], deadline: e.target.value };
+                              setItems(next);
+                            }}
+                            className="text-xs rounded-lg border border-input bg-background px-3 py-1.5 w-36 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                            required
+                          />
+                          <input
+                            type="time"
+                            value={item.deadline_time}
+                            onChange={(e) => {
+                              const next = [...items];
+                              next[idx] = { ...next[idx], deadline_time: e.target.value };
+                              setItems(next);
+                            }}
+                            className="text-xs rounded-lg border border-input bg-background px-3 py-1.5 w-24 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
+                          />
+                          {!item.deadline && (
+                            <span className="text-[10px] font-semibold" style={{ color: "#fc7c71" }}>Datum je povinné</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                        className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                        style={{ border: "none", background: "transparent", cursor: "pointer", marginTop: 2 }}
+                      >
+                        <Trash2 size={14} style={{ color: "#fc7c71" }} />
+                      </button>
+                    </div>
+                  </DraggableTaskCard>
+                ))}
+              </div>
+              <button
+                onClick={() => setItems([...items, { title: "", note: "", deadline: "", deadline_time: "" }])}
+                className="mt-3 ml-6 flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-lg hover:bg-muted transition-colors"
+                style={{ color: "#00abbd", border: "none", background: "transparent", cursor: "pointer" }}
+              >
+                <Plus size={14} /> Přidat úkol
+              </button>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{
+                background: "transparent",
+                border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #d0d8da",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+              }}
+            >
+              Zrušit
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={!allDatesSet}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{
+                background: "#00abbd",
+                color: "white",
+                border: "none",
+                cursor: allDatesSet ? "pointer" : "not-allowed",
+                opacity: allDatesSet ? 1 : 0.4,
+              }}
+            >
+              <Check size={14} />
+              Přidělit plán
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showConfirm && (
+        <ConfirmDialog
+          title="Přidělit plán zapracování?"
+          message={`Plán s ${items.filter((i) => i.title.trim() && i.deadline).length} úkoly bude přidělen uživateli ${novacek.full_name}.`}
+          onConfirm={() => { setShowConfirm(false); assignMutation.mutate(); }}
+          onCancel={() => setShowConfirm(false)}
+          isDark={isDark}
+          isLoading={assignMutation.isPending}
+        />
+      )}
+    </>
   );
 }
 
@@ -325,6 +666,7 @@ export default function ZapracovaniManagement() {
   const [editDeadline, setEditDeadline] = useState("");
   const [editDeadlineTime, setEditDeadlineTime] = useState("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskNote, setNewTaskNote] = useState("");
   const [newTaskDeadline, setNewTaskDeadline] = useState("");
   const [newTaskDeadlineTime, setNewTaskDeadlineTime] = useState("");
 
@@ -432,6 +774,7 @@ export default function ZapracovaniManagement() {
       const { error } = await supabase.from("onboarding_tasks").insert({
         novacek_id: novacekId,
         title: newTaskTitle.trim(),
+        description: newTaskNote.trim() || null,
         deadline: newTaskDeadline,
         deadline_time: newTaskDeadlineTime || null,
         sort_order: maxOrder,
@@ -442,6 +785,7 @@ export default function ZapracovaniManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_all_tasks"] });
       setNewTaskTitle("");
+      setNewTaskNote("");
       setNewTaskDeadline("");
       setNewTaskDeadlineTime("");
       toast.success("Úkol přidán");
@@ -457,16 +801,13 @@ export default function ZapracovaniManagement() {
   });
 
   const novacciWithoutPlan = novacci.filter((n: any) => !tasksByNovacek.has(n.id));
-  const novacciWithPlan = novacci.filter((n: any) => tasksByNovacek.has(n.id));
 
   const isLoading = isNovacciLoading || isTasksLoading;
 
   const formatDeadline = (deadline: string | null, deadline_time: string | null) => {
     if (!deadline) return "Bez deadline";
     const dateStr = format(new Date(deadline), "d.M.yyyy");
-    if (deadline_time) {
-      return `${dateStr} ${deadline_time.slice(0, 5)}`;
-    }
+    if (deadline_time) return `${dateStr} ${deadline_time.slice(0, 5)}`;
     return dateStr;
   };
 
@@ -474,7 +815,7 @@ export default function ZapracovaniManagement() {
     padding: "8px 16px",
     borderRadius: 10,
     border: "none",
-    cursor: "pointer",
+    cursor: "pointer" as const,
     fontSize: 13,
     fontWeight: 600 as const,
     fontFamily: "Poppins, sans-serif",
@@ -624,103 +965,132 @@ export default function ZapracovaniManagement() {
                           return (
                             <div
                               key={task.id}
-                              className="flex items-center gap-2 rounded-lg"
+                              className="rounded-lg"
                               style={{
-                                padding: "6px 10px",
+                                padding: "8px 10px",
                                 background: isOverdue ? (isDark ? "rgba(252,124,113,0.06)" : "rgba(252,124,113,0.04)") : "transparent",
                               }}
                             >
-                              <button
-                                onClick={() => toggleTaskMutation.mutate({ taskId: task.id, completed: !task.completed })}
-                                style={{
-                                  width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                                  border: task.completed ? "none" : "2px solid #b8cfd4",
-                                  background: task.completed ? "#3FC55D" : "transparent",
-                                  display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                                }}
-                              >
-                                {task.completed && <Check size={10} color="white" />}
-                              </button>
-                              <span className="flex-1 text-xs" style={{
-                                color: "var(--text-primary)",
-                                textDecoration: task.completed ? "line-through" : "none",
-                                opacity: task.completed ? 0.5 : 1,
-                              }}>
-                                {task.title}
-                              </span>
-                              {isEditingThis ? (
-                                <div className="flex gap-1 items-center">
-                                  <input
-                                    type="date"
-                                    value={editDeadline}
-                                    onChange={(e) => setEditDeadline(e.target.value)}
-                                    className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-28"
-                                  />
-                                  <input
-                                    type="time"
-                                    value={editDeadlineTime}
-                                    onChange={(e) => setEditDeadlineTime(e.target.value)}
-                                    className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-20"
-                                  />
-                                  <button onClick={() => updateDeadlineMutation.mutate({ taskId: task.id, deadline: editDeadline, deadline_time: editDeadlineTime })}>
-                                    <Check size={12} style={{ color: "#3FC55D" }} />
-                                  </button>
-                                  <button onClick={() => setEditingTaskId(null)}>
-                                    <X size={12} style={{ color: "#fc7c71" }} />
-                                  </button>
-                                </div>
-                              ) : (
+                              <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => { setEditingTaskId(task.id); setEditDeadline(task.deadline || ""); setEditDeadlineTime(task.deadline_time || ""); }}
-                                  className="text-[10px] font-medium"
-                                  style={{ color: isOverdue ? "#fc7c71" : "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+                                  onClick={() => toggleTaskMutation.mutate({ taskId: task.id, completed: !task.completed })}
+                                  style={{
+                                    width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                                    border: task.completed ? "none" : "2px solid #b8cfd4",
+                                    background: task.completed ? "#3FC55D" : "transparent",
+                                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                                  }}
                                 >
-                                  {formatDeadline(task.deadline, task.deadline_time)}
+                                  {task.completed && <Check size={10} color="white" />}
                                 </button>
+                                <span className="flex-1 text-xs" style={{
+                                  color: "var(--text-primary)",
+                                  textDecoration: task.completed ? "line-through" : "none",
+                                  opacity: task.completed ? 0.5 : 1,
+                                  fontWeight: 500,
+                                }}>
+                                  {task.title}
+                                </span>
+                                {isEditingThis ? (
+                                  <div className="flex gap-1 items-center">
+                                    <input
+                                      type="date"
+                                      value={editDeadline}
+                                      onChange={(e) => setEditDeadline(e.target.value)}
+                                      className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-28"
+                                    />
+                                    <input
+                                      type="time"
+                                      value={editDeadlineTime}
+                                      onChange={(e) => setEditDeadlineTime(e.target.value)}
+                                      className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-20"
+                                    />
+                                    <button
+                                      onClick={() => updateDeadlineMutation.mutate({ taskId: task.id, deadline: editDeadline, deadline_time: editDeadlineTime })}
+                                      style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                                    >
+                                      <Check size={12} style={{ color: "#3FC55D" }} />
+                                    </button>
+                                    <button onClick={() => setEditingTaskId(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}>
+                                      <X size={12} style={{ color: "#fc7c71" }} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { setEditingTaskId(task.id); setEditDeadline(task.deadline || ""); setEditDeadlineTime(task.deadline_time || ""); }}
+                                    className="text-[10px] font-medium"
+                                    style={{ color: isOverdue ? "#fc7c71" : "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+                                  >
+                                    {formatDeadline(task.deadline, task.deadline_time)}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteTaskMutation.mutate(task.id)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                                >
+                                  <Trash2 size={12} style={{ color: "#fc7c71", opacity: 0.5 }} />
+                                </button>
+                              </div>
+                              {task.description && (
+                                <div className="ml-6 mt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                                  <FileText size={10} style={{ display: "inline", marginRight: 4, verticalAlign: -1 }} />
+                                  {task.description}
+                                </div>
                               )}
-                              <button
-                                onClick={() => deleteTaskMutation.mutate(task.id)}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
-                              >
-                                <Trash2 size={12} style={{ color: "#fc7c71", opacity: 0.5 }} />
-                              </button>
                             </div>
                           );
                         })}
                       </div>
 
                       {/* Add task inline */}
-                      <div className="mt-3 flex gap-2 items-center">
+                      <div className="mt-3 space-y-2 p-3 rounded-xl" style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#f8fafa", border: isDark ? "1px dashed rgba(255,255,255,0.08)" : "1px dashed #d0d8da" }}>
                         <input
                           type="text"
                           value={expandedNovacek === n.id ? newTaskTitle : ""}
                           onChange={(e) => setNewTaskTitle(e.target.value)}
-                          placeholder="Nový úkol…"
-                          className="flex-1 text-xs rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
+                          placeholder="Název nového úkolu…"
+                          className="w-full text-xs rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
                         />
                         <input
-                          type="date"
-                          value={expandedNovacek === n.id ? newTaskDeadline : ""}
-                          onChange={(e) => setNewTaskDeadline(e.target.value)}
-                          className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-28"
-                          required
+                          type="text"
+                          value={expandedNovacek === n.id ? newTaskNote : ""}
+                          onChange={(e) => setNewTaskNote(e.target.value)}
+                          placeholder="Poznámka (volitelné)"
+                          className="w-full text-xs rounded-lg border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]/40"
                         />
-                        <input
-                          type="time"
-                          value={expandedNovacek === n.id ? newTaskDeadlineTime : ""}
-                          onChange={(e) => setNewTaskDeadlineTime(e.target.value)}
-                          className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-20"
-                        />
-                        <button
-                          onClick={() => {
-                            if (newTaskTitle.trim() && newTaskDeadline) addTaskMutation.mutate({ novacekId: n.id });
-                          }}
-                          disabled={!newTaskTitle.trim() || !newTaskDeadline}
-                          className="flex items-center justify-center rounded-lg"
-                          style={{ width: 28, height: 28, background: "#00abbd", border: "none", cursor: "pointer", opacity: (newTaskTitle.trim() && newTaskDeadline) ? 1 : 0.4 }}
-                        >
-                          <Plus size={12} color="white" />
-                        </button>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="date"
+                            value={expandedNovacek === n.id ? newTaskDeadline : ""}
+                            onChange={(e) => setNewTaskDeadline(e.target.value)}
+                            className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-32"
+                            required
+                          />
+                          <input
+                            type="time"
+                            value={expandedNovacek === n.id ? newTaskDeadlineTime : ""}
+                            onChange={(e) => setNewTaskDeadlineTime(e.target.value)}
+                            className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-20"
+                          />
+                          <button
+                            onClick={() => {
+                              if (newTaskTitle.trim() && newTaskDeadline) addTaskMutation.mutate({ novacekId: n.id });
+                            }}
+                            disabled={!newTaskTitle.trim() || !newTaskDeadline}
+                            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                            style={{
+                              background: "#00abbd",
+                              color: "white",
+                              border: "none",
+                              cursor: (newTaskTitle.trim() && newTaskDeadline) ? "pointer" : "not-allowed",
+                              opacity: (newTaskTitle.trim() && newTaskDeadline) ? 1 : 0.4,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <Plus size={12} />
+                            Přidat
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -734,10 +1104,11 @@ export default function ZapracovaniManagement() {
         <div className="space-y-3">
           <button
             onClick={() => { setEditingTemplate(null); setTemplateEditorOpen(true); }}
-            className="btn btn-md flex items-center gap-2"
-            style={{ background: "#00abbd", color: "white", border: "none" }}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
+            style={{ background: "#00abbd", color: "white", border: "none", cursor: "pointer" }}
           >
-            <Plus size={16} /> Nová šablona
+            <Plus size={16} />
+            Nová šablona
           </button>
 
           {isTemplatesLoading ? (
@@ -761,12 +1132,14 @@ export default function ZapracovaniManagement() {
                       <button
                         onClick={() => { setEditingTemplate(template); setTemplateEditorOpen(true); }}
                         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
                       >
                         <Pencil size={13} style={{ color: "#00abbd" }} />
                       </button>
                       <button
                         onClick={() => deleteTemplateMutation.mutate(template.id)}
                         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
                       >
                         <Trash2 size={13} style={{ color: "#fc7c71" }} />
                       </button>
@@ -774,9 +1147,14 @@ export default function ZapracovaniManagement() {
                   </div>
                   <div className="space-y-1">
                     {items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                      <div key={idx} className="flex items-start gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
                         <span className="font-semibold" style={{ color: "var(--text-muted)", minWidth: 18 }}>{idx + 1}.</span>
-                        <span className="flex-1">{item.title}</span>
+                        <div className="flex-1">
+                          <span>{item.title}</span>
+                          {item.note && (
+                            <span className="ml-2" style={{ color: "var(--text-muted)", fontSize: 10 }}>— {item.note}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
