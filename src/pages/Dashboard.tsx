@@ -538,11 +538,12 @@ const Dashboard = () => {
 
       const vedouciId = me?.vedouci_id ?? activeUserId;
 
-      // Stáhneme všechny aktivní profily pod stejným Vedoucím (celý tým)
+      // Stáhneme všechny aktivní profily pod stejným Vedoucím NEBO pod activeUserId jako vedoucím
+      // (BV může mít vlastní subtým kde členové mají vedouci_id = BV's id)
       const { data: teamMembers } = await supabase
         .from("profiles")
         .select("id, ziskatel_id")
-        .eq("vedouci_id", vedouciId)
+        .or(`vedouci_id.eq.${vedouciId},vedouci_id.eq.${activeUserId}`)
         .eq("is_active", true);
 
       if (!teamMembers) return 0;
