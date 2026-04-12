@@ -93,31 +93,28 @@ function MobileStatCard({
   );
 }
 
-// ─── ActivityChip — compact pill for desktop stats ────────────────────────────
+// ─── ActivityCard — combined stat card for desktop ────────────────────────────
 
-const CHIP_CONFIG: Record<string, { color: string; label: string }> = {
-  FSA: { color: "#00abbd", label: "FSA" },
-  POH: { color: "#f59e0b", label: "POH" },
-  SER: { color: "#ef4444", label: "SER" },
-  POR: { color: "#8b5cf6", label: "POR" },
-  REF: { color: "#10b981", label: "dop." },
-};
-
-function ActivityChip({ type, value }: { type: string; value: number }) {
-  if (value === 0) return null;
-  const { color, label } = CHIP_CONFIG[type] || { color: "#888", label: type };
+function ActivityCard({ label, actual, total, newly, color }: {
+  label: string; actual: number; total: number; newly: number; color: string;
+}) {
+  const progress = total > 0 ? actual / total : 0;
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
-      style={{
-        background: `${color}1a`,
-        border: `1px solid ${color}4d`,
-      }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      <span className="font-semibold text-sm" style={{ color }}>{value}</span>
-      <span className="text-xs text-muted-foreground ml-0.5">{label}</span>
-    </span>
+    <div className="rounded-xl border border-input bg-card px-4 py-3 space-y-2" style={{ borderTop: `2px solid ${color}` }}>
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span>
+          <span style={{ color, fontWeight: 700, fontSize: 22 }}>{actual}</span>
+          <span className="text-xs text-muted-foreground font-medium"> z {total}</span>
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round(progress * 100)}%`, background: color }} />
+      </div>
+      {newly > 0 && (
+        <p className="text-[11px] text-muted-foreground">+{newly} nově domluveno</p>
+      )}
+    </div>
   );
 }
 
