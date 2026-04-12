@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal } from "lucide-react";
+import { Save, Shield, Users, Settings2, Search, Eye, Lock, GitBranch, Plus, Trash2, ChevronDown, RotateCcw, Info, Zap, FileCode, Bell, Pencil, SendHorizontal, Clock, FileText } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +83,12 @@ export default function AdminDashboard() {
           <TabsTrigger value="notifications" className="gap-1.5">
             <Bell className="h-4 w-4" /> Notifikace
           </TabsTrigger>
+          <TabsTrigger value="meetings" className="gap-1.5">
+            <Clock className="h-4 w-4" /> Schůzky
+          </TabsTrigger>
+          <TabsTrigger value="pdf" className="gap-1.5">
+            <FileText className="h-4 w-4" /> PDF Export
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="promotions">
@@ -99,6 +105,12 @@ export default function AdminDashboard() {
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationRulesTab />
+        </TabsContent>
+        <TabsContent value="meetings">
+          <MeetingDefaultsTab />
+        </TabsContent>
+        <TabsContent value="pdf">
+          <PdfExportTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -1903,5 +1915,220 @@ function EditRuleForm({
         <Button size="sm" variant="outline" onClick={onCancel}>Zrušit</Button>
       </div>
     </div>
+  );
+}
+
+// ─── Meeting Defaults Tab ─────────────────────────────────────────────────────
+
+interface MeetingDefaults {
+  FSA: number;
+  POH: number;
+  POR: number;
+  SER: number;
+}
+
+function MeetingDefaultsTab() {
+  const queryClient = useQueryClient();
+  const { data: config, isLoading } = useQuery({
+    queryKey: ["app_config", "meeting_defaults"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", "meeting_defaults")
+        .single();
+      return (data?.value as unknown as MeetingDefaults) ?? null;
+    },
+  });
+
+  const [form, setForm] = useState<MeetingDefaults>({ FSA: 60, POH: 15, POR: 30, SER: 60 });
+
+  useEffect(() => {
+    if (config) setForm(config);
+  }, [config]);
+
+  const mutation = useMutation({
+    mutationFn: async (value: MeetingDefaults) => {
+      const { error } = await supabase
+        .from("app_config")
+        .update({ value: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() })
+        .eq("key", "meeting_defaults");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_config", "meeting_defaults"] });
+      toast.success("Defaultní trvání schůzek uloženo");
+    },
+    onError: () => toast.error("Chyba při ukládání"),
+  });
+
+  if (isLoading) return <p className="text-muted-foreground p-4">Načítání…</p>;
+
+  const MEETING_LABELS: Record<string, string> = {
+    FSA: "Analýza (FSA)",
+    POH: "Pohovor (POH)",
+    POR: "Poradenství (POR)",
+    SER: "Servis (SER)",
+  };
+
+  return (
+    <Card className="max-w-lg">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Defaultní trvání schůzek</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {(["FSA", "POH", "POR", "SER"] as const).map((key) => (
+          <div key={key} className="flex items-center gap-4">
+            <Label className="w-40">{MEETING_LABELS[key]}</Label>
+            <Input
+              type="number"
+              min={5}
+              max={480}
+              className="w-24"
+              value={form[key]}
+              onChange={(e) => setForm((f) => ({ ...f, [key]: Number(e.target.value) }))}
+            />
+            <span className="text-sm text-muted-foreground">minut</span>
+          </div>
+        ))}
+        <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending} className="gap-2">
+          <Save className="h-4 w-4" /> Uložit
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── PDF Export Tab ───────────────────────────────────────────────────────────
+
+interface PdfExportConfig {
+  company_name: string;
+  orientation: "landscape" | "portrait";
+  head_color: [number, number, number];
+  show_planned: boolean;
+  show_completed: boolean;
+  show_newly_booked: boolean;
+}
+
+function PdfExportTab() {
+  const queryClient = useQueryClient();
+  const { data: config, isLoading } = useQuery({
+    queryKey: ["app_config", "pdf_export"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", "pdf_export")
+        .single();
+      return (data?.value as unknown as PdfExportConfig) ?? null;
+    },
+  });
+
+  const [form, setForm] = useState<PdfExportConfig>({
+    company_name: "LEGATUS",
+    orientation: "landscape",
+    head_color: [0, 85, 95],
+    show_planned: true,
+    show_completed: true,
+    show_newly_booked: true,
+  });
+
+  useEffect(() => {
+    if (config) setForm(config);
+  }, [config]);
+
+  const mutation = useMutation({
+    mutationFn: async (value: PdfExportConfig) => {
+      const { error } = await supabase
+        .from("app_config")
+        .update({ value: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() })
+        .eq("key", "pdf_export");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_config", "pdf_export"] });
+      toast.success("Nastavení PDF exportu uloženo");
+    },
+    onError: () => toast.error("Chyba při ukládání"),
+  });
+
+  if (isLoading) return <p className="text-muted-foreground p-4">Načítání…</p>;
+
+  const headColorHex = `#${form.head_color.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+
+  return (
+    <Card className="max-w-lg">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Nastavení PDF exportu</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div>
+          <Label>Název firmy v hlavičce</Label>
+          <Input
+            value={form.company_name}
+            onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
+          />
+        </div>
+
+        <div>
+          <Label>Orientace stránky</Label>
+          <Select value={form.orientation} onValueChange={(v: "landscape" | "portrait") => setForm((f) => ({ ...f, orientation: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="landscape">Na šířku</SelectItem>
+              <SelectItem value="portrait">Na výšku</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Barva hlavičky tabulek</Label>
+          <div className="flex items-center gap-3 mt-1">
+            <input
+              type="color"
+              value={headColorHex}
+              onChange={(e) => {
+                const hex = e.target.value;
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                setForm((f) => ({ ...f, head_color: [r, g, b] }));
+              }}
+              className="w-10 h-10 rounded border border-border cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground font-mono">{headColorHex}</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Label>Zobrazované sekce</Label>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.show_planned}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, show_planned: v }))}
+            />
+            <span className="text-sm">Naplánované</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.show_completed}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, show_completed: v }))}
+            />
+            <span className="text-sm">Proběhlé</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.show_newly_booked}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, show_newly_booked: v }))}
+            />
+            <span className="text-sm">Nově domluvené</span>
+          </div>
+        </div>
+
+        <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending} className="gap-2">
+          <Save className="h-4 w-4" /> Uložit
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

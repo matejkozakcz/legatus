@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
@@ -183,14 +185,32 @@ export function MeetingFormModal({
   const [moreOpen, setMoreOpen] = useState(false);
   const [autoCreating, setAutoCreating] = useState(false);
 
+  const { data: meetingDefaults } = useQuery({
+    queryKey: ["app_config", "meeting_defaults"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", "meeting_defaults")
+        .single();
+      return (data?.value as unknown as Record<string, number>) ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      setForm(initial);
+      const initForm = { ...initial };
+      // Auto-fill duration from defaults for new meetings
+      if (!isEditProp && meetingDefaults && !initForm.duration_minutes) {
+        const defDuration = meetingDefaults[initForm.meeting_type];
+        if (defDuration) initForm.duration_minutes = String(defDuration);
+      }
+      setForm(initForm);
       setShowDeleteConfirm(false);
       setMoreOpen(false);
       setAutoCreating(false);
-      // Pre-fill client input from existing case
       const existingCase = cases.find((c) => c.id === initial.case_id);
       setClientInput(existingCase?.nazev_pripadu || initial.case_name || "");
       setPendingClientName("");
@@ -200,7 +220,19 @@ export function MeetingFormModal({
 
   if (!open) return null;
 
-  const set = (patch: Partial<MeetingForm>) => setForm((f) => ({ ...f, ...patch }));
+  const set = (patch: Partial<MeetingForm>) => {
+    setForm((f) => {
+      const next = { ...f, ...patch };
+      // Auto-fill duration when meeting type changes on new meetings
+      if (patch.meeting_type && !isEditProp && meetingDefaults) {
+        const defDuration = meetingDefaults[patch.meeting_type];
+        if (defDuration && (!f.duration_minutes || f.duration_minutes === String(meetingDefaults[f.meeting_type] || ""))) {
+          next.duration_minutes = String(defDuration);
+        }
+      }
+      return next;
+    });
+  };
   const isEdit = isEditProp ?? false;
   const activeCases = cases.filter((c) => c.status === "aktivni");
 

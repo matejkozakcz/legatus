@@ -106,8 +106,34 @@ function registerFonts(doc: jsPDF) {
   doc.setFont("OpenSans", "normal");
 }
 
-const HEAD_FILL: [number, number, number] = [0, 85, 95];
+const DEFAULT_HEAD_FILL: [number, number, number] = [0, 85, 95];
 const TOTALS_FILL: [number, number, number] = [240, 245, 246];
+
+interface PdfConfig {
+  company_name: string;
+  orientation: "landscape" | "portrait";
+  head_color: [number, number, number];
+  show_planned: boolean;
+  show_completed: boolean;
+  show_newly_booked: boolean;
+}
+
+async function fetchPdfConfig(): Promise<PdfConfig> {
+  const { data } = await supabase
+    .from("app_config")
+    .select("value")
+    .eq("key", "pdf_export")
+    .single();
+  const val = data?.value as unknown as PdfConfig | null;
+  return val ?? {
+    company_name: "LEGATUS",
+    orientation: "landscape",
+    head_color: DEFAULT_HEAD_FILL,
+    show_planned: true,
+    show_completed: true,
+    show_newly_booked: true,
+  };
+}
 
 // ─── Main export function ────────────────────────────────────────────────────
 
@@ -200,9 +226,11 @@ export async function exportDashboardPdf(
     }
   }
 
-  // ── Generate PDF ───────────────────────────────────────────────────────────
+  // ── Fetch PDF config ────────────────────────────────────────────────────
+  const pdfCfg = await fetchPdfConfig();
+  const HEAD_FILL = pdfCfg.head_color as [number, number, number];
 
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: pdfCfg.orientation, unit: "mm", format: "a4" });
   registerFonts(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const fontName = "OpenSans";
@@ -210,7 +238,7 @@ export async function exportDashboardPdf(
   // Header
   doc.setFontSize(18);
   doc.setFont(fontName, "bold");
-  doc.text("LEGATUS", 14, 16);
+  doc.text(pdfCfg.company_name, 14, 16);
   doc.setFontSize(10);
   doc.setFont(fontName, "normal");
   doc.setTextColor(120);
@@ -218,41 +246,48 @@ export async function exportDashboardPdf(
   doc.text(`Vygenerováno: ${format(now, "d. M. yyyy HH:mm", { locale: cs })}`, pageWidth - 14, 23, { align: "right" });
   doc.setTextColor(0);
 
+  // ── Helper: build dynamic column groups based on config ─────────────────
+  type ColGroup = { label: string; cols: string[]; values: (s: PersonStats) => (string | number)[] };
+  const groups: ColGroup[] = [];
+  if (pdfCfg.show_planned) groups.push({
+    label: "Naplánované", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
+    values: (s) => [s.planFsa, s.planPoh, s.planSer, s.planPor],
+  });
+  if (pdfCfg.show_completed) groups.push({
+    label: "Proběhlé", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ"],
+    values: (s) => [s.fsa, s.poh, s.ser, s.por, s.ref, s.bj],
+  });
+  if (pdfCfg.show_newly_booked) groups.push({
+    label: "Nově domluvené", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
+    values: (s) => [s.newFsa, s.newPoh, s.newSer, s.newPor],
+  });
+
   // ── Personal stats ──────────────────────────────────────────────────────
 
   doc.setFontSize(13);
   doc.setFont(fontName, "bold");
   doc.text(`Moje aktivity — ${userName}`, 14, 34);
 
-   // Naplánované + Proběhlé
-  doc.setFontSize(10);
-  doc.setFont(fontName, "bold");
+  if (groups.length > 0) {
+    const ownHeadRow1 = groups.map((g) => ({ content: g.label, colSpan: g.cols.length }));
+    const ownHeadRow2 = groups.flatMap((g) => g.cols);
+    const ownBodyRow = groups.flatMap((g) => g.values(ownStats));
 
-  autoTable(doc, {
-    startY: 38,
-    head: [
-      [
-        { content: "Naplánované", colSpan: 4 },
-        { content: "Proběhlé", colSpan: 6 },
-        { content: "Nově domluvené", colSpan: 4 },
-      ],
-      ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
-    ],
-    body: [[
-      ownStats.planFsa, ownStats.planPoh, ownStats.planSer, ownStats.planPor,
-      ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj,
-      ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor,
-    ]],
-    theme: "grid",
-    styles: { font: fontName },
-    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
-    bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
-    margin: { left: 14, right: 14 },
-  });
+    autoTable(doc, {
+      startY: 38,
+      head: [ownHeadRow1, ownHeadRow2],
+      body: [ownBodyRow],
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
+      margin: { left: 14, right: 14 },
+    });
+  }
 
   // ── Team stats ──────────────────────────────────────────────────────────
 
-  if (showTeam && teamStats.length > 0) {
+  if (showTeam && teamStats.length > 0 && groups.length > 0) {
     const afterOwn2 = (doc as any).lastAutoTable?.finalY || 90;
     let teamStartY = afterOwn2 + 12;
 
@@ -266,44 +301,37 @@ export async function exportDashboardPdf(
     doc.text("Výsledky týmu", 14, teamStartY);
 
     const teamBody = teamStats.map((s) => [
-      s.name,
-      ROLE_LABEL[s.role] || s.role,
-      s.planFsa, s.planPoh, s.planSer, s.planPor,
-      s.fsa, s.poh, s.ser, s.por, s.ref, s.bj,
-      s.newFsa, s.newPoh, s.newSer, s.newPor,
+      s.name, ROLE_LABEL[s.role] || s.role,
+      ...groups.flatMap((g) => g.values(s)),
     ]);
 
-    const totals = teamStats.reduce(
-      (acc, s) => ({
-        planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
-        planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
-        fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
-        ref: acc.ref + s.ref, bj: acc.bj + s.bj,
-        newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
-        newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
-      }),
-      { planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
-    );
+    // Totals row
+    const zeroStats: PersonStats = { name: "", role: "", planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 };
+    const totals = teamStats.reduce<PersonStats>((acc, s) => ({
+      ...acc,
+      planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
+      planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
+      fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
+      ref: acc.ref + s.ref, bj: acc.bj + s.bj,
+      newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
+      newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
+    }), zeroStats);
 
     teamBody.push([
       "CELKEM", "",
-      totals.planFsa, totals.planPoh, totals.planSer, totals.planPor,
-      totals.fsa, totals.poh, totals.ser, totals.por, totals.ref, totals.bj,
-      totals.newFsa, totals.newPoh, totals.newSer, totals.newPor,
+      ...groups.flatMap((g) => g.values(totals)),
     ]);
+
+    const teamHeadRow1: any[] = [
+      { content: "Jméno", rowSpan: 2 },
+      { content: "Role", rowSpan: 2 },
+      ...groups.map((g) => ({ content: g.label, colSpan: g.cols.length })),
+    ];
+    const teamHeadRow2 = groups.flatMap((g) => g.cols);
 
     autoTable(doc, {
       startY: teamStartY + 4,
-      head: [
-        [
-          { content: "Jméno", rowSpan: 2 },
-          { content: "Role", rowSpan: 2 },
-          { content: "Naplánované", colSpan: 4 },
-          { content: "Proběhlé", colSpan: 6 },
-          { content: "Nově domluvené", colSpan: 4 },
-        ],
-        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
-      ],
+      head: [teamHeadRow1, teamHeadRow2],
       body: teamBody,
       theme: "grid",
       styles: { font: fontName },
