@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,9 @@ import {
   SendHorizontal,
   Clock,
   FileText,
+  History,
 } from "lucide-react";
+import { format } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,7 +127,22 @@ export default function AdminDashboard() {
           <PermissionsTab />
         </TabsContent>
         <TabsContent value="notifications">
-          <NotificationRulesTab />
+          <Tabs defaultValue="rules" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="rules" className="gap-1.5">
+                <Settings2 className="h-3.5 w-3.5" /> Pravidla
+              </TabsTrigger>
+              <TabsTrigger value="log" className="gap-1.5">
+                <History className="h-3.5 w-3.5" /> Historie odeslaných
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="rules">
+              <NotificationRulesTab />
+            </TabsContent>
+            <TabsContent value="log">
+              <NotificationLogTab />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         <TabsContent value="meetings">
           <MeetingDefaultsTab />
