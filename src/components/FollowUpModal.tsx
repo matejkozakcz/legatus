@@ -8,8 +8,6 @@ export interface FollowUpScheduleData {
   case_id: string;
   meeting_type: MeetingType;
   date: string;
-  meeting_time: string;
-  duration_minutes: string;
   location_type: string;
   location_detail: string;
 }
@@ -40,8 +38,6 @@ function InlineMiniForm({
 }: {
   onConfirm: (data: {
     date: string;
-    time: string;
-    duration: string;
     locationType: string;
     locationDetail: string;
   }) => void;
@@ -49,8 +45,6 @@ function InlineMiniForm({
   saving: boolean;
 }) {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [time, setTime] = useState("");
-  const [duration, setDuration] = useState("");
   const [locationType, setLocationType] = useState("");
   const [locationDetail, setLocationDetail] = useState("");
 
@@ -64,29 +58,6 @@ function InlineMiniForm({
           onChange={(e) => setDate(e.target.value)}
           className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
-      </div>
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Čas schůzky</label>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Délka (min)</label>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            placeholder="0"
-            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
       </div>
       <div>
         <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
@@ -121,7 +92,7 @@ function InlineMiniForm({
           Zrušit
         </button>
         <button
-          onClick={() => onConfirm({ date, time, duration, locationType, locationDetail })}
+          onClick={() => onConfirm({ date, locationType, locationDetail })}
           disabled={!date || saving}
           className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-1"
         >
@@ -193,8 +164,6 @@ function TrackSection({
                 case_id: caseId,
                 meeting_type: meetingType,
                 date: d.date,
-                meeting_time: d.time,
-                duration_minutes: d.duration,
                 location_type: d.locationType,
                 location_detail: d.locationDetail,
               });

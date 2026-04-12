@@ -11,8 +11,6 @@ export interface MeetingDetailData {
   meeting_type: MeetingType | string;
   cancelled: boolean;
   case_name: string | null;
-  meeting_time: string | null;
-  duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
   poznamka: string | null;
@@ -173,8 +171,6 @@ export function MeetingDetailModal({
             </div>
           )}
           {row("Datum", m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs }))}
-          {m.meeting_time && row("Čas", m.meeting_time.slice(0, 5))}
-          {m.duration_minutes != null && row("Délka", `${m.duration_minutes} min`)}
           {row("Typ", meetingTypeLabel(m.meeting_type as MeetingType))}
           {m.location_type && row("Místo", m.location_type === "osobne" ? "Osobně" : "Online")}
           {m.location_detail && row(m.location_type === "osobne" ? "Adresa" : "Platforma", m.location_detail)}
