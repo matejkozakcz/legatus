@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Trash2 } from "lucide-react";
+import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
@@ -84,6 +84,74 @@ function NumberInput({ label, value, onChange, step = 1 }: {
   );
 }
 
+// ─── Client Autocomplete ─────────────────────────────────────────────────────
+
+function ClientAutocomplete({
+  cases,
+  selectedId,
+  inputValue,
+  onSelect,
+  onInputChange,
+}: {
+  cases: Case[];
+  selectedId: string;
+  inputValue: string;
+  onSelect: (c: Case) => void;
+  onInputChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = inputValue.trim()
+    ? cases.filter((c) => c.nazev_pripadu.toLowerCase().includes(inputValue.toLowerCase()))
+    : cases;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <label className="block text-xs font-medium text-muted-foreground mb-1">Klient *</label>
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => {
+          onInputChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder="Jméno klienta…"
+        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-input bg-popover shadow-lg">
+          {filtered.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                onSelect(c);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${selectedId === c.id ? "bg-accent font-semibold" : ""}`}
+            >
+              {c.nazev_pripadu}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Meeting Form Modal ──────────────────────────────────────────────────────
 
 interface MeetingFormModalProps {
@@ -105,28 +173,27 @@ interface MeetingFormModalProps {
 export function MeetingFormModal({
   open, onClose, initial, onSave, saving, cases,
   isEdit: isEditProp, onDelete,
-  allowCreateCase, createCaseFn, onCaseCreated,
+  createCaseFn,
 }: MeetingFormModalProps) {
   useBodyScrollLock(open);
   const [form, setForm] = useState<MeetingForm>(initial);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showNewCase, setShowNewCase] = useState(false);
-  const [newCaseName, setNewCaseName] = useState("");
-  const [newCaseNote, setNewCaseNote] = useState("");
-  const [creatingCase, setCreatingCase] = useState(false);
+  const [clientInput, setClientInput] = useState("");
+  const [pendingClientName, setPendingClientName] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [autoCreating, setAutoCreating] = useState(false);
 
-  // Reset formuláře pouze při otevření modalu (false → true), ne při každém
-  // re-renderu parenta. Dependency na [initial] způsobovala reset při
-  // refetchOnWindowFocus — React Query vytváří novou referenci objektu
-  // i když se data nezměnila.
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       setForm(initial);
       setShowDeleteConfirm(false);
-      setShowNewCase(false);
-      setNewCaseName("");
-      setNewCaseNote("");
+      setMoreOpen(false);
+      setAutoCreating(false);
+      // Pre-fill client input from existing case
+      const existingCase = cases.find((c) => c.id === initial.case_id);
+      setClientInput(existingCase?.nazev_pripadu || initial.case_name || "");
+      setPendingClientName("");
     }
     prevOpenRef.current = open;
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -137,20 +204,45 @@ export function MeetingFormModal({
   const isEdit = isEditProp ?? false;
   const activeCases = cases.filter((c) => c.status === "aktivni");
 
-  const handleCreateCase = async () => {
-    if (!createCaseFn || !newCaseName.trim()) return;
-    setCreatingCase(true);
-    try {
-      const created = await createCaseFn(newCaseName.trim(), newCaseNote.trim());
-      onCaseCreated?.(created);
-      set({ case_id: created.id });
-      setShowNewCase(false);
-    } catch {
-      // handled upstream
-    } finally {
-      setCreatingCase(false);
+  const handleClientSelect = (c: Case) => {
+    setClientInput(c.nazev_pripadu);
+    setPendingClientName("");
+    set({ case_id: c.id, case_name: c.nazev_pripadu });
+  };
+
+  const handleClientInputChange = (val: string) => {
+    setClientInput(val);
+    // Check if input exactly matches an existing case
+    const match = activeCases.find((c) => c.nazev_pripadu.toLowerCase() === val.toLowerCase());
+    if (match) {
+      setPendingClientName("");
+      set({ case_id: match.id, case_name: match.nazev_pripadu });
+    } else {
+      setPendingClientName(val.trim());
+      set({ case_id: "", case_name: "" });
     }
   };
+
+  const canSave = !!(form.case_id || pendingClientName) && !!form.date && !!form.meeting_time;
+
+  const handleSave = async () => {
+    if (form.case_id) {
+      onSave(form);
+    } else if (pendingClientName && createCaseFn) {
+      setAutoCreating(true);
+      try {
+        const created = await createCaseFn(pendingClientName, "");
+        const updatedForm = { ...form, case_id: created.id, case_name: created.nazev_pripadu };
+        onSave(updatedForm);
+      } catch {
+        // error handled upstream
+      } finally {
+        setAutoCreating(false);
+      }
+    }
+  };
+
+  const isSaving = saving || autoCreating;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -167,44 +259,16 @@ export function MeetingFormModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* 1. Obchodní případ */}
+        {/* 1. Klient autocomplete */}
         <div className="mb-4">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Obchodní případ *</label>
-          <select
-            value={form.case_id}
-            onChange={(e) => {
-              if (allowCreateCase && e.target.value === "__new__") {
-                setShowNewCase(true);
-                set({ case_id: "" });
-              } else {
-                setShowNewCase(false);
-                set({ case_id: e.target.value });
-              }
-            }}
-            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">— Vyber případ —</option>
-            {activeCases.map((c) => (
-              <option key={c.id} value={c.id}>{c.nazev_pripadu}</option>
-            ))}
-            {allowCreateCase && <option value="__new__">+ Nový případ</option>}
-          </select>
+          <ClientAutocomplete
+            cases={activeCases}
+            selectedId={form.case_id}
+            inputValue={clientInput}
+            onSelect={handleClientSelect}
+            onInputChange={handleClientInputChange}
+          />
         </div>
-
-        {showNewCase && allowCreateCase && (
-          <div className="mb-4 p-3 rounded-xl border border-input space-y-2">
-            <input type="text" value={newCaseName} onChange={(e) => setNewCaseName(e.target.value)}
-              placeholder="Název případu *"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            <input type="text" value={newCaseNote} onChange={(e) => setNewCaseNote(e.target.value)}
-              placeholder="Poznámka (volitelné)"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            <button onClick={handleCreateCase} disabled={creatingCase || !newCaseName.trim()}
-              className="btn btn-primary btn-sm w-full flex items-center justify-center gap-1 text-xs">
-              {creatingCase && <Loader2 className="h-3 w-3 animate-spin" />} Vytvořit případ
-            </button>
-          </div>
-        )}
 
         {/* 2. Typ schůzky */}
         <div className="mb-4">
@@ -234,8 +298,8 @@ export function MeetingFormModal({
           </div>
         </div>
 
-        {/* 3. Datum + 4. Čas + 5. Délka */}
-        <div className="mb-4 grid grid-cols-3 gap-3">
+        {/* 3. Datum + 4. Čas (always visible) */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
             <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })}
@@ -246,29 +310,51 @@ export function MeetingFormModal({
             <input type="time" value={form.meeting_time} onChange={(e) => set({ meeting_time: e.target.value })} required
               className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
-          <div>
-            <NumberInput label="Délka (min)" value={form.duration_minutes} onChange={(v) => set({ duration_minutes: v })} />
-          </div>
         </div>
 
-        {/* 6. Místo */}
-        <div className="mb-4">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
-          <div className="flex gap-2 mb-2">
-            {(["osobne", "online"] as const).map((lt) => (
-              <button key={lt} type="button" onClick={() => set({ location_type: form.location_type === lt ? "" : lt })}
-                className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${form.location_type === lt ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
-                style={form.location_type === lt ? { background: "#00abbd" } : {}}>
-                {lt === "osobne" ? "Osobně" : "Online"}
-              </button>
-            ))}
+        {/* Collapsible: Více možností */}
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground mb-3 transition-colors"
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+          Více možností
+        </button>
+
+        {moreOpen && (
+          <div className="space-y-4 mb-4 animate-in fade-in slide-in-from-top-1 duration-150">
+            {/* Délka */}
+            <NumberInput label="Délka (min)" value={form.duration_minutes} onChange={(v) => set({ duration_minutes: v })} />
+
+            {/* Místo */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Místo</label>
+              <div className="flex gap-2 mb-2">
+                {(["osobne", "online"] as const).map((lt) => (
+                  <button key={lt} type="button" onClick={() => set({ location_type: form.location_type === lt ? "" : lt })}
+                    className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${form.location_type === lt ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
+                    style={form.location_type === lt ? { background: "#00abbd" } : {}}>
+                    {lt === "osobne" ? "Osobně" : "Online"}
+                  </button>
+                ))}
+              </div>
+              {form.location_type && (
+                <input type="text" value={form.location_detail} onChange={(e) => set({ location_detail: e.target.value })}
+                  placeholder={form.location_type === "osobne" ? "Adresa…" : "Platforma…"}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              )}
+            </div>
+
+            {/* Poznámka */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Poznámka</label>
+              <textarea value={form.poznamka} onChange={(e) => set({ poznamka: e.target.value })}
+                rows={2} placeholder="Volitelné…"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+            </div>
           </div>
-          {form.location_type && (
-            <input type="text" value={form.location_detail} onChange={(e) => set({ location_detail: e.target.value })}
-              placeholder={form.location_type === "osobne" ? "Adresa…" : "Platforma…"}
-              className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          )}
-        </div>
+        )}
 
         {/* 7. Výsledek schůzky — jen při editaci existující schůzky */}
         {isEdit && !form.cancelled && (
@@ -318,21 +404,13 @@ export function MeetingFormModal({
           </div>
         )}
 
-        {/* 8. Poznámka */}
-        <div className="mb-5">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Poznámka</label>
-          <textarea value={form.poznamka} onChange={(e) => set({ poznamka: e.target.value })}
-            rows={2} placeholder="Volitelné…"
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-        </div>
-
         {/* Save button */}
-        <button onClick={() => onSave(form)} disabled={saving || !form.case_id || !form.date || !form.meeting_time}
+        <button onClick={handleSave} disabled={isSaving || !canSave}
           className="btn btn-primary btn-md w-full flex items-center justify-center gap-2">
-          {saving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
+          {isSaving && <Loader2 className="h-4 w-4 animate-spin" />} Uložit
         </button>
 
-        {/* 9. Cancel / Restore toggle — jen při editaci existující schůzky */}
+        {/* Cancel / Restore toggle — jen při editaci */}
         {isEdit && <button
           type="button"
           onClick={() => set({ cancelled: !form.cancelled })}
