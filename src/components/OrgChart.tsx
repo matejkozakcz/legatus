@@ -112,6 +112,7 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
           <img
             src={node.avatar_url}
             alt={node.full_name}
+            loading="lazy"
             className="rounded-full object-cover"
             style={{ width: 56, height: 56, border: "2px solid white", boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }}
           />
