@@ -1341,24 +1341,12 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="space-y-2">
-            {/* Row 1 — meetings that happened */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">Proběhlo</span>
-              <ActivityChip type="FSA" value={stats.fsa.actual} />
-              <ActivityChip type="POH" value={stats.poh.actual} />
-              <ActivityChip type="SER" value={stats.ser.actual} />
-              <ActivityChip type="POR" value={stats.por.actual} />
-              <ActivityChip type="REF" value={stats.ref.actual} />
-            </div>
-            {/* Row 2 — meetings newly booked this period */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">Nově domluveno</span>
-              <ActivityChip type="FSA" value={newlyBooked.fsa} />
-              <ActivityChip type="POH" value={newlyBooked.poh} />
-              <ActivityChip type="SER" value={newlyBooked.ser} />
-              <ActivityChip type="POR" value={newlyBooked.por} />
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <ActivityCard label="Analýzy" actual={stats.fsa.actual} total={stats.fsa.planned} newly={newlyBooked.fsa} color="#00abbd" />
+            <ActivityCard label="Pohovory" actual={stats.poh.actual} total={stats.poh.planned} newly={newlyBooked.poh} color="#f59e0b" />
+            <ActivityCard label="Servisy" actual={stats.ser.actual} total={stats.ser.planned} newly={newlyBooked.ser} color="#ef4444" />
+            <ActivityCard label="Poradenství" actual={stats.por.actual} total={stats.por.planned} newly={newlyBooked.por} color="#8b5cf6" />
+            <ActivityCard label="Doporučení" actual={stats.ref.actual} total={stats.ref.planned} newly={0} color="#10b981" />
           </div>
         </section>
 
