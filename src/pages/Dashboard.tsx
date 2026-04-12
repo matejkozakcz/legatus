@@ -3,7 +3,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, ChevronLeft, ChevronRight, Pencil, Check, ArrowLeft, Target, FileDown, Loader2 } from "lucide-react";
+import {
+  LayoutDashboard,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Check,
+  ArrowLeft,
+  Target,
+  FileDown,
+  Loader2,
+} from "lucide-react";
 import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
 import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
@@ -96,12 +106,25 @@ function MobileStatCard({
 
 // ─── ActivityCard — combined stat card for desktop ────────────────────────────
 
-function ActivityCard({ label, actual, total, newly, color }: {
-  label: string; actual: number; total: number; newly: number; color: string;
+function ActivityCard({
+  label,
+  actual,
+  total,
+  newly,
+  color,
+}: {
+  label: string;
+  actual: number;
+  total: number;
+  newly: number;
+  color: string;
 }) {
   const progress = total > 0 ? actual / total : 0;
   return (
-    <div className="rounded-xl border border-input bg-card px-4 py-3 space-y-2" style={{ borderTop: `2px solid ${color}` }}>
+    <div
+      className="rounded-xl border border-input bg-card px-4 py-3 space-y-2"
+      style={{ borderTop: `2px solid ${color}` }}
+    >
       <div className="flex items-baseline justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
         <span>
@@ -110,11 +133,12 @@ function ActivityCard({ label, actual, total, newly, color }: {
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round(progress * 100)}%`, background: color }} />
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${Math.round(progress * 100)}%`, background: color }}
+        />
       </div>
-      {newly > 0 && (
-        <p className="text-[11px] text-muted-foreground">+{newly} nově domluveno</p>
-      )}
+      {newly > 0 && <p className="text-[11px] text-muted-foreground">+{newly} nově domluveno</p>}
     </div>
   );
 }
@@ -122,8 +146,7 @@ function ActivityCard({ label, actual, total, newly, color }: {
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
-  const countAll = (type: string) =>
-    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled).length;
+  const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type && !m.cancelled).length;
 
   const countPast = (type: string) =>
     meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date <= todayStr).length;
@@ -370,18 +393,14 @@ const Dashboard = () => {
   );
 
   const desktopNewlyArranged = useMemo(
-    () => computeNewlyArranged(desktopMeetings, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")),
+    () =>
+      computeNewlyArranged(desktopMeetings, format(dateRange.from, "yyyy-MM-dd"), format(dateRange.to, "yyyy-MM-dd")),
     [desktopMeetings, dateRange],
   );
 
   // ── Newly booked meetings (by created_at, not date) ─────────────────────────
   const { data: newlyBookedMeetings = [] } = useQuery({
-    queryKey: [
-      "dashboard_newly_booked",
-      activeUserId,
-      dateRange.from.toISOString(),
-      dateRange.to.toISOString(),
-    ],
+    queryKey: ["dashboard_newly_booked", activeUserId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_meetings")
@@ -680,32 +699,48 @@ const Dashboard = () => {
   const getGoalScope = (key: GoalKey): string => {
     if (!vedouciGoals) return "direct";
     switch (key) {
-      case "vedouci_count": return vedouciGoals.vedouci_count_scope || "direct";
-      case "budouci_vedouci_count": return vedouciGoals.budouci_vedouci_count_scope || "direct";
-      case "garant_count": return vedouciGoals.garant_count_scope || "direct";
-      default: return "direct";
+      case "vedouci_count":
+        return vedouciGoals.vedouci_count_scope || "direct";
+      case "budouci_vedouci_count":
+        return vedouciGoals.budouci_vedouci_count_scope || "direct";
+      case "garant_count":
+        return vedouciGoals.garant_count_scope || "direct";
+      default:
+        return "direct";
     }
   };
   const getGoalValue = (key: GoalKey): number => {
     const scope = getGoalScope(key);
     switch (key) {
-      case "team_bj": return vedouciMonthlyBj;
-      case "personal_bj": return personalMonthlyBj;
-      case "vedouci_count": return scope === "direct" ? directVedouciCount : vedouciSubCount;
-      case "budouci_vedouci_count": return scope === "direct" ? directBvCount : bvCount;
-      case "garant_count": return scope === "direct" ? directGarantCount : garantCount;
-      default: return 0;
+      case "team_bj":
+        return vedouciMonthlyBj;
+      case "personal_bj":
+        return personalMonthlyBj;
+      case "vedouci_count":
+        return scope === "direct" ? directVedouciCount : vedouciSubCount;
+      case "budouci_vedouci_count":
+        return scope === "direct" ? directBvCount : bvCount;
+      case "garant_count":
+        return scope === "direct" ? directGarantCount : garantCount;
+      default:
+        return 0;
     }
   };
   const getGoalMax = (key: GoalKey): number => {
     if (!vedouciGoals) return 0;
     switch (key) {
-      case "team_bj": return vedouciGoals.team_bj_goal || 0;
-      case "personal_bj": return vedouciGoals.personal_bj_goal || 0;
-      case "vedouci_count": return vedouciGoals.vedouci_count_goal || 0;
-      case "budouci_vedouci_count": return vedouciGoals.budouci_vedouci_count_goal || 0;
-      case "garant_count": return vedouciGoals.garant_count_goal || 0;
-      default: return 0;
+      case "team_bj":
+        return vedouciGoals.team_bj_goal || 0;
+      case "personal_bj":
+        return vedouciGoals.personal_bj_goal || 0;
+      case "vedouci_count":
+        return vedouciGoals.vedouci_count_goal || 0;
+      case "budouci_vedouci_count":
+        return vedouciGoals.budouci_vedouci_count_goal || 0;
+      case "garant_count":
+        return vedouciGoals.garant_count_goal || 0;
+      default:
+        return 0;
     }
   };
   const getGoalLabel = (key: GoalKey): string => {
@@ -845,28 +880,70 @@ const Dashboard = () => {
             ) : role === "ziskatel" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={totalBjAllTime} max={1000} label="Kumulativní BJ" sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`} dark completed={totalBjAllTime >= 1000} />
+                  <GaugeIndicator
+                    value={totalBjAllTime}
+                    max={1000}
+                    label="Kumulativní BJ"
+                    sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+                    dark
+                    completed={totalBjAllTime >= 1000}
+                  />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={ziskatelStructureCount} max={2} label="Lidé ve struktuře" sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`} dark completed={ziskatelStructureCount >= 2} />
+                  <GaugeIndicator
+                    value={ziskatelStructureCount}
+                    max={2}
+                    label="Lidé ve struktuře"
+                    sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+                    dark
+                    completed={ziskatelStructureCount >= 2}
+                  />
                 </div>
               </div>
             ) : role === "garant" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={structureCount} max={5} label="Lidé ve struktuře" sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`} dark completed={structureCount >= 5} />
+                  <GaugeIndicator
+                    value={structureCount}
+                    max={5}
+                    label="Lidé ve struktuře"
+                    sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`}
+                    dark
+                    completed={structureCount >= 5}
+                  />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={directSubordinateCount} max={3} label="Přímá linka" sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`} dark completed={directSubordinateCount >= 3} />
+                  <GaugeIndicator
+                    value={directSubordinateCount}
+                    max={3}
+                    label="Přímá linka"
+                    sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+                    dark
+                    completed={directSubordinateCount >= 3}
+                  />
                 </div>
               </div>
             ) : (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={structureCount} max={10} label="Lidé ve struktuře" sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`} dark completed={structureCount >= 10} />
+                  <GaugeIndicator
+                    value={structureCount}
+                    max={10}
+                    label="Lidé ve struktuře"
+                    sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`}
+                    dark
+                    completed={structureCount >= 10}
+                  />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={directSubordinateCount} max={6} label="Přímá linka" sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`} dark completed={directSubordinateCount >= 6} />
+                  <GaugeIndicator
+                    value={directSubordinateCount}
+                    max={6}
+                    label="Přímá linka"
+                    sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+                    dark
+                    completed={directSubordinateCount >= 6}
+                  />
                 </div>
               </div>
             )}
@@ -874,7 +951,7 @@ const Dashboard = () => {
         </div>
 
         {/* ── STAT CARDS ── */}
-        {(role === "vedouci" || role === "budouci_vedouci") ? (
+        {role === "vedouci" || role === "budouci_vedouci" ? (
           <>
             {/* 1) Nově domluvené schůzky */}
             <div
@@ -1234,7 +1311,6 @@ const Dashboard = () => {
     );
   };
 
-
   const handleExport = async (period: ExportPeriod) => {
     if (!activeUserId || !activeProfile) return;
     setExportingPdf(period);
@@ -1394,17 +1470,47 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-6">
           <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
             Přehled aktivit
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <ActivityCard label="Analýzy" actual={stats.fsa.actual} total={stats.fsa.planned} newly={newlyBooked.fsa} color="#00abbd" />
-            <ActivityCard label="Pohovory" actual={stats.poh.actual} total={stats.poh.planned} newly={newlyBooked.poh} color="#f59e0b" />
-            <ActivityCard label="Servisy" actual={stats.ser.actual} total={stats.ser.planned} newly={newlyBooked.ser} color="#ef4444" />
-            <ActivityCard label="Poradenství" actual={stats.por.actual} total={stats.por.planned} newly={newlyBooked.por} color="#8b5cf6" />
-            <ActivityCard label="Doporučení" actual={stats.ref.actual} total={stats.ref.planned} newly={0} color="#10b981" />
+            <ActivityCard
+              label="Analýzy"
+              actual={stats.fsa.actual}
+              total={stats.fsa.planned}
+              newly={newlyBooked.fsa}
+              color="#00abbd"
+            />
+            <ActivityCard
+              label="Pohovory"
+              actual={stats.poh.actual}
+              total={stats.poh.planned}
+              newly={newlyBooked.poh}
+              color="#f59e0b"
+            />
+            <ActivityCard
+              label="Servisy"
+              actual={stats.ser.actual}
+              total={stats.ser.planned}
+              newly={newlyBooked.ser}
+              color="#ef4444"
+            />
+            <ActivityCard
+              label="Poradenství"
+              actual={stats.por.actual}
+              total={stats.por.planned}
+              newly={newlyBooked.por}
+              color="#8b5cf6"
+            />
+            <ActivityCard
+              label="Doporučení"
+              actual={stats.ref.actual}
+              total={stats.ref.planned}
+              newly={0}
+              color="#10b981"
+            />
           </div>
         </section>
 
