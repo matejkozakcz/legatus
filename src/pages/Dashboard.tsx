@@ -1065,6 +1065,61 @@ const Dashboard = () => {
           </>
         ) : (
           <>
+            {/* 1) Nově domluvené schůzky — same position as vedoucí */}
+            <div
+              style={{
+                background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+                borderRadius: 16,
+                padding: "14px 16px",
+                marginBottom: 10,
+                border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "#00abbd",
+                  marginBottom: 12,
+                }}
+              >
+                Nově domluveno tento týden
+              </div>
+              <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
+                {[
+                  { label: "Analýzy", value: mobileNewlyArranged.fsa },
+                  { label: "Pohovory", value: mobileNewlyArranged.poh },
+                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                ].map((item) => (
+                  <div key={item.label} style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 800,
+                        fontSize: 28,
+                        color: "#00555f",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "var(--text-muted)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2-5) Stat cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               <MobileStatCard
                 label="Analýzy"
@@ -1092,32 +1147,6 @@ const Dashboard = () => {
               />
               <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
             </div>
-
-            {/* Nově domluveno */}
-            <div
-              style={{
-                background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
-                borderRadius: 16,
-                padding: "14px 16px",
-                marginBottom: 10,
-                border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: "#00abbd",
-                  marginBottom: 12,
-                }}
-              >
-                Nově domluveno tento týden
-              </div>
-              <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
-                {[
-                  { label: "Analýzy", value: mobileNewlyArranged.fsa },
-                  { label: "Servisy", value: mobileNewlyArranged.ser },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
