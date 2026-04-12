@@ -1568,15 +1568,15 @@ const Dashboard = () => {
             />
             <ActivityCard
               label="Poradenství"
-              actual={stats.por.actual}
-              total={stats.por.planned}
+              actual={desktopWeekStats.por.actual}
+              total={desktopWeekStats.por.planned}
               newly={newlyBooked.por}
               color="#8b5cf6"
             />
             <ActivityCard
               label="Doporučení"
-              actual={stats.ref.actual}
-              total={stats.ref.planned}
+              actual={desktopWeekStats.ref.actual}
+              total={desktopWeekStats.ref.planned}
               newly={0}
               color="#10b981"
             />
