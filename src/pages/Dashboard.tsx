@@ -15,7 +15,7 @@ import {
   daysRemainingInPeriod,
 } from "@/lib/productionPeriod";
 import { cs } from "date-fns/locale";
-import { StatCard } from "@/components/StatCard";
+
 import { OrgChart } from "@/components/OrgChart";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
 import { fireConfetti } from "@/lib/confetti";
