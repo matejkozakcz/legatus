@@ -25,12 +25,19 @@ interface MeetingRow {
 interface PersonStats {
   name: string;
   role: string;
+  // Planned (all non-cancelled in period)
+  planFsa: number;
+  planPoh: number;
+  planSer: number;
+  planPor: number;
+  // Done (past, non-cancelled)
   fsa: number;
   poh: number;
   ser: number;
   por: number;
   ref: number;
   bj: number;
+  // Newly booked
   newFsa: number;
   newPoh: number;
   newSer: number;
@@ -50,6 +57,7 @@ function computePersonStats(
   const active = meetings.filter((m) => !m.cancelled);
   const past = active.filter((m) => m.date <= todayStr);
 
+  const countAll = (type: string) => active.filter((m) => m.meeting_type === type).length;
   const countPast = (type: string) => past.filter((m) => m.meeting_type === type).length;
   const refs = active.reduce(
     (acc, m) => acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
@@ -65,6 +73,10 @@ function computePersonStats(
   return {
     name,
     role,
+    planFsa: countAll("FSA"),
+    planPoh: countAll("POH"),
+    planSer: countAll("SER"),
+    planPor: countAll("POR"),
     fsa: countPast("FSA"),
     poh: countPast("POH"),
     ser: countPast("SER"),
