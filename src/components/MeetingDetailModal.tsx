@@ -38,7 +38,7 @@ interface MeetingDetailModalProps {
 export function MeetingDetailModal({
   open, onClose, meeting, onEdit,
   onSaveOutcome, savingOutcome,
-  onCancel,
+  onCancel, onScheduleFollowUp,
 }: MeetingDetailModalProps) {
   useBodyScrollLock(open);
 
