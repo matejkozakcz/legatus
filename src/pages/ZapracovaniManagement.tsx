@@ -785,9 +785,14 @@ export default function ZapracovaniManagement() {
         created_by: profile?.id || "",
       });
       if (error) throw error;
+      return { novacekId, title: newTaskTitle.trim() };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_all_tasks"] });
+      // Notify nováček about new task
+      supabase.functions.invoke("check-onboarding", {
+        body: { type: "task_added", novacek_id: result.novacekId, sender_id: profile?.id, task_title: result.title },
+      }).catch(() => {});
       setNewTaskTitle("");
       setNewTaskNote("");
       setNewTaskDeadline("");
