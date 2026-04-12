@@ -642,7 +642,48 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         {/* Scrollable meeting list */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 180 }}>
         <div style={{ padding: "0 16px" }}>
-          {mobileDayMeetings.length === 0 ? (
+          {/* Onboarding tasks for this day */}
+          {mobileDayTasks.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: mobileDayMeetings.length > 0 ? 12 : 0 }}>
+              {mobileDayTasks.map((t) => (
+                <div
+                  key={t.id}
+                  style={{
+                    background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
+                    borderRadius: 16,
+                    border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)",
+                    borderLeft: "4px solid #8b5cf6",
+                    padding: "12px 16px",
+                    opacity: t.completed ? 0.5 : 1,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <GraduationCap size={15} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                    <span style={{
+                      fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14,
+                      color: "var(--text-primary)",
+                      textDecoration: t.completed ? "line-through" : undefined,
+                    }}>
+                      {t.title}
+                    </span>
+                    {t.completed && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#3FC55D", background: "rgba(63,197,93,0.12)", borderRadius: 8, padding: "2px 8px" }}>
+                        Splněno
+                      </span>
+                    )}
+                  </div>
+                  {t.deadline_time && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary, #6b8a8e)", marginTop: 4 }}>
+                      <Clock size={12} />
+                      <span>{t.deadline_time.slice(0, 5)}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {mobileDayMeetings.length === 0 && mobileDayTasks.length === 0 ? (
             <div style={{
               textAlign: "center",
               padding: "48px 20px",
