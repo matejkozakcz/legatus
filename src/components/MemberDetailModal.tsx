@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar } from "lucide-react";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface ProfileNode {
   id: string;
