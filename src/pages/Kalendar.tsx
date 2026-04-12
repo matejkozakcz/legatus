@@ -859,8 +859,18 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             if (detailMeeting) {
               await supabase.from("client_meetings").update({ cancelled: true }).eq("id", detailMeeting.id);
               queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
-              setDetailOpen(false);
               toast.success("Schůzka zrušena");
+            }
+          }}
+          onScheduleFollowUp={(data) => {
+            if (detailMeeting) {
+              const form: MeetingForm = {
+                ...defaultMeetingForm(data.date, data.meeting_time),
+                meeting_type: data.meeting_type,
+                case_id: detailMeeting.case_id || "",
+                case_name: detailMeeting.case_name || "",
+              };
+              saveMutation.mutate({ form, skipFollowUp: true });
             }
           }}
           onEdit={() => {
