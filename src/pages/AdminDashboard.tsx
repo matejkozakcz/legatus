@@ -2161,7 +2161,34 @@ function EditRuleForm({
         </div>
       )}
 
-      {/* Redirect URL */}
+      {/* Sender type */}
+      <div>
+        <Label className="text-xs mb-1.5 block">Odesílatel (sender)</Label>
+        <div className="flex flex-wrap gap-2">
+          {SENDER_TYPES.map((st) => {
+            const checked = (form.sender_type || "system") === st.value;
+            return (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setForm({ ...form, sender_type: st.value })}
+                className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                style={{
+                  background: checked ? "hsl(var(--primary))" : "transparent",
+                  color: checked ? "#fff" : "inherit",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
+                }}
+              >
+                {st.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {SENDER_TYPES.find((st) => st.value === (form.sender_type || "system"))?.description}
+        </div>
+      </div>
+
       <div>
         <Label className="text-xs">Přesměrování po kliknutí (volitelné)</Label>
         <div className="flex gap-2 mt-1">
