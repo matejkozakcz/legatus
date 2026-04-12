@@ -877,6 +877,17 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               setMeetingFormOpen(true);
             }
           }}
+          onScheduleFollowUp={(data) => {
+            saveMutation.mutate({
+              form: {
+                ...defaultMeetingForm(data.date, data.time),
+                case_id: detailMeeting?.case_id || "",
+                case_name: detailMeeting?.case_name || "",
+                meeting_type: data.meeting_type,
+              },
+              skipFollowUp: true,
+            });
+          }}
         />
         <FollowUpModal
           open={!!followUp}
@@ -1002,6 +1013,17 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             setEditingMeetingId(detailMeeting.id);
             setMeetingFormOpen(true);
           }
+        }}
+        onScheduleFollowUp={(data) => {
+          saveMutation.mutate({
+            form: {
+              ...defaultMeetingForm(data.date, data.time),
+              case_id: detailMeeting?.case_id || "",
+              case_name: detailMeeting?.case_name || "",
+              meeting_type: data.meeting_type,
+            },
+            skipFollowUp: true,
+          });
         }}
       />
       <FollowUpModal

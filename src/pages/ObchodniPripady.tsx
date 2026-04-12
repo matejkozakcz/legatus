@@ -962,6 +962,19 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             setDetailMeeting(null);
           }
         }}
+        onScheduleFollowUp={(data) => {
+          const caseName = detailMeeting?.case_name || cases.find(c => c.id === data.case_id)?.nazev_pripadu || "";
+          saveMeetingMutation.mutate({
+            form: {
+              ...defaultForm(data.case_id),
+              case_name: caseName,
+              meeting_type: data.meeting_type,
+              date: data.date,
+              meeting_time: data.time,
+            },
+            skipFollowUp: true,
+          });
+        }}
       />
 
       {/* Meeting form modal */}
