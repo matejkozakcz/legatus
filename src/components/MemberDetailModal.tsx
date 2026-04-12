@@ -466,6 +466,151 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           </>
         )}
 
+        {/* Onboarding tasks section for Nováček */}
+        {isNovacek && (
+          <>
+            <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-heading text-sm font-semibold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+                  <GraduationCap size={16} style={{ color: "#00abbd" }} />
+                  Zapracování
+                </p>
+                {canEditOnboarding && templates.length > 0 && (
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) applyTemplateMutation.mutate(e.target.value);
+                      e.target.value = "";
+                    }}
+                    className="text-xs rounded-lg border border-input bg-background px-2 py-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    <option value="">Použít šablonu…</option>
+                    {templates.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              {onboardingTasks.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: isDark ? "rgba(255,255,255,0.1)" : "#E1E9EB", overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%",
+                        width: `${onboardingTasks.length > 0 ? Math.round((onboardingTasks.filter((t: any) => t.completed).length / onboardingTasks.length) * 100) : 0}%`,
+                        borderRadius: 3,
+                        background: "#00abbd",
+                        transition: "width 0.3s",
+                      }} />
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#00abbd" }}>
+                      {onboardingTasks.filter((t: any) => t.completed).length}/{onboardingTasks.length}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Task list */}
+              <div className="space-y-2">
+                {onboardingTasks.map((task: any) => {
+                  const isOverdue = task.deadline && !task.completed && new Date(task.deadline) < new Date();
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-start gap-2 rounded-lg"
+                      style={{
+                        padding: "8px 10px",
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.03)",
+                        border: isOverdue ? "1px solid rgba(252,124,113,0.3)" : isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
+                      }}
+                    >
+                      {canEditOnboarding ? (
+                        <button
+                          onClick={() => toggleTaskMutation.mutate({ taskId: task.id, completed: !task.completed })}
+                          style={{
+                            width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                            border: task.completed ? "none" : "2px solid #b8cfd4",
+                            background: task.completed ? "#3FC55D" : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          }}
+                        >
+                          {task.completed && <Check size={12} color="white" />}
+                        </button>
+                      ) : (
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                          border: task.completed ? "none" : "2px solid #b8cfd4",
+                          background: task.completed ? "#3FC55D" : "transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          {task.completed && <Check size={12} color="white" />}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium" style={{
+                          color: "var(--text-primary)",
+                          textDecoration: task.completed ? "line-through" : "none",
+                          opacity: task.completed ? 0.6 : 1,
+                        }}>
+                          {task.title}
+                        </p>
+                        {task.deadline && (
+                          <p className="text-[10px]" style={{ color: isOverdue ? "#fc7c71" : "var(--text-muted)", marginTop: 1 }}>
+                            {format(new Date(task.deadline), "d.M.yyyy")}
+                          </p>
+                        )}
+                        {task.description && (
+                          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{task.description}</p>
+                        )}
+                      </div>
+                      {canEditOnboarding && (
+                        <button
+                          onClick={() => deleteTaskMutation.mutate(task.id)}
+                          style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                        >
+                          <Trash2 size={14} style={{ color: "#fc7c71", opacity: 0.6 }} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add task form (Vedoucí/BV only) */}
+              {canEditOnboarding && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Nový úkol…"
+                    className="flex-1 text-xs rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
+                  />
+                  <input
+                    type="date"
+                    value={newTaskDeadline}
+                    onChange={(e) => setNewTaskDeadline(e.target.value)}
+                    className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-28"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newTaskTitle.trim()) addTaskMutation.mutate({ title: newTaskTitle.trim(), deadline: newTaskDeadline });
+                    }}
+                    disabled={!newTaskTitle.trim() || addTaskMutation.isPending}
+                    className="flex items-center justify-center rounded-lg"
+                    style={{ width: 30, height: 30, background: "#00abbd", border: "none", cursor: "pointer", opacity: newTaskTitle.trim() ? 1 : 0.4 }}
+                  >
+                    <Plus size={14} color="white" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* Divider */}
         <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
 
