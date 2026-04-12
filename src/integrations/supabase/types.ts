@@ -279,6 +279,7 @@ export type Database = {
           schedule_type: string
           send_in_app: boolean
           send_push: boolean
+          sender_type: string
           title_template: string
           trigger_event: string
           updated_at: string
@@ -300,6 +301,7 @@ export type Database = {
           schedule_type?: string
           send_in_app?: boolean
           send_push?: boolean
+          sender_type?: string
           title_template?: string
           trigger_event: string
           updated_at?: string
@@ -321,6 +323,7 @@ export type Database = {
           schedule_type?: string
           send_in_app?: boolean
           send_push?: boolean
+          sender_type?: string
           title_template?: string
           trigger_event?: string
           updated_at?: string
