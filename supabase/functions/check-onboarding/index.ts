@@ -36,6 +36,8 @@ Deno.serve(async (req) => {
       sent = await handleTaskAdded(supabase, supabaseUrl, serviceRoleKey, body);
     } else if (type === "check_deadlines") {
       sent = await handleCheckDeadlines(supabase, supabaseUrl, serviceRoleKey);
+    } else if (type === "all_completed") {
+      sent = await handleAllCompleted(supabase, supabaseUrl, serviceRoleKey, body);
     } else {
       return new Response(JSON.stringify({ error: "Unknown type" }), {
         status: 400,
