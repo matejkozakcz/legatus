@@ -106,8 +106,34 @@ function registerFonts(doc: jsPDF) {
   doc.setFont("OpenSans", "normal");
 }
 
-const HEAD_FILL: [number, number, number] = [0, 85, 95];
+const DEFAULT_HEAD_FILL: [number, number, number] = [0, 85, 95];
 const TOTALS_FILL: [number, number, number] = [240, 245, 246];
+
+interface PdfConfig {
+  company_name: string;
+  orientation: "landscape" | "portrait";
+  head_color: [number, number, number];
+  show_planned: boolean;
+  show_completed: boolean;
+  show_newly_booked: boolean;
+}
+
+async function fetchPdfConfig(): Promise<PdfConfig> {
+  const { data } = await supabase
+    .from("app_config")
+    .select("value")
+    .eq("key", "pdf_export")
+    .single();
+  const val = data?.value as unknown as PdfConfig | null;
+  return val ?? {
+    company_name: "LEGATUS",
+    orientation: "landscape",
+    head_color: DEFAULT_HEAD_FILL,
+    show_planned: true,
+    show_completed: true,
+    show_newly_booked: true,
+  };
+}
 
 // ─── Main export function ────────────────────────────────────────────────────
 
