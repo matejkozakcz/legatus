@@ -199,7 +199,7 @@ export default function Zapracovani() {
             const cfg = statusConfig[status];
             const StatusIcon = cfg.icon;
             const isExpanded = expandedId === task.id;
-            const isEditingThisNote = editingNote === task.id;
+            
 
             return (
               <div
