@@ -1,41 +1,143 @@
 
 
-# Rozlišení „Naplánováno na týden" vs „Nově domluveno tento týden"
+# Zapracování Nováčka — Onboarding Task System
 
-## Problem
-Aktuálně dashboard zobrazuje `planned` = celkový počet schůzek v období a `actual` = schůzky s datem ≤ dnes. Nerozlišuje se, jestli byla schůzka **domluvena** tento týden (nově vytvořena) nebo jen **naplánována na** tento týden (datum schůzky padne do týdne).
+## Summary
+Nový systém "Zapracování" pro Nováčky: databázová tabulka úkolů s deadliny, šablonový systém pro Vedoucí/BV, progress tracking, notifikace, a upravené UI pro mobilní i desktopové rozhraní Nováčka.
 
-## Řešení
+---
 
-### Dva koncepty
-1. **Na tento týden** — schůzky kde `date` je v rozmezí aktuálního týdne. Z toho: kolik už proběhlo (`date <= today`) vs kolik je celkem.
-2. **Nově domluveno** — schůzky kde `created_at` padne do aktuálního týdne (bez ohledu na datum schůzky). Samostatná karta.
+## 1. Database
 
-### Změny v `Dashboard.tsx`
+### New table: `onboarding_tasks`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| novacek_id | uuid NOT NULL | FK-like to profiles.id |
+| title | text NOT NULL | e.g. "Osobní databáze - 100 lidí" |
+| description | text | Optional note/link field |
+| sort_order | integer | Chronological ordering |
+| deadline | date | Set by Vedoucí/BV |
+| completed | boolean DEFAULT false | Nováček confirms |
+| completed_at | timestamptz | Auto-set on completion |
+| created_by | uuid NOT NULL | Who assigned it |
+| created_at | timestamptz DEFAULT now() | |
+| updated_at | timestamptz DEFAULT now() | |
 
-**Query**: Přidat `created_at` do selectu v obou queries (desktop + mobile).
+**RLS policies:**
+- Nováček can SELECT own tasks (`novacek_id = auth.uid()`)
+- Nováček can UPDATE own tasks (only `completed`, `completed_at`, `description` fields — handled in app logic)
+- Vedoucí/BV can SELECT/INSERT/UPDATE/DELETE tasks for users in their subtree
+- Garant can SELECT tasks for their novacci (read-only)
 
-**`computeStats`**: Zůstane beze změny — už počítá planned (celkem v období) a actual (date ≤ today) správně.
+### New table: `onboarding_templates`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| name | text NOT NULL | Template name |
+| items | jsonb NOT NULL | Array of {title, default_deadline_days} |
+| created_by | uuid NOT NULL | |
+| created_at | timestamptz DEFAULT now() | |
 
-**Nová funkce `computeNewlyArranged`**: Spočítá schůzky kde `created_at` je v daném týdnu, seskupené podle typu (FSA, SER, POH).
+**RLS:** Admin + Vedoucí/BV can manage templates.
 
-**Mobile UI**:
-- Stávající 2×3 grid karet zůstane — zobrazuje „proběhlých / naplánovaných na týden"
-- Přidá se nová karta pod grid: **„Nově domluveno tento týden"** se třemi čísly: Analýzy, Servisy, Pohovory
+### Enable realtime on `onboarding_tasks`:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.onboarding_tasks;
+```
 
-**Desktop UI**:
-- StatCardy zůstanou (planned/actual per period)
-- Přidá se nový řádek karet „Nově domluveno" pod stávající StatCardy
+---
 
-### Změny v `MojeAktivity.tsx`
-- Mobilní view: přidat pod existující karty i read-only kartu „Nově domluveno" se stejnou logikou (query na `created_at` v aktuálním týdnu)
+## 2. Navigation Changes
 
-## Technické kroky
+### Sidebar (`AppSidebar.tsx`)
+- For `novacek` role: hide "Správa týmu", show only Dashboard, Kalendář, Obchodní případy (already there)
+- Add "Zapracování" nav item for Nováček (icon: `GraduationCap` or `ClipboardList`)
 
-1. **Dashboard.tsx** — rozšířit select o `created_at`, přidat `computeNewlyArranged()`, přidat UI kartu „Nově domluveno" na mobilu i desktopu
-2. **Změna sublabel** — u mobilních StatCardů změnit popisek na „proběhlých / na tento týden" aby bylo jasné co je co
+### Mobile Bottom Nav (`MobileBottomNav.tsx`)
+- Current: Nováček sees "Obchod" (left) + "Schůzky" (right)
+- Change to: **"Obchod"** (left) + **"Zapracování"** (right)
+- New route: `/zapracovani`
 
-## Rozsah
-- 1 soubor: `src/pages/Dashboard.tsx`
-- Žádné DB změny — `created_at` už existuje v `client_meetings`
+---
+
+## 3. New Page: Zapracování (`src/pages/Zapracovani.tsx`)
+
+### Nováček View (own tasks)
+- Chronological list of tasks sorted by `sort_order`
+- Each task shows: title, deadline date, status (pending/completed/overdue)
+- Overdue tasks (past deadline, not completed) highlighted in coral
+- Each task expandable to show/edit `description` (poznámka field)
+- "Splnit" button to mark as completed
+- Style consistent with existing app cards/lists
+
+### Mobile layout
+- Clean card-based list, similar to existing mobile stat cards
+- Current/next task prominently shown at top
+
+---
+
+## 4. Dashboard Changes for Nováček
+
+### Desktop: "Stav byznysu" card
+- Replace placeholder gauges with a **horizontal progress bar**
+- Shows: current next uncompleted task title, its deadline
+- Progress bar: `% completed tasks / total tasks`
+- Label: "Postup k pozici Získatele"
+
+### Mobile: Same gradient card area
+- Replace dual placeholder gauges with horizontal progress bar
+- Current task + deadline displayed
+- % completion shown
+
+---
+
+## 5. Vedoucí/BV Interface (in Správa týmu)
+
+### In `MemberDetailModal` or new section for Nováček members:
+- "Zapracování" tab showing task list for that Nováček
+- Can add/edit/delete tasks, change deadlines, toggle completion
+- "Použít šablonu" button to bulk-create tasks from a template
+- Template management (create/edit templates) in same UI or Admin Dashboard
+
+### Garant view:
+- Same "Zapracování" tab but read-only (no edit/delete buttons)
+
+---
+
+## 6. Notifications
+
+Three notification types added to the system:
+
+| Type | Recipient | Trigger |
+|------|-----------|---------|
+| `onboarding_new_task` | Nováček | New task assigned |
+| `onboarding_deadline_soon` | Nováček | 2 days before deadline |
+| `onboarding_overdue` | Nováček | Past deadline, not completed |
+| `onboarding_task_completed` | Garant + BV/Vedoucí | Nováček marks task as done |
+
+Implementation: extend existing `check-reminders` edge function or create a new `check-onboarding` edge function that runs on schedule.
+
+---
+
+## 7. Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| Migration SQL | Create `onboarding_tasks` + `onboarding_templates` tables with RLS |
+| `src/pages/Zapracovani.tsx` | New page — Nováček onboarding task view |
+| `src/pages/Dashboard.tsx` | Replace Nováček gauges with progress bar |
+| `src/components/AppSidebar.tsx` | Add Zapracování for Nováček, hide Tým |
+| `src/components/MobileBottomNav.tsx` | Change right button for Nováček to Zapracování |
+| `src/App.tsx` | Add `/zapracovani` route |
+| `src/components/MemberDetailModal.tsx` | Add Zapracování tab for viewing/managing Nováček tasks |
+| `supabase/functions/check-onboarding/index.ts` | Deadline/overdue notification checks |
+
+---
+
+## Technical Notes
+- Nováček sidebar: no "Správa týmu" link (role check already partially in place, just needs tightening for `novacek`)
+- Progress calculation: `completedTasks.length / totalTasks.length * 100`
+- Template items stored as JSON array; when applied, creates individual rows in `onboarding_tasks` with calculated deadlines (today + default_deadline_days)
+- Poznámka field = single text input per task (for links, notes etc.)
 
