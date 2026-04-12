@@ -272,6 +272,7 @@ export type Database = {
           name: string
           recipient_roles: string[]
           recipient_type: string
+          redirect_url: string | null
           schedule_day_of_month: number | null
           schedule_day_of_week: number | null
           schedule_time: string | null
@@ -292,6 +293,7 @@ export type Database = {
           name: string
           recipient_roles?: string[]
           recipient_type?: string
+          redirect_url?: string | null
           schedule_day_of_month?: number | null
           schedule_day_of_week?: number | null
           schedule_time?: string | null
@@ -312,6 +314,7 @@ export type Database = {
           name?: string
           recipient_roles?: string[]
           recipient_type?: string
+          redirect_url?: string | null
           schedule_day_of_month?: number | null
           schedule_day_of_week?: number | null
           schedule_time?: string | null
@@ -333,6 +336,7 @@ export type Database = {
           message: string
           read: boolean
           recipient_id: string
+          redirect_url: string | null
           related_case_id: string | null
           related_meeting_id: string | null
           reminder_sent: boolean
@@ -348,6 +352,7 @@ export type Database = {
           message?: string
           read?: boolean
           recipient_id: string
+          redirect_url?: string | null
           related_case_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
@@ -363,6 +368,7 @@ export type Database = {
           message?: string
           read?: boolean
           recipient_id?: string
+          redirect_url?: string | null
           related_case_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
