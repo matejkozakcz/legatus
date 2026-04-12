@@ -1796,6 +1796,10 @@ function NotificationRulesTab() {
                           </span>
                         ))}
                     </div>
+                    {/* Sender type badge */}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                      Sender: {SENDER_TYPE_LABELS[rule.sender_type] || "Systém"}
+                    </span>
 
                     {/* Push/In-app indicators */}
                     <div className="flex gap-3 text-xs text-muted-foreground">
