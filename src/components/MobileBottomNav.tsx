@@ -108,6 +108,14 @@ export function MobileBottomNav() {
             onClick={() => navigate("/obchod")}
             isDark={isDark}
           />
+        ) : profile?.role === "novacek" ? (
+          <NavButton
+            icon={GraduationCap}
+            label="Zapracování"
+            active={location.pathname === "/zapracovani"}
+            onClick={() => navigate("/zapracovani")}
+            isDark={isDark}
+          />
         ) : (
           <NavButton
             icon={Calendar}
