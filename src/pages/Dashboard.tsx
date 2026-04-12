@@ -903,13 +903,38 @@ const Dashboard = () => {
             }}
           >
             {role === "novacek" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              <div style={{ padding: "4px 0" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.8, marginBottom: 8 }}>
+                  Postup k pozici Získatele
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: 10, borderRadius: 5, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${onboardingProgress.percent}%`, borderRadius: 5, background: onboardingProgress.percent >= 100 ? "#3FC55D" : "#00abbd", transition: "width 0.5s ease" }} />
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 22 }}>
+                    {onboardingProgress.percent}%
+                  </span>
                 </div>
+                {onboardingProgress.nextTask ? (
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
+                    <div style={{ fontWeight: 600 }}>Další krok: {onboardingProgress.nextTask.title}</div>
+                    {onboardingProgress.nextTask.deadline && (
+                      <div style={{ opacity: 0.7, marginTop: 2 }}>
+                        Deadline: {format(new Date(onboardingProgress.nextTask.deadline), "d. MMMM yyyy", { locale: cs })}
+                      </div>
+                    )}
+                  </div>
+                ) : onboardingProgress.total > 0 ? (
+                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#3FC55D" }}>
+                    ✓ Všechny úkoly splněny!
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                    {onboardingProgress.done} z {onboardingProgress.total} úkolů splněno
+                  </div>
+                )}
               </div>
             ) : role === "vedouci" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
