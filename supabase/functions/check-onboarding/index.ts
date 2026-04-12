@@ -298,19 +298,25 @@ async function handleAllCompleted(
     .limit(1);
 
   if (!existingReq || existingReq.length === 0) {
-    await supabase.from("promotion_requests").insert({
+    const { error: insertErr } = await supabase.from("promotion_requests").insert({
       user_id: novacek_id,
       requested_role: "ziskatel",
       status: "pending",
     });
+    if (insertErr) {
+      console.error("[check-onboarding] promotion_request insert error:", insertErr.message);
+    } else {
+      console.log("[check-onboarding] Created promotion_request for", novacek_id);
+    }
 
     // Log promotion history
-    await supabase.from("promotion_history").insert({
+    const { error: histErr } = await supabase.from("promotion_history").insert({
       user_id: novacek_id,
       requested_role: "ziskatel",
       event: "eligible",
       note: "100% zapracování dokončeno",
     });
+    if (histErr) console.error("[check-onboarding] promotion_history insert error:", histErr.message);
   }
 
   let sent = 0;
