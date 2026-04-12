@@ -15,6 +15,7 @@ import ObchodniPripady from "./pages/ObchodniPripady";
 import Kalendar from "./pages/Kalendar";
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
+import Zapracovani from "./pages/Zapracovani";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
