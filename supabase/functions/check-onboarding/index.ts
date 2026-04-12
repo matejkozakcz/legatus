@@ -278,6 +278,41 @@ async function handleAllCompleted(
   const novacek = await getNovacekWithHierarchy(supabase, novacek_id);
   if (!novacek) return 0;
 
+  // Verify 100% completion
+  const { data: tasks } = await supabase
+    .from("onboarding_tasks")
+    .select("id, completed")
+    .eq("novacek_id", novacek_id);
+  
+  if (!tasks || tasks.length === 0) return 0;
+  const allDone = tasks.every((t: any) => t.completed);
+  if (!allDone) return 0;
+
+  // Create promotion_request (nováček → získatel) if none exists
+  const { data: existingReq } = await supabase
+    .from("promotion_requests")
+    .select("id")
+    .eq("user_id", novacek_id)
+    .eq("requested_role", "ziskatel")
+    .in("status", ["pending"])
+    .limit(1);
+
+  if (!existingReq || existingReq.length === 0) {
+    await supabase.from("promotion_requests").insert({
+      user_id: novacek_id,
+      requested_role: "ziskatel",
+      status: "pending",
+    });
+
+    // Log promotion history
+    await supabase.from("promotion_history").insert({
+      user_id: novacek_id,
+      requested_role: "ziskatel",
+      event: "eligible",
+      note: "100% zapracování dokončeno",
+    });
+  }
+
   let sent = 0;
   const recipients = new Set<string>();
 
