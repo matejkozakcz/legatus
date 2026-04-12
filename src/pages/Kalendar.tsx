@@ -247,8 +247,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         poznamka: form.poznamka || null,
         case_id: form.case_id || null,
         case_name: form.case_name || null,
-        meeting_time: form.meeting_time || null,
-        duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : null,
+        location_type: form.location_type || null,
         location_type: form.location_type || null,
         location_detail: form.location_detail || null,
       };
@@ -303,8 +302,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
 
   const handleSlotClick = (dayIndex: number, hour: number, half: boolean) => {
     const day = addDays(weekStart, dayIndex);
-    const time = `${String(hour).padStart(2, "0")}:${half ? "30" : "00"}`;
-    setMeetingFormInitial(defaultMeetingForm(format(day, "yyyy-MM-dd"), time));
+    setMeetingFormInitial(defaultMeetingForm(format(day, "yyyy-MM-dd")));
     setEditingMeetingId(null);
     setMeetingFormOpen(true);
   };
@@ -1021,7 +1019,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           onScheduleFollowUp={(data) => {
             if (detailMeeting) {
               const form: MeetingForm = {
-                ...defaultMeetingForm(data.date, data.meeting_time),
+                ...defaultMeetingForm(data.date),
                 meeting_type: data.meeting_type as MeetingType,
                 case_id: detailMeeting.case_id || "",
                 case_name: detailMeeting.case_name || "",
@@ -1050,8 +1048,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                 poznamka: detailMeeting.poznamka || "",
                 case_name: detailMeeting.case_name || "",
                 case_id: detailMeeting.case_id || "",
-                meeting_time: detailMeeting.meeting_time || "",
-                duration_minutes: detailMeeting.duration_minutes?.toString() || "",
+                location_type: detailMeeting.location_type || "",
                 location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
               });
@@ -1068,10 +1065,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           meetingType={followUp?.meetingType || "FSA"}
           onSchedule={async (data) => {
             const form: MeetingForm = {
-              ...defaultMeetingForm(data.date, data.meeting_time),
+              ...defaultMeetingForm(data.date),
               case_id: data.case_id,
               meeting_type: data.meeting_type,
-              duration_minutes: data.duration_minutes,
               location_type: data.location_type,
               location_detail: data.location_detail,
             };
@@ -1165,7 +1161,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         onScheduleFollowUp={(data) => {
           if (detailMeeting) {
             const form: MeetingForm = {
-              ...defaultMeetingForm(data.date, data.meeting_time),
+              ...defaultMeetingForm(data.date),
               meeting_type: data.meeting_type as MeetingType,
               case_id: detailMeeting.case_id || "",
               case_name: detailMeeting.case_name || "",
@@ -1194,8 +1190,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               poznamka: detailMeeting.poznamka || "",
               case_name: detailMeeting.case_name || "",
               case_id: detailMeeting.case_id || "",
-              meeting_time: detailMeeting.meeting_time || "",
-              duration_minutes: detailMeeting.duration_minutes?.toString() || "",
+              location_type: detailMeeting.location_type || "",
               location_type: detailMeeting.location_type || "",
               location_detail: detailMeeting.location_detail || "",
             });
@@ -1211,14 +1206,13 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         caseId={followUp?.caseId || ""}
         meetingType={followUp?.meetingType || "FSA"}
         onSchedule={async (data) => {
-          const form: MeetingForm = {
-            ...defaultMeetingForm(data.date, data.meeting_time),
-            case_id: data.case_id,
-            meeting_type: data.meeting_type,
-            duration_minutes: data.duration_minutes,
-            location_type: data.location_type,
-            location_detail: data.location_detail,
-          };
+            const form: MeetingForm = {
+              ...defaultMeetingForm(data.date),
+              case_id: data.case_id,
+              meeting_type: data.meeting_type,
+              location_type: data.location_type,
+              location_detail: data.location_detail,
+            };
           await new Promise<void>((resolve, reject) => {
             saveMutation.mutate({ form, skipFollowUp: true }, {
               onSuccess: () => resolve(),

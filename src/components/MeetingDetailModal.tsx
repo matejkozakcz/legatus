@@ -30,7 +30,7 @@ interface MeetingDetailModalProps {
   onSaveOutcome?: (meetingId: string, data: Record<string, unknown>) => void;
   savingOutcome?: boolean;
   onCancel?: () => void;
-  onScheduleFollowUp?: (data: { meeting_type: string; date: string; meeting_time: string }) => void;
+  onScheduleFollowUp?: (data: { meeting_type: string; date: string }) => void;
 }
 
 export function MeetingDetailModal({
@@ -49,8 +49,6 @@ export function MeetingDetailModal({
   const [showReschedule, setShowReschedule] = useState(false);
   const [showNextStep, setShowNextStep] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
-  const [justCancelled, setJustCancelled] = useState(false);
   const [prevSaving, setPrevSaving] = useState(false);
   useEffect(() => {
     if (meeting) {
@@ -64,10 +62,9 @@ export function MeetingDetailModal({
       setShowNextStep(false);
       setJustCancelled(false);
       setPrevSaving(false);
-      // Pre-fill reschedule with next week same time
+      // Pre-fill reschedule with next week
       const nextDate = addDays(parseISO(meeting.date), 7);
       setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
-      setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
     }
   }, [meeting]);
 
@@ -81,7 +78,6 @@ export function MeetingDetailModal({
       if (meeting) {
         const nextDate = addDays(parseISO(meeting.date), 7);
         setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
-        setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
       }
     }
     setPrevSaving(!!savingOutcome);
@@ -371,17 +367,10 @@ export function MeetingDetailModal({
               <label className="block text-xs font-semibold" style={{ color: "#00abbd" }}>
                 Naplánovat další krok — {nextLabel}?
               </label>
-              <div className="flex gap-3">
-                <div className="flex-1">
+              <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
                   <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
-                  <input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -389,7 +378,6 @@ export function MeetingDetailModal({
                     onScheduleFollowUp({
                       meeting_type: nextType,
                       date: rescheduleDate,
-                      meeting_time: rescheduleTime,
                     });
                     onClose();
                   }}
@@ -413,17 +401,10 @@ export function MeetingDetailModal({
         {showReschedule && onScheduleFollowUp && (
           <div className="mt-4 p-3 rounded-xl border border-input space-y-3">
             <label className="block text-xs font-semibold text-muted-foreground">Naplánovat náhradní termín?</label>
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
                 <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
                   className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
-                <input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
             </div>
             <div className="flex gap-2">
               <button
@@ -431,7 +412,6 @@ export function MeetingDetailModal({
                   onScheduleFollowUp({
                     meeting_type: m.meeting_type as string,
                     date: rescheduleDate,
-                    meeting_time: rescheduleTime,
                   });
                   onClose();
                 }}
