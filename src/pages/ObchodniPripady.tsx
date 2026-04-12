@@ -537,10 +537,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   });
 
   // ── Handlers ──
-  const openCreateCase = () => {
-    setEditCase(null);
-    setCaseModalOpen(true);
-  };
+   // openCreateCase removed — cases are now auto-created from meeting form
   const openEditCase = (c: Case) => {
     setEditCase(c);
     setCaseModalOpen(true);
@@ -652,13 +649,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               gap: 8,
             }}
           >
-            <button
-              onClick={openCreateCase}
-              className="btn btn-primary btn-md w-full flex items-center justify-center gap-2"
-              style={{ boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
-            >
-              <Plus className="h-4 w-4" /> Založit případ
-            </button>
             <div
               ref={mobilePickerRef}
               style={{
@@ -871,9 +861,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               {format(periodRange.end, "d. M. yyyy", { locale: cs })}
             </span>
             <div className="flex-1" />
-            <button onClick={openCreateCase} className="btn btn-primary btn-md flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Založit případ
-            </button>
           </div>
         </>
       )}
@@ -885,11 +872,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       ) : cases.length === 0 ? (
         <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-          Zatím žádné Byznys případy. Klikni na{" "}
-          <button onClick={openCreateCase} className="underline hover:text-foreground transition-colors">
-            Založit případ
-          </button>
-          .
+          Zatím žádné Byznys případy. Nový případ se vytvoří automaticky při založení schůzky.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
