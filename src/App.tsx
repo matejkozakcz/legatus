@@ -118,6 +118,14 @@ const App = () => (
               }
             />
             <Route
+              path="/zapracovani-management"
+              element={
+                <AppLayout>
+                  <ZapracovaniManagement />
+                </AppLayout>
+              }
+            />
+            <Route
               path="/admin"
               element={
                 <AppLayout>
