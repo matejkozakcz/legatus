@@ -92,8 +92,6 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
   poznamka: m.poznamka || "",
   case_name: m.case_name || "",
   case_id: m.case_id || "",
-  meeting_time: m.meeting_time ? m.meeting_time.slice(0, 5) : "",
-  duration_minutes: m.duration_minutes != null ? String(m.duration_minutes) : "",
   location_type: m.location_type || "",
   location_detail: m.location_detail || "",
 });
@@ -470,8 +468,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
-        meeting_time: form.meeting_time || null,
-        duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : null,
         location_type: form.location_type || null,
         location_detail: form.location_detail.trim() || null,
         potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
@@ -591,8 +587,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         poznamka: editMeeting.poznamka || "",
         case_name: editMeeting.case_name || "",
         case_id: editMeeting.case_id || "",
-        meeting_time: editMeeting.meeting_time ? editMeeting.meeting_time.slice(0, 5) : "",
-        duration_minutes: editMeeting.duration_minutes != null ? String(editMeeting.duration_minutes) : "",
         location_type: editMeeting.location_type || "",
         location_detail: editMeeting.location_detail || "",
       }
@@ -983,7 +977,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         onScheduleFollowUp={(data) => {
           if (detailMeeting) {
             const form: MeetingForm = {
-              ...defaultMeetingForm(data.date, data.meeting_time),
+              ...defaultMeetingForm(data.date),
               meeting_type: data.meeting_type as MeetingType,
               case_id: detailMeeting.case_id || "",
               case_name: detailMeeting.case_name || "",
@@ -1029,8 +1023,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             ...defaultForm(data.case_id),
             meeting_type: data.meeting_type,
             date: data.date,
-            meeting_time: data.meeting_time,
-            duration_minutes: data.duration_minutes,
             location_type: data.location_type,
             location_detail: data.location_detail,
           };

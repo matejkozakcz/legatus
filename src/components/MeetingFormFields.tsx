@@ -26,8 +26,6 @@ export interface MeetingForm {
   poznamka: string;
   case_name: string;
   case_id: string;
-  meeting_time: string;
-  duration_minutes: string;
   location_type: string;
   location_detail: string;
 }
@@ -48,7 +46,7 @@ export function meetingTypeLabel(t: MeetingType): string {
   return "Pohovor";
 }
 
-export const defaultMeetingForm = (date?: string, time?: string): MeetingForm => ({
+export const defaultMeetingForm = (date?: string): MeetingForm => ({
   date: date || new Date().toISOString().slice(0, 10),
   meeting_type: "FSA",
   cancelled: false,
@@ -66,8 +64,6 @@ export const defaultMeetingForm = (date?: string, time?: string): MeetingForm =>
   poznamka: "",
   case_name: "",
   case_id: "",
-  meeting_time: time || "",
-  duration_minutes: "",
   location_type: "",
   location_detail: "",
 });
@@ -218,11 +214,6 @@ export function MeetingFormModal({
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       const initForm = { ...initial };
-      // Auto-fill duration from defaults for new meetings
-      if (!isEditProp && meetingDefaults && !initForm.duration_minutes) {
-        const defDuration = meetingDefaults[initForm.meeting_type];
-        if (defDuration) initForm.duration_minutes = String(defDuration);
-      }
       setForm(initForm);
       setShowDeleteConfirm(false);
       setMoreOpen(false);
@@ -237,20 +228,7 @@ export function MeetingFormModal({
   if (!open) return null;
 
   const set = (patch: Partial<MeetingForm>) => {
-    setForm((f) => {
-      const next = { ...f, ...patch };
-      // Auto-fill duration when meeting type changes on new meetings
-      if (patch.meeting_type && !isEditProp && meetingDefaults) {
-        const defDuration = meetingDefaults[patch.meeting_type];
-        if (
-          defDuration &&
-          (!f.duration_minutes || f.duration_minutes === String(meetingDefaults[f.meeting_type] || ""))
-        ) {
-          next.duration_minutes = String(defDuration);
-        }
-      }
-      return next;
-    });
+    setForm((f) => ({ ...f, ...patch }));
   };
   const isEdit = isEditProp ?? false;
   const activeCases = cases.filter((c) => c.status === "aktivni");
@@ -274,7 +252,7 @@ export function MeetingFormModal({
     }
   };
 
-  const canSave = !!(form.case_id || pendingClientName) && !!form.date && !!form.meeting_time;
+  const canSave = !!(form.case_id || pendingClientName) && !!form.date;
 
   const handleSave = async () => {
     if (form.case_id) {
@@ -354,29 +332,15 @@ export function MeetingFormModal({
           </div>
         </div>
 
-        {/* 3. Datum + 4. Čas (always visible) */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => set({ date: e.target.value })}
-              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Čas <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="time"
-              value={form.meeting_time}
-              onChange={(e) => set({ meeting_time: e.target.value })}
-              required
-              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+        {/* 3. Datum */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) => set({ date: e.target.value })}
+            className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
         {/* Collapsible: Více možností */}
@@ -391,12 +355,6 @@ export function MeetingFormModal({
 
         {moreOpen && (
           <div className="space-y-4 mb-4 animate-in fade-in slide-in-from-top-1 duration-150">
-            {/* Délka */}
-            <NumberInput
-              label="Délka (min)"
-              value={form.duration_minutes}
-              onChange={(v) => set({ duration_minutes: v })}
-            />
 
             {/* Místo */}
             <div>
