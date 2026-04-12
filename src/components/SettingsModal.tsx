@@ -344,7 +344,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
+            <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-20 h-20 rounded-full object-cover" />
           ) : (
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
