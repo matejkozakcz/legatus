@@ -49,6 +49,15 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { profile: viewerProfile } = useAuth();
+  const queryClient = useQueryClient();
+  const viewerRole = viewerProfile?.role;
+  const canEditOnboarding = viewerRole === "vedouci" || viewerRole === "budouci_vedouci";
+  const isNovacek = member.role === "novacek";
+
+  // Onboarding task management state
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDeadline, setNewTaskDeadline] = useState("");
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
