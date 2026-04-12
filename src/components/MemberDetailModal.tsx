@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar } from "lucide-react";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface ProfileNode {
   id: string;
@@ -47,6 +49,15 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { profile: viewerProfile } = useAuth();
+  const queryClient = useQueryClient();
+  const viewerRole = viewerProfile?.role;
+  const canEditOnboarding = viewerRole === "vedouci" || viewerRole === "budouci_vedouci";
+  const isNovacek = member.role === "novacek";
+
+  // Onboarding task management state
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDeadline, setNewTaskDeadline] = useState("");
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -115,6 +126,102 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         note: string | null;
         created_at: string;
       }>;
+    },
+  });
+
+  // Onboarding tasks for Nováček members
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["onboarding_tasks_member", member.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("*")
+        .eq("novacek_id", member.id)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isNovacek,
+  });
+
+  // Templates for bulk assignment
+  const { data: templates = [] } = useQuery({
+    queryKey: ["onboarding_templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("onboarding_templates")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isNovacek && canEditOnboarding,
+  });
+
+  const addTaskMutation = useMutation({
+    mutationFn: async ({ title, deadline }: { title: string; deadline: string }) => {
+      const maxOrder = onboardingTasks.length > 0 ? Math.max(...onboardingTasks.map((t: any) => t.sort_order)) + 1 : 0;
+      const { error } = await supabase.from("onboarding_tasks").insert({
+        novacek_id: member.id,
+        title,
+        deadline: deadline || null,
+        sort_order: maxOrder,
+        created_by: viewerProfile?.id || "",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      setNewTaskTitle("");
+      setNewTaskDeadline("");
+      toast.success("Úkol přidán");
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase.from("onboarding_tasks").delete().eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      toast.success("Úkol smazán");
+    },
+  });
+
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ taskId, completed }: { taskId: string; completed: boolean }) => {
+      const { error } = await supabase.from("onboarding_tasks").update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      }).eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+    },
+  });
+
+  const applyTemplateMutation = useMutation({
+    mutationFn: async (templateId: string) => {
+      const template = templates.find((t: any) => t.id === templateId);
+      if (!template) return;
+      const items = (template as any).items as Array<{ title: string; default_deadline_days: number }>;
+      const baseOrder = onboardingTasks.length > 0 ? Math.max(...onboardingTasks.map((t: any) => t.sort_order)) + 1 : 0;
+      const today = new Date();
+      const rows = items.map((item, idx) => ({
+        novacek_id: member.id,
+        title: item.title,
+        deadline: item.default_deadline_days ? format(new Date(today.getTime() + item.default_deadline_days * 86400000), "yyyy-MM-dd") : null,
+        sort_order: baseOrder + idx,
+        created_by: viewerProfile?.id || "",
+      }));
+      const { error } = await supabase.from("onboarding_tasks").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      toast.success("Šablona aplikována");
     },
   });
 
@@ -353,6 +460,151 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Onboarding tasks section for Nováček */}
+        {isNovacek && (
+          <>
+            <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-heading text-sm font-semibold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+                  <GraduationCap size={16} style={{ color: "#00abbd" }} />
+                  Zapracování
+                </p>
+                {canEditOnboarding && templates.length > 0 && (
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) applyTemplateMutation.mutate(e.target.value);
+                      e.target.value = "";
+                    }}
+                    className="text-xs rounded-lg border border-input bg-background px-2 py-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    <option value="">Použít šablonu…</option>
+                    {templates.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              {onboardingTasks.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: isDark ? "rgba(255,255,255,0.1)" : "#E1E9EB", overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%",
+                        width: `${onboardingTasks.length > 0 ? Math.round((onboardingTasks.filter((t: any) => t.completed).length / onboardingTasks.length) * 100) : 0}%`,
+                        borderRadius: 3,
+                        background: "#00abbd",
+                        transition: "width 0.3s",
+                      }} />
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#00abbd" }}>
+                      {onboardingTasks.filter((t: any) => t.completed).length}/{onboardingTasks.length}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Task list */}
+              <div className="space-y-2">
+                {onboardingTasks.map((task: any) => {
+                  const isOverdue = task.deadline && !task.completed && new Date(task.deadline) < new Date();
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-start gap-2 rounded-lg"
+                      style={{
+                        padding: "8px 10px",
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.03)",
+                        border: isOverdue ? "1px solid rgba(252,124,113,0.3)" : isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
+                      }}
+                    >
+                      {canEditOnboarding ? (
+                        <button
+                          onClick={() => toggleTaskMutation.mutate({ taskId: task.id, completed: !task.completed })}
+                          style={{
+                            width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                            border: task.completed ? "none" : "2px solid #b8cfd4",
+                            background: task.completed ? "#3FC55D" : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          }}
+                        >
+                          {task.completed && <Check size={12} color="white" />}
+                        </button>
+                      ) : (
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                          border: task.completed ? "none" : "2px solid #b8cfd4",
+                          background: task.completed ? "#3FC55D" : "transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          {task.completed && <Check size={12} color="white" />}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium" style={{
+                          color: "var(--text-primary)",
+                          textDecoration: task.completed ? "line-through" : "none",
+                          opacity: task.completed ? 0.6 : 1,
+                        }}>
+                          {task.title}
+                        </p>
+                        {task.deadline && (
+                          <p className="text-[10px]" style={{ color: isOverdue ? "#fc7c71" : "var(--text-muted)", marginTop: 1 }}>
+                            {format(new Date(task.deadline), "d.M.yyyy")}
+                          </p>
+                        )}
+                        {task.description && (
+                          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{task.description}</p>
+                        )}
+                      </div>
+                      {canEditOnboarding && (
+                        <button
+                          onClick={() => deleteTaskMutation.mutate(task.id)}
+                          style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                        >
+                          <Trash2 size={14} style={{ color: "#fc7c71", opacity: 0.6 }} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add task form (Vedoucí/BV only) */}
+              {canEditOnboarding && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Nový úkol…"
+                    className="flex-1 text-xs rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
+                  />
+                  <input
+                    type="date"
+                    value={newTaskDeadline}
+                    onChange={(e) => setNewTaskDeadline(e.target.value)}
+                    className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-28"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newTaskTitle.trim()) addTaskMutation.mutate({ title: newTaskTitle.trim(), deadline: newTaskDeadline });
+                    }}
+                    disabled={!newTaskTitle.trim() || addTaskMutation.isPending}
+                    className="flex items-center justify-center rounded-lg"
+                    style={{ width: 30, height: 30, background: "#00abbd", border: "none", cursor: "pointer", opacity: newTaskTitle.trim() ? 1 : 0.4 }}
+                  >
+                    <Plus size={14} color="white" />
+                  </button>
                 </div>
               )}
             </div>

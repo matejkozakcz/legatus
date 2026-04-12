@@ -726,6 +726,29 @@ const Dashboard = () => {
     enabled: !!profile?.id && activeRole === "vedouci",
   });
 
+  // Onboarding tasks for Nováček progress bar
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["onboarding_tasks_progress", activeUserId],
+    queryFn: async () => {
+      if (!activeUserId) return [];
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("id, title, deadline, completed, sort_order")
+        .eq("novacek_id", activeUserId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId && activeRole === "novacek",
+  });
+
+  const onboardingProgress = useMemo(() => {
+    const total = onboardingTasks.length;
+    const done = onboardingTasks.filter((t: any) => t.completed).length;
+    const nextTask = onboardingTasks.find((t: any) => !t.completed);
+    return { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0, nextTask };
+  }, [onboardingTasks]);
+
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
   // Helper: map goal key to current value (scope-aware for people goals)
@@ -880,13 +903,38 @@ const Dashboard = () => {
             }}
           >
             {role === "novacek" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+              <div style={{ padding: "4px 0" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.8, marginBottom: 8 }}>
+                  Postup k pozici Získatele
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder dark />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: 10, borderRadius: 5, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${onboardingProgress.percent}%`, borderRadius: 5, background: onboardingProgress.percent >= 100 ? "#3FC55D" : "#00abbd", transition: "width 0.5s ease" }} />
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 22 }}>
+                    {onboardingProgress.percent}%
+                  </span>
                 </div>
+                {onboardingProgress.nextTask ? (
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
+                    <div style={{ fontWeight: 600 }}>Další krok: {onboardingProgress.nextTask.title}</div>
+                    {onboardingProgress.nextTask.deadline && (
+                      <div style={{ opacity: 0.7, marginTop: 2 }}>
+                        Deadline: {format(new Date(onboardingProgress.nextTask.deadline), "d. MMMM yyyy", { locale: cs })}
+                      </div>
+                    )}
+                  </div>
+                ) : onboardingProgress.total > 0 ? (
+                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#3FC55D" }}>
+                    ✓ Všechny úkoly splněny!
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                    {onboardingProgress.done} z {onboardingProgress.total} úkolů splněno
+                  </div>
+                )}
               </div>
             ) : role === "vedouci" ? (
               <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
@@ -1236,10 +1284,33 @@ const Dashboard = () => {
   const renderStavByznysu = () => {
     if (role === "novacek") {
       return (
-        <>
-          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
-          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
-        </>
+        <div style={{ width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)", marginBottom: 12 }}>
+            Postup k pozici Získatele
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div style={{ flex: 1, height: 10, borderRadius: 5, background: isDark ? "rgba(255,255,255,0.1)" : "#E1E9EB", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${onboardingProgress.percent}%`, borderRadius: 5, background: onboardingProgress.percent >= 100 ? "#3FC55D" : "#00abbd", transition: "width 0.5s ease" }} />
+            </div>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 22, color: "var(--text-primary)" }}>
+              {onboardingProgress.percent}%
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {onboardingProgress.done} z {onboardingProgress.total} úkolů splněno
+          </div>
+          {onboardingProgress.nextTask && (
+            <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)", border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)", textAlign: "left" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#00abbd", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Další krok</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{onboardingProgress.nextTask.title}</div>
+              {onboardingProgress.nextTask.deadline && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  Deadline: {format(new Date(onboardingProgress.nextTask.deadline), "d. MMMM yyyy", { locale: cs })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       );
     }
 

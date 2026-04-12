@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Calendar, Briefcase, Users } from "lucide-react";
+import { Calendar, Briefcase, Users, GraduationCap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
@@ -106,6 +106,14 @@ export function MobileBottomNav() {
             label="Obchod"
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
+            isDark={isDark}
+          />
+        ) : profile?.role === "novacek" ? (
+          <NavButton
+            icon={GraduationCap}
+            label="Zapracování"
+            active={location.pathname === "/zapracovani"}
+            onClick={() => navigate("/zapracovani")}
             isDark={isDark}
           />
         ) : (
