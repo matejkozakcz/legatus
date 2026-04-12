@@ -1292,6 +1292,19 @@ const Dashboard = () => {
 
   const renderStavByznysu = () => {
     if (role === "novacek") {
+      if (onboardingProgress.total === 0) {
+        return (
+          <div style={{ width: "100%", textAlign: "center", padding: "20px 0" }}>
+            <Clock size={36} style={{ margin: "0 auto 12px", opacity: 0.3, color: "#00abbd" }} />
+            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+              Čekám na přidělení plánu zapracování
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              Tvůj vedoucí ti brzy přidělí plán.
+            </div>
+          </div>
+        );
+      }
       return (
         <div style={{ width: "100%", textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)", marginBottom: 12 }}>
@@ -1317,6 +1330,11 @@ const Dashboard = () => {
                   Deadline: {format(new Date(onboardingProgress.nextTask.deadline), "d. MMMM yyyy", { locale: cs })}
                 </div>
               )}
+            </div>
+          )}
+          {onboardingProgress.percent >= 100 && (
+            <div style={{ marginTop: 16, fontSize: 14, fontWeight: 600, color: "#3FC55D" }}>
+              ✓ Všechny úkoly splněny — čeká na potvrzení povýšení!
             </div>
           )}
         </div>
