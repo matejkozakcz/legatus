@@ -129,6 +129,102 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     },
   });
 
+  // Onboarding tasks for Nováček members
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ["onboarding_tasks_member", member.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .select("*")
+        .eq("novacek_id", member.id)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isNovacek,
+  });
+
+  // Templates for bulk assignment
+  const { data: templates = [] } = useQuery({
+    queryKey: ["onboarding_templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("onboarding_templates")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isNovacek && canEditOnboarding,
+  });
+
+  const addTaskMutation = useMutation({
+    mutationFn: async ({ title, deadline }: { title: string; deadline: string }) => {
+      const maxOrder = onboardingTasks.length > 0 ? Math.max(...onboardingTasks.map((t: any) => t.sort_order)) + 1 : 0;
+      const { error } = await supabase.from("onboarding_tasks").insert({
+        novacek_id: member.id,
+        title,
+        deadline: deadline || null,
+        sort_order: maxOrder,
+        created_by: viewerProfile?.id || "",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      setNewTaskTitle("");
+      setNewTaskDeadline("");
+      toast.success("Úkol přidán");
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase.from("onboarding_tasks").delete().eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      toast.success("Úkol smazán");
+    },
+  });
+
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ taskId, completed }: { taskId: string; completed: boolean }) => {
+      const { error } = await supabase.from("onboarding_tasks").update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      }).eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+    },
+  });
+
+  const applyTemplateMutation = useMutation({
+    mutationFn: async (templateId: string) => {
+      const template = templates.find((t: any) => t.id === templateId);
+      if (!template) return;
+      const items = (template as any).items as Array<{ title: string; default_deadline_days: number }>;
+      const baseOrder = onboardingTasks.length > 0 ? Math.max(...onboardingTasks.map((t: any) => t.sort_order)) + 1 : 0;
+      const today = new Date();
+      const rows = items.map((item, idx) => ({
+        novacek_id: member.id,
+        title: item.title,
+        deadline: item.default_deadline_days ? format(new Date(today.getTime() + item.default_deadline_days * 86400000), "yyyy-MM-dd") : null,
+        sort_order: baseOrder + idx,
+        created_by: viewerProfile?.id || "",
+      }));
+      const { error } = await supabase.from("onboarding_tasks").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks_member", member.id] });
+      toast.success("Šablona aplikována");
+    },
+  });
+
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
