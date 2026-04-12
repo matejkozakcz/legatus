@@ -645,15 +645,18 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 700,
-                        fontSize: 15,
-                        color: borderColor,
-                        textDecoration: m.cancelled ? "line-through" : undefined,
-                      }}>
-                        {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: 700,
+                          fontSize: 15,
+                          color: borderColor,
+                          textDecoration: m.cancelled ? "line-through" : undefined,
+                        }}>
+                          {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                        </span>
+                        {needsFollowUp(m) && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />}
+                      </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {needsFollowUp(m) && (
                           <span style={{
