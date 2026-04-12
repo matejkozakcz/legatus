@@ -60,6 +60,12 @@ export function MeetingDetailModal({
       setPohDal(meeting.pohovor_jde_dal ?? null);
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setEditingOutcome(false);
+      setShowReschedule(false);
+      setJustCancelled(false);
+      // Pre-fill reschedule with next week same time
+      const nextDate = addDays(parseISO(meeting.date), 7);
+      setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
+      setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
     }
   }, [meeting]);
 
