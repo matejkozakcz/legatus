@@ -1437,7 +1437,7 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="space-y-6 mt-8">
+        <section className="space-y-6 mt-4">
           <div className="flex items-center justify-between">
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
               Přehled aktivit
