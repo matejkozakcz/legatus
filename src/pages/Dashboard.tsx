@@ -183,6 +183,8 @@ const Dashboard = () => {
   const [promotionRole, setPromotionRole] = useState<string | null>(null);
   const prevRoleRef = useRef<string | null>(null);
   const hasCheckedFirstLogin = useRef(false);
+  const [exportingPdf, setExportingPdf] = useState<ExportPeriod | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // ── Impersonation: view dashboard as another team member ──
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
