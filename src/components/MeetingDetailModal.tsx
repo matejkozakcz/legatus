@@ -152,8 +152,8 @@ export function MeetingDetailModal({
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
 
-        {/* Progress indicator — only for non-cancelled, non-POH meetings */}
-        {!m.cancelled && m.meeting_type !== "POH" && (() => {
+        {/* Progress indicator — only for non-POH meetings */}
+        {m.meeting_type !== "POH" && (() => {
           const processSteps = [
             { key: "FSA", label: "Analýza", icon: Users },
             { key: "POR", label: "Poradenství", icon: FileText },
@@ -168,16 +168,29 @@ export function MeetingDetailModal({
             { key: "outcome", label: "Výsledek", icon: ClipboardCheck },
           ];
           let currentStatusIdx = 0;
-          if (m.date <= todayStr) currentStatusIdx = 1;
-          if (m.outcome_recorded) currentStatusIdx = 2;
+          if (m.cancelled) currentStatusIdx = -1; // cancelled state
+          else if (m.outcome_recorded) currentStatusIdx = 2;
+          else if (m.date <= todayStr) currentStatusIdx = 1;
 
-          const renderAxis = (steps: { key: string; label: string; icon: React.ElementType }[], activeIdx: number) => (
+          const getStatusColor = (i: number, activeIdx: number) => {
+            if (m.cancelled) return "#fc7c71"; // red for cancelled
+            if (i < activeIdx) return "#22c55e"; // green for completed steps
+            if (i === activeIdx) {
+              // Active step: orange if action needed, green if just done
+              if (activeIdx === 1 && !m.outcome_recorded) return "#f59e0b"; // orange — needs outcome
+              if (activeIdx === 2) return "#22c55e"; // green — all done
+              return "#00abbd"; // teal for planned (no action needed yet)
+            }
+            return "var(--text-muted, #8aadb3)"; // future steps
+          };
+
+          const renderAxis = (steps: { key: string; label: string; icon: React.ElementType }[], activeIdx: number, useStatusColors = false) => (
             <div className="flex items-center w-full">
               {steps.map((step, i) => {
                 const Icon = step.icon;
                 const isActive = i === activeIdx;
                 const isPast = i < activeIdx;
-                const color = isActive ? "#00abbd" : isPast ? "#00abbd" : "var(--text-muted, #8aadb3)";
+                const color = useStatusColors ? getStatusColor(i, activeIdx) : (isActive || isPast ? "#00abbd" : "var(--text-muted, #8aadb3)");
                 const opacity = isActive ? 1 : isPast ? 0.5 : 0.3;
                 return (
                   <div key={step.key} className="flex items-center" style={{ flex: i < steps.length - 1 ? 1 : undefined }}>
@@ -187,7 +200,7 @@ export function MeetingDetailModal({
                         style={{
                           width: isActive ? 28 : 22,
                           height: isActive ? 28 : 22,
-                          background: isActive ? "rgba(0,171,189,0.15)" : isPast ? "rgba(0,171,189,0.08)" : "transparent",
+                          background: isActive ? `${color}22` : isPast ? `${color}14` : "transparent",
                           border: `2px solid ${color}`,
                           opacity,
                         }}
@@ -215,7 +228,7 @@ export function MeetingDetailModal({
                         className="flex-1 mx-1"
                         style={{
                           height: 2,
-                          background: i < activeIdx ? "#00abbd" : "var(--border, #e1e9eb)",
+                          background: i < activeIdx ? color : "var(--border, #e1e9eb)",
                           opacity: i < activeIdx ? 0.5 : 0.3,
                           borderRadius: 1,
                           marginBottom: 16,
@@ -230,7 +243,7 @@ export function MeetingDetailModal({
 
           return (
             <div className="mt-4 space-y-3">
-              {currentProcessIdx >= 0 && (
+              {currentProcessIdx >= 0 && !m.cancelled && (
                 <div>
                   <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Proces</span>
                   {renderAxis(processSteps, currentProcessIdx)}
@@ -238,7 +251,14 @@ export function MeetingDetailModal({
               )}
               <div>
                 <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Stav</span>
-                {renderAxis(statusSteps, currentStatusIdx)}
+                {m.cancelled ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center rounded-full" style={{ width: 28, height: 28, border: "2px solid #fc7c71", background: "rgba(252,124,113,0.12)" }}>
+                      <X size={14} style={{ color: "#fc7c71" }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#fc7c71" }}>Zrušená</span>
+                  </div>
+                ) : renderAxis(statusSteps, currentStatusIdx, true)}
               </div>
             </div>
           );
