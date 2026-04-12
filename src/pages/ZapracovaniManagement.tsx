@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   GraduationCap, Plus, Trash2, Check, Pencil, AlertTriangle, ChevronDown, ChevronUp,
-  Loader2, Copy, Users, CheckCircle2, Clock, X, Save,
+  Loader2, Copy, Users, Clock, X, Save,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 
 interface TemplateItem {
   title: string;
-  default_deadline_days: number;
 }
 
 // ─── Template Editor ──────────────────────────────────────────────────────────
@@ -31,7 +30,7 @@ function TemplateEditor({
   const queryClient = useQueryClient();
   const [name, setName] = useState(existingTemplate?.name || "");
   const [items, setItems] = useState<TemplateItem[]>(
-    existingTemplate?.items || [{ title: "", default_deadline_days: 7 }]
+    existingTemplate?.items || [{ title: "" }]
   );
 
   const saveMutation = useMutation({
@@ -99,8 +98,8 @@ function TemplateEditor({
           <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-muted)" }}>Úkoly</label>
           <div className="space-y-2">
             {items.map((item, idx) => (
-              <div key={idx} className="flex gap-2 items-start">
-                <span className="text-xs font-semibold mt-2.5" style={{ color: "var(--text-muted)", minWidth: 20 }}>
+              <div key={idx} className="flex gap-2 items-center">
+                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)", minWidth: 20 }}>
                   {idx + 1}.
                 </span>
                 <input
@@ -108,29 +107,14 @@ function TemplateEditor({
                   value={item.title}
                   onChange={(e) => {
                     const next = [...items];
-                    next[idx] = { ...next[idx], title: e.target.value };
+                    next[idx] = { title: e.target.value };
                     setItems(next);
                   }}
                   placeholder="Název úkolu"
                   className="flex-1 text-sm rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
                 />
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    value={item.default_deadline_days}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], default_deadline_days: parseInt(e.target.value) || 7 };
-                      setItems(next);
-                    }}
-                    className="w-16 text-sm rounded-lg border border-input bg-background px-2 py-1.5 text-center"
-                  />
-                  <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>dní</span>
-                </div>
                 <button
                   onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                  style={{ marginTop: 6 }}
                 >
                   <Trash2 size={14} style={{ color: "#fc7c71" }} />
                 </button>
@@ -138,7 +122,7 @@ function TemplateEditor({
             ))}
           </div>
           <button
-            onClick={() => setItems([...items, { title: "", default_deadline_days: 7 }])}
+            onClick={() => setItems([...items, { title: "" }])}
             className="mt-2 flex items-center gap-1.5 text-xs font-semibold"
             style={{ color: "#00abbd" }}
           >
@@ -179,33 +163,36 @@ function AssignTemplateModal({
   const isDark = theme === "dark";
   const queryClient = useQueryClient();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [items, setItems] = useState<Array<{ title: string; deadline: string }>>([]);
+  const [items, setItems] = useState<Array<{ title: string; deadline: string; deadline_time: string }>>([]);
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
     const template = templates.find((t: any) => t.id === templateId);
     if (template) {
-      const today = new Date();
       const templateItems = (template.items as TemplateItem[]).map((item) => ({
         title: item.title,
-        deadline: format(new Date(today.getTime() + item.default_deadline_days * 86400000), "yyyy-MM-dd"),
+        deadline: "",
+        deadline_time: "",
       }));
       setItems(templateItems);
     }
   };
 
+  const allDatesSet = items.length > 0 && items.every((i) => i.deadline);
+
   const assignMutation = useMutation({
     mutationFn: async () => {
       const rows = items
-        .filter((i) => i.title.trim())
+        .filter((i) => i.title.trim() && i.deadline)
         .map((item, idx) => ({
           novacek_id: novacek.id,
           title: item.title,
-          deadline: item.deadline || null,
+          deadline: item.deadline,
+          deadline_time: item.deadline_time || null,
           sort_order: idx,
           created_by: profile?.id || "",
         }));
-      if (rows.length === 0) throw new Error("Žádné úkoly k přidělení");
+      if (rows.length === 0) throw new Error("Vyplňte datum u všech úkolů");
       const { error } = await supabase.from("onboarding_tasks").insert(rows);
       if (error) throw error;
     },
@@ -261,23 +248,42 @@ function AssignTemplateModal({
         {items.length > 0 && (
           <div className="mb-4">
             <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-muted)" }}>
-              Upravte termíny pro {novacek.full_name.split(" ")[0]}
+              Nastavte termíny pro {novacek.full_name.split(" ")[0]}
             </label>
             <div className="space-y-2">
               {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  <span className="text-xs font-semibold" style={{ color: "var(--text-muted)", minWidth: 20 }}>{idx + 1}.</span>
-                  <span className="flex-1 text-sm truncate" style={{ color: "var(--text-primary)" }}>{item.title}</span>
-                  <input
-                    type="date"
-                    value={item.deadline}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], deadline: e.target.value };
-                      setItems(next);
-                    }}
-                    className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-36"
-                  />
+                <div key={idx} className="flex flex-col gap-1 p-2 rounded-lg" style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#f8fafa" }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold" style={{ color: "var(--text-muted)", minWidth: 20 }}>{idx + 1}.</span>
+                    <span className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>{item.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2 ml-5">
+                    <input
+                      type="date"
+                      value={item.deadline}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[idx] = { ...next[idx], deadline: e.target.value };
+                        setItems(next);
+                      }}
+                      className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-36"
+                      required
+                    />
+                    <input
+                      type="time"
+                      value={item.deadline_time}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[idx] = { ...next[idx], deadline_time: e.target.value };
+                        setItems(next);
+                      }}
+                      className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-24"
+                      placeholder="Čas"
+                    />
+                    {!item.deadline && (
+                      <span className="text-[10px] font-semibold" style={{ color: "#fc7c71" }}>*povinné</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -288,9 +294,9 @@ function AssignTemplateModal({
           <button onClick={onClose} className="btn btn-md btn-ghost flex-1">Zrušit</button>
           <button
             onClick={() => assignMutation.mutate()}
-            disabled={assignMutation.isPending || items.length === 0}
+            disabled={assignMutation.isPending || !allDatesSet}
             className="btn btn-md flex-1"
-            style={{ background: "#00abbd", color: "white", border: "none", opacity: items.length === 0 ? 0.4 : 1 }}
+            style={{ background: "#00abbd", color: "white", border: "none", opacity: !allDatesSet ? 0.4 : 1 }}
           >
             {assignMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
             <span className="ml-2">Přidělit plán</span>
@@ -317,8 +323,10 @@ export default function ZapracovaniManagement() {
   // Task editing state
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editDeadline, setEditDeadline] = useState("");
+  const [editDeadlineTime, setEditDeadlineTime] = useState("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDeadline, setNewTaskDeadline] = useState("");
+  const [newTaskDeadlineTime, setNewTaskDeadlineTime] = useState("");
 
   // Fetch all novacek members in subtree
   const { data: novacci = [], isLoading: isNovacciLoading } = useQuery({
@@ -389,8 +397,12 @@ export default function ZapracovaniManagement() {
   });
 
   const updateDeadlineMutation = useMutation({
-    mutationFn: async ({ taskId, deadline }: { taskId: string; deadline: string }) => {
-      const { error } = await supabase.from("onboarding_tasks").update({ deadline: deadline || null }).eq("id", taskId);
+    mutationFn: async ({ taskId, deadline, deadline_time }: { taskId: string; deadline: string; deadline_time: string }) => {
+      if (!deadline) throw new Error("Datum je povinné");
+      const { error } = await supabase.from("onboarding_tasks").update({
+        deadline,
+        deadline_time: deadline_time || null,
+      }).eq("id", taskId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -398,6 +410,7 @@ export default function ZapracovaniManagement() {
       setEditingTaskId(null);
       toast.success("Deadline aktualizován");
     },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const deleteTaskMutation = useMutation({
@@ -413,12 +426,14 @@ export default function ZapracovaniManagement() {
 
   const addTaskMutation = useMutation({
     mutationFn: async ({ novacekId }: { novacekId: string }) => {
+      if (!newTaskDeadline) throw new Error("Datum je povinné");
       const existingTasks = allTasks.filter((t: any) => t.novacek_id === novacekId);
       const maxOrder = existingTasks.length > 0 ? Math.max(...existingTasks.map((t: any) => t.sort_order)) + 1 : 0;
       const { error } = await supabase.from("onboarding_tasks").insert({
         novacek_id: novacekId,
         title: newTaskTitle.trim(),
-        deadline: newTaskDeadline || null,
+        deadline: newTaskDeadline,
+        deadline_time: newTaskDeadlineTime || null,
         sort_order: maxOrder,
         created_by: profile?.id || "",
       });
@@ -428,8 +443,10 @@ export default function ZapracovaniManagement() {
       queryClient.invalidateQueries({ queryKey: ["onboarding_all_tasks"] });
       setNewTaskTitle("");
       setNewTaskDeadline("");
+      setNewTaskDeadlineTime("");
       toast.success("Úkol přidán");
     },
+    onError: (e: any) => toast.error(e.message),
   });
 
   // Group tasks by novacek
@@ -443,6 +460,15 @@ export default function ZapracovaniManagement() {
   const novacciWithPlan = novacci.filter((n: any) => tasksByNovacek.has(n.id));
 
   const isLoading = isNovacciLoading || isTasksLoading;
+
+  const formatDeadline = (deadline: string | null, deadline_time: string | null) => {
+    if (!deadline) return "Bez deadline";
+    const dateStr = format(new Date(deadline), "d.M.yyyy");
+    if (deadline_time) {
+      return `${dateStr} ${deadline_time.slice(0, 5)}`;
+    }
+    return dateStr;
+  };
 
   const tabStyle = (active: boolean) => ({
     padding: "8px 16px",
@@ -623,14 +649,20 @@ export default function ZapracovaniManagement() {
                                 {task.title}
                               </span>
                               {isEditingThis ? (
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 items-center">
                                   <input
                                     type="date"
                                     value={editDeadline}
                                     onChange={(e) => setEditDeadline(e.target.value)}
                                     className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-28"
                                   />
-                                  <button onClick={() => updateDeadlineMutation.mutate({ taskId: task.id, deadline: editDeadline })}>
+                                  <input
+                                    type="time"
+                                    value={editDeadlineTime}
+                                    onChange={(e) => setEditDeadlineTime(e.target.value)}
+                                    className="text-[10px] rounded border border-input bg-background px-1 py-0.5 w-20"
+                                  />
+                                  <button onClick={() => updateDeadlineMutation.mutate({ taskId: task.id, deadline: editDeadline, deadline_time: editDeadlineTime })}>
                                     <Check size={12} style={{ color: "#3FC55D" }} />
                                   </button>
                                   <button onClick={() => setEditingTaskId(null)}>
@@ -639,11 +671,11 @@ export default function ZapracovaniManagement() {
                                 </div>
                               ) : (
                                 <button
-                                  onClick={() => { setEditingTaskId(task.id); setEditDeadline(task.deadline || ""); }}
+                                  onClick={() => { setEditingTaskId(task.id); setEditDeadline(task.deadline || ""); setEditDeadlineTime(task.deadline_time || ""); }}
                                   className="text-[10px] font-medium"
                                   style={{ color: isOverdue ? "#fc7c71" : "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
                                 >
-                                  {task.deadline ? format(new Date(task.deadline), "d.M.yyyy") : "Bez deadline"}
+                                  {formatDeadline(task.deadline, task.deadline_time)}
                                 </button>
                               )}
                               <button
@@ -658,7 +690,7 @@ export default function ZapracovaniManagement() {
                       </div>
 
                       {/* Add task inline */}
-                      <div className="mt-3 flex gap-2">
+                      <div className="mt-3 flex gap-2 items-center">
                         <input
                           type="text"
                           value={expandedNovacek === n.id ? newTaskTitle : ""}
@@ -671,14 +703,21 @@ export default function ZapracovaniManagement() {
                           value={expandedNovacek === n.id ? newTaskDeadline : ""}
                           onChange={(e) => setNewTaskDeadline(e.target.value)}
                           className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-28"
+                          required
+                        />
+                        <input
+                          type="time"
+                          value={expandedNovacek === n.id ? newTaskDeadlineTime : ""}
+                          onChange={(e) => setNewTaskDeadlineTime(e.target.value)}
+                          className="text-xs rounded-lg border border-input bg-background px-2 py-1.5 w-20"
                         />
                         <button
                           onClick={() => {
-                            if (newTaskTitle.trim()) addTaskMutation.mutate({ novacekId: n.id });
+                            if (newTaskTitle.trim() && newTaskDeadline) addTaskMutation.mutate({ novacekId: n.id });
                           }}
-                          disabled={!newTaskTitle.trim()}
+                          disabled={!newTaskTitle.trim() || !newTaskDeadline}
                           className="flex items-center justify-center rounded-lg"
-                          style={{ width: 28, height: 28, background: "#00abbd", border: "none", cursor: "pointer", opacity: newTaskTitle.trim() ? 1 : 0.4 }}
+                          style={{ width: 28, height: 28, background: "#00abbd", border: "none", cursor: "pointer", opacity: (newTaskTitle.trim() && newTaskDeadline) ? 1 : 0.4 }}
                         >
                           <Plus size={12} color="white" />
                         </button>
@@ -738,7 +777,6 @@ export default function ZapracovaniManagement() {
                       <div key={idx} className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
                         <span className="font-semibold" style={{ color: "var(--text-muted)", minWidth: 18 }}>{idx + 1}.</span>
                         <span className="flex-1">{item.title}</span>
-                        <span style={{ color: "var(--text-muted)" }}>+{item.default_deadline_days} dní</span>
                       </div>
                     ))}
                   </div>

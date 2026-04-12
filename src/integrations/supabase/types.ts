@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           created_by: string
           deadline: string | null
+          deadline_time: string | null
           description: string | null
           id: string
           novacek_id: string
@@ -421,6 +422,7 @@ export type Database = {
           created_at?: string
           created_by: string
           deadline?: string | null
+          deadline_time?: string | null
           description?: string | null
           id?: string
           novacek_id: string
@@ -434,6 +436,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deadline?: string | null
+          deadline_time?: string | null
           description?: string | null
           id?: string
           novacek_id?: string

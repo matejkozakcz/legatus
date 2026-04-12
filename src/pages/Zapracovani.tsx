@@ -285,7 +285,7 @@ export default function Zapracovani() {
                           marginTop: 2,
                         }}
                       >
-                        Deadline: {format(new Date(task.deadline), "d. MMMM yyyy", { locale: cs })}
+                        Deadline: {format(new Date(task.deadline), "d. MMMM yyyy", { locale: cs })}{(task as any).deadline_time ? ` v ${(task as any).deadline_time.slice(0, 5)}` : ""}
                       </div>
                     )}
                   </div>
