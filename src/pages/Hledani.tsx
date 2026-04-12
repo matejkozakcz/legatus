@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, User, Briefcase, Calendar, ArrowLeft } from "lucide-react";
+import { Search, User, Briefcase, Calendar, ArrowLeft, X } from "lucide-react";
 import { format } from "date-fns";
+import { MemberDetailModal } from "@/components/MemberDetailModal";
+import { MeetingDetailModal, type MeetingDetailData } from "@/components/MeetingDetailModal";
+import { toast } from "sonner";
 
 interface SearchResult {
   type: "person" | "case" | "meeting";
@@ -11,6 +15,7 @@ interface SearchResult {
   title: string;
   subtitle?: string;
   url: string;
+  raw?: any;
 }
 
 export default function Hledani() {
@@ -18,6 +23,12 @@ export default function Hledani() {
   const query = searchParams.get("q") || "";
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Modal states
+  const [selectedMember, setSelectedMember] = useState<{ id: string; full_name: string; role: string; avatar_url: string | null } | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<MeetingDetailData | null>(null);
+  const [selectedCase, setSelectedCase] = useState<{ id: string; nazev_pripadu: string; status: string; poznamka: string | null } | null>(null);
 
   const { data: results = [], isLoading } = useQuery({
     queryKey: ["global-search", query],
@@ -26,21 +37,20 @@ export default function Hledani() {
       const q = query.toLowerCase();
       const allResults: SearchResult[] = [];
 
-      // Search profiles by name or email
+      // Search profiles by name
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, role")
+        .select("id, full_name, role, avatar_url")
         .eq("is_active", true)
         .ilike("full_name", `%${q}%`)
         .limit(20);
 
-      // Also search by email via auth — use a second query on profiles matching osobni_id as fallback
-      // Since we can't query auth.users, search osobni_id field which may contain email-like identifiers
+      // Also search by osobni_id for email-like queries
       let emailProfiles: typeof profiles = [];
       if (q.includes("@") || q.includes(".")) {
         const { data: byEmail } = await supabase
           .from("profiles")
-          .select("id, full_name, role")
+          .select("id, full_name, role, avatar_url")
           .eq("is_active", true)
           .ilike("osobni_id", `%${q}%`)
           .limit(20);
@@ -56,7 +66,7 @@ export default function Hledani() {
         novacek: "Nováček",
       };
 
-      const addProfile = (p: { id: string; full_name: string; role: string }) => {
+      const addProfile = (p: { id: string; full_name: string; role: string; avatar_url: string | null }) => {
         if (seenIds.has(p.id)) return;
         seenIds.add(p.id);
         allResults.push({
@@ -65,6 +75,7 @@ export default function Hledani() {
           title: p.full_name,
           subtitle: roleLabels[p.role] || p.role,
           url: `/tym/${p.id}/aktivity`,
+          raw: p,
         });
       };
 
@@ -74,7 +85,7 @@ export default function Hledani() {
       // Search cases
       const { data: cases } = await supabase
         .from("cases")
-        .select("id, nazev_pripadu, status, user_id")
+        .select("id, nazev_pripadu, status, poznamka, user_id")
         .ilike("nazev_pripadu", `%${q}%`)
         .limit(20);
 
@@ -86,6 +97,7 @@ export default function Hledani() {
             title: c.nazev_pripadu,
             subtitle: c.status === "aktivni" ? "Aktivní" : c.status === "uzavreny" ? "Uzavřený" : c.status,
             url: "/obchodni-pripady",
+            raw: c,
           })
         );
       }
@@ -93,7 +105,7 @@ export default function Hledani() {
       // Search meetings by case_name or poznamka
       const { data: meetings } = await supabase
         .from("client_meetings")
-        .select("id, date, meeting_type, case_name, poznamka, user_id")
+        .select("id, date, meeting_type, case_name, case_id, poznamka, user_id, meeting_time, duration_minutes, location_type, location_detail, cancelled, doporuceni_fsa, podepsane_bj, doporuceni_poradenstvi, pohovor_jde_dal, doporuceni_pohovor, outcome_recorded")
         .or(`case_name.ilike.%${q}%,poznamka.ilike.%${q}%`)
         .order("date", { ascending: false })
         .limit(20);
@@ -107,6 +119,7 @@ export default function Hledani() {
             title: m.case_name || `${typeLabels[m.meeting_type] || m.meeting_type}`,
             subtitle: `${typeLabels[m.meeting_type] || m.meeting_type} · ${format(new Date(m.date), "d. M. yyyy")}`,
             url: "/kalendar",
+            raw: m,
           })
         );
       }
@@ -115,6 +128,31 @@ export default function Hledani() {
     },
     enabled: query.length >= 2,
   });
+
+  // Outcome mutation for meeting detail
+  const outcomeMutation = useMutation({
+    mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
+      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["global-search"] });
+      toast.success("Výsledek uložen");
+    },
+    onError: (err: any) => toast.error(err.message || "Chyba"),
+  });
+
+  const handleResultClick = (item: SearchResult) => {
+    if (item.type === "person" && item.raw) {
+      setSelectedMember(item.raw);
+    } else if (item.type === "meeting" && item.raw) {
+      setSelectedMeeting(item.raw as MeetingDetailData);
+    } else if (item.type === "case" && item.raw) {
+      setSelectedCase(item.raw);
+    } else {
+      navigate(item.url);
+    }
+  };
 
   const grouped = {
     person: results.filter((r) => r.type === "person"),
@@ -196,7 +234,7 @@ export default function Hledani() {
                   {items.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => navigate(item.url)}
+                      onClick={() => handleResultClick(item)}
                       className="w-full text-left px-4 py-3 rounded-xl hover:bg-accent/10 transition-colors flex items-center gap-3 group bg-card/50"
                     >
                       <div className="flex-1 min-w-0">
@@ -216,6 +254,70 @@ export default function Hledani() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Member detail modal */}
+      {selectedMember && (
+        <MemberDetailModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
+
+      {/* Meeting detail modal */}
+      <MeetingDetailModal
+        open={!!selectedMeeting}
+        onClose={() => setSelectedMeeting(null)}
+        meeting={selectedMeeting}
+        onEdit={() => setSelectedMeeting(null)}
+        onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
+        savingOutcome={outcomeMutation.isPending}
+      />
+
+      {/* Case detail modal */}
+      {selectedCase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setSelectedCase(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={() => setSelectedCase(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <Briefcase className="h-5 w-5" style={{ color: "#00abbd" }} />
+              <h2 className="font-heading text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                {selectedCase.nazev_pripadu}
+              </h2>
+            </div>
+            <div className="space-y-0">
+              <div className="flex justify-between py-1.5 border-b border-border">
+                <span className="text-xs text-muted-foreground">Status</span>
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  {selectedCase.status === "aktivni" ? "Aktivní" : "Uzavřený"}
+                </span>
+              </div>
+              {selectedCase.poznamka && (
+                <div className="flex justify-between py-1.5 border-b border-border">
+                  <span className="text-xs text-muted-foreground">Poznámka</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    {selectedCase.poznamka}
+                  </span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setSelectedCase(null);
+                navigate("/obchodni-pripady");
+              }}
+              className="btn btn-primary btn-md w-full mt-4"
+            >
+              Zobrazit v Byznys případech
+            </button>
+          </div>
         </div>
       )}
     </div>
