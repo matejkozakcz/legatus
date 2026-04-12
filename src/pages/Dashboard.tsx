@@ -1065,35 +1065,7 @@ const Dashboard = () => {
           </>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <MobileStatCard
-                label="Analýzy"
-                actual={mobileStats.fsa.actual}
-                planned={mobileStats.fsa.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard
-                label="Pohovory"
-                actual={mobileStats.poh.actual}
-                planned={mobileStats.poh.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard
-                label="Servisy"
-                actual={mobileStats.ser.actual}
-                planned={mobileStats.ser.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard
-                label="Poradenství"
-                actual={mobileStats.por.actual}
-                planned={mobileStats.por.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
-            </div>
-
-            {/* Nově domluveno */}
+            {/* 1) Nově domluvené schůzky — same position as vedoucí */}
             <div
               style={{
                 background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)",
@@ -1117,8 +1089,8 @@ const Dashboard = () => {
               <div style={{ display: "flex", gap: 16, justifyContent: "space-around" }}>
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
-                  { label: "Servisy", value: mobileNewlyArranged.ser },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
+                  { label: "Servisy", value: mobileNewlyArranged.ser },
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
@@ -1145,6 +1117,35 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* 2-5) Stat cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <MobileStatCard
+                label="Analýzy"
+                actual={mobileStats.fsa.actual}
+                planned={mobileStats.fsa.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Pohovory"
+                actual={mobileStats.poh.actual}
+                planned={mobileStats.poh.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Servisy"
+                actual={mobileStats.ser.actual}
+                planned={mobileStats.ser.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard
+                label="Poradenství"
+                actual={mobileStats.por.actual}
+                planned={mobileStats.por.planned}
+                sublabel="proběhlých / na týden"
+              />
+              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
             </div>
           </>
         )}
