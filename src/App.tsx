@@ -19,6 +19,7 @@ import Zapracovani from "./pages/Zapracovani";
 import ZapracovaniManagement from "./pages/ZapracovaniManagement";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import { GodModeRoute } from "@/components/GodModeRoute";
 
 const queryClient = new QueryClient();
 
@@ -97,7 +98,9 @@ const App = () => (
               path="/kalendar"
               element={
                 <AppLayout>
-                  <Kalendar />
+                  <GodModeRoute>
+                    <Kalendar />
+                  </GodModeRoute>
                 </AppLayout>
               }
             />

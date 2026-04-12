@@ -116,7 +116,7 @@ export function MobileBottomNav() {
             onClick={() => navigate("/zapracovani")}
             isDark={isDark}
           />
-        ) : (
+        ) : godMode ? (
           <NavButton
             icon={Calendar}
             label="Schůzky"
@@ -124,7 +124,7 @@ export function MobileBottomNav() {
             onClick={() => navigate("/kalendar")}
             isDark={isDark}
           />
-        )}
+        ) : null}
 
         {/* Center elevated Dashboard/Avatar button */}
         <div

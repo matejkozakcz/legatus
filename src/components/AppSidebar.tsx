@@ -68,7 +68,7 @@ export function AppSidebar() {
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, badge: false },
     ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3, badge: false }] : []),
-    { title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false },
+    ...(godMode ? [{ title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false }] : []),
     { title: "Můj byznys", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
