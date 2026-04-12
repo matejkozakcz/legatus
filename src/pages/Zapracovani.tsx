@@ -307,49 +307,17 @@ export default function Zapracovani() {
                       paddingTop: 12,
                     }}
                   >
-                    {/* Note field */}
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Poznámka
-                      </div>
-                      {isEditingThisNote ? (
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <input
-                            type="text"
-                            value={noteValue}
-                            onChange={(e) => setNoteValue(e.target.value)}
-                            placeholder="Odkaz, místo, poznámka..."
-                            className="flex-1 text-sm rounded-lg border border-input bg-background px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => saveNoteMutation.mutate({ taskId: task.id, note: noteValue })}
-                            className="btn btn-sm btn-primary"
-                            disabled={saveNoteMutation.isPending}
-                          >
-                            Uložit
-                          </button>
+                    {/* Note field (read-only for Nováček) */}
+                    {task.description && (
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Poznámka
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingNote(task.id);
-                            setNoteValue(task.description || "");
-                          }}
-                          style={{
-                            fontSize: 13,
-                            color: task.description ? "var(--text-primary)" : "var(--text-muted)",
-                            cursor: "pointer",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            textAlign: "left",
-                          }}
-                        >
-                          {task.description || "Přidat poznámku..."}
-                        </button>
-                      )}
-                    </div>
+                        <p style={{ fontSize: 13, color: "var(--text-primary)", margin: 0 }}>
+                          {task.description}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Status label */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
