@@ -32,6 +32,7 @@ interface MeetingDetailModalProps {
   onSaveOutcome?: (meetingId: string, data: Record<string, unknown>) => void;
   savingOutcome?: boolean;
   onCancel?: () => void;
+  onScheduleFollowUp?: (data: { meeting_type: string; date: string; meeting_time: string }) => void;
 }
 
 export function MeetingDetailModal({
