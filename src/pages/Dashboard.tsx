@@ -1323,6 +1323,7 @@ const Dashboard = () => {
         period,
         selectedYear,
         selectedMonth,
+        profile?.role,
       );
     } catch (e) {
       console.error("PDF export failed", e);
