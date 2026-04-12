@@ -283,11 +283,11 @@ const SpravaTeam = () => {
       const vars = { role_label: roleLabel, vedouci_name: profile!.full_name };
 
       if (rule) {
-        await sendRuleNotification(rule, userId, userId, vars);
+        await sendRuleNotification(rule, profile!.id, userId, vars);
       } else {
         // Fallback if no rule exists
         const { data: notifData } = await supabase.from("notifications").insert({
-          sender_id: userId,
+          sender_id: profile!.id,
           recipient_id: userId,
           type: "promotion_approved",
           title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
