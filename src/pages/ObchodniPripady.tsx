@@ -521,6 +521,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
+      setDetailMeeting(null);
       toast.success("Výsledek uložen");
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
@@ -961,19 +962,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             saveMeetingMutation.mutate({ form: cancelForm, id: detailMeeting.id, skipFollowUp: true });
             setDetailMeeting(null);
           }
-        }}
-        onScheduleFollowUp={(data) => {
-          const caseName = detailMeeting?.case_name || cases.find(c => c.id === data.case_id)?.nazev_pripadu || "";
-          saveMeetingMutation.mutate({
-            form: {
-              ...defaultForm(data.case_id),
-              case_name: caseName,
-              meeting_type: data.meeting_type,
-              date: data.date,
-              meeting_time: data.time,
-            },
-            skipFollowUp: true,
-          });
         }}
       />
 

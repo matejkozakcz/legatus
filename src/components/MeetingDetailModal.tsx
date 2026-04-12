@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Pencil, CalendarPlus } from "lucide-react";
+import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
@@ -11,7 +11,6 @@ export interface MeetingDetailData {
   meeting_type: MeetingType | string;
   cancelled: boolean;
   case_name: string | null;
-  case_id: string | null;
   meeting_time: string | null;
   duration_minutes: number | null;
   location_type: string | null;
@@ -25,20 +24,6 @@ export interface MeetingDetailData {
   outcome_recorded: boolean;
 }
 
-export interface FollowUpData {
-  meeting_type: MeetingType;
-  date: string;
-  time: string;
-  case_id: string;
-}
-
-const FOLLOW_UP_TYPE: Record<string, MeetingType | null> = {
-  FSA: "POR",
-  POR: "SER",
-  SER: "POR",
-  POH: null,
-};
-
 interface MeetingDetailModalProps {
   open: boolean;
   onClose: () => void;
@@ -47,13 +32,12 @@ interface MeetingDetailModalProps {
   onSaveOutcome?: (meetingId: string, data: Record<string, unknown>) => void;
   savingOutcome?: boolean;
   onCancel?: () => void;
-  onScheduleFollowUp?: (data: FollowUpData) => void;
 }
 
 export function MeetingDetailModal({
   open, onClose, meeting, onEdit,
   onSaveOutcome, savingOutcome,
-  onCancel, onScheduleFollowUp,
+  onCancel,
 }: MeetingDetailModalProps) {
   useBodyScrollLock(open);
 
@@ -63,9 +47,6 @@ export function MeetingDetailModal({
   const [pohDal, setPohDal] = useState<boolean | null>(null);
   const [dopPoh, setDopPoh] = useState("0");
   const [editingOutcome, setEditingOutcome] = useState(false);
-  const [showFollowUp, setShowFollowUp] = useState(false);
-  const [followUpDate, setFollowUpDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [followUpTime, setFollowUpTime] = useState("09:00");
 
   useEffect(() => {
     if (meeting) {
@@ -75,9 +56,6 @@ export function MeetingDetailModal({
       setPohDal(meeting.pohovor_jde_dal ?? null);
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setEditingOutcome(false);
-      setShowFollowUp(false);
-      setFollowUpDate(format(new Date(), "yyyy-MM-dd"));
-      setFollowUpTime("09:00");
     }
   }, [meeting]);
 
@@ -87,7 +65,6 @@ export function MeetingDetailModal({
   const isPast = !m.cancelled && m.date <= today;
   const showOutcomeForm = onSaveOutcome && isPast && (!m.outcome_recorded || editingOutcome);
   const showOutcomeSummary = isPast && m.outcome_recorded && !editingOutcome;
-  const followUpType = FOLLOW_UP_TYPE[m.meeting_type as string] ?? null;
 
   const row = (label: string, value: React.ReactNode) => (
     <div className="flex justify-between py-1.5 border-b border-border last:border-0">
@@ -109,21 +86,6 @@ export function MeetingDetailModal({
       data.doporuceni_pohovor = parseInt(dopPoh) || 0;
     }
     onSaveOutcome(m.id, data);
-    // Show follow-up section after saving (if applicable)
-    if (followUpType && onScheduleFollowUp && m.case_id) {
-      setShowFollowUp(true);
-    }
-  };
-
-  const handleScheduleFollowUp = () => {
-    if (!onScheduleFollowUp || !followUpType || !m.case_id) return;
-    onScheduleFollowUp({
-      meeting_type: followUpType,
-      date: followUpDate,
-      time: followUpTime,
-      case_id: m.case_id,
-    });
-    onClose();
   };
 
   const renderOutcomeSummary = () => {
@@ -190,11 +152,103 @@ export function MeetingDetailModal({
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
 
+        {/* Progress indicator — only for non-cancelled, non-POH meetings */}
+        {!m.cancelled && m.meeting_type !== "POH" && (() => {
+          const processSteps = [
+            { key: "FSA", label: "Analýza", icon: Users },
+            { key: "POR", label: "Poradenství", icon: FileText },
+            { key: "SER", label: "Servis", icon: Shield },
+          ];
+          const currentProcessIdx = processSteps.findIndex(s => s.key === m.meeting_type);
+
+          const todayStr = format(new Date(), "yyyy-MM-dd");
+          const statusSteps = [
+            { key: "planned", label: "Naplánována", icon: Clock },
+            { key: "done", label: "Proběhla", icon: Check },
+            { key: "outcome", label: "Výsledek", icon: ClipboardCheck },
+          ];
+          let currentStatusIdx = 0;
+          if (m.date <= todayStr) currentStatusIdx = 1;
+          if (m.outcome_recorded) currentStatusIdx = 2;
+
+          const renderAxis = (steps: { key: string; label: string; icon: React.ElementType }[], activeIdx: number) => (
+            <div className="flex items-center w-full">
+              {steps.map((step, i) => {
+                const Icon = step.icon;
+                const isActive = i === activeIdx;
+                const isPast = i < activeIdx;
+                const color = isActive ? "#00abbd" : isPast ? "#00abbd" : "var(--text-muted, #8aadb3)";
+                const opacity = isActive ? 1 : isPast ? 0.5 : 0.3;
+                return (
+                  <div key={step.key} className="flex items-center" style={{ flex: i < steps.length - 1 ? 1 : undefined }}>
+                    <div className="flex flex-col items-center" style={{ minWidth: 40 }}>
+                      <div
+                        className="flex items-center justify-center rounded-full transition-all"
+                        style={{
+                          width: isActive ? 28 : 22,
+                          height: isActive ? 28 : 22,
+                          background: isActive ? "rgba(0,171,189,0.15)" : isPast ? "rgba(0,171,189,0.08)" : "transparent",
+                          border: `2px solid ${color}`,
+                          opacity,
+                        }}
+                      >
+                        {isPast ? (
+                          <Check size={isActive ? 14 : 11} style={{ color }} />
+                        ) : (
+                          <Icon size={isActive ? 14 : 11} style={{ color }} />
+                        )}
+                      </div>
+                      <span
+                        className="mt-1 text-center leading-tight"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: isActive ? 700 : 500,
+                          color,
+                          opacity: isActive ? 1 : isPast ? 0.7 : 0.5,
+                        }}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div
+                        className="flex-1 mx-1"
+                        style={{
+                          height: 2,
+                          background: i < activeIdx ? "#00abbd" : "var(--border, #e1e9eb)",
+                          opacity: i < activeIdx ? 0.5 : 0.3,
+                          borderRadius: 1,
+                          marginBottom: 16,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+
+          return (
+            <div className="mt-4 space-y-3">
+              {currentProcessIdx >= 0 && (
+                <div>
+                  <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Proces</span>
+                  {renderAxis(processSteps, currentProcessIdx)}
+                </div>
+              )}
+              <div>
+                <span className="block text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Stav</span>
+                {renderAxis(statusSteps, currentStatusIdx)}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Outcome read-only summary */}
         {showOutcomeSummary && renderOutcomeSummary()}
 
         {/* Outcome form — for past, non-cancelled meetings without recorded outcome */}
-        {showOutcomeForm && !showFollowUp && (
+        {showOutcomeForm && (
           <div className="mt-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
@@ -258,74 +312,21 @@ export function MeetingDetailModal({
           </div>
         )}
 
-        {/* Inline follow-up section — shown after outcome is saved */}
-        {showFollowUp && followUpType && m.case_id && (
-          <div className="mt-4 p-3 rounded-xl border border-input">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarPlus className="h-4 w-4" style={{ color: "#00abbd" }} />
-              <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                Naplánovat následnou schůzku?
-              </span>
-            </div>
-            <div className="mb-3">
-              <span className="text-xs text-muted-foreground">
-                Typ: <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{meetingTypeLabel(followUpType)}</span>
-              </span>
-            </div>
-            <div className="flex gap-3 mb-3">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-                <input
-                  type="date"
-                  value={followUpDate}
-                  onChange={(e) => setFollowUpDate(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
-                <input
-                  type="time"
-                  value={followUpTime}
-                  onChange={(e) => setFollowUpTime(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowFollowUp(false)}
-                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
-              >
-                Přeskočit
-              </button>
-              <button
-                onClick={handleScheduleFollowUp}
-                className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2"
-              >
-                <CalendarPlus className="h-4 w-4" /> Naplánovat
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Action buttons */}
-        {!showFollowUp && (
-          <div className="flex gap-3 mt-4">
-            {onCancel && !m.cancelled && (
-              <button
-                onClick={onCancel}
-                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
-              >
-                <X className="h-4 w-4" /> Zrušit
-              </button>
-            )}
-            <button onClick={onEdit}
-              className={`${onCancel && !m.cancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
-              <Pencil className="h-4 w-4" /> Upravit schůzku
+        <div className="flex gap-3 mt-4">
+          {onCancel && !m.cancelled && (
+            <button
+              onClick={onCancel}
+              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <X className="h-4 w-4" /> Zrušit
             </button>
-          </div>
-        )}
+          )}
+          <button onClick={onEdit}
+            className={`${onCancel && !m.cancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
+            <Pencil className="h-4 w-4" /> Upravit schůzku
+          </button>
+        </div>
       </div>
     </div>
   );
