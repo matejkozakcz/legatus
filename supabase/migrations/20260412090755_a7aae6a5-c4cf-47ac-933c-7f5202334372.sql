@@ -1,0 +1,1 @@
+ALTER TABLE public.client_meetings ADD COLUMN IF NOT EXISTS outcome_recorded boolean NOT NULL DEFAULT false;

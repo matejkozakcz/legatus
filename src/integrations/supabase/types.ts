@@ -169,6 +169,7 @@ export type Database = {
           location_type: string | null
           meeting_time: string | null
           meeting_type: string
+          outcome_recorded: boolean
           podepsane_bj: number
           pohovor_date: string | null
           pohovor_jde_dal: boolean | null
@@ -199,6 +200,7 @@ export type Database = {
           location_type?: string | null
           meeting_time?: string | null
           meeting_type: string
+          outcome_recorded?: boolean
           podepsane_bj?: number
           pohovor_date?: string | null
           pohovor_jde_dal?: boolean | null
@@ -229,6 +231,7 @@ export type Database = {
           location_type?: string | null
           meeting_time?: string | null
           meeting_type?: string
+          outcome_recorded?: boolean
           podepsane_bj?: number
           pohovor_date?: string | null
           pohovor_jde_dal?: boolean | null

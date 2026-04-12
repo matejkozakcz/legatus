@@ -59,6 +59,7 @@ interface Meeting {
   duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
+  outcome_recorded: boolean;
 }
 
 const defaultForm = (caseId?: string): MeetingForm => ({
@@ -304,6 +305,9 @@ function CaseAccordion({
                 >
                   {meetingTypeLabel(m.meeting_type)}
                 </span>
+                {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                )}
                 <span className="text-xs text-muted-foreground flex-1">
                   {!m.cancelled && m.has_poradenstvi && m.poradenstvi_status === "probehle"
                     ? `${m.podepsane_bj} BJ`

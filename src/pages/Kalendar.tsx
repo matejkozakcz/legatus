@@ -44,6 +44,7 @@ interface Meeting {
   duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
+  outcome_recorded: boolean;
 }
 
 // ─── Color mapping by status + type ─────────────────────────────────────────
@@ -63,16 +64,12 @@ function getMeetingStatus(m: { cancelled: boolean; date: string }): MeetingStatu
   return m.date < todayStr ? "probehla" : "naplanovana";
 }
 
-/** Meeting is past, not cancelled, and has no outcome filled in */
+/** Meeting is past, not cancelled, and has no outcome recorded */
 function needsFollowUp(m: Meeting): boolean {
   if (m.cancelled) return false;
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  if (m.date >= todayStr) return false; // not yet past
-  // Check if any result field was filled
-  if (m.meeting_type === "FSA") return m.doporuceni_fsa === 0;
-  if (m.meeting_type === "POR" || m.meeting_type === "SER") return m.podepsane_bj === 0 && m.doporuceni_poradenstvi === 0;
-  if (m.meeting_type === "POH") return m.pohovor_jde_dal === null && m.doporuceni_pohovor === 0;
-  return false;
+  if (m.date >= todayStr) return false;
+  return !m.outcome_recorded;
 }
 
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
@@ -412,6 +409,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                             <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
                               {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                             </div>
+                            {needsFollowUp(m) && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />}
                             {needsFollowUp(m) && <AlertCircle size={11} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           {blockHeight > 30 && (
@@ -523,9 +521,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                         className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                         <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
-                            {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
+                           <div className="flex items-center gap-1">
+                             <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
+                             {needsFollowUp(m) && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />}
+                             {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
@@ -646,15 +645,18 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 700,
-                        fontSize: 15,
-                        color: borderColor,
-                        textDecoration: m.cancelled ? "line-through" : undefined,
-                      }}>
-                        {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: 700,
+                          fontSize: 15,
+                          color: borderColor,
+                          textDecoration: m.cancelled ? "line-through" : undefined,
+                        }}>
+                          {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
+                        </span>
+                        {needsFollowUp(m) && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />}
+                      </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {needsFollowUp(m) && (
                           <span style={{
