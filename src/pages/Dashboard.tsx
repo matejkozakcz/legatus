@@ -1316,45 +1316,24 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <StatCard
-              label="Analýzy"
-              actual={stats.fsa.actual}
-              planned={stats.fsa.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Pohovory"
-              actual={stats.poh.actual}
-              planned={stats.poh.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Servisy"
-              actual={stats.ser.actual}
-              planned={stats.ser.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard
-              label="Poradenství"
-              actual={stats.por.actual}
-              planned={stats.por.planned}
-              actualLabel="proběhlých"
-              plannedLabel="na období"
-            />
-            <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="celkem" />
-          </div>
-
-          <h3 className="font-heading font-semibold" style={{ fontSize: 18, color: "var(--text-primary)", marginTop: 8 }}>
-            Nově domluveno v období
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Analýzy" actual={desktopNewlyArranged.fsa} actualLabel="nově domluvených" />
-            <StatCard label="Servisy" actual={desktopNewlyArranged.ser} actualLabel="nově domluvených" />
-            <StatCard label="Pohovory" actual={desktopNewlyArranged.poh} actualLabel="nově domluvených" />
+          <div className="space-y-2">
+            {/* Row 1 — meetings that happened */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground w-24 shrink-0">Proběhlo</span>
+              <ActivityChip type="FSA" value={stats.fsa.actual} />
+              <ActivityChip type="POH" value={stats.poh.actual} />
+              <ActivityChip type="SER" value={stats.ser.actual} />
+              <ActivityChip type="POR" value={stats.por.actual} />
+              <ActivityChip type="REF" value={stats.ref.actual} />
+            </div>
+            {/* Row 2 — meetings newly booked this period */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground w-24 shrink-0">Nově domluveno</span>
+              <ActivityChip type="FSA" value={newlyBooked.fsa} />
+              <ActivityChip type="POH" value={newlyBooked.poh} />
+              <ActivityChip type="SER" value={newlyBooked.ser} />
+              <ActivityChip type="POR" value={newlyBooked.por} />
+            </div>
           </div>
         </section>
 
