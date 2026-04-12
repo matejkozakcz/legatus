@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, User, Briefcase, Calendar, ArrowLeft } from "lucide-react";
+import { Search, User, Briefcase, Calendar, ArrowLeft, X } from "lucide-react";
 import { format } from "date-fns";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
 import { MeetingDetailModal, type MeetingDetailData } from "@/components/MeetingDetailModal";
