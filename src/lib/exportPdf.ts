@@ -146,11 +146,13 @@ export async function exportDashboardPdf(
 
   const ownStats = computePersonStats(ownMeetings as MeetingRow[], todayStr, periodFrom, periodTo, userName, userRole);
 
-  // Fetch team members if leader role
-  const isLeader = ["vedouci", "budouci_vedouci", "garant"].includes(userRole);
+  // Fetch team members — V/BV viewers always see subordinates of the target user
+  const viewerIsTopLeader = ["vedouci", "budouci_vedouci"].includes(viewerRole || "");
+  const targetIsLeader = ["vedouci", "budouci_vedouci", "garant"].includes(userRole);
+  const showTeam = targetIsLeader || viewerIsTopLeader;
   let teamStats: PersonStats[] = [];
 
-  if (isLeader) {
+  if (showTeam) {
     let subordinateQuery = supabase
       .from("profiles")
       .select("id, full_name, role")
@@ -160,6 +162,9 @@ export async function exportDashboardPdf(
       subordinateQuery = subordinateQuery.eq("vedouci_id", userId);
     } else if (userRole === "garant") {
       subordinateQuery = subordinateQuery.eq("garant_id", userId);
+    } else if (viewerIsTopLeader) {
+      // Target is získatel/nováček — find people under them as ziskatel
+      subordinateQuery = subordinateQuery.eq("ziskatel_id", userId);
     }
 
     const { data: subordinates = [] } = await subordinateQuery;
