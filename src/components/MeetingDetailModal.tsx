@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Pencil } from "lucide-react";
+import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
