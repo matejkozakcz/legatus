@@ -107,6 +107,32 @@ export default function Zapracovani() {
     );
   }
 
+  // No plan assigned — show waiting state
+  if (!isLoading && tasks.length === 0) {
+    return (
+      <div className={isMobile ? "mobile-page" : "space-y-6"} style={isMobile ? { paddingBottom: 160, paddingTop: 16 } : undefined}>
+        <div className={isMobile ? "" : "flex items-center gap-4"}>
+          {!isMobile && <GraduationCap className="h-6 w-6" style={{ color: "var(--text-primary)" }} />}
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)", fontFamily: "Poppins, sans-serif" }}>
+            {isMobile ? "Zapracování" : "ZAPRACOVÁNÍ"}
+          </h1>
+        </div>
+        <div
+          className="legatus-card"
+          style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}
+        >
+          <Clock size={48} style={{ margin: "0 auto 16px", opacity: 0.3, color: "#00abbd" }} />
+          <p className="font-heading font-semibold text-lg" style={{ color: "var(--text-primary)" }}>
+            Čekám na přidělení plánu zapracování
+          </p>
+          <p className="text-sm mt-2" style={{ maxWidth: 320, margin: "8px auto 0" }}>
+            Tvůj vedoucí ti brzy přidělí zapracovací plán s konkrétními úkoly a termíny.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={isMobile ? "mobile-page" : "space-y-6"} style={isMobile ? { paddingBottom: 160 } : undefined}>
       {/* Header */}
@@ -115,7 +141,7 @@ export default function Zapracovani() {
         <h1
           className="font-heading font-bold"
           style={{
-            fontSize: isMobile ? 28 : 28,
+            fontSize: 28,
             color: "var(--text-primary)",
             fontFamily: "Poppins, sans-serif",
           }}
