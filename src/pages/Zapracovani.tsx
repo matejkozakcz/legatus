@@ -54,9 +54,18 @@ export default function Zapracovani() {
         .eq("novacek_id", profile?.id || "");
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, taskId) => {
       queryClient.invalidateQueries({ queryKey: ["onboarding_tasks"] });
       toast.success("Úkol splněn! 🎉");
+
+      // Check if this was the last task → 100% complete
+      const remaining = tasks.filter((t) => !t.completed && t.id !== taskId);
+      if (remaining.length === 0 && tasks.length > 0 && profile?.id) {
+        // Trigger all_completed notification
+        supabase.functions.invoke("check-onboarding", {
+          body: { type: "all_completed", novacek_id: profile.id },
+        }).catch(() => {});
+      }
     },
   });
 

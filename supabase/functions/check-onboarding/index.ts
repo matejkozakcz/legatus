@@ -36,6 +36,8 @@ Deno.serve(async (req) => {
       sent = await handleTaskAdded(supabase, supabaseUrl, serviceRoleKey, body);
     } else if (type === "check_deadlines") {
       sent = await handleCheckDeadlines(supabase, supabaseUrl, serviceRoleKey);
+    } else if (type === "all_completed") {
+      sent = await handleAllCompleted(supabase, supabaseUrl, serviceRoleKey, body);
     } else {
       return new Response(JSON.stringify({ error: "Unknown type" }), {
         status: 400,
@@ -260,4 +262,55 @@ async function handleCheckDeadlines(
 
 function formatDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// ─── All Completed (100% onboarding) ─────────────────────────────────────────
+
+async function handleAllCompleted(
+  supabase: any,
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  body: any,
+): Promise<number> {
+  const { novacek_id } = body;
+  if (!novacek_id) return 0;
+
+  const novacek = await getNovacekWithHierarchy(supabase, novacek_id);
+  if (!novacek) return 0;
+
+  let sent = 0;
+  const recipients = new Set<string>();
+
+  // Vedoucí (or BV acting as vedoucí)
+  if (novacek.vedouci_id) recipients.add(novacek.vedouci_id);
+  // Garant (if different from vedoucí)
+  if (novacek.garant_id && novacek.garant_id !== novacek.vedouci_id) recipients.add(novacek.garant_id);
+
+  for (const recipientId of recipients) {
+    await insertNotificationAndPush(
+      supabase, supabaseUrl, serviceRoleKey,
+      novacek_id,
+      recipientId,
+      "onboarding_all_completed",
+      `🎓 ${novacek.full_name} dokončil(a) zapracování!`,
+      `${novacek.full_name} splnil(a) 100 % plánu zapracování a má nárok na povýšení na Získatele.`,
+      "/tym",
+    );
+    sent++;
+  }
+
+  // Also notify the nováček themselves
+  await insertNotificationAndPush(
+    supabase, supabaseUrl, serviceRoleKey,
+    novacek_id,
+    novacek_id,
+    "onboarding_all_completed",
+    "🎓 Gratulujeme! Zapracování dokončeno!",
+    "Splnil(a) jsi všechny úkoly zapracování. Tvůj vedoucí bude informován o nároku na povýšení.",
+    "/zapracovani",
+  );
+  sent++;
+
+  console.log(`[check-onboarding] all_completed: ${novacek.full_name}, sent=${sent}`);
+  return sent;
 }
