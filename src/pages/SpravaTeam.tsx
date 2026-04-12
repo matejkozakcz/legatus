@@ -96,7 +96,7 @@ function MemberCard({
       onClick={onClick}
     >
       {member.avatar_url ? (
-        <img src={member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+        <img src={member.avatar_url} alt="" loading="lazy" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
       ) : (
         <div className="w-9 h-9 rounded-full bg-border flex items-center justify-center flex-shrink-0">
           <span className="text-xs font-heading font-semibold">{initials}</span>
@@ -477,7 +477,7 @@ const SpravaTeam = () => {
                       }}>
                         <div className="flex items-center gap-3" style={{ marginBottom: 8 }}>
                           {req.member.avatar_url ? (
-                            <img src={req.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                            <img src={req.member.avatar_url} alt="" loading="lazy" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
                           ) : (
                             <div className="w-9 h-9 rounded-full bg-border flex items-center justify-center flex-shrink-0">
                               <span className="text-xs font-heading font-semibold">{initials}</span>
@@ -609,7 +609,7 @@ const SpravaTeam = () => {
                 <div key={req.id} className="legatus-card legatus-card-sm flex items-center gap-4 flex-wrap"
                   style={{ borderLeft: "3px solid #00abbd" }}>
                   {req.member.avatar_url ? (
-                    <img src={req.member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img src={req.member.avatar_url} alt="" loading="lazy" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center">
                       <span className="text-xs font-heading font-semibold">{initials}</span>

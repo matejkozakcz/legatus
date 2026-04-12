@@ -175,6 +175,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
               <img
                 src={member.avatar_url}
                 alt={member.full_name}
+                loading="lazy"
                 className="rounded-full object-cover"
                 style={{ width: 64, height: 64, border: isDark ? "2px solid rgba(255,255,255,0.15)" : "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
               />

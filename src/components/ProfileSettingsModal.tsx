@@ -312,6 +312,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               <img
                 src={avatarUrl}
                 alt="Avatar"
+                loading="lazy"
                 className="w-20 h-20 rounded-full object-cover"
               />
             ) : (

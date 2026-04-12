@@ -329,7 +329,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 {uploading ? (
                   <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#00abbd" }} />
                 ) : avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-0.5">
                     <Camera className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
@@ -562,7 +562,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 }}
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <span className="font-heading font-bold text-white text-xl">
                     {jmeno[0]?.toUpperCase()}{prijmeni[0]?.toUpperCase()}
