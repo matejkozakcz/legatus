@@ -855,6 +855,14 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           meeting={detailMeeting}
           onSaveOutcome={(meetingId, data) => outcomeMutation.mutate({ meetingId, data })}
           savingOutcome={outcomeMutation.isPending}
+          onCancel={async () => {
+            if (detailMeeting) {
+              await supabase.from("client_meetings").update({ cancelled: true }).eq("id", detailMeeting.id);
+              queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
+              setDetailOpen(false);
+              toast.success("Schůzka zrušena");
+            }
+          }}
           onEdit={() => {
             setDetailOpen(false);
             if (detailMeeting) {
