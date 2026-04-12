@@ -49,9 +49,11 @@ export function MeetingDetailModal({
   const [dopPoh, setDopPoh] = useState("0");
   const [editingOutcome, setEditingOutcome] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
+  const [showNextStep, setShowNextStep] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [justCancelled, setJustCancelled] = useState(false);
+  const [prevSaving, setPrevSaving] = useState(false);
   useEffect(() => {
     if (meeting) {
       setDopFsa(meeting.doporuceni_fsa?.toString() || "0");
