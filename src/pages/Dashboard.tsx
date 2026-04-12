@@ -259,7 +259,7 @@ const Dashboard = () => {
   // Active profile for rendering (impersonated or own)
   const activeProfile = isImpersonating && viewingProfile ? { ...profile, ...viewingProfile } : profile;
 
-  // Mobile week navigation
+  // Week navigation (shared logic for mobile + desktop activity section)
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
@@ -267,6 +267,15 @@ const Dashboard = () => {
   );
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
+
+  // Desktop week navigation for Přehled aktivit
+  const [desktopWeekOffset, setDesktopWeekOffset] = useState(0);
+  const desktopWeekStart = useMemo(
+    () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), desktopWeekOffset),
+    [desktopWeekOffset],
+  );
+  const desktopWeekEnd = endOfWeek(desktopWeekStart, { weekStartsOn: 1 });
+  const isDesktopWeekCurrent = isSameWeek(desktopWeekStart, now, { weekStartsOn: 1 });
 
   // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
   const promotionCheckDoneRef = useRef(false);
@@ -1378,7 +1387,10 @@ const Dashboard = () => {
                 className="font-heading font-semibold"
                 style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
               >
-                Stav byznysu
+                Stav byznysu –{" "}
+                <span style={{ fontWeight: 600 }}>
+                  {format(new Date(selectedYear, selectedMonth), "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+                </span>
               </h2>
               <div
                 className="legatus-card"
