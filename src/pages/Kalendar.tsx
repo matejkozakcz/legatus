@@ -409,6 +409,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                             <div className="font-semibold truncate" style={{ color: borderColor, textDecoration: m.cancelled ? "line-through" : undefined }}>
                               {meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}
                             </div>
+                            {needsFollowUp(m) && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />}
                             {needsFollowUp(m) && <AlertCircle size={11} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           {blockHeight > 30 && (
@@ -520,9 +521,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                         className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                         <div className="w-1 h-8 rounded-full" style={{ background: borderColor }} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
-                            {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
+                           <div className="flex items-center gap-1">
+                             <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: m.cancelled ? "line-through" : undefined }}>{meetingTypeLabel(m.meeting_type)}{m.case_name ? ` - ${m.case_name}` : ""}</span>
+                             {needsFollowUp(m) && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />}
+                             {needsFollowUp(m) && <AlertCircle size={13} style={{ color: "#fc7c71", flexShrink: 0 }} />}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {m.meeting_time?.slice(0, 5) || "—"} • {m.duration_minutes ? `${m.duration_minutes} min` : "—"}
