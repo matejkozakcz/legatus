@@ -49,6 +49,7 @@ export function MeetingDetailModal({
   const [showReschedule, setShowReschedule] = useState(false);
   const [showNextStep, setShowNextStep] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
+  const [justCancelled, setJustCancelled] = useState(false);
   const [prevSaving, setPrevSaving] = useState(false);
   useEffect(() => {
     if (meeting) {
