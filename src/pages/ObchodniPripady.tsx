@@ -62,8 +62,6 @@ interface Meeting {
   poradenstvi_date: string | null;
   pohovor_date: string | null;
   case_id: string | null;
-  meeting_time: string | null;
-  duration_minutes: number | null;
   location_type: string | null;
   location_detail: string | null;
   outcome_recorded: boolean;
