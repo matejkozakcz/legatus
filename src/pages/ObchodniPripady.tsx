@@ -960,6 +960,17 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               cancelled: true,
             };
             saveMeetingMutation.mutate({ form: cancelForm, id: detailMeeting.id, skipFollowUp: true });
+          }
+        }}
+        onScheduleFollowUp={(data) => {
+          if (detailMeeting) {
+            const form: MeetingForm = {
+              ...defaultMeetingForm(data.date, data.meeting_time),
+              meeting_type: data.meeting_type as MeetingType,
+              case_id: detailMeeting.case_id || "",
+              case_name: detailMeeting.case_name || "",
+            };
+            saveMeetingMutation.mutate({ form, skipFollowUp: true });
             setDetailMeeting(null);
           }
         }}
