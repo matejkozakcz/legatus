@@ -342,20 +342,74 @@ export function MeetingDetailModal({
           </div>
         )}
 
+        {/* Reschedule section after cancel */}
+        {showReschedule && onScheduleFollowUp && (
+          <div className="mt-4 p-3 rounded-xl border border-input space-y-3">
+            <label className="block text-xs font-semibold text-muted-foreground">Naplánovat náhradní termín?</label>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+                <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
+                <input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  onScheduleFollowUp({
+                    meeting_type: m.meeting_type as string,
+                    date: rescheduleDate,
+                    meeting_time: rescheduleTime,
+                  });
+                  onClose();
+                }}
+                disabled={!rescheduleDate}
+                className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2"
+              >
+                <CalendarPlus className="h-4 w-4" /> Naplánovat
+              </button>
+              <button
+                onClick={() => setShowReschedule(false)}
+                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Přeskočit
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-3 mt-4">
-          {onCancel && !m.cancelled && (
+          {onCancel && !m.cancelled && !justCancelled && (
             <button
-              onClick={onCancel}
-              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+              onClick={() => {
+                onCancel();
+                setJustCancelled(true);
+                if (onScheduleFollowUp) {
+                  setShowReschedule(true);
+                }
+              }}
+              className="flex-1 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+              style={{
+                border: "1px solid rgba(252,124,113,0.4)",
+                background: "rgba(252,124,113,0.08)",
+                color: "#fc7c71",
+              }}
             >
-              <X className="h-4 w-4" /> Zrušit
+              <Ban className="h-4 w-4" /> Zrušit schůzku
             </button>
           )}
-          <button onClick={onEdit}
-            className={`${onCancel && !m.cancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
-            <Pencil className="h-4 w-4" /> Upravit schůzku
-          </button>
+          {!showReschedule && (
+            <button onClick={onEdit}
+              className={`${onCancel && !m.cancelled && !justCancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
+              <Pencil className="h-4 w-4" /> Upravit schůzku
+            </button>
+          )}
         </div>
       </div>
     </div>
