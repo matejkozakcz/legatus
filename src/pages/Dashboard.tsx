@@ -1284,10 +1284,33 @@ const Dashboard = () => {
   const renderStavByznysu = () => {
     if (role === "novacek") {
       return (
-        <>
-          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
-          <GaugeIndicator value={0} max={0} label="Brzy dostupné" placeholder />
-        </>
+        <div style={{ width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)", marginBottom: 12 }}>
+            Postup k pozici Získatele
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div style={{ flex: 1, height: 10, borderRadius: 5, background: isDark ? "rgba(255,255,255,0.1)" : "#E1E9EB", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${onboardingProgress.percent}%`, borderRadius: 5, background: onboardingProgress.percent >= 100 ? "#3FC55D" : "#00abbd", transition: "width 0.5s ease" }} />
+            </div>
+            <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 22, color: "var(--text-primary)" }}>
+              {onboardingProgress.percent}%
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {onboardingProgress.done} z {onboardingProgress.total} úkolů splněno
+          </div>
+          {onboardingProgress.nextTask && (
+            <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 12, background: isDark ? "rgba(0,171,189,0.08)" : "rgba(0,171,189,0.06)", border: isDark ? "1px solid rgba(0,171,189,0.2)" : "1px solid rgba(0,171,189,0.15)", textAlign: "left" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#00abbd", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Další krok</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{onboardingProgress.nextTask.title}</div>
+              {onboardingProgress.nextTask.deadline && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  Deadline: {format(new Date(onboardingProgress.nextTask.deadline), "d. MMMM yyyy", { locale: cs })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       );
     }
 
