@@ -259,7 +259,7 @@ const Dashboard = () => {
   // Active profile for rendering (impersonated or own)
   const activeProfile = isImpersonating && viewingProfile ? { ...profile, ...viewingProfile } : profile;
 
-  // Mobile week navigation
+  // Week navigation (shared logic for mobile + desktop activity section)
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
@@ -267,6 +267,15 @@ const Dashboard = () => {
   );
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
+
+  // Desktop week navigation for Přehled aktivit
+  const [desktopWeekOffset, setDesktopWeekOffset] = useState(0);
+  const desktopWeekStart = useMemo(
+    () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), desktopWeekOffset),
+    [desktopWeekOffset],
+  );
+  const desktopWeekEnd = endOfWeek(desktopWeekStart, { weekStartsOn: 1 });
+  const isDesktopWeekCurrent = isSameWeek(desktopWeekStart, now, { weekStartsOn: 1 });
 
   // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
   const promotionCheckDoneRef = useRef(false);
@@ -398,16 +407,40 @@ const Dashboard = () => {
     [desktopMeetings, dateRange],
   );
 
-  // ── Newly booked meetings (by created_at, not date) ─────────────────────────
+  // ── Desktop week-based meetings for Přehled aktivit ──────────────────────────
+  const desktopWeekStartStr = format(desktopWeekStart, "yyyy-MM-dd");
+  const desktopWeekEndStr = format(desktopWeekEnd, "yyyy-MM-dd");
+
+  const { data: desktopWeekMeetings = [] } = useQuery({
+    queryKey: ["dashboard_meetings_desktop_week", activeUserId, desktopWeekStartStr, desktopWeekEndStr],
+    queryFn: async () => {
+      if (!activeUserId) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+        )
+        .eq("user_id", activeUserId)
+        .gte("date", desktopWeekStartStr)
+        .lte("date", desktopWeekEndStr);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId && !isMobile,
+  });
+
+  const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
+
+  // ── Newly booked meetings (by created_at in the desktop week) ───────────────
   const { data: newlyBookedMeetings = [] } = useQuery({
-    queryKey: ["dashboard_newly_booked", activeUserId, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ["dashboard_newly_booked", activeUserId, desktopWeekStartStr, desktopWeekEndStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select("meeting_type, cancelled")
         .eq("user_id", activeUserId)
-        .gte("created_at", dateRange.from.toISOString())
-        .lte("created_at", dateRange.to.toISOString());
+        .gte("created_at", desktopWeekStart.toISOString())
+        .lte("created_at", desktopWeekEnd.toISOString());
       if (error) throw error;
       return data || [];
     },
@@ -1378,7 +1411,10 @@ const Dashboard = () => {
                 className="font-heading font-semibold"
                 style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
               >
-                Stav byznysu
+                Stav byznysu –{" "}
+                <span style={{ fontWeight: 600 }}>
+                  {format(new Date(selectedYear, selectedMonth), "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+                </span>
               </h2>
               <div
                 className="legatus-card"
@@ -1443,6 +1479,36 @@ const Dashboard = () => {
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
               Přehled aktivit
             </h2>
+
+            {/* Desktop week picker — centered */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDesktopWeekOffset((o) => o - 1)}
+                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
+                style={{ width: 30, height: 30 }}
+              >
+                <ChevronLeft size={14} style={{ color: "#00555f" }} />
+              </button>
+              <div style={{ textAlign: "center", minWidth: 160 }}>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, lineHeight: 1.2 }}>
+                  {isDesktopWeekCurrent ? "Aktuální týden" : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+                </div>
+                <div
+                  style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.3 }}
+                >
+                  {format(desktopWeekStart, "d.M.", { locale: cs })} – {format(desktopWeekEnd, "d.M.", { locale: cs })}
+                </div>
+              </div>
+              <button
+                onClick={() => setDesktopWeekOffset((o) => Math.min(0, o + 1))}
+                disabled={desktopWeekOffset >= 0}
+                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
+                style={{ width: 30, height: 30, opacity: desktopWeekOffset >= 0 ? 0.3 : 1 }}
+              >
+                <ChevronRight size={14} style={{ color: "#00555f" }} />
+              </button>
+            </div>
+
             {!isMobile && (
               <div className="relative">
                 <button
@@ -1481,36 +1547,36 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <ActivityCard
               label="Analýzy"
-              actual={stats.fsa.actual}
-              total={stats.fsa.planned}
+              actual={desktopWeekStats.fsa.actual}
+              total={desktopWeekStats.fsa.planned}
               newly={newlyBooked.fsa}
               color="#00abbd"
             />
             <ActivityCard
               label="Pohovory"
-              actual={stats.poh.actual}
-              total={stats.poh.planned}
+              actual={desktopWeekStats.poh.actual}
+              total={desktopWeekStats.poh.planned}
               newly={newlyBooked.poh}
               color="#f59e0b"
             />
             <ActivityCard
               label="Servisy"
-              actual={stats.ser.actual}
-              total={stats.ser.planned}
+              actual={desktopWeekStats.ser.actual}
+              total={desktopWeekStats.ser.planned}
               newly={newlyBooked.ser}
               color="#ef4444"
             />
             <ActivityCard
               label="Poradenství"
-              actual={stats.por.actual}
-              total={stats.por.planned}
+              actual={desktopWeekStats.por.actual}
+              total={desktopWeekStats.por.planned}
               newly={newlyBooked.por}
               color="#8b5cf6"
             />
             <ActivityCard
               label="Doporučení"
-              actual={stats.ref.actual}
-              total={stats.ref.planned}
+              actual={desktopWeekStats.ref.actual}
+              total={desktopWeekStats.ref.planned}
               newly={0}
               color="#10b981"
             />
