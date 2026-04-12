@@ -283,7 +283,7 @@ const SpravaTeam = () => {
       const vars = { role_label: roleLabel, vedouci_name: profile!.full_name };
 
       if (rule) {
-        await sendRuleNotification(rule, profile!.id, userId, vars);
+        await sendRuleNotification(rule, userId, profile!.id, vars);
       } else {
         // Fallback if no rule exists
         const { data: notifData } = await supabase.from("notifications").insert({
