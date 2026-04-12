@@ -1069,7 +1069,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
-                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                  ...(activeRole !== "novacek" ? [{ label: "Servisy", value: mobileNewlyArranged.ser }] : []),
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
