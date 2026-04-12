@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
