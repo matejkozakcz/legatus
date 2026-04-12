@@ -65,8 +65,8 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const data = event.notification.data || {};
-  // Promotion notifications go to Správa týmu
-  const targetUrl = data.type === "promotion_eligible" ? "/tym" : "/dashboard";
+  // Use redirect_url if provided, otherwise fallback by type
+  const targetUrl = data.redirect_url || (data.type === "promotion_eligible" ? "/tym" : "/dashboard");
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
