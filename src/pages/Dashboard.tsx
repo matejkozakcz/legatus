@@ -1232,8 +1232,6 @@ const Dashboard = () => {
     );
   };
 
-  const [exportingPdf, setExportingPdf] = useState<ExportPeriod | null>(null);
-  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = async (period: ExportPeriod) => {
     if (!activeUserId || !activeProfile) return;
