@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
+import { format, parseISO, addDays } from "date-fns";
 import { cs } from "date-fns/locale";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
 
@@ -32,12 +32,13 @@ interface MeetingDetailModalProps {
   onSaveOutcome?: (meetingId: string, data: Record<string, unknown>) => void;
   savingOutcome?: boolean;
   onCancel?: () => void;
+  onScheduleFollowUp?: (data: { meeting_type: string; date: string; meeting_time: string }) => void;
 }
 
 export function MeetingDetailModal({
   open, onClose, meeting, onEdit,
   onSaveOutcome, savingOutcome,
-  onCancel,
+  onCancel, onScheduleFollowUp,
 }: MeetingDetailModalProps) {
   useBodyScrollLock(open);
 
@@ -47,7 +48,10 @@ export function MeetingDetailModal({
   const [pohDal, setPohDal] = useState<boolean | null>(null);
   const [dopPoh, setDopPoh] = useState("0");
   const [editingOutcome, setEditingOutcome] = useState(false);
-
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [justCancelled, setJustCancelled] = useState(false);
   useEffect(() => {
     if (meeting) {
       setDopFsa(meeting.doporuceni_fsa?.toString() || "0");
@@ -56,6 +60,12 @@ export function MeetingDetailModal({
       setPohDal(meeting.pohovor_jde_dal ?? null);
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setEditingOutcome(false);
+      setShowReschedule(false);
+      setJustCancelled(false);
+      // Pre-fill reschedule with next week same time
+      const nextDate = addDays(parseISO(meeting.date), 7);
+      setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
+      setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
     }
   }, [meeting]);
 
@@ -332,20 +342,74 @@ export function MeetingDetailModal({
           </div>
         )}
 
+        {/* Reschedule section after cancel */}
+        {showReschedule && onScheduleFollowUp && (
+          <div className="mt-4 p-3 rounded-xl border border-input space-y-3">
+            <label className="block text-xs font-semibold text-muted-foreground">Naplánovat náhradní termín?</label>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+                <input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
+                <input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  onScheduleFollowUp({
+                    meeting_type: m.meeting_type as string,
+                    date: rescheduleDate,
+                    meeting_time: rescheduleTime,
+                  });
+                  onClose();
+                }}
+                disabled={!rescheduleDate}
+                className="btn btn-primary btn-md flex-1 flex items-center justify-center gap-2"
+              >
+                <CalendarPlus className="h-4 w-4" /> Naplánovat
+              </button>
+              <button
+                onClick={() => setShowReschedule(false)}
+                className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Přeskočit
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-3 mt-4">
-          {onCancel && !m.cancelled && (
+          {onCancel && !m.cancelled && !justCancelled && (
             <button
-              onClick={onCancel}
-              className="flex-1 h-10 rounded-xl border border-input bg-background text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+              onClick={() => {
+                onCancel();
+                setJustCancelled(true);
+                if (onScheduleFollowUp) {
+                  setShowReschedule(true);
+                }
+              }}
+              className="flex-1 h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+              style={{
+                border: "1px solid rgba(252,124,113,0.4)",
+                background: "rgba(252,124,113,0.08)",
+                color: "#fc7c71",
+              }}
             >
-              <X className="h-4 w-4" /> Zrušit
+              <Ban className="h-4 w-4" /> Zrušit schůzku
             </button>
           )}
-          <button onClick={onEdit}
-            className={`${onCancel && !m.cancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
-            <Pencil className="h-4 w-4" /> Upravit schůzku
-          </button>
+          {!showReschedule && (
+            <button onClick={onEdit}
+              className={`${onCancel && !m.cancelled && !justCancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
+              <Pencil className="h-4 w-4" /> Upravit schůzku
+            </button>
+          )}
         </div>
       </div>
     </div>
