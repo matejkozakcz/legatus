@@ -93,31 +93,21 @@ function MobileStatCard({
   );
 }
 
-// ─── ActivityChip — compact pill for desktop stats ────────────────────────────
+// ─── MiniStatCard — compact card for desktop stats ────────────────────────────
 
-const CHIP_CONFIG: Record<string, { color: string; label: string }> = {
-  FSA: { color: "#00abbd", label: "FSA" },
-  POH: { color: "#f59e0b", label: "POH" },
-  SER: { color: "#ef4444", label: "SER" },
-  POR: { color: "#8b5cf6", label: "POR" },
-  REF: { color: "#10b981", label: "dop." },
-};
-
-function ActivityChip({ type, value }: { type: string; value: number }) {
-  if (value === 0) return null;
-  const { color, label } = CHIP_CONFIG[type] || { color: "#888", label: type };
+function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
-      style={{
-        background: `${color}1a`,
-        border: `1px solid ${color}4d`,
-      }}
+    <div
+      className="rounded-xl border border-input bg-card px-3 py-2.5"
+      style={{ borderTop: `2px solid ${color}` }}
     >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      <span className="font-semibold text-sm" style={{ color }}>{value}</span>
-      <span className="text-xs text-muted-foreground ml-0.5">{label}</span>
-    </span>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground truncate">
+        {label}
+      </div>
+      <div className="font-heading font-bold" style={{ fontSize: 28, lineHeight: 1, color, marginTop: 4 }}>
+        {value}
+      </div>
+    </div>
   );
 }
 
@@ -1344,23 +1334,27 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="space-y-2">
-            {/* Row 1 — meetings that happened */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">Proběhlo</span>
-              <ActivityChip type="FSA" value={stats.fsa.actual} />
-              <ActivityChip type="POH" value={stats.poh.actual} />
-              <ActivityChip type="SER" value={stats.ser.actual} />
-              <ActivityChip type="POR" value={stats.por.actual} />
-              <ActivityChip type="REF" value={stats.ref.actual} />
+          <div className="space-y-4">
+            {/* Row 1 — Proběhlo */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Proběhlo</p>
+              <div className="grid grid-cols-5 gap-2">
+                <MiniStatCard label="Analýzy" value={stats.fsa.actual} color="#00abbd" />
+                <MiniStatCard label="Pohovory" value={stats.poh.actual} color="#f59e0b" />
+                <MiniStatCard label="Servisy" value={stats.ser.actual} color="#ef4444" />
+                <MiniStatCard label="Poradenství" value={stats.por.actual} color="#8b5cf6" />
+                <MiniStatCard label="Doporučení" value={stats.ref.actual} color="#10b981" />
+              </div>
             </div>
-            {/* Row 2 — meetings newly booked this period */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">Nově domluveno</span>
-              <ActivityChip type="FSA" value={newlyBooked.fsa} />
-              <ActivityChip type="POH" value={newlyBooked.poh} />
-              <ActivityChip type="SER" value={newlyBooked.ser} />
-              <ActivityChip type="POR" value={newlyBooked.por} />
+            {/* Row 2 — Nově domluveno */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Nově domluveno</p>
+              <div className="grid grid-cols-4 gap-2">
+                <MiniStatCard label="Analýzy" value={newlyBooked.fsa} color="#00abbd" />
+                <MiniStatCard label="Pohovory" value={newlyBooked.poh} color="#f59e0b" />
+                <MiniStatCard label="Servisy" value={newlyBooked.ser} color="#ef4444" />
+                <MiniStatCard label="Poradenství" value={newlyBooked.por} color="#8b5cf6" />
+              </div>
             </div>
           </div>
         </section>
