@@ -63,13 +63,31 @@ export function MeetingDetailModal({
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setEditingOutcome(false);
       setShowReschedule(false);
+      setShowNextStep(false);
       setJustCancelled(false);
+      setPrevSaving(false);
       // Pre-fill reschedule with next week same time
       const nextDate = addDays(parseISO(meeting.date), 7);
       setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
       setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
     }
   }, [meeting]);
+
+  // Detect when saving completes → show next step prompt
+  useEffect(() => {
+    if (prevSaving && !savingOutcome) {
+      // Save just completed successfully
+      setShowNextStep(true);
+      setEditingOutcome(false);
+      // Pre-fill next step date
+      if (meeting) {
+        const nextDate = addDays(parseISO(meeting.date), 7);
+        setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
+        setRescheduleTime(meeting.meeting_time?.slice(0, 5) || "");
+      }
+    }
+    setPrevSaving(!!savingOutcome);
+  }, [savingOutcome]);
 
   if (!open || !meeting) return null;
   const m = meeting;
