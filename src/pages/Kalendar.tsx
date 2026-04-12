@@ -494,9 +494,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             {monthGrid.map((day, i) => {
               if (!day) return <div key={i} className="p-2 border-b border-r border-border min-h-[70px]" />;
               const dateStr = format(day, "yyyy-MM-dd");
-              const dayMeetings = meetingsByDay[dateStr] || [];
-              const isToday = isSameDay(day, today);
-              const isSelected = selectedDay && isSameDay(day, selectedDay);
+               const dayMeetings = meetingsByDay[dateStr] || [];
+               const dayTasks = onboardingByDay[dateStr] || [];
+               const isToday = isSameDay(day, today);
+               const isSelected = selectedDay && isSameDay(day, selectedDay);
 
               return (
                 <div
@@ -508,6 +509,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                     {format(day, "d")}
                   </div>
                   <div className="flex flex-wrap gap-1">
+                    {dayTasks.filter(t => !t.completed).map((t) => (
+                      <div key={t.id} className="w-2 h-2 rounded-full" style={{ background: "#8b5cf6" }} />
+                    ))}
                     {dayMeetings.slice(0, 3).map((m) => (
                       <div key={m.id} className="w-2 h-2 rounded-full" style={{ background: getTypeBorder(m.meeting_type) }} />
                     ))}
