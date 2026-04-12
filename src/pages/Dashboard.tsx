@@ -1069,7 +1069,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
-                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                  ...(activeRole !== "novacek" ? [{ label: "Servisy", value: mobileNewlyArranged.ser }] : []),
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
@@ -1148,7 +1148,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
-                  { label: "Servisy", value: mobileNewlyArranged.ser },
+                  ...(activeRole !== "novacek" ? [{ label: "Servisy", value: mobileNewlyArranged.ser }] : []),
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
@@ -1191,12 +1191,14 @@ const Dashboard = () => {
                 planned={mobileStats.poh.planned}
                 sublabel="proběhlých / na týden"
               />
-              <MobileStatCard
-                label="Servisy"
-                actual={mobileStats.ser.actual}
-                planned={mobileStats.ser.planned}
-                sublabel="proběhlých / na týden"
-              />
+              {activeRole !== "novacek" && (
+                <MobileStatCard
+                  label="Servisy"
+                  actual={mobileStats.ser.actual}
+                  planned={mobileStats.ser.planned}
+                  sublabel="proběhlých / na týden"
+                />
+              )}
               <MobileStatCard
                 label="Poradenství"
                 actual={mobileStats.por.actual}
