@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,9 @@ import {
   SendHorizontal,
   Clock,
   FileText,
+  History,
 } from "lucide-react";
+import { format } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,7 +127,22 @@ export default function AdminDashboard() {
           <PermissionsTab />
         </TabsContent>
         <TabsContent value="notifications">
-          <NotificationRulesTab />
+          <Tabs defaultValue="rules" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="rules" className="gap-1.5">
+                <Settings2 className="h-3.5 w-3.5" /> Pravidla
+              </TabsTrigger>
+              <TabsTrigger value="log" className="gap-1.5">
+                <History className="h-3.5 w-3.5" /> Historie odeslaných
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="rules">
+              <NotificationRulesTab />
+            </TabsContent>
+            <TabsContent value="log">
+              <NotificationLogTab />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         <TabsContent value="meetings">
           <MeetingDefaultsTab />
@@ -2323,6 +2340,146 @@ function PdfExportTab() {
         <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending} className="gap-2">
           <Save className="h-4 w-4" /> Uložit
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Notification Log Tab ─────────────────────────────────────────────────────
+
+interface NotifLog {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  read: boolean;
+  created_at: string;
+  sender?: { full_name: string } | null;
+  recipient?: { full_name: string } | null;
+}
+
+function NotificationLogTab() {
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ["admin_notification_log"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, sender_id, recipient_id, type, title, body, read, created_at, sender:profiles!notifications_sender_id_fkey(full_name), recipient:profiles!notifications_recipient_id_fkey(full_name)")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data || []) as unknown as NotifLog[];
+    },
+  });
+
+  const types = useMemo(() => {
+    const set = new Set(logs.map((l) => l.type));
+    return Array.from(set).sort();
+  }, [logs]);
+
+  const filtered = useMemo(() => {
+    return logs.filter((l) => {
+      if (typeFilter !== "all" && l.type !== typeFilter) return false;
+      if (search) {
+        const s = search.toLowerCase();
+        const senderName = (l.sender as any)?.full_name || "";
+        const recipientName = (l.recipient as any)?.full_name || "";
+        return (
+          l.title.toLowerCase().includes(s) ||
+          (l.body || "").toLowerCase().includes(s) ||
+          senderName.toLowerCase().includes(s) ||
+          recipientName.toLowerCase().includes(s)
+        );
+      }
+      return true;
+    });
+  }, [logs, search, typeFilter]);
+
+  if (isLoading) return <p className="text-muted-foreground p-4">Načítání…</p>;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <History className="h-4 w-4" /> Historie odeslaných notifikací
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Hledat v notifikacích…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Typ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Všechny typy</SelectItem>
+              {types.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Žádné notifikace</p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 font-medium">Datum</th>
+                  <th className="text-left p-3 font-medium">Typ</th>
+                  <th className="text-left p-3 font-medium">Příjemce</th>
+                  <th className="text-left p-3 font-medium">Odesílatel</th>
+                  <th className="text-left p-3 font-medium">Titulek</th>
+                  <th className="text-left p-3 font-medium">Přečteno</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map((n) => (
+                  <tr key={n.id} className="hover:bg-muted/30">
+                    <td className="p-3 whitespace-nowrap text-xs text-muted-foreground">
+                      {format(new Date(n.created_at), "d.M.yyyy HH:mm")}
+                    </td>
+                    <td className="p-3">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">
+                        {n.type}
+                      </span>
+                    </td>
+                    <td className="p-3 text-xs">{(n.recipient as any)?.full_name || "–"}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{(n.sender as any)?.full_name || "–"}</td>
+                    <td className="p-3 text-xs max-w-[300px] truncate" title={n.body || ""}>
+                      {n.title}
+                    </td>
+                    <td className="p-3 text-center">
+                      {n.read ? (
+                        <span className="text-xs text-green-600">✓</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">–</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Zobrazeno posledních {filtered.length} z {logs.length} notifikací</p>
       </CardContent>
     </Card>
   );
