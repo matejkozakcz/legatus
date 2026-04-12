@@ -260,15 +260,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
-      setDetailOpen(false);
       toast.success("Výsledek uložen");
-      // Open follow-up
-      if (detailMeeting && !detailMeeting.cancelled && detailMeeting.case_id) {
-        const c = localCases.find((cs) => cs.id === detailMeeting.case_id);
-        if (c) {
-          setFollowUp({ caseId: detailMeeting.case_id, caseName: c.nazev_pripadu, meetingType: detailMeeting.meeting_type });
-        }
-      }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
   });
