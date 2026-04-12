@@ -179,7 +179,7 @@ export default function Hledani() {
   };
   const sectionLabels = {
     person: "Lidé",
-    case: "Obchodní případy",
+    case: "Můj byznys",
     meeting: "Schůzky",
   };
 

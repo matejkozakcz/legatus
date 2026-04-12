@@ -69,12 +69,17 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, badge: false },
     ...(godMode ? [{ title: "Přehled aktivit", url: "/aktivity", icon: BarChart3, badge: false }] : []),
     { title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false },
-    { title: "Obchodní případy", url: "/obchodni-pripady", icon: Briefcase, badge: false },
+    { title: "Můj byznys", url: "/obchodni-pripady", icon: Briefcase, badge: false },
   ];
 
   if (profile?.role === "novacek") {
     navItems.push({ title: "Zapracování", url: "/zapracovani", icon: GraduationCap, badge: false });
-  } else if (isVedouci || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel") {
+  } else if (
+    isVedouci ||
+    profile?.role === "budouci_vedouci" ||
+    profile?.role === "garant" ||
+    profile?.role === "ziskatel"
+  ) {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
   }
 

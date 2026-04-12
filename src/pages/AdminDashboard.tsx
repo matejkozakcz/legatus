@@ -701,7 +701,7 @@ const SCOPE_OPTIONS = [
 const DEFAULT_VISIBILITY: VisibilityRule[] = [
   { role: "Vedoucí", sees: "Profily", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
   { role: "Vedoucí", sees: "Aktivity & Schůzky", scope: "Lidé s vedouci_id = já" },
-  { role: "Vedoucí", sees: "Obchodní případy", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
+  { role: "Vedoucí", sees: "Můj byznys", scope: "Celý svůj podstrom (is_in_vedouci_subtree)" },
   { role: "Vedoucí", sees: "Promotion requests", scope: "Všechny (role = vedouci)" },
   { role: "Garant", sees: "Profily", scope: "Lidé s garant_id = já" },
   { role: "Garant", sees: "Aktivity & Schůzky", scope: "Lidé s garant_id = já" },
@@ -1269,15 +1269,8 @@ const TRIGGER_EVENTS = [
   { value: "promotion_approved", label: "Povýšení schváleno", description: "Při schválení povýšení" },
   { value: "promotion_rejected", label: "Povýšení zamítnuto", description: "Při zamítnutí povýšení" },
   { value: "meeting_reminder", label: "Připomínka schůzky", description: "Před plánovanou schůzkou" },
-  { value: "followup_needed", label: "Doplnit výsledek schůzky", description: "Schůzka bez vyplněného výsledku" },
   { value: "weekly_summary", label: "Týdenní souhrn", description: "Souhrn aktivit na konci týdne" },
   { value: "goal_achieved", label: "Cíl splněn", description: "Při dosažení nastaveného cíle" },
-  { value: "onboarding_new_task", label: "Nový úkol zapracování", description: "Nováčkovi byl přidělen nový úkol" },
-  { value: "onboarding_plan_assigned", label: "Plán zapracování přidělen", description: "Nováčkovi byl přidělen celý plán zapracování" },
-  { value: "onboarding_deadline_soon", label: "Blížící se deadline zapracování", description: "Úkol zapracování má deadline za 2 dny" },
-  { value: "onboarding_overdue", label: "Zpoždění v zapracování", description: "Úkol zapracování je po deadline" },
-  { value: "onboarding_task_completed", label: "Úkol zapracování splněn", description: "Nováček splnil úkol zapracování" },
-  { value: "onboarding_all_completed", label: "Zapracování dokončeno (100%)", description: "Nováček dokončil všechny úkoly zapracování a má nárok na povýšení" },
   { value: "scheduled", label: "Pravidelná", description: "Opakovaná notifikace v nastaveném čase" },
   { value: "custom", label: "Vlastní", description: "Vlastní typ notifikace" },
 ] as const;
@@ -1290,13 +1283,6 @@ const TEMPLATE_VARS: Record<string, string[]> = {
   meeting_reminder: ["{{client_name}}", "{{meeting_time}}", "{{meeting_type}}"],
   weekly_summary: ["{{fsa_count}}", "{{ser_count}}", "{{poh_count}}", "{{bj_total}}"],
   goal_achieved: ["{{member_name}}", "{{goal_name}}", "{{goal_value}}"],
-  onboarding_new_task: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
-  onboarding_plan_assigned: ["{{member_name}}", "{{task_count}}"],
-  onboarding_deadline_soon: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
-  onboarding_overdue: ["{{member_name}}", "{{task_title}}", "{{deadline}}"],
-  onboarding_task_completed: ["{{member_name}}", "{{task_title}}"],
-  onboarding_all_completed: ["{{member_name}}"],
-  followup_needed: ["{{client_name}}", "{{meeting_type}}", "{{meeting_date}}"],
   scheduled: [
     "{{total_bj}}",
     "{{total_fsa}}",
@@ -1399,7 +1385,7 @@ const ALL_TEMPLATE_VARS: { category: string; vars: { name: string; description: 
     ],
   },
   {
-    category: "Obchodní případy",
+    category: "Můj byznys",
     vars: [
       { name: "{{case_status}}", description: "Stav případu (aktivní, ukončený)" },
       { name: "{{case_poznamka}}", description: "Poznámka k případu" },
@@ -1503,7 +1489,7 @@ const APP_PAGES = [
   { value: "/aktivity", label: "Moje aktivity" },
   { value: "/tym", label: "Správa týmu" },
   { value: "/ukoly", label: "Úkoly" },
-  { value: "/obchodni-pripady", label: "Obchodní případy" },
+  { value: "/obchodni-pripady", label: "Můj byznys" },
   { value: "/obchod", label: "Obchod" },
   { value: "/kalendar", label: "Kalendář" },
   { value: "/hledani", label: "Hledání" },
@@ -2211,7 +2197,13 @@ function EditRuleForm({
         <Label className="text-xs">Přesměrování po kliknutí (volitelné)</Label>
         <div className="flex gap-2 mt-1">
           <Select
-            value={APP_PAGES.some((p) => p.value === form.redirect_url) ? form.redirect_url! : form.redirect_url ? "__custom" : "__none"}
+            value={
+              APP_PAGES.some((p) => p.value === form.redirect_url)
+                ? form.redirect_url!
+                : form.redirect_url
+                  ? "__custom"
+                  : "__none"
+            }
             onValueChange={(v) => {
               if (v === "__none") setForm({ ...form, redirect_url: null });
               else if (v === "__custom") setForm({ ...form, redirect_url: "/" });
@@ -2224,7 +2216,9 @@ function EditRuleForm({
             <SelectContent>
               <SelectItem value="__none">Žádné</SelectItem>
               {APP_PAGES.map((p) => (
-                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
               ))}
               <SelectItem value="__custom">Vlastní URL…</SelectItem>
             </SelectContent>
@@ -2238,7 +2232,9 @@ function EditRuleForm({
             />
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">Kam bude uživatel přesměrován po kliknutí na notifikaci.</p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          Kam bude uživatel přesměrován po kliknutí na notifikaci.
+        </p>
       </div>
 
       {/* Delivery toggles */}
@@ -2495,7 +2491,9 @@ function NotificationLogTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
-        .select("id, sender_id, recipient_id, type, title, body, read, created_at, sender:profiles!notifications_sender_id_fkey(full_name), recipient:profiles!notifications_recipient_id_fkey(full_name)")
+        .select(
+          "id, sender_id, recipient_id, type, title, body, read, created_at, sender:profiles!notifications_sender_id_fkey(full_name), recipient:profiles!notifications_recipient_id_fkey(full_name)",
+        )
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -2605,7 +2603,9 @@ function NotificationLogTab() {
             </table>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">Zobrazeno posledních {filtered.length} z {logs.length} notifikací</p>
+        <p className="text-xs text-muted-foreground">
+          Zobrazeno posledních {filtered.length} z {logs.length} notifikací
+        </p>
       </CardContent>
     </Card>
   );

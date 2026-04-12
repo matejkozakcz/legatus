@@ -199,7 +199,7 @@ interface VisibilityRule {
 const SEES_TO_TABLES: Record<string, string[]> = {
   Profily: ["profiles"],
   "Aktivity & Schůzky": ["activity_records", "client_meetings"],
-  "Obchodní případy": ["cases"],
+  "Můj byznys": ["cases"],
   "Promotion requests": ["promotion_requests"],
   "Vše vlastní": ["profiles", "activity_records", "client_meetings", "cases", "notifications", "vedouci_goals"],
   Vše: [

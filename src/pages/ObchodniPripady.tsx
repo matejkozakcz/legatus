@@ -652,7 +652,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               <div className="flex items-center gap-3">
                 <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
                 <h1 className="font-heading font-bold flex-1" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-                  Obchodní případy
+                  Můj byznys
                 </h1>
               </div>
             </div>
@@ -863,7 +863,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             <div className="flex items-center gap-3">
               <Briefcase className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
               <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-                Obchodní případy
+                Můj byznys
               </h1>
             </div>
           </div>
@@ -894,7 +894,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       ) : cases.length === 0 ? (
         <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-          Zatím žádné Obchodní případy. Nový případ se vytvoří automaticky při založení schůzky.
+          Zatím žádné Můj byznys. Nový případ se vytvoří automaticky při založení schůzky.
         </div>
       ) : (
         <div className="flex flex-col gap-3">
