@@ -1191,12 +1191,14 @@ const Dashboard = () => {
                 planned={mobileStats.poh.planned}
                 sublabel="proběhlých / na týden"
               />
-              <MobileStatCard
-                label="Servisy"
-                actual={mobileStats.ser.actual}
-                planned={mobileStats.ser.planned}
-                sublabel="proběhlých / na týden"
-              />
+              {activeRole !== "novacek" && (
+                <MobileStatCard
+                  label="Servisy"
+                  actual={mobileStats.ser.actual}
+                  planned={mobileStats.ser.planned}
+                  sublabel="proběhlých / na týden"
+                />
+              )}
               <MobileStatCard
                 label="Poradenství"
                 actual={mobileStats.por.actual}
