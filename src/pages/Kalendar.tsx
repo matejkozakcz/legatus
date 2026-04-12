@@ -393,6 +393,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               {weekDays.map((day, dayIdx) => {
                 const dateStr = format(day, "yyyy-MM-dd");
                 const dayMeetings = meetingsByDay[dateStr] || [];
+                const dayTasks = onboardingByDay[dateStr] || [];
 
                 return (
                   <div key={dayIdx} className="relative border-l border-border">
@@ -447,6 +448,63 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                               {needsFollowUp(m) && " • Doplň výsledek"}
                             </div>
                           )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Onboarding task blocks */}
+                    {dayTasks.map((t) => {
+                      const taskHour = t.deadline_time ? parseInt(t.deadline_time.split(":")[0]) : null;
+                      if (taskHour === null) {
+                        // Tasks without time: show at top of first hour only (hour === 0)
+                        if (hour !== 0) return null;
+                        return (
+                          <div
+                            key={`task-${t.id}`}
+                            className="absolute left-1 right-1 rounded-lg px-1.5 py-0.5 overflow-hidden z-10"
+                            style={{
+                              top: 0,
+                              height: SLOT_HEIGHT * 0.8,
+                              background: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.08)",
+                              borderLeft: "4px solid #8b5cf6",
+                              fontSize: 11,
+                              opacity: t.completed ? 0.5 : 1,
+                            }}
+                          >
+                            <div className="flex items-center gap-0.5">
+                              <GraduationCap size={10} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                              <div className="font-semibold truncate" style={{ color: "#8b5cf6", textDecoration: t.completed ? "line-through" : undefined }}>
+                                {t.title}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (taskHour !== hour) return null;
+                      const taskMin = parseInt(t.deadline_time!.split(":")[1]) || 0;
+                      const topOffset = taskMin * (SLOT_HEIGHT / 30);
+                      return (
+                        <div
+                          key={`task-${t.id}`}
+                          className="absolute left-1 right-1 rounded-lg px-1.5 py-0.5 overflow-hidden z-10"
+                          style={{
+                            top: topOffset,
+                            height: SLOT_HEIGHT * 0.8,
+                            background: isDark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.08)",
+                            borderLeft: "4px solid #8b5cf6",
+                            fontSize: 11,
+                            opacity: t.completed ? 0.5 : 1,
+                          }}
+                        >
+                          <div className="flex items-center gap-0.5">
+                            <GraduationCap size={10} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                            <div className="font-semibold truncate" style={{ color: "#8b5cf6", textDecoration: t.completed ? "line-through" : undefined }}>
+                              {t.title}
+                            </div>
+                          </div>
+                          <div className="text-muted-foreground" style={{ fontSize: 10 }}>
+                            {t.deadline_time?.slice(0, 5)}
+                          </div>
                         </div>
                       );
                     })}
