@@ -475,7 +475,7 @@ export function MeetingDetailModal({
               <Ban className="h-4 w-4" /> Zrušit schůzku
             </button>
           )}
-          {!showReschedule && (
+          {!showReschedule && !showNextStep && (
             <button onClick={onEdit}
               className={`${onCancel && !m.cancelled && !justCancelled ? "flex-1" : "w-full"} h-10 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors hover:opacity-80 border border-input text-muted-foreground`}>
               <Pencil className="h-4 w-4" /> Upravit schůzku
