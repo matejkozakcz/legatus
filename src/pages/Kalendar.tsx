@@ -545,8 +545,28 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               </button>
             </div>
             <div className="overflow-y-auto px-4 pb-4">
-              {selectedDayMeetings.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Žádné schůzky</p>
+              {/* Onboarding tasks */}
+              {selectedDayTasks.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {selectedDayTasks.map((t) => (
+                    <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ opacity: t.completed ? 0.5 : 1 }}>
+                      <div className="w-1 h-8 rounded-full" style={{ background: "#8b5cf6" }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap size={13} style={{ color: "#8b5cf6", flexShrink: 0 }} />
+                          <span className="text-sm font-medium text-foreground truncate" style={{ textDecoration: t.completed ? "line-through" : undefined }}>{t.title}</span>
+                          {t.completed && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: "#3FC55D", background: "rgba(63,197,93,0.12)" }}>Splněno</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Zapracování{t.deadline_time ? ` • ${t.deadline_time.slice(0, 5)}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedDayMeetings.length === 0 && selectedDayTasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Žádné události</p>
               ) : (
                 <div className="space-y-2">
                   {selectedDayMeetings.map((m) => {
