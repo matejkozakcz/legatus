@@ -224,36 +224,29 @@ export async function exportDashboardPdf(
   doc.setFont(fontName, "bold");
   doc.text(`Moje aktivity — ${userName}`, 14, 34);
 
-  // Proběhlé
+   // Naplánované + Proběhlé
   doc.setFontSize(10);
   doc.setFont(fontName, "bold");
-  doc.text("Proběhlé", 14, 42);
 
   autoTable(doc, {
-    startY: 45,
-    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ"]],
-    body: [[ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj]],
+    startY: 38,
+    head: [
+      [
+        { content: "Naplánované", colSpan: 4 },
+        { content: "Proběhlé", colSpan: 6 },
+        { content: "Nově domluvené", colSpan: 4 },
+      ],
+      ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
+    ],
+    body: [[
+      ownStats.planFsa, ownStats.planPoh, ownStats.planSer, ownStats.planPor,
+      ownStats.fsa, ownStats.poh, ownStats.ser, ownStats.por, ownStats.ref, ownStats.bj,
+      ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor,
+    ]],
     theme: "grid",
     styles: { font: fontName },
-    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
-    bodyStyles: { fontSize: 9, font: fontName },
-    margin: { left: 14, right: 14 },
-  });
-
-  // Nově domluvené
-  const afterOwn1 = (doc as any).lastAutoTable?.finalY || 60;
-  doc.setFontSize(10);
-  doc.setFont(fontName, "bold");
-  doc.text("Nově domluvené", 14, afterOwn1 + 7);
-
-  autoTable(doc, {
-    startY: afterOwn1 + 10,
-    head: [["Analýzy", "Pohovory", "Servisy", "Poradenství"]],
-    body: [[ownStats.newFsa, ownStats.newPoh, ownStats.newSer, ownStats.newPor]],
-    theme: "grid",
-    styles: { font: fontName },
-    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 9, fontStyle: "bold", font: fontName },
-    bodyStyles: { fontSize: 9, font: fontName },
+    headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+    bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
     margin: { left: 14, right: 14 },
   });
 
