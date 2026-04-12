@@ -1,0 +1,1 @@
+ALTER TABLE public.notification_rules ADD COLUMN sender_type text NOT NULL DEFAULT 'system';

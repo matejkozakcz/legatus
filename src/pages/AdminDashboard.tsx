@@ -1434,10 +1434,34 @@ const RECIPIENT_TYPES = [
   },
 ] as const;
 
+const SENDER_TYPES = [
+  {
+    value: "system",
+    label: "Systém",
+    description: "Odesílatelem je systém (sender_id = recipient_id). Vhodné pro automatické notifikace.",
+  },
+  {
+    value: "self",
+    label: "Dotčená osoba",
+    description: "Odesílatelem je osoba, které se událost týká (např. člen, který splnil podmínku).",
+  },
+  {
+    value: "hierarchy",
+    label: "Nadřízený",
+    description: "Odesílatelem je přímý nadřízený dotčené osoby (vedoucí, garant, získatel).",
+  },
+] as const;
+
 const RECIPIENT_TYPE_LABELS: Record<string, string> = {
   self: "Dotčená osoba",
   hierarchy: "Nadřízení v hierarchii",
   by_role: "Podle role",
+};
+
+const SENDER_TYPE_LABELS: Record<string, string> = {
+  system: "Systém",
+  self: "Dotčená osoba",
+  hierarchy: "Nadřízený",
 };
 
 interface NotifRule {
@@ -1452,6 +1476,7 @@ interface NotifRule {
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
+  sender_type: string;
   schedule_type: string;
   schedule_time: string | null;
   schedule_day_of_week: number | null;
@@ -1553,6 +1578,7 @@ function NotificationRulesTab() {
             body_template: rule.body_template,
             recipient_roles: rule.recipient_roles,
             recipient_type: rule.recipient_type,
+            sender_type: rule.sender_type || "system",
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
@@ -1572,6 +1598,7 @@ function NotificationRulesTab() {
           body_template: rule.body_template || "",
           recipient_roles: rule.recipient_roles || [],
           recipient_type: rule.recipient_type || "by_role",
+          sender_type: rule.sender_type || "system",
           is_active: rule.is_active ?? true,
           send_push: rule.send_push ?? true,
           send_in_app: rule.send_in_app ?? true,
@@ -1632,6 +1659,7 @@ function NotificationRulesTab() {
       send_push: true,
       send_in_app: true,
       recipient_type: "self",
+      sender_type: "system",
       description: "",
       redirect_url: null,
     });
@@ -1768,6 +1796,10 @@ function NotificationRulesTab() {
                           </span>
                         ))}
                     </div>
+                    {/* Sender type badge */}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                      Sender: {SENDER_TYPE_LABELS[rule.sender_type] || "Systém"}
+                    </span>
 
                     {/* Push/In-app indicators */}
                     <div className="flex gap-3 text-xs text-muted-foreground">
@@ -2133,7 +2165,34 @@ function EditRuleForm({
         </div>
       )}
 
-      {/* Redirect URL */}
+      {/* Sender type */}
+      <div>
+        <Label className="text-xs mb-1.5 block">Odesílatel (sender)</Label>
+        <div className="flex flex-wrap gap-2">
+          {SENDER_TYPES.map((st) => {
+            const checked = (form.sender_type || "system") === st.value;
+            return (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setForm({ ...form, sender_type: st.value })}
+                className="text-xs px-3 py-1 rounded-full font-medium border transition-colors"
+                style={{
+                  background: checked ? "hsl(var(--primary))" : "transparent",
+                  color: checked ? "#fff" : "inherit",
+                  borderColor: checked ? "hsl(var(--primary))" : "#e1e9eb",
+                }}
+              >
+                {st.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {SENDER_TYPES.find((st) => st.value === (form.sender_type || "system"))?.description}
+        </div>
+      </div>
+
       <div>
         <Label className="text-xs">Přesměrování po kliknutí (volitelné)</Label>
         <div className="flex gap-2 mt-1">
