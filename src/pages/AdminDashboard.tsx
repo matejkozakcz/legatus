@@ -1434,10 +1434,34 @@ const RECIPIENT_TYPES = [
   },
 ] as const;
 
+const SENDER_TYPES = [
+  {
+    value: "system",
+    label: "Systém",
+    description: "Odesílatelem je systém (sender_id = recipient_id). Vhodné pro automatické notifikace.",
+  },
+  {
+    value: "self",
+    label: "Dotčená osoba",
+    description: "Odesílatelem je osoba, které se událost týká (např. člen, který splnil podmínku).",
+  },
+  {
+    value: "hierarchy",
+    label: "Nadřízený",
+    description: "Odesílatelem je přímý nadřízený dotčené osoby (vedoucí, garant, získatel).",
+  },
+] as const;
+
 const RECIPIENT_TYPE_LABELS: Record<string, string> = {
   self: "Dotčená osoba",
   hierarchy: "Nadřízení v hierarchii",
   by_role: "Podle role",
+};
+
+const SENDER_TYPE_LABELS: Record<string, string> = {
+  system: "Systém",
+  self: "Dotčená osoba",
+  hierarchy: "Nadřízený",
 };
 
 interface NotifRule {
@@ -1452,6 +1476,7 @@ interface NotifRule {
   is_active: boolean;
   send_push: boolean;
   send_in_app: boolean;
+  sender_type: string;
   schedule_type: string;
   schedule_time: string | null;
   schedule_day_of_week: number | null;
@@ -1553,6 +1578,7 @@ function NotificationRulesTab() {
             body_template: rule.body_template,
             recipient_roles: rule.recipient_roles,
             recipient_type: rule.recipient_type,
+            sender_type: rule.sender_type || "system",
             is_active: rule.is_active,
             send_push: rule.send_push,
             send_in_app: rule.send_in_app,
@@ -1572,6 +1598,7 @@ function NotificationRulesTab() {
           body_template: rule.body_template || "",
           recipient_roles: rule.recipient_roles || [],
           recipient_type: rule.recipient_type || "by_role",
+          sender_type: rule.sender_type || "system",
           is_active: rule.is_active ?? true,
           send_push: rule.send_push ?? true,
           send_in_app: rule.send_in_app ?? true,
@@ -1632,6 +1659,7 @@ function NotificationRulesTab() {
       send_push: true,
       send_in_app: true,
       recipient_type: "self",
+      sender_type: "system",
       description: "",
       redirect_url: null,
     });
