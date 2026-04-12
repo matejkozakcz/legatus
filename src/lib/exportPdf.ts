@@ -268,22 +268,26 @@ export async function exportDashboardPdf(
     const teamBody = teamStats.map((s) => [
       s.name,
       ROLE_LABEL[s.role] || s.role,
+      s.planFsa, s.planPoh, s.planSer, s.planPor,
       s.fsa, s.poh, s.ser, s.por, s.ref, s.bj,
       s.newFsa, s.newPoh, s.newSer, s.newPor,
     ]);
 
     const totals = teamStats.reduce(
       (acc, s) => ({
+        planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
+        planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
         fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
         ref: acc.ref + s.ref, bj: acc.bj + s.bj,
         newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
         newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
       }),
-      { fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
+      { planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 },
     );
 
     teamBody.push([
       "CELKEM", "",
+      totals.planFsa, totals.planPoh, totals.planSer, totals.planPor,
       totals.fsa, totals.poh, totals.ser, totals.por, totals.ref, totals.bj,
       totals.newFsa, totals.newPoh, totals.newSer, totals.newPor,
     ]);
@@ -294,10 +298,11 @@ export async function exportDashboardPdf(
         [
           { content: "Jméno", rowSpan: 2 },
           { content: "Role", rowSpan: 2 },
+          { content: "Naplánované", colSpan: 4 },
           { content: "Proběhlé", colSpan: 6 },
           { content: "Nově domluvené", colSpan: 4 },
         ],
-        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
+        ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ", "Analýzy", "Pohovory", "Servisy", "Poradenství"],
       ],
       body: teamBody,
       theme: "grid",
