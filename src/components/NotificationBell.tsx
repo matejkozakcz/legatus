@@ -16,6 +16,7 @@ interface Notification {
   created_at: string;
   related_meeting_id: string | null;
   related_case_id: string | null;
+  redirect_url: string | null;
 }
 
 interface NotificationBellProps {
@@ -45,7 +46,7 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
     if (!user) return;
     const { data } = await supabase
       .from("notifications")
-      .select("id, type, title, body, read, created_at, related_meeting_id, related_case_id")
+      .select("id, type, title, body, read, created_at, related_meeting_id, related_case_id, redirect_url")
       .eq("recipient_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -108,6 +109,12 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
     if (!notif.read) {
       await supabase.from("notifications").update({ read: true }).eq("id", notif.id);
       setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
+    }
+    // Custom redirect_url takes priority
+    if (notif.redirect_url) {
+      navigate(notif.redirect_url);
+      setOpen(false);
+      return;
     }
     // Promotion notifications → navigate to Správa týmu
     if (notif.type === "promotion_eligible") {

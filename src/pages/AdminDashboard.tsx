@@ -1456,7 +1456,22 @@ interface NotifRule {
   schedule_time: string | null;
   schedule_day_of_week: number | null;
   schedule_day_of_month: number | null;
+  redirect_url: string | null;
 }
+
+const APP_PAGES = [
+  { value: "/dashboard", label: "Dashboard" },
+  { value: "/aktivity", label: "Moje aktivity" },
+  { value: "/tym", label: "Správa týmu" },
+  { value: "/ukoly", label: "Úkoly" },
+  { value: "/obchodni-pripady", label: "Obchodní případy" },
+  { value: "/obchod", label: "Obchod" },
+  { value: "/kalendar", label: "Kalendář" },
+  { value: "/hledani", label: "Hledání" },
+  { value: "/zapracovani", label: "Zapracování" },
+  { value: "/zapracovani-management", label: "Zapracování (management)" },
+  { value: "/admin", label: "Admin Dashboard" },
+];
 
 function NotificationRulesTab() {
   const { user } = useAuth();
@@ -1545,6 +1560,7 @@ function NotificationRulesTab() {
             schedule_time: rule.schedule_time || "08:00",
             schedule_day_of_week: rule.schedule_day_of_week ?? null,
             schedule_day_of_month: rule.schedule_day_of_month ?? null,
+            redirect_url: rule.redirect_url || null,
           })
           .eq("id", rule.id);
         if (error) throw error;
@@ -1564,6 +1580,7 @@ function NotificationRulesTab() {
           schedule_time: rule.schedule_time || "08:00",
           schedule_day_of_week: rule.schedule_day_of_week ?? null,
           schedule_day_of_month: rule.schedule_day_of_month ?? null,
+          redirect_url: rule.redirect_url || null,
         });
         if (error) throw error;
       }
@@ -1616,6 +1633,7 @@ function NotificationRulesTab() {
       send_in_app: true,
       recipient_type: "self",
       description: "",
+      redirect_url: null,
     });
   };
 
@@ -2114,6 +2132,41 @@ function EditRuleForm({
           </div>
         </div>
       )}
+
+      {/* Redirect URL */}
+      <div>
+        <Label className="text-xs">Přesměrování po kliknutí (volitelné)</Label>
+        <div className="flex gap-2 mt-1">
+          <Select
+            value={APP_PAGES.some((p) => p.value === form.redirect_url) ? form.redirect_url! : form.redirect_url ? "__custom" : "__none"}
+            onValueChange={(v) => {
+              if (v === "__none") setForm({ ...form, redirect_url: null });
+              else if (v === "__custom") setForm({ ...form, redirect_url: "/" });
+              else setForm({ ...form, redirect_url: v });
+            }}
+          >
+            <SelectTrigger className="h-8 text-sm w-48">
+              <SelectValue placeholder="Žádné" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">Žádné</SelectItem>
+              {APP_PAGES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+              <SelectItem value="__custom">Vlastní URL…</SelectItem>
+            </SelectContent>
+          </Select>
+          {form.redirect_url && !APP_PAGES.some((p) => p.value === form.redirect_url) && (
+            <Input
+              value={form.redirect_url || ""}
+              onChange={(e) => setForm({ ...form, redirect_url: e.target.value })}
+              placeholder="/cesta"
+              className="h-8 text-sm flex-1"
+            />
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">Kam bude uživatel přesměrován po kliknutí na notifikaci.</p>
+      </div>
 
       {/* Delivery toggles */}
       <div className="flex gap-6">
