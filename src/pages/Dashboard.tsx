@@ -1346,40 +1346,7 @@ const Dashboard = () => {
             setSelectedMonth(m);
           }}
         />
-        {/* PDF export — desktop only */}
-        {!isMobile && (
-          <div className="relative ml-auto">
-            <button
-              onClick={() => setShowExportMenu((v) => !v)}
-              disabled={!!exportingPdf}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
-            >
-              {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-              Export PDF
-            </button>
-            {showExportMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-input bg-card shadow-lg py-1">
-                  <button
-                    onClick={() => handleExport("week")}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Týdenní přehled
-                  </button>
-                  <button
-                    onClick={() => handleExport("month")}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Měsíční přehled
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+        {/* PDF export button moved to Přehled aktivit section */}
       </div>
 
       <div>
@@ -1470,10 +1437,45 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="space-y-6">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-            Přehled aktivit
-          </h2>
+        <section className="space-y-6 mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
+              Přehled aktivit
+            </h2>
+            {!isMobile && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu((v) => !v)}
+                  disabled={!!exportingPdf}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                  Export PDF
+                </button>
+                {showExportMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-input bg-card shadow-lg py-1">
+                      <button
+                        onClick={() => handleExport("week")}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        Týdenní přehled
+                      </button>
+                      <button
+                        onClick={() => handleExport("month")}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        Měsíční přehled
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <ActivityCard
