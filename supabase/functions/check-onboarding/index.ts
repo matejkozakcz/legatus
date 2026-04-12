@@ -123,6 +123,7 @@ async function handlePlanAssigned(
     "onboarding_plan_assigned",
     "Plán zapracování přidělen 🎯",
     `Tvůj vedoucí ti právě přidělil plán zapracování. Podívej se na úkoly a termíny v sekci Zapracování.`,
+    "/zapracovani",
   );
   sent++;
 
@@ -135,6 +136,7 @@ async function handlePlanAssigned(
       "onboarding_plan_assigned",
       `Plán zapracování přidělen: ${novacek.full_name}`,
       `Nováčkovi ${novacek.full_name} byl přidělen plán zapracování. Můžeš sledovat jeho postup.`,
+      "/zapracovani-management",
     );
     sent++;
   }
@@ -161,6 +163,7 @@ async function handleTaskAdded(
     "onboarding_new_task",
     "Nový úkol v zapracování 📋",
     `Byl ti přidán nový úkol: ${task_title || "Nový úkol"}. Zkontroluj si termín v sekci Zapracování.`,
+    "/zapracovani",
   );
 
   console.log(`[check-onboarding] task_added for ${novacek_id}: ${task_title}`);
@@ -225,11 +228,12 @@ async function handleCheckDeadlines(
       const extra = overdueTasks.length > 3 ? ` a ${overdueTasks.length - 3} dalších` : "";
       await insertNotificationAndPush(
         supabase, supabaseUrl, serviceRoleKey,
-        novacekId, // self-notification
+        novacekId,
         novacekId,
         "onboarding_overdue",
         `⚠️ Zpoždění v zapracování`,
         `Máš ${overdueTasks.length} úkol${overdueTasks.length > 1 ? "y" : ""} po termínu: ${taskNames}${extra}. Splň je co nejdříve!`,
+        "/zapracovani",
       );
       sent++;
     }
@@ -244,6 +248,7 @@ async function handleCheckDeadlines(
         "onboarding_deadline_soon",
         `⏰ Blíží se termín zapracování`,
         `Blíží se deadline: ${taskNames}. Nezapomeň splnit úkoly včas!`,
+        "/zapracovani",
       );
       sent++;
     }
