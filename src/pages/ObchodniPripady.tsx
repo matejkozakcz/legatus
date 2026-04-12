@@ -523,7 +523,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
       toast.success("Výsledek uložen");
     },
-    },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
   });
 
