@@ -16,6 +16,7 @@ import Kalendar from "./pages/Kalendar";
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
 import Zapracovani from "./pages/Zapracovani";
+import ZapracovaniManagement from "./pages/ZapracovaniManagement";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
