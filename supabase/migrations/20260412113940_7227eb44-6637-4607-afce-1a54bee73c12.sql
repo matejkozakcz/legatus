@@ -1,0 +1,1 @@
+DELETE FROM notification_rules WHERE id = '70a874c3-f581-4a6e-b2c1-363f5e7af1e3';
