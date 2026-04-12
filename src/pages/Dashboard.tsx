@@ -93,20 +93,27 @@ function MobileStatCard({
   );
 }
 
-// ─── MiniStatCard — compact card for desktop stats ────────────────────────────
+// ─── ActivityCard — combined stat card for desktop ────────────────────────────
 
-function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function ActivityCard({ label, actual, total, newly, color }: {
+  label: string; actual: number; total: number; newly: number; color: string;
+}) {
+  const progress = total > 0 ? actual / total : 0;
   return (
-    <div
-      className="rounded-xl border border-input bg-card px-3 py-2.5"
-      style={{ borderTop: `2px solid ${color}` }}
-    >
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground truncate">
-        {label}
+    <div className="rounded-xl border border-input bg-card px-4 py-3 space-y-2" style={{ borderTop: `2px solid ${color}` }}>
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span>
+          <span style={{ color, fontWeight: 700, fontSize: 22 }}>{actual}</span>
+          <span className="text-xs text-muted-foreground font-medium"> z {total}</span>
+        </span>
       </div>
-      <div className="font-heading font-bold" style={{ fontSize: 28, lineHeight: 1, color, marginTop: 4 }}>
-        {value}
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round(progress * 100)}%`, background: color }} />
       </div>
+      {newly > 0 && (
+        <p className="text-[11px] text-muted-foreground">+{newly} nově domluveno</p>
+      )}
     </div>
   );
 }
@@ -1334,28 +1341,12 @@ const Dashboard = () => {
             Přehled aktivit
           </h2>
 
-          <div className="space-y-4">
-            {/* Row 1 — Proběhlo */}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Proběhlo</p>
-              <div className="grid grid-cols-5 gap-2">
-                <MiniStatCard label="Analýzy" value={stats.fsa.actual} color="#00abbd" />
-                <MiniStatCard label="Pohovory" value={stats.poh.actual} color="#f59e0b" />
-                <MiniStatCard label="Servisy" value={stats.ser.actual} color="#ef4444" />
-                <MiniStatCard label="Poradenství" value={stats.por.actual} color="#8b5cf6" />
-                <MiniStatCard label="Doporučení" value={stats.ref.actual} color="#10b981" />
-              </div>
-            </div>
-            {/* Row 2 — Nově domluveno */}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Nově domluveno</p>
-              <div className="grid grid-cols-4 gap-2">
-                <MiniStatCard label="Analýzy" value={newlyBooked.fsa} color="#00abbd" />
-                <MiniStatCard label="Pohovory" value={newlyBooked.poh} color="#f59e0b" />
-                <MiniStatCard label="Servisy" value={newlyBooked.ser} color="#ef4444" />
-                <MiniStatCard label="Poradenství" value={newlyBooked.por} color="#8b5cf6" />
-              </div>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <ActivityCard label="Analýzy" actual={stats.fsa.actual} total={stats.fsa.planned} newly={newlyBooked.fsa} color="#00abbd" />
+            <ActivityCard label="Pohovory" actual={stats.poh.actual} total={stats.poh.planned} newly={newlyBooked.poh} color="#f59e0b" />
+            <ActivityCard label="Servisy" actual={stats.ser.actual} total={stats.ser.planned} newly={newlyBooked.ser} color="#ef4444" />
+            <ActivityCard label="Poradenství" actual={stats.por.actual} total={stats.por.planned} newly={newlyBooked.por} color="#8b5cf6" />
+            <ActivityCard label="Doporučení" actual={stats.ref.actual} total={stats.ref.planned} newly={0} color="#10b981" />
           </div>
         </section>
 
