@@ -364,6 +364,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
+  const [activeTab, setActiveTab] = useState<"schuzky" | "aktivity">("schuzky");
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -651,6 +652,23 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           )}
 
+          {/* Tab bar */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => setActiveTab("schuzky")}
+              className={`chip ${activeTab === "schuzky" ? "chip-teal-active" : "chip-neutral"}`}
+            >
+              Schůzky
+            </button>
+            <button
+              onClick={() => setActiveTab("aktivity")}
+              className={`chip ${activeTab === "aktivity" ? "chip-teal-active" : "chip-neutral"}`}
+            >
+              Moje aktivity
+            </button>
+          </div>
+
+          {activeTab === "schuzky" && (<>
           {/* Fixed: Create case button + period bar */}
           <div
             style={{
@@ -848,6 +866,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               )}
             </div>
           </div>
+          </>)}
+          {activeTab === "aktivity" && (
+            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+              Aktivity — brzy
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -876,6 +900,22 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               {format(periodRange.end, "d. M. yyyy", { locale: cs })}
             </span>
             <div className="flex-1" />
+          </div>
+
+          {/* Tab bar */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => setActiveTab("schuzky")}
+              className={`chip ${activeTab === "schuzky" ? "chip-teal-active" : "chip-neutral"}`}
+            >
+              Schůzky
+            </button>
+            <button
+              onClick={() => setActiveTab("aktivity")}
+              className={`chip ${activeTab === "aktivity" ? "chip-teal-active" : "chip-neutral"}`}
+            >
+              Moje aktivity
+            </button>
           </div>
         </>
       )}
