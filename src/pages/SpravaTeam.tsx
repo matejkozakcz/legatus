@@ -7,6 +7,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
+import { format } from "date-fns";
+import { getCurrentProductionPeriod } from "@/lib/productionPeriod";
 
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
