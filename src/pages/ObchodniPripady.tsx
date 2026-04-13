@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, addDays, subDays, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
-import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
+
 import {
   Plus,
   X,
