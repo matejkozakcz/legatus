@@ -1567,6 +1567,8 @@ const Dashboard = () => {
                     currentUserId={profile?.id || ""}
                     focusUserId={viewingUserId || undefined}
                     viewerRole={profile?.role}
+                    periodStart={periodStartStr}
+                    periodEnd={periodEndStr}
                     onPersonClick={(userId, p) => {
                       handlePersonSwitch(userId, p.full_name);
                     }}
