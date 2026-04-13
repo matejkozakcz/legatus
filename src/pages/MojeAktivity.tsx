@@ -137,6 +137,8 @@ const AUTO_SYNCED_KEYS: Set<string> = new Set([
 ]);
 
 export const MojeAktivityContent = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { profile } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
