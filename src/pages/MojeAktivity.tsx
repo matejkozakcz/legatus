@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart3, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, isSameWeek, isAfter } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
@@ -10,6 +10,7 @@ import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function Counter({
   value,
