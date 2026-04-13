@@ -977,28 +977,180 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           </div>
 
-          {/* Desktop: Period picker (shown for schuzky & pripady tabs) */}
-          {activeTab !== "aktivity" && (
-            <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 16 }}>
-              <ProductionMonthPicker
-                selectedYear={selectedYear}
-                selectedMonth={selectedMonth}
-                onChange={(y, m) => {
-                  setSelectedYear(y);
-                  setSelectedMonth(m);
+          {/* Desktop: Day picker for Schůzky tab */}
+          {activeTab === "schuzky" && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+              borderRadius: 16,
+              padding: "10px 16px",
+              marginBottom: 16,
+              border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+              maxWidth: 520,
+              margin: "0 auto 16px",
+            }}>
+              <button
+                onClick={() => setSelectedDate((d) => subDays(d, 1))}
+                style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                  border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}
-              />
-              <span className="font-body text-xs text-muted-foreground">
-                {format(periodRange.start, "d. M.", { locale: cs })} –{" "}
-                {format(periodRange.end, "d. M. yyyy", { locale: cs })}
-              </span>
-              <div className="flex-1" />
+              >
+                <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+              </button>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
+                  {isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
+                </div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+                  {format(selectedDate, "d. MMMM yyyy", { locale: cs })}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDate((d) => addDays(d, 1))}
+                style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                  border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+              </button>
+            </div>
+          )}
+
+          {/* Desktop: Month navigator for Byznys případy tab */}
+          {activeTab === "pripady" && (
+            <div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                borderRadius: 16,
+                padding: "10px 16px",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                maxWidth: 520,
+                margin: "0 auto",
+              }}>
+                <button
+                  onClick={() => {
+                    if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
+                    else { setSelectedMonth((m) => m - 1); }
+                  }}
+                  style={{
+                    width: 32, height: 32, borderRadius: 10,
+                    background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+                </button>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
+                  <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+                    {MONTH_NAMES[selectedMonth]} {selectedYear}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
+                    else { setSelectedMonth((m) => m + 1); }
+                  }}
+                  style={{
+                    width: 32, height: 32, borderRadius: 10,
+                    background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+                </button>
+              </div>
+              <div className="text-center font-body text-xs text-muted-foreground" style={{ marginTop: 8, marginBottom: 16 }}>
+                {format(periodRange.start, "d. M.", { locale: cs })} – {format(periodRange.end, "d. M. yyyy", { locale: cs })}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {(activeTab === "schuzky" || activeTab === "pripady") && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
+      {/* Desktop Schůzky: meetings for selected day */}
+      {!isMobile && activeTab === "schuzky" && (
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          {meetingsLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : meetingsForDay.length === 0 ? (
+            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+              Žádné schůzky pro tento den.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {meetingsForDay.map((m) => {
+                const caseObj = cases.find((c) => c.id === m.case_id);
+                return (
+                  <div
+                    key={m.id}
+                    className="legatus-card cursor-pointer hover:shadow-md transition-shadow"
+                    style={{ padding: "12px 16px", opacity: m.cancelled ? 0.5 : 1 }}
+                    onClick={() => setDetailMeeting(m)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                        style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
+                      >
+                        {meetingTypeLabel(m.meeting_type)}
+                      </span>
+                      <span className="font-heading font-semibold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
+                        {m.case_name || caseObj?.nazev_pripadu || "—"}
+                      </span>
+                      {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
+                        className="p-1 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
+                      </button>
+                    </div>
+                    {(m.location_type || totalRefs(m) > 0 || m.podepsane_bj > 0) && (
+                      <div className="flex items-center gap-2 mt-2 ml-0.5">
+                        {m.location_type && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin size={11} /> {m.location_type === "online" ? "Online" : m.location_detail || m.location_type}
+                          </span>
+                        )}
+                        {totalRefs(m) > 0 && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}>
+                            {totalRefs(m)} dop.
+                          </span>
+                        )}
+                        {m.podepsane_bj > 0 && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}>
+                            {m.podepsane_bj} BJ
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "pripady" && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
