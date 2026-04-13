@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { MojeAktivityContent } from "@/pages/MojeAktivity";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -867,11 +868,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           </div>
           </>)}
-          {activeTab === "aktivity" && (
-            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-              Aktivity — brzy
-            </div>
-          )}
+          {activeTab === "aktivity" && <MojeAktivityContent />}
         </>
       ) : (
         <>
@@ -1080,11 +1077,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       />
       </>)}
 
-      {activeTab === "aktivity" && (
-        <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-          Aktivity — brzy
-        </div>
-      )}
+      {activeTab === "aktivity" && <MojeAktivityContent />}
     </div>
   );
 }
