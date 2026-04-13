@@ -21,6 +21,7 @@ import {
   Clock,
   MapPin,
   Calendar,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
