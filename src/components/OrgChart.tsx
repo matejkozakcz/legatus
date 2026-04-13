@@ -401,7 +401,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     enabled: profiles.length > 0,
   });
 
-  // Also fetch meeting BJ (podepsane_bj) for accurate totals
+  // Also fetch meeting BJ (podepsane_bj) for accurate totals (all-time, used for progress bars)
   const { data: meetingBjData = [] } = useQuery({
     queryKey: ["org_meeting_bj"],
     queryFn: async () => {
@@ -409,6 +409,23 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
         .from("client_meetings")
         .select("user_id, podepsane_bj")
         .eq("cancelled", false);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: profiles.length > 0,
+  });
+
+  // Fetch period-filtered meeting BJ for display in cards
+  const { data: periodMeetingBj = [] } = useQuery({
+    queryKey: ["org_period_meeting_bj", periodStart, periodEnd],
+    queryFn: async () => {
+      let q = supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false);
+      if (periodStart) q = q.gte("date", periodStart);
+      if (periodEnd) q = q.lte("date", periodEnd);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -461,6 +478,37 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     });
     return map;
   }, [profiles, cumulativeBjMap, structureCountMap]);
+
+  // Compute period BJ per user (personal) from client_meetings
+  const periodPersonalBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    periodMeetingBj.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
+    return map;
+  }, [periodMeetingBj]);
+
+  // Build bjMap for NodeCard display: personal for Nov/Zís/Gar, team for BV/Ved
+  const bjMap = useMemo(() => {
+    const map = new Map<string, { value: number; isTeam: boolean }>();
+
+    // Recursive sum of personal BJ for subtree (including self)
+    function subtreeBj(nodeId: string): number {
+      let total = periodPersonalBjMap.get(nodeId) || 0;
+      const kids = childrenMap.get(nodeId) || [];
+      kids.forEach((k) => { total += subtreeBj(k.id); });
+      return total;
+    }
+
+    profiles.forEach((p) => {
+      if (p.role === "vedouci" || p.role === "budouci_vedouci") {
+        map.set(p.id, { value: Math.round(subtreeBj(p.id)), isTeam: true });
+      } else {
+        map.set(p.id, { value: Math.round(periodPersonalBjMap.get(p.id) || 0), isTeam: false });
+      }
+    });
+    return map;
+  }, [profiles, periodPersonalBjMap, childrenMap]);
 
   // Compute which nodes should be collapsed by default
   // If focusUserId is set, expand the path to that person + their direct children
@@ -649,6 +697,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
             focusUserId={focusUserId || currentUserId}
             isClickableFn={isClickableFn}
             progressMap={progressMap}
+            bjMap={bjMap}
           />
         </div>
       </div>
