@@ -20,6 +20,7 @@ import {
   ChevronRight as ChevronRightIcon,
   Clock,
   MapPin,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -365,7 +366,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
-  const [activeTab, setActiveTab] = useState<"schuzky" | "aktivity">("schuzky");
+  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
