@@ -20,6 +20,8 @@ import {
   ChevronRight as ChevronRightIcon,
   Clock,
   MapPin,
+  Calendar,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -365,7 +367,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
-  const [activeTab, setActiveTab] = useState<"schuzky" | "aktivity">("schuzky");
+  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -654,19 +656,53 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           )}
 
           {/* Tab bar */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <button
-              onClick={() => setActiveTab("schuzky")}
-              className={`chip ${activeTab === "schuzky" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Schůzky
-            </button>
-            <button
-              onClick={() => setActiveTab("aktivity")}
-              className={`chip ${activeTab === "aktivity" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Moje aktivity
-            </button>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <div style={{
+              display: "flex",
+              background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+              borderRadius: 14,
+              padding: 4,
+              gap: 4,
+              width: "100%",
+            }}>
+              {([
+                { key: "schuzky" as const, label: "Schůzky", icon: <Calendar size={14} /> },
+                { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
+                { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={14} /> },
+              ]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: activeTab === tab.key ? 700 : 500,
+                    fontFamily: "Poppins, sans-serif",
+                    background: activeTab === tab.key
+                      ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
+                      : "transparent",
+                    color: activeTab === tab.key
+                      ? (isDark ? "#4dd8e8" : "#00555f")
+                      : (isDark ? "#7aadb3" : "#6b8a8f"),
+                    boxShadow: activeTab === tab.key
+                      ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
+                      : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {activeTab === "schuzky" && (<>
@@ -871,9 +907,9 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           {activeTab === "aktivity" && <MojeAktivityContent />}
         </>
       ) : (
-        <>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
           {/* Desktop header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
             <div className="flex items-center gap-3">
               <Briefcase className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
               <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
@@ -882,42 +918,79 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           </div>
 
-          {/* Desktop: Period picker + button */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <ProductionMonthPicker
-              selectedYear={selectedYear}
-              selectedMonth={selectedMonth}
-              onChange={(y, m) => {
-                setSelectedYear(y);
-                setSelectedMonth(m);
-              }}
-            />
-            <span className="font-body text-xs text-muted-foreground">
-              {format(periodRange.start, "d. M.", { locale: cs })} –{" "}
-              {format(periodRange.end, "d. M. yyyy", { locale: cs })}
-            </span>
-            <div className="flex-1" />
+          {/* Tab bar — matching mobile style */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            <div style={{
+              display: "flex",
+              background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+              borderRadius: 14,
+              padding: 4,
+              gap: 4,
+              width: "100%",
+              maxWidth: 520,
+            }}>
+              {([
+                { key: "schuzky" as const, label: "Schůzky", icon: <Calendar size={15} /> },
+                { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={15} /> },
+                { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={15} /> },
+              ]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "9px 14px",
+                    borderRadius: 10,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: activeTab === tab.key ? 700 : 500,
+                    fontFamily: "Poppins, sans-serif",
+                    background: activeTab === tab.key
+                      ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
+                      : "transparent",
+                    color: activeTab === tab.key
+                      ? (isDark ? "#4dd8e8" : "#00555f")
+                      : (isDark ? "#7aadb3" : "#6b8a8f"),
+                    boxShadow: activeTab === tab.key
+                      ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
+                      : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Tab bar */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <button
-              onClick={() => setActiveTab("schuzky")}
-              className={`chip ${activeTab === "schuzky" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Schůzky
-            </button>
-            <button
-              onClick={() => setActiveTab("aktivity")}
-              className={`chip ${activeTab === "aktivity" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Moje aktivity
-            </button>
-          </div>
-        </>
+          {/* Desktop: Period picker (shown for schuzky & pripady tabs) */}
+          {activeTab !== "aktivity" && (
+            <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 16 }}>
+              <ProductionMonthPicker
+                selectedYear={selectedYear}
+                selectedMonth={selectedMonth}
+                onChange={(y, m) => {
+                  setSelectedYear(y);
+                  setSelectedMonth(m);
+                }}
+              />
+              <span className="font-body text-xs text-muted-foreground">
+                {format(periodRange.start, "d. M.", { locale: cs })} –{" "}
+                {format(periodRange.end, "d. M. yyyy", { locale: cs })}
+              </span>
+              <div className="flex-1" />
+            </div>
+          )}
+        </div>
       )}
 
-      {activeTab === "schuzky" && (<>
+      {(activeTab === "schuzky" || activeTab === "pripady") && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -1075,9 +1148,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           });
         }}
       />
-      </>)}
+      </div>)}
 
-      {activeTab === "aktivity" && <MojeAktivityContent />}
+      {activeTab === "aktivity" && (
+        <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
+          <MojeAktivityContent />
+        </div>
+      )}
     </div>
   );
 }
