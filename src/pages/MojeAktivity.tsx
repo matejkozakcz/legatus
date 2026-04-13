@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, isSameWeek, isAfter } from "date-fns";
 import { getProductionPeriodStart, getProductionPeriodEnd, getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
-import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
+
 import { cs } from "date-fns/locale";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
