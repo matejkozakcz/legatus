@@ -35,7 +35,7 @@ export default function MobileObchod() {
         else if (dx > 0 && activeTab === "pripady") setActiveTab("schuzky");
       }
     },
-    [activeTab]
+    [activeTab],
   );
 
   const activeColor = "#00abbd";
@@ -56,7 +56,7 @@ export default function MobileObchod() {
         <div className="flex items-center gap-3">
           <Briefcase className="h-5 w-5" style={{ color: "var(--text-primary)" }} />
           <h1 className="font-heading font-bold text-foreground" style={{ fontSize: 22 }}>
-            Obchod
+            Byznys
           </h1>
         </div>
       </div>
@@ -91,18 +91,10 @@ export default function MobileObchod() {
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: isActive ? 600 : 500,
                 fontSize: 12.5,
-                color: isActive
-                  ? isDark ? "#fff" : "#00555f"
-                  : inactiveColor,
-                background: isActive
-                  ? isDark ? "rgba(0,171,189,0.2)" : "#fff"
-                  : "transparent",
+                color: isActive ? (isDark ? "#fff" : "#00555f") : inactiveColor,
+                background: isActive ? (isDark ? "rgba(0,171,189,0.2)" : "#fff") : "transparent",
                 borderRadius: 10,
-                boxShadow: isActive
-                  ? isDark
-                    ? "0 1px 4px rgba(0,0,0,0.3)"
-                    : "0 1px 4px rgba(0,85,95,0.1)"
-                  : "none",
+                boxShadow: isActive ? (isDark ? "0 1px 4px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,85,95,0.1)") : "none",
                 transition: "all 0.2s ease",
                 WebkitTapHighlightColor: "transparent",
               }}
@@ -115,20 +107,14 @@ export default function MobileObchod() {
       </div>
 
       {/* Content — swipe area */}
-      <div
-        style={{ flex: 1, overflow: "hidden", marginTop: 8 }}
-      >
+      <div style={{ flex: 1, overflow: "hidden", marginTop: 8 }}>
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           style={{ height: "100%", overflowY: "auto", overflowX: "hidden", minHeight: "100%" }}
         >
           <div style={{ minHeight: "100%" }}>
-            {activeTab === "schuzky" ? (
-              <Kalendar mobileEmbedded />
-            ) : (
-              <ObchodniPripady mobileEmbedded />
-            )}
+            {activeTab === "schuzky" ? <Kalendar mobileEmbedded /> : <ObchodniPripady mobileEmbedded />}
           </div>
         </div>
       </div>

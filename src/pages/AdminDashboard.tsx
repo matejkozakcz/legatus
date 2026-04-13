@@ -1490,7 +1490,7 @@ const APP_PAGES = [
   { value: "/tym", label: "Správa týmu" },
   { value: "/ukoly", label: "Úkoly" },
   { value: "/obchodni-pripady", label: "Můj byznys" },
-  { value: "/obchod", label: "Obchod" },
+  { value: "/obchod", label: "Byznys" },
   { value: "/kalendar", label: "Kalendář" },
   { value: "/hledani", label: "Hledání" },
   { value: "/zapracovani", label: "Zapracování" },
