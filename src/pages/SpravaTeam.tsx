@@ -7,6 +7,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
+import { format } from "date-fns";
+import { getCurrentProductionPeriod } from "@/lib/productionPeriod";
 
 import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
@@ -74,11 +76,13 @@ function MemberCard({
   onClick,
   depth = 0,
   readOnly = false,
+  bjInfo,
 }: {
   member: Profile;
   onClick: () => void;
   depth?: number;
   readOnly?: boolean;
+  bjInfo?: { value: number; isTeam: boolean };
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
@@ -104,7 +108,14 @@ function MemberCard({
       )}
       <div className="flex-1 min-w-0">
         <p className="font-body font-medium text-foreground text-sm leading-tight">{member.full_name}</p>
-        <span className={`${badge.className} mt-0.5`} style={{ fontSize: 10 }}>{badge.label}</span>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={`${badge.className}`} style={{ fontSize: 10 }}>{badge.label}</span>
+          {bjInfo != null && (
+            <span className="font-heading font-semibold" style={{ fontSize: 10, color: borderColor }}>
+              {bjInfo.value.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -117,6 +128,7 @@ function HierarchyGroup({
   onEdit,
   depth,
   readOnly = false,
+  bjMap,
 }: {
   parent: Profile;
   children: Profile[];
@@ -124,6 +136,7 @@ function HierarchyGroup({
   onEdit: (m: Profile) => void;
   depth: number;
   readOnly?: boolean;
+  bjMap?: Map<string, { value: number; isTeam: boolean }>;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
@@ -150,6 +163,7 @@ function HierarchyGroup({
             onClick={() => onEdit(parent)}
             depth={0}
             readOnly={readOnly}
+            bjInfo={bjMap?.get(parent.id)}
           />
         </div>
       </div>
@@ -166,6 +180,7 @@ function HierarchyGroup({
                 onEdit={onEdit}
                 depth={depth + 1}
                 readOnly={readOnly}
+                bjMap={bjMap}
               />
             );
           })}
@@ -436,6 +451,59 @@ const SpravaTeam = () => {
     if (!isLoading && members.length > 0) checkPromotions();
   }, [isLoading, members.length, checkPromotions]);
 
+  // ── BJ for current production period ──
+  const currentPeriod = useMemo(() => getCurrentProductionPeriod(), []);
+  const periodStartStr = format(currentPeriod.start, "yyyy-MM-dd");
+  const periodEndStr = format(currentPeriod.end, "yyyy-MM-dd");
+
+  const { data: periodMeetingBj = [] } = useQuery({
+    queryKey: ["team_period_bj", periodStartStr, periodEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: members.length > 0,
+  });
+
+  const bjMap = useMemo(() => {
+    const personalMap = new Map<string, number>();
+    periodMeetingBj.forEach((r: any) => {
+      personalMap.set(r.user_id, (personalMap.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
+
+    function subtreeBj(nodeId: string): number {
+      let total = personalMap.get(nodeId) || 0;
+      const kids = childrenMap.get(nodeId) || [];
+      kids.forEach((k) => { total += subtreeBj(k.id); });
+      return total;
+    }
+
+    const map = new Map<string, { value: number; isTeam: boolean }>();
+    members.forEach((m) => {
+      if (m.role === "vedouci" || m.role === "budouci_vedouci") {
+        map.set(m.id, { value: Math.round(subtreeBj(m.id)), isTeam: true });
+      } else {
+        map.set(m.id, { value: Math.round(personalMap.get(m.id) || 0), isTeam: false });
+      }
+    });
+    // Also compute for the logged-in user if they're BV/Ved
+    if (profile && (profile.role === "vedouci" || profile.role === "budouci_vedouci")) {
+      const selfBj = (personalMap.get(profile.id) || 0);
+      let teamTotal = selfBj;
+      members.forEach((m) => {
+        teamTotal += (personalMap.get(m.id) || 0);
+      });
+      // Use subtree approach properly
+      map.set(profile.id, { value: Math.round(subtreeBj(profile.id)), isTeam: true });
+    }
+    return map;
+  }, [members, periodMeetingBj, childrenMap, profile]);
 
 
   if (isMobile) {
@@ -551,6 +619,7 @@ const SpravaTeam = () => {
                       onEdit={setDetailMember}
                       depth={0}
                       readOnly={isReadOnly}
+                      bjMap={bjMap}
                     />
                   );
                 })}
@@ -676,9 +745,9 @@ const SpravaTeam = () => {
                   children={children}
                   childrenMap={childrenMap}
                   onEdit={setDetailMember}
-                  
                   depth={0}
                   readOnly={isReadOnly}
+                  bjMap={bjMap}
                 />
               );
             })}
