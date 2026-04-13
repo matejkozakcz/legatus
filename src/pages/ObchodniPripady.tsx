@@ -370,11 +370,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Meetings for selected day (desktop Schůzky tab)
-  const meetingsForDay = useMemo(() => {
-    const dayStr = format(selectedDate, "yyyy-MM-dd");
-    return meetings.filter((m) => m.date === dayStr).sort((a, b) => a.date.localeCompare(b.date));
-  }, [meetings, selectedDate]);
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -432,6 +427,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     }
     return map;
   }, [meetings]);
+
+  // Meetings for selected day (desktop Schůzky tab)
+  const meetingsForDay = useMemo(() => {
+    const dayStr = format(selectedDate, "yyyy-MM-dd");
+    return meetings.filter((m) => m.date === dayStr).sort((a, b) => a.date.localeCompare(b.date));
+  }, [meetings, selectedDate]);
 
   // ── Case mutations ──
   const saveCaseMutation = useMutation({
