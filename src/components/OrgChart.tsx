@@ -22,6 +22,9 @@ interface OrgChartProps {
   onPersonClick?: (userId: string, profile: ProfileNode) => void;
   /** The role of the logged-in user — controls who can click */
   viewerRole?: string;
+  /** ISO date strings for the selected production period */
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 const roleBadgeConfig: Record<string, { label: string }> = {
@@ -58,7 +61,7 @@ const progressBarColor: Record<string, string> = {
   novacek: "#F39E0A",
 };
 
-function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number }) {
+function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean } }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -128,6 +131,11 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
       <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}>
         {node.full_name}
       </p>
+      {bjInfo != null && (
+        <p className="text-center font-heading font-semibold" style={{ fontSize: 11, color: barColor, marginTop: 2, lineHeight: "14px" }}>
+          {bjInfo.value.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
+        </p>
+      )}
 
       {/* Progress bar at bottom edge */}
       {pct != null && (
@@ -190,6 +198,7 @@ function ChildrenBranch({
   focusUserId,
   isClickableFn,
   progressMap,
+  bjMap,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -200,6 +209,8 @@ function ChildrenBranch({
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
+  bjMap: Map<string, { value: number; isTeam: boolean }>;
+
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -262,6 +273,7 @@ function ChildrenBranch({
               focusUserId={focusUserId}
               isClickableFn={isClickableFn}
               progressMap={progressMap}
+              bjMap={bjMap}
             />
           </div>
         ))}
@@ -280,6 +292,7 @@ function TreeNode({
   focusUserId,
   isClickableFn,
   progressMap,
+  bjMap,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -290,6 +303,7 @@ function TreeNode({
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
+  bjMap: Map<string, { value: number; isTeam: boolean }>;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -298,7 +312,7 @@ function TreeNode({
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} />
+      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} bjInfo={bjMap.get(node.id)} />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -322,6 +336,7 @@ function TreeNode({
                 focusUserId={focusUserId}
                 isClickableFn={isClickableFn}
                 progressMap={progressMap}
+                bjMap={bjMap}
               />
             </>
           )}
@@ -346,7 +361,7 @@ function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string
   return path;
 }
 
-export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole }: OrgChartProps) {
+export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole, periodStart, periodEnd }: OrgChartProps) {
   const { profile } = useAuth();
 
   const { data: profiles = [], isLoading } = useQuery({
@@ -386,7 +401,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     enabled: profiles.length > 0,
   });
 
-  // Also fetch meeting BJ (podepsane_bj) for accurate totals
+  // Also fetch meeting BJ (podepsane_bj) for accurate totals (all-time, used for progress bars)
   const { data: meetingBjData = [] } = useQuery({
     queryKey: ["org_meeting_bj"],
     queryFn: async () => {
@@ -394,6 +409,23 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
         .from("client_meetings")
         .select("user_id, podepsane_bj")
         .eq("cancelled", false);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: profiles.length > 0,
+  });
+
+  // Fetch period-filtered meeting BJ for display in cards
+  const { data: periodMeetingBj = [] } = useQuery({
+    queryKey: ["org_period_meeting_bj", periodStart, periodEnd],
+    queryFn: async () => {
+      let q = supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false);
+      if (periodStart) q = q.gte("date", periodStart);
+      if (periodEnd) q = q.lte("date", periodEnd);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -446,6 +478,37 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     });
     return map;
   }, [profiles, cumulativeBjMap, structureCountMap]);
+
+  // Compute period BJ per user (personal) from client_meetings
+  const periodPersonalBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    periodMeetingBj.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
+    return map;
+  }, [periodMeetingBj]);
+
+  // Build bjMap for NodeCard display: personal for Nov/Zís/Gar, team for BV/Ved
+  const bjMap = useMemo(() => {
+    const map = new Map<string, { value: number; isTeam: boolean }>();
+
+    // Recursive sum of personal BJ for subtree (including self)
+    function subtreeBj(nodeId: string): number {
+      let total = periodPersonalBjMap.get(nodeId) || 0;
+      const kids = childrenMap.get(nodeId) || [];
+      kids.forEach((k) => { total += subtreeBj(k.id); });
+      return total;
+    }
+
+    profiles.forEach((p) => {
+      if (p.role === "vedouci" || p.role === "budouci_vedouci") {
+        map.set(p.id, { value: Math.round(subtreeBj(p.id)), isTeam: true });
+      } else {
+        map.set(p.id, { value: Math.round(periodPersonalBjMap.get(p.id) || 0), isTeam: false });
+      }
+    });
+    return map;
+  }, [profiles, periodPersonalBjMap, childrenMap]);
 
   // Compute which nodes should be collapsed by default
   // If focusUserId is set, expand the path to that person + their direct children
@@ -634,6 +697,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
             focusUserId={focusUserId || currentUserId}
             isClickableFn={isClickableFn}
             progressMap={progressMap}
+            bjMap={bjMap}
           />
         </div>
       </div>
