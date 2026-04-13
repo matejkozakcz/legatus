@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  BarChart3,
   Users,
   LogOut,
   Briefcase,
