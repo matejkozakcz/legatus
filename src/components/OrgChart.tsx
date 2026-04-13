@@ -198,6 +198,7 @@ function ChildrenBranch({
   focusUserId,
   isClickableFn,
   progressMap,
+  bjMap,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -208,6 +209,8 @@ function ChildrenBranch({
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
+  bjMap: Map<string, { value: number; isTeam: boolean }>;
+
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -270,6 +273,7 @@ function ChildrenBranch({
               focusUserId={focusUserId}
               isClickableFn={isClickableFn}
               progressMap={progressMap}
+              bjMap={bjMap}
             />
           </div>
         ))}
@@ -288,6 +292,7 @@ function TreeNode({
   focusUserId,
   isClickableFn,
   progressMap,
+  bjMap,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -298,6 +303,7 @@ function TreeNode({
   focusUserId?: string;
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
+  bjMap: Map<string, { value: number; isTeam: boolean }>;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -306,7 +312,7 @@ function TreeNode({
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} />
+      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} bjInfo={bjMap.get(node.id)} />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -330,6 +336,7 @@ function TreeNode({
                 focusUserId={focusUserId}
                 isClickableFn={isClickableFn}
                 progressMap={progressMap}
+                bjMap={bjMap}
               />
             </>
           )}
