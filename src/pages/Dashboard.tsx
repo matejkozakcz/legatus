@@ -1108,9 +1108,9 @@ const Dashboard = () => {
                   { label: "Analýzy", actual: mobileStats.fsa.actual, planned: mobileStats.fsa.planned },
                   { label: "Poradenství", actual: mobileStats.por.actual, planned: mobileStats.por.planned },
                 ].map((item) => (
-                  <div key={item.label}>
+                  <div key={item.label} style={{ textAlign: "center" }}>
                     <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "center" }}>
                       <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
                         {item.actual}
                       </span>
@@ -1192,9 +1192,9 @@ const Dashboard = () => {
                   { label: "Poradenství", actual: mobileStats.por.actual, planned: mobileStats.por.planned },
                   { label: "Doporučení", actual: mobileStats.ref.actual },
                 ].map((item) => (
-                  <div key={item.label}>
+                  <div key={item.label} style={{ textAlign: "center" }}>
                     <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "center" }}>
                       <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
                         {item.actual}
                       </span>
