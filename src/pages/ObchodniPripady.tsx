@@ -36,6 +36,7 @@ import {
   defaultMeetingForm,
 } from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
+import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
