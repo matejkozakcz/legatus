@@ -128,6 +128,7 @@ function HierarchyGroup({
   onEdit,
   depth,
   readOnly = false,
+  bjMap,
 }: {
   parent: Profile;
   children: Profile[];
@@ -135,6 +136,7 @@ function HierarchyGroup({
   onEdit: (m: Profile) => void;
   depth: number;
   readOnly?: boolean;
+  bjMap?: Map<string, { value: number; isTeam: boolean }>;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
@@ -161,6 +163,7 @@ function HierarchyGroup({
             onClick={() => onEdit(parent)}
             depth={0}
             readOnly={readOnly}
+            bjInfo={bjMap?.get(parent.id)}
           />
         </div>
       </div>
@@ -177,6 +180,7 @@ function HierarchyGroup({
                 onEdit={onEdit}
                 depth={depth + 1}
                 readOnly={readOnly}
+                bjMap={bjMap}
               />
             );
           })}
