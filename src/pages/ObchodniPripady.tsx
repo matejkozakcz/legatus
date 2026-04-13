@@ -542,7 +542,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
-      setDetailMeeting(null);
+      // Don't close the modal — let the MeetingDetailModal show the follow-up prompt
       toast.success("Výsledek uložen");
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
