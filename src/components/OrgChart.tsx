@@ -361,7 +361,7 @@ function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string
   return path;
 }
 
-export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole }: OrgChartProps) {
+export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole, periodStart, periodEnd }: OrgChartProps) {
   const { profile } = useAuth();
 
   const { data: profiles = [], isLoading } = useQuery({
