@@ -22,6 +22,9 @@ interface OrgChartProps {
   onPersonClick?: (userId: string, profile: ProfileNode) => void;
   /** The role of the logged-in user — controls who can click */
   viewerRole?: string;
+  /** ISO date strings for the selected production period */
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 const roleBadgeConfig: Record<string, { label: string }> = {
@@ -58,7 +61,7 @@ const progressBarColor: Record<string, string> = {
   novacek: "#F39E0A",
 };
 
-function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number }) {
+function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean } }) {
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -128,6 +131,11 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress }: { node: P
       <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}>
         {node.full_name}
       </p>
+      {bjInfo != null && (
+        <p className="text-center font-heading font-semibold" style={{ fontSize: 11, color: barColor, marginTop: 2, lineHeight: "14px" }}>
+          {bjInfo.value.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
+        </p>
+      )}
 
       {/* Progress bar at bottom edge */}
       {pct != null && (
