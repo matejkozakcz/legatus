@@ -990,7 +990,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       )}
 
-      {(activeTab === "schuzky" || activeTab === "pripady") && (<>
+      {(activeTab === "schuzky" || activeTab === "pripady") && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -1148,7 +1148,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           });
         }}
       />
-      </>)}
+      </div>)}
 
       {activeTab === "aktivity" && (
         <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
