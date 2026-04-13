@@ -76,11 +76,13 @@ function MemberCard({
   onClick,
   depth = 0,
   readOnly = false,
+  bjInfo,
 }: {
   member: Profile;
   onClick: () => void;
   depth?: number;
   readOnly?: boolean;
+  bjInfo?: { value: number; isTeam: boolean };
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
@@ -106,7 +108,14 @@ function MemberCard({
       )}
       <div className="flex-1 min-w-0">
         <p className="font-body font-medium text-foreground text-sm leading-tight">{member.full_name}</p>
-        <span className={`${badge.className} mt-0.5`} style={{ fontSize: 10 }}>{badge.label}</span>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={`${badge.className}`} style={{ fontSize: 10 }}>{badge.label}</span>
+          {bjInfo != null && (
+            <span className="font-heading font-semibold" style={{ fontSize: 10, color: borderColor }}>
+              {bjInfo.value.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
