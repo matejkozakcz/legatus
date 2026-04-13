@@ -101,7 +101,7 @@ export function MeetingDetailModal({
   const handleSaveOutcome = () => {
     if (!onSaveOutcome) return;
     const data: Record<string, unknown> = { outcome_recorded: true };
-    if (m.meeting_type === "FSA") {
+    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       data.podepsane_bj = parseFloat(podBj) || 0;
@@ -115,8 +115,8 @@ export function MeetingDetailModal({
 
   const renderOutcomeSummary = () => {
     const rows: { label: string; value: string }[] = [];
-    if (m.meeting_type === "FSA") {
-      rows.push({ label: "Doporučení FSA", value: String(m.doporuceni_fsa) });
+    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
+      rows.push({ label: "Doporučení", value: String(m.doporuceni_fsa) });
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       rows.push({ label: "Podepsané BJ", value: String(m.podepsane_bj) });
       rows.push({ label: "Doporučení", value: String(m.doporuceni_poradenstvi) });
@@ -295,9 +295,9 @@ export function MeetingDetailModal({
           <div className="mt-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
-            {m.meeting_type === "FSA" && (
+            {(m.meeting_type === "FSA" || m.meeting_type === "NAB") && (
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení FSA</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení</label>
                 <input type="number" value={dopFsa} onChange={(e) => setDopFsa(e.target.value)} min={0}
                   className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
