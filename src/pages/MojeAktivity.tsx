@@ -540,35 +540,65 @@ export const MojeAktivityContent = () => {
     );
   }
 
+  const MONTH_NAMES = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <BarChart3 className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-          Přehled aktivit
-        </h1>
+    <div className="space-y-6">
+      {/* Month navigator — same style as Byznys případy */}
+      <div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+          borderRadius: 16,
+          padding: "10px 16px",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+          maxWidth: 520,
+          margin: "0 auto",
+        }}>
+          <button
+            onClick={() => {
+              if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
+              else { setSelectedMonth((m) => m - 1); }
+            }}
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+          </button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+              {MONTH_NAMES[selectedMonth]} {selectedYear}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
+              else { setSelectedMonth((m) => m + 1); }
+            }}
+            style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+          </button>
+        </div>
+        <div className="text-center font-body text-xs text-muted-foreground" style={{ marginTop: 8 }}>
+          {format(monthStart, "d. M.", { locale: cs })} – {format(monthEnd, "d. M. yyyy", { locale: cs })}
+        </div>
       </div>
 
       {/* Stats */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-            Přehled aktivit
-          </h2>
-          <Pencil className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <ProductionMonthPicker
-            selectedYear={selectedYear}
-            selectedMonth={selectedMonth}
-            onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
-          />
-          <span className="font-body ml-2" style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Období od {format(monthStart, "d. M. yyyy", { locale: cs })} do{" "}
-            {format(monthEnd, "d. M. yyyy", { locale: cs })}
-          </span>
-        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
