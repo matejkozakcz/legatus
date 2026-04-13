@@ -619,6 +619,7 @@ const SpravaTeam = () => {
                       onEdit={setDetailMember}
                       depth={0}
                       readOnly={isReadOnly}
+                      bjMap={bjMap}
                     />
                   );
                 })}
@@ -744,9 +745,9 @@ const SpravaTeam = () => {
                   children={children}
                   childrenMap={childrenMap}
                   onEdit={setDetailMember}
-                  
                   depth={0}
                   readOnly={isReadOnly}
+                  bjMap={bjMap}
                 />
               );
             })}
