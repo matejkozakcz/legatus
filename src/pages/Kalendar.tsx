@@ -53,6 +53,7 @@ const TYPE_BORDER: Record<string, string> = {
   POR: "#8b5cf6",
   SER: "#f97316",
   POH: "#3b82f6",
+  NAB: "#7e22ce",
 };
 
 type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
@@ -230,7 +231,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           ? parseFloat(form.podepsane_bj) || 0
           : 0,
         // Doporučení podle typu
-        doporuceni_fsa: !form.cancelled && form.meeting_type === "FSA" ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_fsa: !form.cancelled && (form.meeting_type === "FSA" || form.meeting_type === "NAB") ? parseInt(form.doporuceni_fsa) || 0 : 0,
         doporuceni_poradenstvi: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
           ? parseInt(form.doporuceni_poradenstvi) || 0
           : 0,

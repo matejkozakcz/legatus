@@ -105,6 +105,7 @@ function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
   if (t === "POR") return { background: "#e8f5e9", color: "#2e7d32" };
   if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
+  if (t === "NAB") return { background: "#f3e8ff", color: "#7e22ce" };
   return { background: "#fef3f2", color: "#c0392b" };
 }
 
@@ -475,7 +476,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             ? parseFloat(form.podepsane_bj) || 0
             : 0,
         // Doporučení podle typu
-        doporuceni_fsa: !form.cancelled && form.meeting_type === "FSA" ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_fsa: !form.cancelled && (form.meeting_type === "FSA" || form.meeting_type === "NAB") ? parseInt(form.doporuceni_fsa) || 0 : 0,
         doporuceni_poradenstvi:
           !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
             ? parseInt(form.doporuceni_poradenstvi) || 0

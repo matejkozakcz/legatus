@@ -26,6 +26,7 @@ function getClientFollowUp(t: MeetingType): { type: MeetingType; label: string }
   if (t === "FSA") return { type: "POR", label: "Poradenství" };
   if (t === "POR") return { type: "SER", label: "Servis" };
   if (t === "SER") return { type: "POR", label: "Poradenství" };
+  if (t === "NAB") return { type: "FSA", label: "Analýza" };
   return null; // POH — no client track
 }
 
@@ -187,7 +188,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
 
   const clientSuggestion = getClientFollowUp(meetingType);
   const showClient = clientSuggestion !== null; // not POH
-  const showRecruit = meetingType !== "POH";
+  const showRecruit = meetingType !== "POH" && meetingType !== "SER" && meetingType !== "POR";
 
   useEffect(() => {
     if (open) {
