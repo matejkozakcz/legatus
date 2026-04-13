@@ -6,7 +6,7 @@ import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
-export type MeetingType = "FSA" | "POR" | "SER" | "POH";
+export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB";
 
 export interface MeetingForm {
   date: string;
@@ -43,6 +43,7 @@ export function meetingTypeLabel(t: MeetingType): string {
   if (t === "FSA") return "Analýza";
   if (t === "POR") return "Poradenství";
   if (t === "SER") return "Servis";
+  if (t === "NAB") return "Nábor";
   return "Pohovor";
 }
 
@@ -307,8 +308,8 @@ export function MeetingFormModal({
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
           <div className="flex gap-2 items-center">
             <div className="flex gap-2 flex-1">
-              {(["FSA", "POR", "SER", "POH"] as MeetingType[])
-                .filter((t) => t !== "POR" || isEdit)
+              {(["FSA", "NAB", "SER", "POH"] as MeetingType[])
+                .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit))
                 .map((t) => (
                   <button
                     key={t}
@@ -402,7 +403,7 @@ export function MeetingFormModal({
           <div className="mb-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
-            {form.meeting_type === "FSA" && (
+            {(form.meeting_type === "FSA" || form.meeting_type === "NAB") && (
               <NumberInput
                 label="Doporučení"
                 value={form.doporuceni_fsa}
