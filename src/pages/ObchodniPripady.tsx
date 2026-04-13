@@ -3,7 +3,7 @@ import { MojeAktivityContent } from "@/pages/MojeAktivity";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays, subDays, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
@@ -368,6 +368,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Meetings for selected day (desktop Schůzky tab)
+  const meetingsForDay = useMemo(() => {
+    const dayStr = format(selectedDate, "yyyy-MM-dd");
+    return meetings.filter((m) => m.date === dayStr).sort((a, b) => a.date.localeCompare(b.date));
+  }, [meetings, selectedDate]);
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
