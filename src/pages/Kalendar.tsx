@@ -93,7 +93,7 @@ const GRID_VISIBLE_HEIGHT = SLOT_HEIGHT * 2 * VISIBLE_HOURS; // 400px
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isMobileHook = useIsMobile();
@@ -975,6 +975,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           cases={localCases}
           isEdit={!!editingMeetingId}
           allowCreateCase
+          userRole={profile?.role}
           onCaseCreated={(c) => setLocalCases((prev) => [c, ...prev])}
           createCaseFn={async (name, note) => {
             const { data, error } = await supabase.from("cases").insert({
@@ -1116,6 +1117,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         cases={localCases}
         isEdit={!!editingMeetingId}
         allowCreateCase
+        userRole={profile?.role}
         onCaseCreated={(c) => setLocalCases((prev) => [c, ...prev])}
         createCaseFn={async (name, note) => {
           const { data, error } = await supabase.from("cases").insert({

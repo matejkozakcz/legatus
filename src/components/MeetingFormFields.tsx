@@ -181,6 +181,8 @@ interface MeetingFormModalProps {
   onCaseCreated?: (c: Case) => void;
   /** For inline case creation */
   createCaseFn?: (name: string, note: string) => Promise<Case>;
+  /** Current user role — used to restrict certain meeting types */
+  userRole?: string;
 }
 
 export function MeetingFormModal({
@@ -193,6 +195,7 @@ export function MeetingFormModal({
   isEdit: isEditProp,
   onDelete,
   createCaseFn,
+  userRole,
 }: MeetingFormModalProps) {
   useBodyScrollLock(open);
   const [form, setForm] = useState<MeetingForm>(initial);
@@ -225,6 +228,13 @@ export function MeetingFormModal({
     }
     prevOpenRef.current = open;
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-reset SER to FSA if novacek
+  useEffect(() => {
+    if (userRole === "novacek" && form.meeting_type === "SER") {
+      setForm((f) => ({ ...f, meeting_type: "FSA" }));
+    }
+  }, [userRole, form.meeting_type]);
 
   if (!open) return null;
 
@@ -309,7 +319,7 @@ export function MeetingFormModal({
           <div className="flex gap-2 items-center">
             <div className="flex gap-2 flex-1">
               {(["FSA", "NAB", "SER", "POH"] as MeetingType[])
-                .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit))
+                .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit) && (t !== "SER" || userRole !== "novacek"))
                 .map((t) => (
                   <button
                     key={t}
