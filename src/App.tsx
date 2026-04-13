@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import MojeAktivity from "./pages/MojeAktivity";
+
 import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
