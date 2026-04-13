@@ -655,19 +655,53 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           )}
 
           {/* Tab bar */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <button
-              onClick={() => setActiveTab("schuzky")}
-              className={`chip ${activeTab === "schuzky" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Schůzky
-            </button>
-            <button
-              onClick={() => setActiveTab("aktivity")}
-              className={`chip ${activeTab === "aktivity" ? "chip-teal-active" : "chip-neutral"}`}
-            >
-              Moje aktivity
-            </button>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <div style={{
+              display: "flex",
+              background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+              borderRadius: 14,
+              padding: 4,
+              gap: 4,
+              width: "100%",
+            }}>
+              {([
+                { key: "schuzky" as const, label: "Schůzky", icon: <Calendar size={14} /> },
+                { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
+                { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={14} /> },
+              ]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: activeTab === tab.key ? 700 : 500,
+                    fontFamily: "Poppins, sans-serif",
+                    background: activeTab === tab.key
+                      ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
+                      : "transparent",
+                    color: activeTab === tab.key
+                      ? (isDark ? "#4dd8e8" : "#00555f")
+                      : (isDark ? "#7aadb3" : "#6b8a8f"),
+                    boxShadow: activeTab === tab.key
+                      ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
+                      : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {activeTab === "schuzky" && (<>
