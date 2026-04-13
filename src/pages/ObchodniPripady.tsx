@@ -1116,6 +1116,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       )}
 
+      </div>)}
+
       {/* Delete confirmation */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setConfirmDeleteId(null)}>
@@ -1248,7 +1250,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           });
         }}
       />
-      </div>)}
 
       {activeTab === "aktivity" && (
         <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
