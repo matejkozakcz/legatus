@@ -78,7 +78,10 @@ export function MobileBottomNav() {
         }}
       >
         {/* Left button */}
-        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel" ? (
+        {profile?.role === "vedouci" ||
+        profile?.role === "budouci_vedouci" ||
+        profile?.role === "garant" ||
+        profile?.role === "ziskatel" ? (
           <NavButton
             icon={Users}
             label="Tým"
@@ -89,7 +92,7 @@ export function MobileBottomNav() {
         ) : (
           <NavButton
             icon={Briefcase}
-            label="Obchod"
+            label="Byznys"
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
             isDark={isDark}
@@ -100,10 +103,13 @@ export function MobileBottomNav() {
         <div style={{ flex: 1 }} />
 
         {/* Right button */}
-        {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || profile?.role === "ziskatel" ? (
+        {profile?.role === "vedouci" ||
+        profile?.role === "budouci_vedouci" ||
+        profile?.role === "garant" ||
+        profile?.role === "ziskatel" ? (
           <NavButton
             icon={Briefcase}
-            label="Obchod"
+            label="Byznys"
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
             isDark={isDark}
