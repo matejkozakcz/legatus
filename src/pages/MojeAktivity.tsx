@@ -544,57 +544,28 @@ export const MojeAktivityContent = () => {
 
   return (
     <div className="space-y-6">
-      {/* Month navigator — same style as Byznys případy */}
+      {/* Month navigator with calendar dropdown */}
       <div>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
-          borderRadius: 16,
-          padding: "10px 16px",
-          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
-          maxWidth: 520,
-          margin: "0 auto",
-        }}>
-          <button
-            onClick={() => {
-              if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
-              else { setSelectedMonth((m) => m - 1); }
-            }}
-            style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
-          </button>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
-              {MONTH_NAMES[selectedMonth]} {selectedYear}
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
-              else { setSelectedMonth((m) => m + 1); }
-            }}
-            style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
-          </button>
-        </div>
-        <div className="text-center font-body text-xs text-muted-foreground" style={{ marginTop: 8 }}>
-          {format(monthStart, "d. M.", { locale: cs })} – {format(monthEnd, "d. M. yyyy", { locale: cs })}
-        </div>
+        <PeriodNavigator
+          label="Produkční období"
+          title={`${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+          subtitle={`${format(monthStart, "d. M.", { locale: cs })} – ${format(monthEnd, "d. M. yyyy", { locale: cs })}`}
+          onPrev={() => {
+            if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
+            else { setSelectedMonth((m) => m - 1); }
+          }}
+          onNext={() => {
+            if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
+            else { setSelectedMonth((m) => m + 1); }
+          }}
+          selectedDate={new Date(selectedYear, selectedMonth, 1)}
+          calendarMonth={new Date(selectedYear, selectedMonth, 1)}
+          onSelectDate={(date) => {
+            const period = getProductionPeriodMonth(date);
+            setSelectedYear(period.year);
+            setSelectedMonth(period.month);
+          }}
+        />
       </div>
 
       {/* Stats */}
