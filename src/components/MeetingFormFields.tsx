@@ -229,6 +229,13 @@ export function MeetingFormModal({
     prevOpenRef.current = open;
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-reset SER to FSA if novacek
+  useEffect(() => {
+    if (userRole === "novacek" && form.meeting_type === "SER") {
+      setForm((f) => ({ ...f, meeting_type: "FSA" }));
+    }
+  }, [userRole, form.meeting_type]);
+
   if (!open) return null;
 
   const set = (patch: Partial<MeetingForm>) => {

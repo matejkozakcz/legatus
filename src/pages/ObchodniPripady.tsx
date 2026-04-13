@@ -999,6 +999,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         saving={saveMeetingMutation.isPending}
         cases={cases}
         isEdit={!!editMeeting}
+        userRole={profile?.role}
         onDelete={
           editMeeting
             ? () => {
