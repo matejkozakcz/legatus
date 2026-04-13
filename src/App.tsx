@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import MojeAktivity from "./pages/MojeAktivity";
+
 import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
@@ -48,11 +48,7 @@ const App = () => (
             />
             <Route
               path="/aktivity"
-              element={
-                <AppLayout>
-                  <MojeAktivity />
-                </AppLayout>
-              }
+              element={<Navigate to="/obchodni-pripady" replace />}
             />
             <Route
               path="/tym"
