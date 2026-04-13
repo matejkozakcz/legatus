@@ -1099,27 +1099,31 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 2-5) Pohovory, Doporučení, Analýzy, Poradenství */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <MobileStatCard
-                label="Pohovory"
-                actual={mobileStats.poh.actual}
-                planned={mobileStats.poh.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
-              <MobileStatCard
-                label="Analýzy"
-                actual={mobileStats.fsa.actual}
-                planned={mobileStats.fsa.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard
-                label="Poradenství"
-                actual={mobileStats.por.actual}
-                planned={mobileStats.por.planned}
-                sublabel="proběhlých / na týden"
-              />
+            {/* 2-5) Pohovory, Doporučení, Analýzy, Poradenství — combined card */}
+            <div className="mobile-stat-card" style={{ padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                {[
+                  { label: "Pohovory", actual: mobileStats.poh.actual, planned: mobileStats.poh.planned },
+                  { label: "Doporučení", actual: mobileStats.ref.actual },
+                  { label: "Analýzy", actual: mobileStats.fsa.actual, planned: mobileStats.fsa.planned },
+                  { label: "Poradenství", actual: mobileStats.por.actual, planned: mobileStats.por.planned },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                        {item.actual}
+                      </span>
+                      {item.planned != null && (
+                        <>
+                          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 500, fontSize: 17, color: "#b8cfd4", lineHeight: 1 }}>/</span>
+                          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 21, color: "#00abbd", lineHeight: 1 }}>{item.planned}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         ) : (
@@ -1178,35 +1182,32 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 2-5) Stat cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <MobileStatCard
-                label="Analýzy"
-                actual={mobileStats.fsa.actual}
-                planned={mobileStats.fsa.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard
-                label="Pohovory"
-                actual={mobileStats.poh.actual}
-                planned={mobileStats.poh.planned}
-                sublabel="proběhlých / na týden"
-              />
-              {activeRole !== "novacek" && (
-                <MobileStatCard
-                  label="Servisy"
-                  actual={mobileStats.ser.actual}
-                  planned={mobileStats.ser.planned}
-                  sublabel="proběhlých / na týden"
-                />
-              )}
-              <MobileStatCard
-                label="Poradenství"
-                actual={mobileStats.por.actual}
-                planned={mobileStats.por.planned}
-                sublabel="proběhlých / na týden"
-              />
-              <MobileStatCard label="Doporučení" actual={mobileStats.ref.actual} sublabel="celkem" />
+            {/* 2-5) Stat cards — combined card */}
+            <div className="mobile-stat-card" style={{ padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                {[
+                  { label: "Analýzy", actual: mobileStats.fsa.actual, planned: mobileStats.fsa.planned },
+                  { label: "Pohovory", actual: mobileStats.poh.actual, planned: mobileStats.poh.planned },
+                  ...(activeRole !== "novacek" ? [{ label: "Servisy", actual: mobileStats.ser.actual, planned: mobileStats.ser.planned }] : []),
+                  { label: "Poradenství", actual: mobileStats.por.actual, planned: mobileStats.por.planned },
+                  { label: "Doporučení", actual: mobileStats.ref.actual },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                        {item.actual}
+                      </span>
+                      {item.planned != null && (
+                        <>
+                          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 500, fontSize: 17, color: "#b8cfd4", lineHeight: 1 }}>/</span>
+                          <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 21, color: "#00abbd", lineHeight: 1 }}>{item.planned}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
