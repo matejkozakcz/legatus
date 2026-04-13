@@ -920,6 +920,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </>
       )}
 
+      {activeTab === "schuzky" && (<>
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -1077,6 +1078,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           });
         }}
       />
+      </>)}
+
+      {activeTab === "aktivity" && (
+        <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+          Aktivity — brzy
+        </div>
+      )}
     </div>
   );
 }
