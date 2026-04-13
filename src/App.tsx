@@ -48,11 +48,7 @@ const App = () => (
             />
             <Route
               path="/aktivity"
-              element={
-                <AppLayout>
-                  <MojeAktivity />
-                </AppLayout>
-              }
+              element={<Navigate to="/obchodni-pripady" replace />}
             />
             <Route
               path="/tym"

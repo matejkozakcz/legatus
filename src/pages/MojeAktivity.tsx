@@ -135,7 +135,7 @@ const AUTO_SYNCED_KEYS: Set<string> = new Set([
   "ref_actual", "bj", "bj_fsa_actual", "bj_ser_actual",
 ]);
 
-const MojeAktivity = () => {
+export const MojeAktivityContent = () => {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -661,5 +661,7 @@ const MojeAktivity = () => {
     </div>
   );
 };
+
+const MojeAktivity = () => <MojeAktivityContent />;
 
 export default MojeAktivity;
