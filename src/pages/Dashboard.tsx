@@ -148,12 +148,12 @@ function ActivityCard({
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
-  // Y = all meetings (including cancelled) of a type
+  // Y = all meetings of a type in the period (proběhlé + zrušené + čekající)
   const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type).length;
 
-  // X = past non-cancelled meetings (actually completed)
-  const countPast = (type: string) =>
-    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date <= todayStr).length;
+  // X = meetings confirmed as completed by user (outcome_recorded = true)
+  const countCompleted = (type: string) =>
+    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.outcome_recorded === true).length;
 
   const sumAllRefs = () =>
     meetings
@@ -165,10 +165,10 @@ function computeStats(meetings: any[], todayStr: string) {
       );
 
   return {
-    fsa: { actual: countPast("FSA"), planned: countAll("FSA") },
-    poh: { actual: countPast("POH"), planned: countAll("POH") },
-    ser: { actual: countPast("SER"), planned: countAll("SER") },
-    por: { actual: countPast("POR"), planned: countAll("POR") },
+    fsa: { actual: countCompleted("FSA"), planned: countAll("FSA") },
+    poh: { actual: countCompleted("POH"), planned: countAll("POH") },
+    ser: { actual: countCompleted("SER"), planned: countAll("SER") },
+    por: { actual: countCompleted("POR"), planned: countAll("POR") },
     ref: { actual: sumAllRefs(), planned: 0 },
   };
 }
