@@ -718,7 +718,21 @@
   box-shadow: 0 24px 60px rgba(0,0,0,0.6) !important;
 }
 
-/* bg-white modaly a karty (jen rounded-2xl nebo rounded-xl, ne malé prvky) */
+/* ===== Mobile modal spacing ===== */
+@media (max-width: 767px) {
+  .fixed.inset-0.flex.items-center,
+  .fixed.inset-0.flex.items-start {
+    padding-top: max(3.5rem, calc(env(safe-area-inset-top, 0px) + 3rem)) !important;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    align-items: flex-start !important;
+  }
+  .fixed.inset-0.flex.items-center > .relative,
+  .fixed.inset-0.flex.items-start > .relative {
+    max-height: calc(100dvh - 10rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    overflow-y: auto;
+  }
+}
+
 .dark .rounded-2xl.bg-white,
 .dark .rounded-xl.bg-white {
   background: hsl(188, 18%, 18%) !important;
