@@ -713,7 +713,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     transition: "all 0.15s ease",
                   }}
                 >
-                  {tab.icon}
+                  <span style={{ position: "relative" }}>
+                    {tab.icon}
+                    {tab.key === "schuzky" && unrecordedCount > 0 && (
+                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
+                    )}
+                  </span>
                   {tab.label}
                 </button>
               ))}
@@ -977,7 +982,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     transition: "all 0.15s ease",
                   }}
                 >
-                  {tab.icon}
+                  <span style={{ position: "relative" }}>
+                    {tab.icon}
+                    {tab.key === "schuzky" && unrecordedCount > 0 && (
+                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
+                    )}
+                  </span>
                   {tab.label}
                 </button>
               ))}
