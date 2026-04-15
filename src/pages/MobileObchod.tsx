@@ -17,6 +17,7 @@ export default function MobileObchod() {
   const [activeTab, setActiveTab] = useState<TabKey>("schuzky");
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { unrecordedCount } = useUnrecordedMeetings();
 
   // Swipe handling
   const touchStartX = useRef(0);
@@ -101,7 +102,12 @@ export default function MobileObchod() {
               }}
             >
               <Icon size={14} color={isActive ? activeColor : inactiveColor} />
-              {tab.label}
+              <span style={{ position: "relative" }}>
+                {tab.label}
+                {tab.key === "schuzky" && unrecordedCount > 0 && (
+                  <span style={{ position: "absolute", top: -2, right: -8, width: 6, height: 6, borderRadius: "50%", background: "#fc7c71" }} />
+                )}
+              </span>
             </button>
           );
         })}
