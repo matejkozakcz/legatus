@@ -1312,6 +1312,7 @@ const Dashboard = () => {
             userId={profile.id}
             periodKey={periodKey}
             onSaved={() => refetchGoals()}
+            role={activeProfile?.role}
           />
         )}
       </div>
@@ -1723,6 +1724,7 @@ const Dashboard = () => {
             userId={profile.id}
             periodKey={periodKey}
             onSaved={() => refetchGoals()}
+            role={activeProfile?.role}
           />
         )}
       </div>
