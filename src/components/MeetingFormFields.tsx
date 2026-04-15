@@ -103,12 +103,14 @@ function CaseCombobox({
   cases,
   selectedId,
   onSelect,
+  onClear,
   allowCreateCase,
   onCreateClick,
 }: {
   cases: Case[];
   selectedId: string;
   onSelect: (c: Case) => void;
+  onClear: () => void;
   allowCreateCase?: boolean;
   onCreateClick?: (name: string) => void;
 }) {
@@ -137,7 +139,7 @@ function CaseCombobox({
         value={dropdownOpen ? query : selectedName}
         onFocus={() => { setDropdownOpen(true); setQuery(""); }}
         onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
-        onChange={(e) => { setQuery(e.target.value); }}
+        onChange={(e) => { setQuery(e.target.value); onClear(); }}
         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
       {dropdownOpen && (
@@ -150,11 +152,6 @@ function CaseCombobox({
           {filteredCases.length === 0 && !allowCreateCase && (
             <div style={{ padding: "10px 14px", fontSize: 13, color: "var(--muted-foreground)" }}>
               Žádný případ nenalezen
-            </div>
-          )}
-          {filteredCases.length === 0 && !allowCreateCase && query.trim().length === 0 && cases.length === 0 && (
-            <div style={{ padding: "10px 14px", fontSize: 13, color: "var(--muted-foreground)" }}>
-              Zatím nemáte žádné případy
             </div>
           )}
           {filteredCases.map((c) => (
@@ -199,18 +196,137 @@ function CaseCombobox({
     </div>
   );
 }
+
+// ─── Meeting Form Modal ──────────────────────────────────────────────────────
+
+interface MeetingFormModalProps {
+  open: boolean;
+  onClose: () => void;
+  initial: MeetingForm;
+  onSave: (form: MeetingForm) => void;
+  saving: boolean;
+  cases: Case[];
+  isEdit?: boolean;
+  onDelete?: () => void;
+  /** If true, show inline case creation (used in Kalendar) */
+  allowCreateCase?: boolean;
+  onCaseCreated?: (c: Case) => void;
+  /** For inline case creation */
+  createCaseFn?: (name: string, note: string) => Promise<Case>;
+  /** Current user role — used to restrict certain meeting types */
+  userRole?: string;
+}
+
+export function MeetingFormModal({
+  open,
+  onClose,
+  initial,
+  onSave,
+  saving,
+  cases,
+  isEdit: isEditProp,
+  onDelete,
+  allowCreateCase,
+  createCaseFn,
+  userRole,
+}: MeetingFormModalProps) {
+  useBodyScrollLock(open);
+  const [form, setForm] = useState<MeetingForm>(initial);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingClientName, setPendingClientName] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [autoCreating, setAutoCreating] = useState(false);
+
+  const { data: meetingDefaults } = useQuery({
+    queryKey: ["app_config", "meeting_defaults"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_config").select("value").eq("key", "meeting_defaults").single();
+      return (data?.value as unknown as Record<string, number>) ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const prevOpenRef = useRef(false);
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      const initForm = { ...initial };
+      setForm(initForm);
+      setShowDeleteConfirm(false);
+      setMoreOpen(false);
+      setAutoCreating(false);
+      setPendingClientName("");
+    }
+    prevOpenRef.current = open;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-reset SER to FSA if novacek
+  useEffect(() => {
+    if (userRole === "novacek" && form.meeting_type === "SER") {
+      setForm((f) => ({ ...f, meeting_type: "FSA" }));
+    }
+  }, [userRole, form.meeting_type]);
+
+  if (!open) return null;
+
+  const set = (patch: Partial<MeetingForm>) => {
+    setForm((f) => ({ ...f, ...patch }));
+  };
+  const isEdit = isEditProp ?? false;
+  const activeCases = cases.filter((c) => c.status === "aktivni");
+
+  const handleCaseSelect = (c: Case) => {
+    setPendingClientName("");
+    set({ case_id: c.id, case_name: c.nazev_pripadu });
+  };
+
+  const handleCaseClear = () => {
+    set({ case_id: "", case_name: "" });
+  };
+
+  const handleCreateClick = (name: string) => {
+    setPendingClientName(name);
+    // Auto-create the case immediately
+    if (createCaseFn) {
+      setAutoCreating(true);
+      createCaseFn(name, "")
+        .then((created) => {
+          set({ case_id: created.id, case_name: created.nazev_pripadu });
+          setPendingClientName("");
+        })
+        .catch(() => {})
+        .finally(() => setAutoCreating(false));
+    }
+  };
+
+  const canSave = !!(form.case_id || pendingClientName) && !!form.date;
+
+  const handleSave = async () => {
+    if (form.case_id) {
+      onSave(form);
+    } else if (pendingClientName && createCaseFn) {
+      setAutoCreating(true);
+      try {
+        const created = await createCaseFn(pendingClientName, "");
+        const updatedForm = { ...form, case_id: created.id, case_name: created.nazev_pripadu };
+        onSave(updatedForm);
+      } catch {
+        // error handled upstream
+      } finally {
+        setAutoCreating(false);
+      }
+    }
   };
 
   const isSaving = saving || autoCreating;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 pb-8" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
         className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
         style={{
-          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
-          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+          maxHeight: "calc(100dvh - 64px)",
+          paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 12px))",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -221,14 +337,15 @@ function CaseCombobox({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* 1. Klient autocomplete */}
+        {/* 1. Case combobox */}
         <div className="mb-4">
-          <ClientAutocomplete
+          <CaseCombobox
             cases={activeCases}
             selectedId={form.case_id}
-            inputValue={clientInput}
-            onSelect={handleClientSelect}
-            onInputChange={handleClientInputChange}
+            onSelect={handleCaseSelect}
+            onClear={handleCaseClear}
+            allowCreateCase={!!createCaseFn}
+            onCreateClick={handleCreateClick}
           />
         </div>
 
