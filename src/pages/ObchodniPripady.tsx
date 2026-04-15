@@ -1366,7 +1366,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       onClick={() => {
                         setShowUnrecordedModal(false);
                         // Find the full meeting object from existing data or navigate
-                        const fullMeeting = allMeetings?.find((am: any) => am.id === m.id);
+                        const fullMeeting = meetings?.find((am: any) => am.id === m.id);
                         if (fullMeeting) {
                           setDetailMeeting(fullMeeting);
                         } else {
