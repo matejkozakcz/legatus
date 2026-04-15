@@ -39,6 +39,8 @@ import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
+import { MeetingFormModal, type MeetingForm, type Case, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { FollowUpModal } from "@/components/FollowUpModal";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
