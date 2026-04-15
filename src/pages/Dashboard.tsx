@@ -264,6 +264,26 @@ const Dashboard = () => {
   // Admin goal configuration
   const { goals: adminGoals } = useGoalConfiguration(activeProfile?.role);
 
+  // Promotion rules from admin config
+  const { data: promotionRules } = useQuery({
+    queryKey: ["app_config", "promotion_rules"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_config").select("value").eq("key", "promotion_rules").single();
+      return data?.value as any;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Resolved promotion thresholds
+  const promoThresholds = useMemo(() => ({
+    ziskatel_bj: promotionRules?.ziskatel_to_garant?.min_bj ?? 1000,
+    ziskatel_structure: promotionRules?.ziskatel_to_garant?.min_structure ?? 2,
+    garant_structure: promotionRules?.garant_to_bv?.min_structure ?? 5,
+    garant_direct: promotionRules?.garant_to_bv?.min_direct ?? 3,
+    bv_structure: promotionRules?.bv_to_vedouci?.min_structure ?? 10,
+    bv_direct: promotionRules?.bv_to_vedouci?.min_direct ?? 6,
+  }), [promotionRules]);
+
   // Week navigation (shared logic for mobile + desktop activity section)
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
