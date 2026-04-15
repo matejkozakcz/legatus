@@ -1030,9 +1030,35 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           </div>
 
-          {/* Desktop: Day picker for Schůzky tab */}
+          {/* Desktop: Day picker + unrecorded banner for Schůzky tab */}
           {activeTab === "schuzky" && (
             <div style={{ marginBottom: 16 }}>
+              {unrecordedCount > 0 && (
+                <button
+                  onClick={() => setShowUnrecordedModal(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "10px 16px",
+                    marginBottom: 12,
+                    borderRadius: 14,
+                    background: isDark ? "rgba(252,124,113,0.10)" : "rgba(252,124,113,0.06)",
+                    border: `1px solid ${isDark ? "rgba(252,124,113,0.2)" : "rgba(252,124,113,0.15)"}`,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <AlertCircle size={16} color="#fc7c71" />
+                  <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
+                    {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#fc7c71", fontFamily: "Poppins, sans-serif" }}>
+                    Zobrazit vše →
+                  </span>
+                </button>
+              )}
               <PeriodNavigator
                 label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
                 title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
