@@ -8,21 +8,14 @@ import { useEffect } from "react";
 export function useBodyScrollLock(locked: boolean) {
   useEffect(() => {
     if (!locked) return;
-    const scrollY = window.scrollY;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const original = document.body.style.cssText;
-    document.body.style.cssText = `
-      overflow: hidden;
-      position: fixed;
-      top: -${scrollY}px;
-      left: 0;
-      right: 0;
-      width: 100%;
-      padding-right: ${scrollbarWidth}px;
-    `;
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
     return () => {
-      document.body.style.cssText = original;
-      window.scrollTo(0, scrollY);
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
     };
   }, [locked]);
 }
