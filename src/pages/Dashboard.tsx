@@ -1404,22 +1404,22 @@ const Dashboard = () => {
     }
 
     if (role === "ziskatel") {
-      const bjDone = totalBjAllTime >= 1000;
-      const peopleDone = ziskatelStructureCount >= 2;
+      const bjDone = totalBjAllTime >= promoThresholds.ziskatel_bj;
+      const peopleDone = ziskatelStructureCount >= promoThresholds.ziskatel_structure;
       return (
         <>
           <GaugeIndicator
             value={totalBjAllTime}
-            max={1000}
+            max={promoThresholds.ziskatel_bj}
             label="Kumulativní BJ"
-            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
             completed={bjDone}
           />
           <GaugeIndicator
             value={ziskatelStructureCount}
-            max={2}
+            max={promoThresholds.ziskatel_structure}
             label="Lidé ve struktuře"
-            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
             completed={peopleDone}
           />
         </>
@@ -1427,22 +1427,22 @@ const Dashboard = () => {
     }
 
     if (role === "garant") {
-      const structDone = structureCount >= 5;
-      const directDone = directSubordinateCount >= 3;
+      const structDone = structureCount >= promoThresholds.garant_structure;
+      const directDone = directSubordinateCount >= promoThresholds.garant_direct;
       return (
         <>
           <GaugeIndicator
             value={structureCount}
-            max={5}
+            max={promoThresholds.garant_structure}
             label="Lidé ve struktuře"
-            sublabel={structDone ? "✓ Splněno" : `${structureCount} z 5`}
+            sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
             completed={structDone}
           />
           <GaugeIndicator
             value={directSubordinateCount}
-            max={3}
+            max={promoThresholds.garant_direct}
             label="Přímá linka"
-            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
             completed={directDone}
           />
         </>
@@ -1450,22 +1450,22 @@ const Dashboard = () => {
     }
 
     // budouci_vedouci
-    const structDone = structureCount >= 10;
-    const directDone = directSubordinateCount >= 6;
+    const structDone = structureCount >= promoThresholds.bv_structure;
+    const directDone = directSubordinateCount >= promoThresholds.bv_direct;
     return (
       <>
         <GaugeIndicator
           value={structureCount}
-          max={10}
+          max={promoThresholds.bv_structure}
           label="Lidé ve struktuře"
-          sublabel={structDone ? "✓ Splněno" : `${structureCount} z 10`}
+          sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
           completed={structDone}
         />
         <GaugeIndicator
           value={directSubordinateCount}
-          max={6}
+          max={promoThresholds.bv_direct}
           label="Přímá linka"
-          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
           completed={directDone}
         />
       </>
