@@ -1680,21 +1680,21 @@ const Dashboard = () => {
             <ActivityCard
               label="Analýzy"
               actual={desktopWeekStats.fsa.actual}
-              total={adminGoals.fsa_weekly ?? desktopWeekStats.fsa.planned}
+              total={desktopWeekStats.fsa.planned}
               newly={newlyBooked.fsa}
               color="#00abbd"
             />
             <ActivityCard
               label="Pohovory"
               actual={desktopWeekStats.poh.actual}
-              total={adminGoals.poh_weekly ?? desktopWeekStats.poh.planned}
+              total={desktopWeekStats.poh.planned}
               newly={newlyBooked.poh}
               color="#f59e0b"
             />
             <ActivityCard
               label="Servisy"
               actual={desktopWeekStats.ser.actual}
-              total={adminGoals.ser_weekly ?? desktopWeekStats.ser.planned}
+              total={desktopWeekStats.ser.planned}
               newly={newlyBooked.ser}
               color="#ef4444"
             />
@@ -1708,7 +1708,7 @@ const Dashboard = () => {
             <ActivityCard
               label="Doporučení"
               actual={desktopWeekStats.ref.actual}
-              total={adminGoals.referrals_weekly ?? desktopWeekStats.ref.planned}
+              total={desktopWeekStats.ref.planned}
               newly={0}
               color="#10b981"
             />
