@@ -1299,7 +1299,7 @@ const Dashboard = () => {
 
         {/* ── Salmon FAB for new meeting ── */}
         <button
-          onClick={() => navigate("/obchod")}
+          onClick={() => setFabMeetingOpen(true)}
           style={{
             position: "fixed",
             bottom: 178,
@@ -1399,6 +1399,41 @@ const Dashboard = () => {
             role={activeProfile?.role}
           />
         )}
+
+        {/* Meeting form modal from FAB */}
+        <MeetingFormModal
+          open={fabMeetingOpen}
+          onClose={() => setFabMeetingOpen(false)}
+          initial={defaultMeetingForm()}
+          onSave={(form) => fabSaveMeeting.mutate({ form })}
+          saving={fabSaveMeeting.isPending}
+          cases={fabCases}
+          isEdit={false}
+          userRole={profile?.role}
+        />
+
+        <FollowUpModal
+          open={!!fabFollowUp}
+          onClose={() => setFabFollowUp(null)}
+          caseName={fabFollowUp?.caseName || ""}
+          caseId={fabFollowUp?.caseId || ""}
+          meetingType={fabFollowUp?.meetingType || "FSA"}
+          onSchedule={async (data) => {
+            const form: MeetingForm = {
+              ...defaultMeetingForm(data.date),
+              meeting_type: data.meeting_type as any,
+              case_id: data.case_id,
+              location_type: data.location_type,
+              location_detail: data.location_detail,
+            };
+            await new Promise<void>((resolve, reject) => {
+              fabSaveMeeting.mutate(
+                { form, skipFollowUp: true },
+                { onSuccess: () => resolve(), onError: (err) => reject(err) },
+              );
+            });
+          }}
+        />
       </div>
     );
   }
