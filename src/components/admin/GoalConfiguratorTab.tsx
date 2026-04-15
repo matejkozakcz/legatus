@@ -235,7 +235,7 @@ export function GoalConfiguratorTab() {
       [role]: {
         ...prev[role],
         [goalKey]: {
-          ...prev[role]?.[goalKey as keyof RoleGoals],
+          ...(prev[role]?.[goalKey as keyof RoleGoals] as GoalSetting | undefined),
           [field]: val,
         },
       },
