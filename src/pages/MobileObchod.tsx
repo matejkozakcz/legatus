@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from "react";
+import { Navigate } from "react-router-dom";
 import { Briefcase, Calendar } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 
 import Kalendar from "./Kalendar";
