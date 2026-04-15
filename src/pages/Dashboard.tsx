@@ -41,6 +41,7 @@ import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 import { MeetingFormModal, type MeetingForm, type Case, defaultMeetingForm } from "@/components/MeetingFormFields";
 import { FollowUpModal } from "@/components/FollowUpModal";
+import { toast } from "sonner";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
