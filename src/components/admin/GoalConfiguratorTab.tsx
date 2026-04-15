@@ -337,7 +337,7 @@ export function GoalConfiguratorTab() {
                       onClick={() =>
                         setForm((prev) => ({
                           ...prev,
-                          novacek: { ...prev.novacek, onboarding: { mode: "system", value: 100 } },
+                          novacek: { ...(prev.novacek || {} as RoleGoals), onboarding: { mode: "system" as const, value: 100 } },
                         }))
                       }
                       className="h-7 text-xs w-full"
