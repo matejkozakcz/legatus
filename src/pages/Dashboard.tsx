@@ -301,7 +301,7 @@ const Dashboard = () => {
 
   // ── Mobile FAB: new meeting modal ──
   const [fabMeetingOpen, setFabMeetingOpen] = useState(false);
-  const [fabFollowUp, setFabFollowUp] = useState<{ caseId: string; caseName: string; meetingType: string } | null>(null);
+  const [fabFollowUp, setFabFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
 
   const { data: fabCases = [] } = useQuery({
     queryKey: ["cases", profile?.id],
