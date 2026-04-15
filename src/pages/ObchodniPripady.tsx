@@ -22,9 +22,10 @@ import {
   ChevronRight as ChevronRightIcon,
   Clock,
   MapPin,
-  Calendar,
+  Calendar as CalendarIcon,
   BarChart3,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
