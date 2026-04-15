@@ -317,7 +317,6 @@ function CaseAccordion({
                     <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>
                   ) : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
                 </span>
-                </span>
                 <span
                   className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
                   style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
