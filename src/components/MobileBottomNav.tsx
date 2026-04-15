@@ -116,23 +116,7 @@ export function MobileBottomNav() {
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
             isDark={isDark}
-          />
-        )}
-
-        {/* Center spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Right button */}
-        {profile?.role === "vedouci" ||
-        profile?.role === "budouci_vedouci" ||
-        profile?.role === "garant" ||
-        profile?.role === "ziskatel" ? (
-          <NavButton
-            icon={Briefcase}
-            label="Byznys"
-            active={location.pathname === "/obchod"}
-            onClick={() => navigate("/obchod")}
-            isDark={isDark}
+            badge={unrecordedCount > 0}
           />
         ) : profile?.role === "novacek" ? (
           <NavButton
