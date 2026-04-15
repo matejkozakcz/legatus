@@ -726,6 +726,42 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           </div>
 
           {activeTab === "schuzky" && (<>
+          {/* Unrecorded meetings banner — mobile */}
+          {unrecordedCount > 0 && showUnrecordedBanner && (
+            <div
+              style={{
+                margin: "0 0 12px",
+                padding: "10px 14px",
+                borderRadius: 14,
+                background: isDark ? "rgba(252,124,113,0.12)" : "rgba(252,124,113,0.08)",
+                border: `1px solid ${isDark ? "rgba(252,124,113,0.25)" : "rgba(252,124,113,0.2)"}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <AlertCircle size={16} color="#fc7c71" style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
+                {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
+              </span>
+              <button
+                onClick={() => setShowUnrecordedModal(true)}
+                style={{
+                  fontSize: 11, fontWeight: 700, fontFamily: "Poppins, sans-serif",
+                  color: "#fc7c71", background: "none", border: "none", cursor: "pointer",
+                  textDecoration: "underline", whiteSpace: "nowrap",
+                }}
+              >
+                Zobrazit
+              </button>
+              <button
+                onClick={() => setShowUnrecordedBanner(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+              >
+                <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
+              </button>
+            </div>
+          )}
           {/* Fixed: Create case button + period bar */}
           <div
             style={{
