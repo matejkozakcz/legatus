@@ -21,7 +21,9 @@ interface RoleGoals {
   poh_weekly: GoalSetting;
   referrals_weekly: GoalSetting;
   team_bj?: GoalSetting;
+  onboarding?: GoalSetting;
   promotions?: PromotionTarget[];
+  allow_custom_goals?: boolean;
 }
 
 type GoalConfiguration = Record<string, RoleGoals>;
@@ -33,7 +35,9 @@ interface ResolvedGoals {
   poh_weekly: number | null;
   referrals_weekly: number | null;
   team_bj: number | null;
+  onboarding: number | null;
   promotions: PromotionTarget[];
+  allow_custom_goals: boolean;
 }
 
 /**
@@ -51,7 +55,7 @@ export function useGoalConfiguration(role: string | undefined) {
         .single();
       return (data?.value as unknown as GoalConfiguration) ?? null;
     },
-    staleTime: 5 * 60 * 1000, // cache for 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
   const resolved: ResolvedGoals = {
@@ -61,7 +65,9 @@ export function useGoalConfiguration(role: string | undefined) {
     poh_weekly: null,
     referrals_weekly: null,
     team_bj: null,
+    onboarding: null,
     promotions: [],
+    allow_custom_goals: false,
   };
 
   if (config && role && config[role]) {
@@ -77,7 +83,9 @@ export function useGoalConfiguration(role: string | undefined) {
     resolved.poh_weekly = resolve(roleGoals.poh_weekly);
     resolved.referrals_weekly = resolve(roleGoals.referrals_weekly);
     resolved.team_bj = resolve(roleGoals.team_bj);
+    resolved.onboarding = resolve(roleGoals.onboarding);
     resolved.promotions = roleGoals.promotions || [];
+    resolved.allow_custom_goals = roleGoals.allow_custom_goals ?? false;
   }
 
   return { goals: resolved, isLoading, rawConfig: config };
