@@ -261,6 +261,9 @@ const Dashboard = () => {
   // Active profile for rendering (impersonated or own)
   const activeProfile = isImpersonating && viewingProfile ? { ...profile, ...viewingProfile } : profile;
 
+  // Admin goal configuration
+  const { goals: adminGoals } = useGoalConfiguration(activeProfile?.role);
+
   // Week navigation (shared logic for mobile + desktop activity section)
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const mobileWeekStart = useMemo(
