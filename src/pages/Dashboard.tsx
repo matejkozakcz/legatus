@@ -148,12 +148,12 @@ function ActivityCard({
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
-  // Y = all meetings (including cancelled) of a type
+  // Y = all meetings of a type in the period (proběhlé + zrušené + čekající)
   const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type).length;
 
-  // X = past non-cancelled meetings (actually completed)
-  const countPast = (type: string) =>
-    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date <= todayStr).length;
+  // X = meetings confirmed as completed by user (outcome_recorded = true)
+  const countCompleted = (type: string) =>
+    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.outcome_recorded === true).length;
 
   const sumAllRefs = () =>
     meetings
@@ -165,10 +165,10 @@ function computeStats(meetings: any[], todayStr: string) {
       );
 
   return {
-    fsa: { actual: countPast("FSA"), planned: countAll("FSA") },
-    poh: { actual: countPast("POH"), planned: countAll("POH") },
-    ser: { actual: countPast("SER"), planned: countAll("SER") },
-    por: { actual: countPast("POR"), planned: countAll("POR") },
+    fsa: { actual: countCompleted("FSA"), planned: countAll("FSA") },
+    poh: { actual: countCompleted("POH"), planned: countAll("POH") },
+    ser: { actual: countCompleted("SER"), planned: countAll("SER") },
+    por: { actual: countCompleted("POR"), planned: countAll("POR") },
     ref: { actual: sumAllRefs(), planned: 0 },
   };
 }
@@ -385,7 +385,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, outcome_recorded",
         )
         .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
@@ -409,7 +409,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, outcome_recorded",
         )
         .eq("user_id", activeUserId)
         .gte("date", mobileWeekStartStr)
@@ -445,7 +445,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, outcome_recorded",
         )
         .eq("user_id", activeUserId)
         .gte("date", desktopWeekStartStr)
@@ -1680,21 +1680,21 @@ const Dashboard = () => {
             <ActivityCard
               label="Analýzy"
               actual={desktopWeekStats.fsa.actual}
-              total={adminGoals.fsa_weekly ?? desktopWeekStats.fsa.planned}
+              total={desktopWeekStats.fsa.planned}
               newly={newlyBooked.fsa}
               color="#00abbd"
             />
             <ActivityCard
               label="Pohovory"
               actual={desktopWeekStats.poh.actual}
-              total={adminGoals.poh_weekly ?? desktopWeekStats.poh.planned}
+              total={desktopWeekStats.poh.planned}
               newly={newlyBooked.poh}
               color="#f59e0b"
             />
             <ActivityCard
               label="Servisy"
               actual={desktopWeekStats.ser.actual}
-              total={adminGoals.ser_weekly ?? desktopWeekStats.ser.planned}
+              total={desktopWeekStats.ser.planned}
               newly={newlyBooked.ser}
               color="#ef4444"
             />
@@ -1708,7 +1708,7 @@ const Dashboard = () => {
             <ActivityCard
               label="Doporučení"
               actual={desktopWeekStats.ref.actual}
-              total={adminGoals.referrals_weekly ?? desktopWeekStats.ref.planned}
+              total={desktopWeekStats.ref.planned}
               newly={0}
               color="#10b981"
             />
