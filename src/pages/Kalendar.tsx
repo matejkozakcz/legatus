@@ -435,7 +435,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                           </div>
                           {blockHeight > 30 && (
                             <div className="text-muted-foreground" style={{ fontSize: 10 }}>
-                              {m.cancelled && "Zrušená"}
+                              {m.cancelled ? "Zrušená" : m.outcome_recorded ? "Proběhlá" : ""}
                               {needsFollowUp(m) && " • Doplň výsledek"}
                             </div>
                           )}
@@ -633,6 +633,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                           <div className="text-xs text-muted-foreground">
                             {format(parseISO(m.date), "d. M.", { locale: cs })}
                             {m.cancelled && " • Zrušená"}
+                            {!m.cancelled && m.outcome_recorded && " • Proběhlá"}
                             {needsFollowUp(m) && " • Doplň výsledek"}
                           </div>
                         </div>
@@ -816,6 +817,14 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                             background: "rgba(252,124,113,0.12)", borderRadius: 8, padding: "2px 8px",
                           }}>
                             Zrušená
+                          </span>
+                        )}
+                        {!m.cancelled && m.outcome_recorded && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#22c55e",
+                            background: "rgba(34,197,94,0.12)", borderRadius: 8, padding: "2px 8px",
+                          }}>
+                            Proběhlá
                           </span>
                         )}
                       </div>

@@ -182,7 +182,8 @@ export function MeetingDetailModal({
           {row("Typ", meetingTypeLabel(m.meeting_type as MeetingType))}
           {m.location_type && row("Místo", m.location_type === "osobne" ? "Osobně" : "Online")}
           {m.location_detail && row(m.location_type === "osobne" ? "Adresa" : "Platforma", m.location_detail)}
-          {m.cancelled && row("Stav", "Zrušená")}
+          {m.cancelled && row("Stav", <span style={{ color: "#fc7c71", fontWeight: 600 }}>Zrušená</span>)}
+          {!m.cancelled && m.outcome_recorded && row("Stav", <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>)}
           {m.poznamka && row("Poznámka", m.poznamka)}
         </div>
 
