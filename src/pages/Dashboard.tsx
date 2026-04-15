@@ -445,7 +445,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, outcome_recorded",
         )
         .eq("user_id", activeUserId)
         .gte("date", desktopWeekStartStr)
