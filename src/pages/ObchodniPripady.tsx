@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, addDays, subDays, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
+import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
+import { AlertCircle } from "lucide-react";
 
 import {
   Plus,
@@ -370,6 +372,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
+  const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
+
+  const { unrecordedMeetings, unrecordedCount } = useUnrecordedMeetings();
 
 
   const periodRange = useMemo(
@@ -707,7 +713,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     transition: "all 0.15s ease",
                   }}
                 >
-                  {tab.icon}
+                  <span style={{ position: "relative" }}>
+                    {tab.icon}
+                    {tab.key === "schuzky" && unrecordedCount > 0 && (
+                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
+                    )}
+                  </span>
                   {tab.label}
                 </button>
               ))}
@@ -715,6 +726,42 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           </div>
 
           {activeTab === "schuzky" && (<>
+          {/* Unrecorded meetings banner — mobile */}
+          {unrecordedCount > 0 && showUnrecordedBanner && (
+            <div
+              style={{
+                margin: "0 0 12px",
+                padding: "10px 14px",
+                borderRadius: 14,
+                background: isDark ? "rgba(252,124,113,0.12)" : "rgba(252,124,113,0.08)",
+                border: `1px solid ${isDark ? "rgba(252,124,113,0.25)" : "rgba(252,124,113,0.2)"}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <AlertCircle size={16} color="#fc7c71" style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
+                {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
+              </span>
+              <button
+                onClick={() => setShowUnrecordedModal(true)}
+                style={{
+                  fontSize: 11, fontWeight: 700, fontFamily: "Poppins, sans-serif",
+                  color: "#fc7c71", background: "none", border: "none", cursor: "pointer",
+                  textDecoration: "underline", whiteSpace: "nowrap",
+                }}
+              >
+                Zobrazit
+              </button>
+              <button
+                onClick={() => setShowUnrecordedBanner(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+              >
+                <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
+              </button>
+            </div>
+          )}
           {/* Fixed: Create case button + period bar */}
           <div
             style={{
@@ -971,16 +1018,47 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     transition: "all 0.15s ease",
                   }}
                 >
-                  {tab.icon}
+                  <span style={{ position: "relative" }}>
+                    {tab.icon}
+                    {tab.key === "schuzky" && unrecordedCount > 0 && (
+                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
+                    )}
+                  </span>
                   {tab.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Desktop: Day picker for Schůzky tab */}
+          {/* Desktop: Day picker + unrecorded banner for Schůzky tab */}
           {activeTab === "schuzky" && (
             <div style={{ marginBottom: 16 }}>
+              {unrecordedCount > 0 && (
+                <button
+                  onClick={() => setShowUnrecordedModal(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "10px 16px",
+                    marginBottom: 12,
+                    borderRadius: 14,
+                    background: isDark ? "rgba(252,124,113,0.10)" : "rgba(252,124,113,0.06)",
+                    border: `1px solid ${isDark ? "rgba(252,124,113,0.2)" : "rgba(252,124,113,0.15)"}`,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <AlertCircle size={16} color="#fc7c71" />
+                  <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
+                    {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#fc7c71", fontFamily: "Poppins, sans-serif" }}>
+                    Zobrazit vše →
+                  </span>
+                </button>
+              )}
               <PeriodNavigator
                 label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
                 title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
@@ -1254,6 +1332,71 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       {activeTab === "aktivity" && (
         <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
           <MojeAktivityContent />
+        </div>
+      )}
+
+      {/* Unrecorded meetings modal */}
+      {showUnrecordedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowUnrecordedModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl mx-4 animate-in fade-in zoom-in-95 duration-150"
+            style={{ maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: "20px 20px 12px", borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4", display: "flex", alignItems: "center", gap: 10 }}>
+              <AlertCircle size={18} color="#fc7c71" />
+              <h2 className="font-heading font-bold flex-1" style={{ fontSize: 17, color: "var(--text-primary)" }}>
+                Schůzky bez výsledku
+              </h2>
+              <button onClick={() => setShowUnrecordedModal(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <X size={18} color={isDark ? "#7aadb3" : "#8aadb3"} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px 20px" }}>
+              {unrecordedMeetings.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Všechny schůzky mají vyplněný výsledek 🎉</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {unrecordedMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="legatus-card cursor-pointer hover:shadow-md transition-shadow"
+                      style={{ padding: "10px 14px" }}
+                      onClick={() => {
+                        setShowUnrecordedModal(false);
+                        // Find the full meeting object from existing data or navigate
+                        const fullMeeting = meetings?.find((am: any) => am.id === m.id);
+                        if (fullMeeting) {
+                          setDetailMeeting(fullMeeting);
+                        } else {
+                          // Navigate to the date
+                          setSelectedDate(parseISO(m.date));
+                          setActiveTab("schuzky");
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                          style={meetingTypeBadgeStyle(m.meeting_type as MeetingType, false)}
+                        >
+                          {meetingTypeLabel(m.meeting_type as MeetingType)}
+                        </span>
+                        <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
+                          {m.case_name || "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseISO(m.date), "d. M.", { locale: cs })}
+                        </span>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

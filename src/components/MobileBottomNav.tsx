@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Calendar, Briefcase, Users, GraduationCap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 
 export function MobileBottomNav() {
   const location = useLocation();
@@ -11,6 +13,8 @@ export function MobileBottomNav() {
   const { profile, godMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const queryClient = useQueryClient();
+  const { unrecordedCount } = useUnrecordedMeetings();
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -27,6 +31,22 @@ export function MobileBottomNav() {
     enabled: !!profile?.id,
     refetchInterval: 30000,
   });
+
+  // Realtime subscription for notifications
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("notif-badge-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${profile.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["unread_notifications_count", profile.id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.id, queryClient]);
 
   const initials = profile
     ? profile.full_name
@@ -96,6 +116,7 @@ export function MobileBottomNav() {
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
             isDark={isDark}
+            badge={unrecordedCount > 0}
           />
         )}
 
@@ -113,6 +134,7 @@ export function MobileBottomNav() {
             active={location.pathname === "/obchod"}
             onClick={() => navigate("/obchod")}
             isDark={isDark}
+            badge={unrecordedCount > 0}
           />
         ) : profile?.role === "novacek" ? (
           <NavButton
@@ -267,12 +289,14 @@ function NavButton({
   active,
   onClick,
   isDark = false,
+  badge = false,
 }: {
   icon: React.ElementType;
   label: string;
   active: boolean;
   onClick: () => void;
   isDark?: boolean;
+  badge?: boolean;
 }) {
   const activeColor = "#00abbd";
   const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
@@ -292,9 +316,26 @@ function NavButton({
         border: "none",
         background: "transparent",
         flex: 1,
+        position: "relative",
       }}
     >
-      <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
+      <div style={{ position: "relative" }}>
+        <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
+        {badge && (
+          <span
+            style={{
+              position: "absolute",
+              top: -2,
+              right: -4,
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#fc7c71",
+              border: "2px solid transparent",
+            }}
+          />
+        )}
+      </div>
       <span
         style={{
           fontSize: 10,
