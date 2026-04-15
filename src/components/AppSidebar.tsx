@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 import {
   Sidebar,
   SidebarContent,
@@ -64,10 +65,12 @@ export function AppSidebar() {
     refetchInterval: 30000,
   });
 
+  const { unrecordedCount } = useUnrecordedMeetings();
+
   const navItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, badge: false },
     ...(godMode ? [{ title: "Kalendář", url: "/kalendar", icon: Calendar, badge: false }] : []),
-    { title: "Můj byznys", url: "/obchodni-pripady", icon: Briefcase, badge: false },
+    { title: "Můj byznys", url: "/obchodni-pripady", icon: Briefcase, badge: unrecordedCount > 0 },
   ];
 
   if (profile?.role === "novacek") {

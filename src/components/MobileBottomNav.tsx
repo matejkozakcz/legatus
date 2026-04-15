@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Calendar, Briefcase, Users, GraduationCap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 
 export function MobileBottomNav() {
   const location = useLocation();
