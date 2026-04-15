@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from "react";
+import { Navigate } from "react-router-dom";
 import { Briefcase, Calendar } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 
 import Kalendar from "./Kalendar";
@@ -14,6 +16,7 @@ const TABS = [
 type TabKey = "schuzky" | "pripady";
 
 export default function MobileObchod() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabKey>("schuzky");
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -39,6 +42,9 @@ export default function MobileObchod() {
     },
     [activeTab],
   );
+
+  // On tablet/desktop, redirect to the full desktop page
+  if (!isMobile) return <Navigate to="/obchodni-pripady" replace />;
 
   const activeColor = "#00abbd";
   const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
