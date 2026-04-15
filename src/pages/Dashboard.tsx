@@ -37,6 +37,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
+import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -259,6 +260,29 @@ const Dashboard = () => {
 
   // Active profile for rendering (impersonated or own)
   const activeProfile = isImpersonating && viewingProfile ? { ...profile, ...viewingProfile } : profile;
+
+  // Admin goal configuration
+  const { goals: adminGoals } = useGoalConfiguration(activeProfile?.role);
+
+  // Promotion rules from admin config
+  const { data: promotionRules } = useQuery({
+    queryKey: ["app_config", "promotion_rules"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_config").select("value").eq("key", "promotion_rules").single();
+      return data?.value as any;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Resolved promotion thresholds
+  const promoThresholds = useMemo(() => ({
+    ziskatel_bj: promotionRules?.ziskatel_to_garant?.min_bj ?? 1000,
+    ziskatel_structure: promotionRules?.ziskatel_to_garant?.min_structure ?? 2,
+    garant_structure: promotionRules?.garant_to_bv?.min_structure ?? 5,
+    garant_direct: promotionRules?.garant_to_bv?.min_direct ?? 3,
+    bv_structure: promotionRules?.bv_to_vedouci?.min_structure ?? 10,
+    bv_direct: promotionRules?.bv_to_vedouci?.min_direct ?? 6,
+  }), [promotionRules]);
 
   // Week navigation (shared logic for mobile + desktop activity section)
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
@@ -974,21 +998,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={totalBjAllTime}
-                    max={1000}
+                    max={promoThresholds.ziskatel_bj}
                     label="Kumulativní BJ"
-                    sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+                    sublabel={totalBjAllTime >= promoThresholds.ziskatel_bj ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
                     dark
-                    completed={totalBjAllTime >= 1000}
+                    completed={totalBjAllTime >= promoThresholds.ziskatel_bj}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={ziskatelStructureCount}
-                    max={2}
+                    max={promoThresholds.ziskatel_structure}
                     label="Lidé ve struktuře"
-                    sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+                    sublabel={ziskatelStructureCount >= promoThresholds.ziskatel_structure ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
                     dark
-                    completed={ziskatelStructureCount >= 2}
+                    completed={ziskatelStructureCount >= promoThresholds.ziskatel_structure}
                   />
                 </div>
               </div>
@@ -997,21 +1021,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={structureCount}
-                    max={5}
+                    max={promoThresholds.garant_structure}
                     label="Lidé ve struktuře"
-                    sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`}
+                    sublabel={structureCount >= promoThresholds.garant_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
                     dark
-                    completed={structureCount >= 5}
+                    completed={structureCount >= promoThresholds.garant_structure}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={directSubordinateCount}
-                    max={3}
+                    max={promoThresholds.garant_direct}
                     label="Přímá linka"
-                    sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+                    sublabel={directSubordinateCount >= promoThresholds.garant_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
                     dark
-                    completed={directSubordinateCount >= 3}
+                    completed={directSubordinateCount >= promoThresholds.garant_direct}
                   />
                 </div>
               </div>
@@ -1020,21 +1044,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={structureCount}
-                    max={10}
+                    max={promoThresholds.bv_structure}
                     label="Lidé ve struktuře"
-                    sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`}
+                    sublabel={structureCount >= promoThresholds.bv_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
                     dark
-                    completed={structureCount >= 10}
+                    completed={structureCount >= promoThresholds.bv_structure}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={directSubordinateCount}
-                    max={6}
+                    max={promoThresholds.bv_direct}
                     label="Přímá linka"
-                    sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+                    sublabel={directSubordinateCount >= promoThresholds.bv_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
                     dark
-                    completed={directSubordinateCount >= 6}
+                    completed={directSubordinateCount >= promoThresholds.bv_direct}
                   />
                 </div>
               </div>
@@ -1380,22 +1404,22 @@ const Dashboard = () => {
     }
 
     if (role === "ziskatel") {
-      const bjDone = totalBjAllTime >= 1000;
-      const peopleDone = ziskatelStructureCount >= 2;
+      const bjDone = totalBjAllTime >= promoThresholds.ziskatel_bj;
+      const peopleDone = ziskatelStructureCount >= promoThresholds.ziskatel_structure;
       return (
         <>
           <GaugeIndicator
             value={totalBjAllTime}
-            max={1000}
+            max={promoThresholds.ziskatel_bj}
             label="Kumulativní BJ"
-            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
             completed={bjDone}
           />
           <GaugeIndicator
             value={ziskatelStructureCount}
-            max={2}
+            max={promoThresholds.ziskatel_structure}
             label="Lidé ve struktuře"
-            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
             completed={peopleDone}
           />
         </>
@@ -1403,22 +1427,22 @@ const Dashboard = () => {
     }
 
     if (role === "garant") {
-      const structDone = structureCount >= 5;
-      const directDone = directSubordinateCount >= 3;
+      const structDone = structureCount >= promoThresholds.garant_structure;
+      const directDone = directSubordinateCount >= promoThresholds.garant_direct;
       return (
         <>
           <GaugeIndicator
             value={structureCount}
-            max={5}
+            max={promoThresholds.garant_structure}
             label="Lidé ve struktuře"
-            sublabel={structDone ? "✓ Splněno" : `${structureCount} z 5`}
+            sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
             completed={structDone}
           />
           <GaugeIndicator
             value={directSubordinateCount}
-            max={3}
+            max={promoThresholds.garant_direct}
             label="Přímá linka"
-            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
             completed={directDone}
           />
         </>
@@ -1426,22 +1450,22 @@ const Dashboard = () => {
     }
 
     // budouci_vedouci
-    const structDone = structureCount >= 10;
-    const directDone = directSubordinateCount >= 6;
+    const structDone = structureCount >= promoThresholds.bv_structure;
+    const directDone = directSubordinateCount >= promoThresholds.bv_direct;
     return (
       <>
         <GaugeIndicator
           value={structureCount}
-          max={10}
+          max={promoThresholds.bv_structure}
           label="Lidé ve struktuře"
-          sublabel={structDone ? "✓ Splněno" : `${structureCount} z 10`}
+          sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
           completed={structDone}
         />
         <GaugeIndicator
           value={directSubordinateCount}
-          max={6}
+          max={promoThresholds.bv_direct}
           label="Přímá linka"
-          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
           completed={directDone}
         />
       </>
@@ -1654,21 +1678,21 @@ const Dashboard = () => {
             <ActivityCard
               label="Analýzy"
               actual={desktopWeekStats.fsa.actual}
-              total={desktopWeekStats.fsa.planned}
+              total={adminGoals.fsa_weekly ?? desktopWeekStats.fsa.planned}
               newly={newlyBooked.fsa}
               color="#00abbd"
             />
             <ActivityCard
               label="Pohovory"
               actual={desktopWeekStats.poh.actual}
-              total={desktopWeekStats.poh.planned}
+              total={adminGoals.poh_weekly ?? desktopWeekStats.poh.planned}
               newly={newlyBooked.poh}
               color="#f59e0b"
             />
             <ActivityCard
               label="Servisy"
               actual={desktopWeekStats.ser.actual}
-              total={desktopWeekStats.ser.planned}
+              total={adminGoals.ser_weekly ?? desktopWeekStats.ser.planned}
               newly={newlyBooked.ser}
               color="#ef4444"
             />
@@ -1682,7 +1706,7 @@ const Dashboard = () => {
             <ActivityCard
               label="Doporučení"
               actual={desktopWeekStats.ref.actual}
-              total={desktopWeekStats.ref.planned}
+              total={adminGoals.referrals_weekly ?? desktopWeekStats.ref.planned}
               newly={0}
               color="#10b981"
             />
