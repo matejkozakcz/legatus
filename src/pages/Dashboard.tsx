@@ -37,6 +37,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
+import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
