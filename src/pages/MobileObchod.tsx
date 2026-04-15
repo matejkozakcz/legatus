@@ -46,23 +46,6 @@ export default function MobileObchod() {
   // On tablet/desktop, redirect to the full desktop page
   if (!isMobile) return <Navigate to="/obchodni-pripady" replace />;
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }, []);
-
-  const handleTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      const dx = e.changedTouches[0].clientX - touchStartX.current;
-      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
-      if (Math.abs(dx) > 60 && Math.abs(dx) > dy * 1.5) {
-        if (dx < 0 && activeTab === "schuzky") setActiveTab("pripady");
-        else if (dx > 0 && activeTab === "pripady") setActiveTab("schuzky");
-      }
-    },
-    [activeTab],
-  );
-
   const activeColor = "#00abbd";
   const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
 
