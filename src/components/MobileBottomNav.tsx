@@ -271,12 +271,14 @@ function NavButton({
   active,
   onClick,
   isDark = false,
+  badge = false,
 }: {
   icon: React.ElementType;
   label: string;
   active: boolean;
   onClick: () => void;
   isDark?: boolean;
+  badge?: boolean;
 }) {
   const activeColor = "#00abbd";
   const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
@@ -296,9 +298,26 @@ function NavButton({
         border: "none",
         background: "transparent",
         flex: 1,
+        position: "relative",
       }}
     >
-      <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
+      <div style={{ position: "relative" }}>
+        <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
+        {badge && (
+          <span
+            style={{
+              position: "absolute",
+              top: -2,
+              right: -4,
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#fc7c71",
+              border: "2px solid transparent",
+            }}
+          />
+        )}
+      </div>
       <span
         style={{
           fontSize: 10,
