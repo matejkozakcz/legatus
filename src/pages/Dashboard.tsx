@@ -1238,6 +1238,31 @@ const Dashboard = () => {
           </>
         )}
 
+        {/* ── Salmon FAB for new meeting ── */}
+        <button
+          onClick={() => navigate("/obchod")}
+          style={{
+            position: "fixed",
+            bottom: 178,
+            right: 20,
+            zIndex: 41,
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            background: "#fc7c71",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(252,124,113,0.4)",
+            transition: "transform 0.15s, box-shadow 0.15s",
+          }}
+          aria-label="Nová schůzka"
+        >
+          <Plus size={24} color="#fff" />
+        </button>
+
         {/* ── WEEK NAVIGATOR (fixed above bottom nav) ── */}
         <div
           style={{
