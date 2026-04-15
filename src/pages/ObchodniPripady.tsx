@@ -372,6 +372,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
+  const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
+
+  const { unrecordedMeetings, unrecordedCount } = useUnrecordedMeetings();
 
 
   const periodRange = useMemo(
