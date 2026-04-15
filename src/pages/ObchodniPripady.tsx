@@ -370,7 +370,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
-  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">("schuzky");
+  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
   const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
@@ -670,7 +670,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           )}
 
-          {/* Tab bar */}
+          {/* Tab bar — hide when embedded in MobileObchod */}
+          {!mobileEmbedded && (
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <div style={{
               display: "flex",
@@ -724,6 +725,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               ))}
             </div>
           </div>
+          )}
 
           {activeTab === "schuzky" && (<>
           {/* Unrecorded meetings banner — mobile */}
