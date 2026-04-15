@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Target } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Save, Target, UserCog, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"] as const;
@@ -28,7 +29,7 @@ interface PromotionTarget {
   mode: "system" | "custom";
   value: number;
   scope: "direct" | "full_structure";
-  type: "total" | "increment"; // celkový stav vs přírůstek
+  type: "total" | "increment";
 }
 
 interface RoleGoals {
@@ -38,7 +39,9 @@ interface RoleGoals {
   poh_weekly: GoalSetting;
   referrals_weekly: GoalSetting;
   team_bj?: GoalSetting;
+  onboarding?: GoalSetting;
   promotions?: PromotionTarget[];
+  allow_custom_goals?: boolean;
 }
 
 type GoalConfiguration = Record<string, RoleGoals>;
@@ -50,6 +53,7 @@ const GOAL_LABELS: Record<string, string> = {
   poh_weekly: "POH / týden",
   referrals_weekly: "Doporučení / týden",
   team_bj: "Týmový BJ cíl",
+  onboarding: "Dokončené zapracování",
 };
 
 const BASIC_GOALS = ["monthly_bj", "fsa_weekly", "ser_weekly", "poh_weekly", "referrals_weekly"] as const;
@@ -71,6 +75,7 @@ const DEFAULT_CONFIG: GoalConfiguration = {
       { role: "garant", mode: "system", value: 1, scope: "direct", type: "increment" },
       { role: "budouci_vedouci", mode: "system", value: 1, scope: "full_structure", type: "total" },
     ],
+    allow_custom_goals: true,
   },
   budouci_vedouci: {
     monthly_bj: { mode: "system", value: 500 },
@@ -79,6 +84,7 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 3 },
     promotions: [],
+    allow_custom_goals: true,
   },
   garant: {
     monthly_bj: { mode: "system", value: 400 },
@@ -86,6 +92,7 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     ser_weekly: { mode: "system", value: 2 },
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 3 },
+    allow_custom_goals: false,
   },
   ziskatel: {
     monthly_bj: { mode: "system", value: 300 },
@@ -93,6 +100,7 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     ser_weekly: { mode: "system", value: 1 },
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 2 },
+    allow_custom_goals: false,
   },
   novacek: {
     monthly_bj: { mode: "system", value: 200 },
@@ -100,6 +108,8 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     ser_weekly: { mode: "system", value: 1 },
     poh_weekly: { mode: "custom", value: null },
     referrals_weekly: { mode: "system", value: 2 },
+    onboarding: { mode: "system", value: 100 },
+    allow_custom_goals: false,
   },
 };
 
@@ -121,6 +131,46 @@ function ModeSelect({ value, onChange }: { value: "system" | "custom"; onChange:
         <SelectItem value="custom">{MODE_LABELS.custom}</SelectItem>
       </SelectContent>
     </Select>
+  );
+}
+
+function GoalRow({
+  goalKey,
+  goal,
+  role,
+  onUpdate,
+}: {
+  goalKey: string;
+  goal: GoalSetting;
+  role: string;
+  onUpdate: (field: "mode" | "value", val: any) => void;
+}) {
+  const isSystem = goal.mode === "system";
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5">
+        {isSystem ? (
+          <Shield className="h-3 w-3 text-primary shrink-0" />
+        ) : (
+          <UserCog className="h-3 w-3 text-muted-foreground shrink-0" />
+        )}
+        <Label className={`text-xs ${isSystem ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+          {GOAL_LABELS[goalKey] || goalKey}
+        </Label>
+      </div>
+      <div className="flex items-center gap-2">
+        <ModeSelect value={goal.mode} onChange={(v) => onUpdate("mode", v)} />
+        {isSystem && (
+          <Input
+            type="number"
+            className="h-7 w-20 text-xs"
+            value={goal.value ?? 0}
+            onChange={(e) => onUpdate("value", Number(e.target.value))}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -216,15 +266,36 @@ export function GoalConfiguratorTab() {
     });
   };
 
+  const toggleAllowCustomGoals = (role: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        allow_custom_goals: !prev[role]?.allow_custom_goals,
+      },
+    }));
+  };
+
   const hasPromotions = (role: string) =>
     role === "vedouci" || role === "budouci_vedouci" || role === "garant" || role === "ziskatel";
 
   return (
     <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex items-center gap-6 text-xs text-muted-foreground px-1">
+        <span className="flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5 text-primary" /> Systémový cíl (stanoví admin)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <UserCog className="h-3.5 w-3.5 text-muted-foreground" /> Uživatelský cíl (stanoví si sám)
+        </span>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {ROLES.map((role) => {
           const goals = form[role];
           if (!goals) return null;
+          const allowCustom = goals.allow_custom_goals ?? false;
 
           return (
             <Card key={role}>
@@ -233,31 +304,62 @@ export function GoalConfiguratorTab() {
                   <Target className="h-4 w-4 text-primary" />
                   {ROLE_LABELS[role]}
                 </CardTitle>
+                {/* Allow custom goals toggle */}
+                <div className="flex items-center justify-between pt-2 pb-1 border-b border-border">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <UserCog className="h-3.5 w-3.5" />
+                    Uživatel si může stanovit vlastní cíle
+                  </Label>
+                  <Switch
+                    checked={allowCustom}
+                    onCheckedChange={() => toggleAllowCustomGoals(role)}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Onboarding goal for novacek */}
+                {role === "novacek" && goals.onboarding && (
+                  <>
+                    <GoalRow
+                      goalKey="onboarding"
+                      goal={goals.onboarding}
+                      role={role}
+                      onUpdate={(field, val) => updateGoal(role, "onboarding", field, val)}
+                    />
+                    <div className="border-t border-border my-2" />
+                  </>
+                )}
+                {role === "novacek" && !goals.onboarding && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          novacek: { ...prev.novacek, onboarding: { mode: "system", value: 100 } },
+                        }))
+                      }
+                      className="h-7 text-xs w-full"
+                    >
+                      + Přidat cíl zapracování
+                    </Button>
+                    <div className="border-t border-border my-2" />
+                  </>
+                )}
+
                 {BASIC_GOALS.map((goalKey) => {
                   const goal = goals[goalKey];
                   if (!goal) return null;
-                  const isSystem = goal.mode === "system";
 
                   return (
-                    <div key={goalKey} className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">{GOAL_LABELS[goalKey]}</Label>
-                      <div className="flex items-center gap-2">
-                        <ModeSelect
-                          value={goal.mode}
-                          onChange={(v) => updateGoal(role, goalKey, "mode", v)}
-                        />
-                        {isSystem && (
-                          <Input
-                            type="number"
-                            className="h-7 w-20 text-xs"
-                            value={goal.value ?? 0}
-                            onChange={(e) => updateGoal(role, goalKey, "value", Number(e.target.value))}
-                          />
-                        )}
-                      </div>
-                    </div>
+                    <GoalRow
+                      key={goalKey}
+                      goalKey={goalKey}
+                      goal={goal}
+                      role={role}
+                      onUpdate={(field, val) => updateGoal(role, goalKey, field, val)}
+                    />
                   );
                 })}
 
@@ -265,23 +367,12 @@ export function GoalConfiguratorTab() {
                 {(role === "vedouci" || role === "budouci_vedouci") && goals.team_bj && (
                   <>
                     <div className="border-t border-border my-2" />
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">{GOAL_LABELS.team_bj}</Label>
-                      <div className="flex items-center gap-2">
-                        <ModeSelect
-                          value={goals.team_bj.mode}
-                          onChange={(v) => updateGoal(role, "team_bj", "mode", v)}
-                        />
-                        {goals.team_bj.mode === "system" && (
-                          <Input
-                            type="number"
-                            className="h-7 w-20 text-xs"
-                            value={goals.team_bj.value ?? 0}
-                            onChange={(e) => updateGoal(role, "team_bj", "value", Number(e.target.value))}
-                          />
-                        )}
-                      </div>
-                    </div>
+                    <GoalRow
+                      goalKey="team_bj"
+                      goal={goals.team_bj}
+                      role={role}
+                      onUpdate={(field, val) => updateGoal(role, "team_bj", field, val)}
+                    />
                   </>
                 )}
 
