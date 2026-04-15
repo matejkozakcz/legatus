@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Target } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +28,7 @@ interface PromotionTarget {
   mode: "system" | "custom";
   value: number;
   scope: "direct" | "full_structure";
+  type: "total" | "increment"; // celkový stav vs přírůstek
 }
 
 interface RoleGoals {
@@ -54,6 +54,11 @@ const GOAL_LABELS: Record<string, string> = {
 
 const BASIC_GOALS = ["monthly_bj", "fsa_weekly", "ser_weekly", "poh_weekly", "referrals_weekly"] as const;
 
+const MODE_LABELS = {
+  system: "Stanoví admin",
+  custom: "Stanoví uživatel",
+};
+
 const DEFAULT_CONFIG: GoalConfiguration = {
   vedouci: {
     monthly_bj: { mode: "system", value: 500 },
@@ -63,8 +68,8 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     referrals_weekly: { mode: "system", value: 3 },
     team_bj: { mode: "system", value: 3000 },
     promotions: [
-      { role: "garant", mode: "system", value: 1, scope: "direct" },
-      { role: "budouci_vedouci", mode: "system", value: 1, scope: "full_structure" },
+      { role: "garant", mode: "system", value: 1, scope: "direct", type: "increment" },
+      { role: "budouci_vedouci", mode: "system", value: 1, scope: "full_structure", type: "total" },
     ],
   },
   budouci_vedouci: {
@@ -73,6 +78,7 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     ser_weekly: { mode: "system", value: 2 },
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 3 },
+    promotions: [],
   },
   garant: {
     monthly_bj: { mode: "system", value: 400 },
@@ -104,6 +110,20 @@ const PROMOTION_ROLE_OPTIONS = [
   { value: "vedouci", label: "Vedoucí" },
 ];
 
+function ModeSelect({ value, onChange }: { value: "system" | "custom"; onChange: (v: "system" | "custom") => void }) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as "system" | "custom")}>
+      <SelectTrigger className="h-7 text-xs w-[130px] shrink-0">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="system">{MODE_LABELS.system}</SelectItem>
+        <SelectItem value="custom">{MODE_LABELS.custom}</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function GoalConfiguratorTab() {
   const queryClient = useQueryClient();
 
@@ -127,7 +147,6 @@ export function GoalConfiguratorTab() {
 
   const mutation = useMutation({
     mutationFn: async (value: GoalConfiguration) => {
-      // Try update first, if no rows affected, insert
       const { data: existing } = await supabase
         .from("app_config")
         .select("id")
@@ -184,7 +203,7 @@ export function GoalConfiguratorTab() {
   const addPromotion = (role: string) => {
     setForm((prev) => {
       const promotions = [...(prev[role]?.promotions || [])];
-      promotions.push({ role: "garant", mode: "system", value: 1, scope: "direct" });
+      promotions.push({ role: "garant", mode: "system", value: 1, scope: "direct", type: "increment" });
       return { ...prev, [role]: { ...prev[role], promotions } };
     });
   };
@@ -197,7 +216,8 @@ export function GoalConfiguratorTab() {
     });
   };
 
-  const isVedouciLike = (role: string) => role === "vedouci" || role === "budouci_vedouci";
+  const hasPromotions = (role: string) =>
+    role === "vedouci" || role === "budouci_vedouci" || role === "garant" || role === "ziskatel";
 
   return (
     <div className="space-y-4">
@@ -221,26 +241,17 @@ export function GoalConfiguratorTab() {
                   const isSystem = goal.mode === "system";
 
                   return (
-                    <div key={goalKey} className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs text-muted-foreground">{GOAL_LABELS[goalKey]}</Label>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => updateGoal(role, goalKey, "mode", isSystem ? "custom" : "system")}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium border transition-colors"
-                          style={{
-                            background: isSystem ? "#00abbd" : "transparent",
-                            color: isSystem ? "#fff" : "inherit",
-                            borderColor: isSystem ? "#00abbd" : "#e1e9eb",
-                          }}
-                        >
-                          {isSystem ? "system" : "custom"}
-                        </button>
+                    <div key={goalKey} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{GOAL_LABELS[goalKey]}</Label>
+                      <div className="flex items-center gap-2">
+                        <ModeSelect
+                          value={goal.mode}
+                          onChange={(v) => updateGoal(role, goalKey, "mode", v)}
+                        />
                         {isSystem && (
                           <Input
                             type="number"
-                            className="h-7 w-16 text-xs"
+                            className="h-7 w-20 text-xs"
                             value={goal.value ?? 0}
                             onChange={(e) => updateGoal(role, goalKey, "value", Number(e.target.value))}
                           />
@@ -250,30 +261,21 @@ export function GoalConfiguratorTab() {
                   );
                 })}
 
-                {/* Team BJ goal for vedouci-like roles */}
-                {isVedouciLike(role) && goals.team_bj && (
+                {/* Team BJ goal for vedouci */}
+                {(role === "vedouci" || role === "budouci_vedouci") && goals.team_bj && (
                   <>
                     <div className="border-t border-border my-2" />
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs text-muted-foreground">{GOAL_LABELS.team_bj}</Label>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => updateGoal(role, "team_bj", "mode", goals.team_bj!.mode === "system" ? "custom" : "system")}
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium border transition-colors"
-                          style={{
-                            background: goals.team_bj.mode === "system" ? "#00abbd" : "transparent",
-                            color: goals.team_bj.mode === "system" ? "#fff" : "inherit",
-                            borderColor: goals.team_bj.mode === "system" ? "#00abbd" : "#e1e9eb",
-                          }}
-                        >
-                          {goals.team_bj.mode === "system" ? "system" : "custom"}
-                        </button>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{GOAL_LABELS.team_bj}</Label>
+                      <div className="flex items-center gap-2">
+                        <ModeSelect
+                          value={goals.team_bj.mode}
+                          onChange={(v) => updateGoal(role, "team_bj", "mode", v)}
+                        />
                         {goals.team_bj.mode === "system" && (
                           <Input
                             type="number"
-                            className="h-7 w-16 text-xs"
+                            className="h-7 w-20 text-xs"
                             value={goals.team_bj.value ?? 0}
                             onChange={(e) => updateGoal(role, "team_bj", "value", Number(e.target.value))}
                           />
@@ -284,10 +286,10 @@ export function GoalConfiguratorTab() {
                 )}
 
                 {/* Promotion targets */}
-                {isVedouciLike(role) && (
+                {hasPromotions(role) && (
                   <>
                     <div className="border-t border-border my-2" />
-                    <Label className="text-xs text-muted-foreground">Cíle povýšení</Label>
+                    <Label className="text-xs font-medium">Cíle povýšení</Label>
                     {(goals.promotions || []).map((promo, idx) => (
                       <div key={idx} className="rounded-lg border border-border bg-muted/20 p-2.5 space-y-2">
                         <div className="flex items-center gap-2">
@@ -306,23 +308,16 @@ export function GoalConfiguratorTab() {
                           </Select>
                           <button
                             onClick={() => removePromotion(role, idx)}
-                            className="text-xs text-destructive hover:text-destructive/80"
+                            className="text-xs text-destructive hover:text-destructive/80 px-1"
                           >
                             ✕
                           </button>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updatePromotion(role, idx, "mode", promo.mode === "system" ? "custom" : "system")}
-                            className="text-[10px] px-2 py-0.5 rounded-full font-medium border transition-colors shrink-0"
-                            style={{
-                              background: promo.mode === "system" ? "#00abbd" : "transparent",
-                              color: promo.mode === "system" ? "#fff" : "inherit",
-                              borderColor: promo.mode === "system" ? "#00abbd" : "#e1e9eb",
-                            }}
-                          >
-                            {promo.mode === "system" ? "system" : "custom"}
-                          </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <ModeSelect
+                            value={promo.mode}
+                            onChange={(v) => updatePromotion(role, idx, "mode", v)}
+                          />
                           {promo.mode === "system" && (
                             <Input
                               type="number"
@@ -331,6 +326,20 @@ export function GoalConfiguratorTab() {
                               onChange={(e) => updatePromotion(role, idx, "value", Number(e.target.value))}
                             />
                           )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Select
+                            value={promo.type || "increment"}
+                            onValueChange={(v) => updatePromotion(role, idx, "type", v)}
+                          >
+                            <SelectTrigger className="h-7 text-xs flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="increment">Nový přírůstek</SelectItem>
+                              <SelectItem value="total">Celkový stav</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Select
                             value={promo.scope}
                             onValueChange={(v) => updatePromotion(role, idx, "scope", v)}
