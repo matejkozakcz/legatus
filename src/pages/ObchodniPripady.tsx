@@ -1334,6 +1334,71 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           <MojeAktivityContent />
         </div>
       )}
+
+      {/* Unrecorded meetings modal */}
+      {showUnrecordedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowUnrecordedModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl mx-4 animate-in fade-in zoom-in-95 duration-150"
+            style={{ maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: "20px 20px 12px", borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4", display: "flex", alignItems: "center", gap: 10 }}>
+              <AlertCircle size={18} color="#fc7c71" />
+              <h2 className="font-heading font-bold flex-1" style={{ fontSize: 17, color: "var(--text-primary)" }}>
+                Schůzky bez výsledku
+              </h2>
+              <button onClick={() => setShowUnrecordedModal(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <X size={18} color={isDark ? "#7aadb3" : "#8aadb3"} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px 20px" }}>
+              {unrecordedMeetings.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Všechny schůzky mají vyplněný výsledek 🎉</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {unrecordedMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="legatus-card cursor-pointer hover:shadow-md transition-shadow"
+                      style={{ padding: "10px 14px" }}
+                      onClick={() => {
+                        setShowUnrecordedModal(false);
+                        // Find the full meeting object from existing data or navigate
+                        const fullMeeting = allMeetings?.find((am: any) => am.id === m.id);
+                        if (fullMeeting) {
+                          setDetailMeeting(fullMeeting);
+                        } else {
+                          // Navigate to the date
+                          setSelectedDate(parseISO(m.date));
+                          setActiveTab("schuzky");
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                          style={meetingTypeBadgeStyle(m.meeting_type as MeetingType, false)}
+                        >
+                          {meetingTypeLabel(m.meeting_type as MeetingType)}
+                        </span>
+                        <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
+                          {m.case_name || "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseISO(m.date), "d. M.", { locale: cs })}
+                        </span>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
