@@ -684,7 +684,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               {([
                 { key: "schuzky" as const, label: "Schůzky", icon: <Calendar size={14} /> },
                 { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
-                { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={14} /> },
               ]).map((tab) => (
                 <button
                   key={tab.key}
