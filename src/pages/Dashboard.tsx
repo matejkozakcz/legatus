@@ -998,21 +998,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={totalBjAllTime}
-                    max={1000}
+                    max={promoThresholds.ziskatel_bj}
                     label="Kumulativní BJ"
-                    sublabel={totalBjAllTime >= 1000 ? "✓ Splněno" : `${totalBjAllTime} z 1 000`}
+                    sublabel={totalBjAllTime >= promoThresholds.ziskatel_bj ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
                     dark
-                    completed={totalBjAllTime >= 1000}
+                    completed={totalBjAllTime >= promoThresholds.ziskatel_bj}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={ziskatelStructureCount}
-                    max={2}
+                    max={promoThresholds.ziskatel_structure}
                     label="Lidé ve struktuře"
-                    sublabel={ziskatelStructureCount >= 2 ? "✓ Splněno" : `${ziskatelStructureCount} z 2`}
+                    sublabel={ziskatelStructureCount >= promoThresholds.ziskatel_structure ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
                     dark
-                    completed={ziskatelStructureCount >= 2}
+                    completed={ziskatelStructureCount >= promoThresholds.ziskatel_structure}
                   />
                 </div>
               </div>
@@ -1021,21 +1021,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={structureCount}
-                    max={5}
+                    max={promoThresholds.garant_structure}
                     label="Lidé ve struktuře"
-                    sublabel={structureCount >= 5 ? "✓ Splněno" : `${structureCount} z 5`}
+                    sublabel={structureCount >= promoThresholds.garant_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
                     dark
-                    completed={structureCount >= 5}
+                    completed={structureCount >= promoThresholds.garant_structure}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={directSubordinateCount}
-                    max={3}
+                    max={promoThresholds.garant_direct}
                     label="Přímá linka"
-                    sublabel={directSubordinateCount >= 3 ? "✓ Splněno" : `${directSubordinateCount} z 3`}
+                    sublabel={directSubordinateCount >= promoThresholds.garant_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
                     dark
-                    completed={directSubordinateCount >= 3}
+                    completed={directSubordinateCount >= promoThresholds.garant_direct}
                   />
                 </div>
               </div>
@@ -1044,21 +1044,21 @@ const Dashboard = () => {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={structureCount}
-                    max={10}
+                    max={promoThresholds.bv_structure}
                     label="Lidé ve struktuře"
-                    sublabel={structureCount >= 10 ? "✓ Splněno" : `${structureCount} z 10`}
+                    sublabel={structureCount >= promoThresholds.bv_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
                     dark
-                    completed={structureCount >= 10}
+                    completed={structureCount >= promoThresholds.bv_structure}
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <GaugeIndicator
                     value={directSubordinateCount}
-                    max={6}
+                    max={promoThresholds.bv_direct}
                     label="Přímá linka"
-                    sublabel={directSubordinateCount >= 6 ? "✓ Splněno" : `${directSubordinateCount} z 6`}
+                    sublabel={directSubordinateCount >= promoThresholds.bv_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
                     dark
-                    completed={directSubordinateCount >= 6}
+                    completed={directSubordinateCount >= promoThresholds.bv_direct}
                   />
                 </div>
               </div>
