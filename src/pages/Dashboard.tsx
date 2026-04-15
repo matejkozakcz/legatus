@@ -39,6 +39,9 @@ import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
+import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { FollowUpModal } from "@/components/FollowUpModal";
+import { toast } from "sonner";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -296,7 +299,62 @@ const Dashboard = () => {
   const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const isMobileWeekEditable = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
-  // Desktop week navigation for Přehled aktivit
+  // ── Mobile FAB: new meeting modal ──
+  const [fabMeetingOpen, setFabMeetingOpen] = useState(false);
+  const [fabFollowUp, setFabFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
+
+  const { data: fabCases = [] } = useQuery({
+    queryKey: ["cases", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data } = await supabase.from("cases").select("*").eq("user_id", profile.id).eq("status", "aktivni").order("nazev_pripadu");
+      return (data || []) as Case[];
+    },
+    enabled: !!profile?.id && isMobile,
+  });
+
+  const fabSaveMeeting = useMutation({
+    mutationFn: async ({ form }: { form: MeetingForm; skipFollowUp?: boolean }) => {
+      const payload: Record<string, unknown> = {
+        user_id: profile!.id,
+        case_id: form.case_id || null,
+        date: form.date,
+        meeting_type: form.meeting_type,
+        cancelled: form.cancelled,
+        case_name: form.case_name.trim() || null,
+        location_type: form.location_type || null,
+        location_detail: form.location_detail.trim() || null,
+        potencial_bj: form.meeting_type === "FSA" && !form.cancelled ? parseFloat(form.potencial_bj) || null : null,
+        podepsane_bj: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER") ? parseFloat(form.podepsane_bj) || 0 : 0,
+        doporuceni_fsa: !form.cancelled && (form.meeting_type === "FSA" || form.meeting_type === "NAB") ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_poradenstvi: !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER") ? parseInt(form.doporuceni_poradenstvi) || 0 : 0,
+        doporuceni_pohovor: !form.cancelled && form.meeting_type === "POH" ? parseInt(form.doporuceni_pohovor) || 0 : 0,
+        pohovor_jde_dal: !form.cancelled && form.meeting_type === "POH" ? form.pohovor_jde_dal : null,
+        vizi_spoluprace: !form.cancelled && form.meeting_type === "POH" && form.pohovor_jde_dal === true,
+        has_poradenstvi: false,
+        poradenstvi_status: null,
+        has_pohovor: false,
+        poznamka: form.poznamka.trim() || null,
+      };
+      const { error } = await supabase.from("client_meetings").insert(payload as any);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard_meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_records"] });
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
+      toast.success("Schůzka přidána");
+      setFabMeetingOpen(false);
+      const f = variables.form;
+      if (!variables.skipFollowUp && !f.cancelled && f.case_id) {
+        const c = fabCases.find((c) => c.id === f.case_id);
+        if (c) setFabFollowUp({ caseId: f.case_id, caseName: c.nazev_pripadu, meetingType: f.meeting_type });
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Chyba"),
+  });
+
   const [desktopWeekOffset, setDesktopWeekOffset] = useState(0);
   const desktopWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), desktopWeekOffset),
@@ -1241,7 +1299,7 @@ const Dashboard = () => {
 
         {/* ── Salmon FAB for new meeting ── */}
         <button
-          onClick={() => navigate("/obchod")}
+          onClick={() => setFabMeetingOpen(true)}
           style={{
             position: "fixed",
             bottom: 178,
@@ -1341,6 +1399,41 @@ const Dashboard = () => {
             role={activeProfile?.role}
           />
         )}
+
+        {/* Meeting form modal from FAB */}
+        <MeetingFormModal
+          open={fabMeetingOpen}
+          onClose={() => setFabMeetingOpen(false)}
+          initial={defaultMeetingForm()}
+          onSave={(form) => fabSaveMeeting.mutate({ form })}
+          saving={fabSaveMeeting.isPending}
+          cases={fabCases}
+          isEdit={false}
+          userRole={profile?.role}
+        />
+
+        <FollowUpModal
+          open={!!fabFollowUp}
+          onClose={() => setFabFollowUp(null)}
+          caseName={fabFollowUp?.caseName || ""}
+          caseId={fabFollowUp?.caseId || ""}
+          meetingType={fabFollowUp?.meetingType || "FSA"}
+          onSchedule={async (data) => {
+            const form: MeetingForm = {
+              ...defaultMeetingForm(data.date),
+              meeting_type: data.meeting_type as any,
+              case_id: data.case_id,
+              location_type: data.location_type,
+              location_detail: data.location_detail,
+            };
+            await new Promise<void>((resolve, reject) => {
+              fabSaveMeeting.mutate(
+                { form, skipFollowUp: true },
+                { onSuccess: () => resolve(), onError: (err) => reject(err) },
+              );
+            });
+          }}
+        />
       </div>
     );
   }
