@@ -693,6 +693,8 @@ export type Database = {
           user_id: string
           vedouci_count_goal: number
           vedouci_count_scope: string
+          ziskatel_count_goal: number
+          ziskatel_count_scope: string
         }
         Insert: {
           budouci_vedouci_count_goal?: number
@@ -710,6 +712,8 @@ export type Database = {
           user_id: string
           vedouci_count_goal?: number
           vedouci_count_scope?: string
+          ziskatel_count_goal?: number
+          ziskatel_count_scope?: string
         }
         Update: {
           budouci_vedouci_count_goal?: number
@@ -727,6 +731,8 @@ export type Database = {
           user_id?: string
           vedouci_count_goal?: number
           vedouci_count_scope?: string
+          ziskatel_count_goal?: number
+          ziskatel_count_scope?: string
         }
         Relationships: [
           {
