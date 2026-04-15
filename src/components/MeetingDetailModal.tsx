@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
@@ -51,8 +51,12 @@ export function MeetingDetailModal({
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [justCancelled, setJustCancelled] = useState(false);
   const [prevSaving, setPrevSaving] = useState(false);
+  const prevMeetingId = useRef<string | null>(null);
+
+  // Reset state only when opening a DIFFERENT meeting (not on refetch of the same one)
   useEffect(() => {
-    if (meeting) {
+    if (meeting && meeting.id !== prevMeetingId.current) {
+      prevMeetingId.current = meeting.id;
       setDopFsa(meeting.doporuceni_fsa?.toString() || "0");
       setPodBj(meeting.podepsane_bj?.toString() || "0");
       setDopPor(meeting.doporuceni_poradenstvi?.toString() || "0");
@@ -68,6 +72,13 @@ export function MeetingDetailModal({
       setRescheduleDate(format(nextDate, "yyyy-MM-dd"));
     }
   }, [meeting]);
+
+  // Reset when modal closes
+  useEffect(() => {
+    if (!open) {
+      prevMeetingId.current = null;
+    }
+  }, [open]);
 
   // Detect when saving completes → show next step prompt
   useEffect(() => {

@@ -148,8 +148,10 @@ function ActivityCard({
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 
 function computeStats(meetings: any[], todayStr: string) {
-  const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type && !m.cancelled).length;
+  // Y = all meetings (including cancelled) of a type
+  const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type).length;
 
+  // X = past non-cancelled meetings (actually completed)
   const countPast = (type: string) =>
     meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.date <= todayStr).length;
 
