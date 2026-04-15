@@ -34,8 +34,11 @@ import {
   Clock,
   FileText,
   History,
+  Target,
 } from "lucide-react";
 import { format } from "date-fns";
+import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
+import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,10 +76,19 @@ const ROLE_LABELS: Record<string, string> = {
   novacek: "Nováček",
 };
 
+const ADMIN_TABS = [
+  { key: "users", label: "Uživatelé", icon: Users },
+  { key: "settings", label: "Nastavení", icon: Settings2 },
+  { key: "permissions", label: "Oprávnění", icon: Lock },
+  { key: "notifications", label: "Notifikace", icon: Bell },
+  { key: "goals", label: "Cíle", icon: Target },
+];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
   const { godMode, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState("users");
 
   if (!godMode || !isAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -89,69 +101,64 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-heading font-bold text-foreground">Admin Dashboard</h1>
       </div>
 
-      <Tabs defaultValue="promotions" className="w-full">
-        <TabsList className="w-full justify-start bg-card border border-border flex-wrap">
-          <TabsTrigger value="promotions" className="gap-1.5">
-            <Settings2 className="h-4 w-4" /> Pravidla povýšení
-          </TabsTrigger>
-          <TabsTrigger value="period" className="gap-1.5">
-            <Settings2 className="h-4 w-4" /> Produkční období
-          </TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5">
-            <Users className="h-4 w-4" /> Uživatelé
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5">
-            <Lock className="h-4 w-4" /> Logika & Hierarchie
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-1.5">
-            <Bell className="h-4 w-4" /> Notifikace
-          </TabsTrigger>
-          <TabsTrigger value="meetings" className="gap-1.5">
-            <Clock className="h-4 w-4" /> Schůzky
-          </TabsTrigger>
-          <TabsTrigger value="pdf" className="gap-1.5">
-            <FileText className="h-4 w-4" /> PDF Export
-          </TabsTrigger>
-        </TabsList>
+      <AdminPillTabs tabs={ADMIN_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <TabsContent value="promotions">
-          <PromotionRulesTab />
-        </TabsContent>
-        <TabsContent value="period">
-          <PeriodConfigTab />
-        </TabsContent>
-        <TabsContent value="users">
-          <UsersTab />
-        </TabsContent>
-        <TabsContent value="permissions">
-          <PermissionsTab />
-        </TabsContent>
-        <TabsContent value="notifications">
-          <Tabs defaultValue="rules" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="rules" className="gap-1.5">
-                <Settings2 className="h-3.5 w-3.5" /> Pravidla
-              </TabsTrigger>
-              <TabsTrigger value="log" className="gap-1.5">
-                <History className="h-3.5 w-3.5" /> Historie odeslaných
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="rules">
-              <NotificationRulesTab />
-            </TabsContent>
-            <TabsContent value="log">
-              <NotificationLogTab />
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-        <TabsContent value="meetings">
-          <MeetingDefaultsTab />
-        </TabsContent>
-        <TabsContent value="pdf">
-          <PdfExportTab />
-        </TabsContent>
-      </Tabs>
+      <div className="mt-4">
+        {activeTab === "users" && <UsersTab />}
+        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "permissions" && <PermissionsTab />}
+        {activeTab === "notifications" && <NotificationsTab />}
+        {activeTab === "goals" && <GoalConfiguratorTab />}
+      </div>
     </div>
+  );
+}
+
+// ─── Settings Tab (consolidated) ──────────────────────────────────────────────
+
+function SettingsTab() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-lg font-heading font-semibold text-foreground mb-4">Pravidla povýšení</h2>
+        <PromotionRulesTab />
+      </div>
+      <div>
+        <h2 className="text-lg font-heading font-semibold text-foreground mb-4">Produkční období</h2>
+        <PeriodConfigTab />
+      </div>
+      <div>
+        <h2 className="text-lg font-heading font-semibold text-foreground mb-4">Defaultní trvání schůzek</h2>
+        <MeetingDefaultsTab />
+      </div>
+      <div>
+        <h2 className="text-lg font-heading font-semibold text-foreground mb-4">PDF Export</h2>
+        <PdfExportTab />
+      </div>
+    </div>
+  );
+}
+
+// ─── Notifications Tab (with sub-tabs) ────────────────────────────────────────
+
+function NotificationsTab() {
+  return (
+    <Tabs defaultValue="rules" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="rules" className="gap-1.5">
+          <Settings2 className="h-3.5 w-3.5" /> Pravidla
+        </TabsTrigger>
+        <TabsTrigger value="log" className="gap-1.5">
+          <History className="h-3.5 w-3.5" /> Historie odeslaných
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="rules">
+        <NotificationRulesTab />
+      </TabsContent>
+      <TabsContent value="log">
+        <NotificationLogTab />
+      </TabsContent>
+    </Tabs>
   );
 }
 
