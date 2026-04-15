@@ -13,6 +13,8 @@ export function MobileBottomNav() {
   const { profile, godMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const queryClient = useQueryClient();
+  const { unrecordedCount } = useUnrecordedMeetings();
 
   // Unread notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -29,6 +31,22 @@ export function MobileBottomNav() {
     enabled: !!profile?.id,
     refetchInterval: 30000,
   });
+
+  // Realtime subscription for notifications
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("notif-badge-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${profile.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["unread_notifications_count", profile.id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.id, queryClient]);
 
   const initials = profile
     ? profile.full_name
