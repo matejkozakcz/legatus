@@ -97,68 +97,100 @@ function NumberInput({
   );
 }
 
-// ─── Client Autocomplete ─────────────────────────────────────────────────────
+// ─── Case Combobox (autocomplete + inline create) ────────────────────────────
 
-function ClientAutocomplete({
+function CaseCombobox({
   cases,
   selectedId,
-  inputValue,
   onSelect,
-  onInputChange,
+  onClear,
+  allowCreateCase,
+  onCreateClick,
 }: {
   cases: Case[];
   selectedId: string;
-  inputValue: string;
   onSelect: (c: Case) => void;
-  onInputChange: (val: string) => void;
+  onClear: () => void;
+  allowCreateCase?: boolean;
+  onCreateClick?: (name: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const filtered = inputValue.trim()
-    ? cases.filter((c) => c.nazev_pripadu.toLowerCase().includes(inputValue.toLowerCase()))
-    : cases;
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const filteredCases = cases.filter((c) =>
+    c.nazev_pripadu.toLowerCase().includes(debouncedQuery.toLowerCase())
+  );
+
+  const selectedName = cases.find((c) => c.id === selectedId)?.nazev_pripadu ?? "";
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div style={{ position: "relative" }}>
       <label className="block text-xs font-medium text-muted-foreground mb-1">Klient *</label>
       <input
         type="text"
-        value={inputValue}
-        onChange={(e) => {
-          onInputChange(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        placeholder="Jméno člověka…"
-        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         autoComplete="off"
+        placeholder={selectedId ? selectedName || "Vyber případ…" : "Hledat nebo vytvořit případ…"}
+        value={dropdownOpen ? query : selectedName}
+        onFocus={() => { setDropdownOpen(true); setQuery(""); }}
+        onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+        onChange={(e) => { setQuery(e.target.value); onClear(); }}
+        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-input bg-popover shadow-lg">
-          {filtered.map((c) => (
+      {dropdownOpen && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+          background: "var(--card)", border: "1px solid var(--border)",
+          borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+          maxHeight: 220, overflowY: "auto",
+        }}>
+          {filteredCases.length === 0 && !allowCreateCase && (
+            <div style={{ padding: "10px 14px", fontSize: 13, color: "var(--muted-foreground)" }}>
+              Žádný případ nenalezen
+            </div>
+          )}
+          {filteredCases.map((c) => (
             <button
               key={c.id}
               type="button"
-              onClick={() => {
+              onMouseDown={() => {
                 onSelect(c);
-                setOpen(false);
+                setQuery("");
+                setDropdownOpen(false);
               }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${selectedId === c.id ? "bg-accent font-semibold" : ""}`}
+              style={{
+                display: "block", width: "100%", textAlign: "left",
+                padding: "9px 14px", fontSize: 13, border: "none",
+                background: selectedId === c.id ? "rgba(0,171,189,0.1)" : "transparent",
+                color: "var(--text-primary)", cursor: "pointer",
+              }}
             >
               {c.nazev_pripadu}
             </button>
           ))}
+          {allowCreateCase && query.trim().length > 0 && (
+            <button
+              type="button"
+              onMouseDown={() => {
+                onCreateClick?.(query.trim());
+                setDropdownOpen(false);
+              }}
+              style={{
+                display: "block", width: "100%", textAlign: "left",
+                padding: "9px 14px", fontSize: 13, border: "none",
+                borderTop: filteredCases.length > 0 ? "1px solid var(--border)" : "none",
+                background: "transparent",
+                color: "#00abbd", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              + Vytvořit „{query.trim()}"
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -194,13 +226,13 @@ export function MeetingFormModal({
   cases,
   isEdit: isEditProp,
   onDelete,
+  allowCreateCase,
   createCaseFn,
   userRole,
 }: MeetingFormModalProps) {
   useBodyScrollLock(open);
   const [form, setForm] = useState<MeetingForm>(initial);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [clientInput, setClientInput] = useState("");
   const [pendingClientName, setPendingClientName] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [autoCreating, setAutoCreating] = useState(false);
@@ -222,8 +254,6 @@ export function MeetingFormModal({
       setShowDeleteConfirm(false);
       setMoreOpen(false);
       setAutoCreating(false);
-      const existingCase = cases.find((c) => c.id === initial.case_id);
-      setClientInput(existingCase?.nazev_pripadu || initial.case_name || "");
       setPendingClientName("");
     }
     prevOpenRef.current = open;
@@ -244,22 +274,27 @@ export function MeetingFormModal({
   const isEdit = isEditProp ?? false;
   const activeCases = cases.filter((c) => c.status === "aktivni");
 
-  const handleClientSelect = (c: Case) => {
-    setClientInput(c.nazev_pripadu);
+  const handleCaseSelect = (c: Case) => {
     setPendingClientName("");
     set({ case_id: c.id, case_name: c.nazev_pripadu });
   };
 
-  const handleClientInputChange = (val: string) => {
-    setClientInput(val);
-    // Check if input exactly matches an existing case
-    const match = activeCases.find((c) => c.nazev_pripadu.toLowerCase() === val.toLowerCase());
-    if (match) {
-      setPendingClientName("");
-      set({ case_id: match.id, case_name: match.nazev_pripadu });
-    } else {
-      setPendingClientName(val.trim());
-      set({ case_id: "", case_name: "" });
+  const handleCaseClear = () => {
+    set({ case_id: "", case_name: "" });
+  };
+
+  const handleCreateClick = (name: string) => {
+    setPendingClientName(name);
+    // Auto-create the case immediately
+    if (createCaseFn) {
+      setAutoCreating(true);
+      createCaseFn(name, "")
+        .then((created) => {
+          set({ case_id: created.id, case_name: created.nazev_pripadu });
+          setPendingClientName("");
+        })
+        .catch(() => {})
+        .finally(() => setAutoCreating(false));
     }
   };
 
@@ -285,13 +320,13 @@ export function MeetingFormModal({
   const isSaving = saving || autoCreating;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 pb-8" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
         className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
         style={{
-          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
-          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+          maxHeight: "calc(100dvh - 64px)",
+          paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 12px))",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -302,14 +337,15 @@ export function MeetingFormModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* 1. Klient autocomplete */}
+        {/* 1. Case combobox */}
         <div className="mb-4">
-          <ClientAutocomplete
+          <CaseCombobox
             cases={activeCases}
             selectedId={form.case_id}
-            inputValue={clientInput}
-            onSelect={handleClientSelect}
-            onInputChange={handleClientInputChange}
+            onSelect={handleCaseSelect}
+            onClear={handleCaseClear}
+            allowCreateCase={!!createCaseFn}
+            onCreateClick={handleCreateClick}
           />
         </div>
 
