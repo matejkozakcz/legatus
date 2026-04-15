@@ -311,7 +311,12 @@ function CaseAccordion({
                 onClick={() => onClickMeeting(m)}
               >
                 <span className="text-xs text-muted-foreground w-20 flex-shrink-0">
-                  {m.cancelled ? "Zrušená" : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
+                  {m.cancelled ? (
+                    <span style={{ color: "#fc7c71", fontWeight: 600 }}>Zrušená</span>
+                  ) : m.outcome_recorded ? (
+                    <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>
+                  ) : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
+                </span>
                 </span>
                 <span
                   className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
