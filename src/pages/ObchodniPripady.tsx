@@ -670,7 +670,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           )}
 
-          {/* Tab bar */}
+          {/* Tab bar — hide when embedded in MobileObchod */}
+          {!mobileEmbedded && (
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <div style={{
               display: "flex",
@@ -724,6 +725,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               ))}
             </div>
           </div>
+          )}
 
           {activeTab === "schuzky" && (<>
           {/* Unrecorded meetings banner — mobile */}
