@@ -40,21 +40,23 @@ export function useUnrecordedMeetings() {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel("unrecorded-meetings-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "client_meetings",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["unrecorded_meetings", user.id] });
-        }
-      )
-      .subscribe();
+    const channelName = `unrecorded-meetings-${user.id}-${Math.random().toString(36).slice(2, 8)}`;
+    const channel = supabase.channel(channelName);
+
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "client_meetings",
+        filter: `user_id=eq.${user.id}`,
+      },
+      () => {
+        queryClient.invalidateQueries({ queryKey: ["unrecorded_meetings", user.id] });
+      }
+    );
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
