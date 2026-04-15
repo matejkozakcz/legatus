@@ -16,10 +16,14 @@ const TABS = [
 type TabKey = "schuzky" | "pripady";
 
 export default function MobileObchod() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabKey>("schuzky");
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { unrecordedCount } = useUnrecordedMeetings();
+
+  // On tablet/desktop, redirect to the full desktop page
+  if (!isMobile) return <Navigate to="/obchodni-pripady" replace />;
 
   // Swipe handling
   const touchStartX = useRef(0);
