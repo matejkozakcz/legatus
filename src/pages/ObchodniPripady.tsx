@@ -767,7 +767,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               </button>
             </div>
           )}
-          {/* Fixed: Create case button + period bar */}
+          {/* Fixed: day picker + add meeting button */}
           <div
             style={{
               position: "fixed",
@@ -780,6 +780,36 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               gap: 8,
             }}
           >
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  setEditMeeting(null);
+                  setPreCaseId("");
+                  setMeetingModalOpen(true);
+                }}
+                className="btn btn-primary btn-md flex items-center justify-center gap-2"
+                style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
+              >
+                <Plus size={18} />
+                Přidat schůzku
+              </button>
+              <button
+                onClick={() => !isSameDay(selectedDate, new Date()) && setSelectedDate(new Date())}
+                disabled={isSameDay(selectedDate, new Date())}
+                style={{
+                  height: 40, padding: "0 16px", borderRadius: 12, border: "none",
+                  background: isSameDay(selectedDate, new Date()) ? (isDark ? "rgba(255,255,255,0.08)" : "#dde8ea") : "#00abbd",
+                  color: isSameDay(selectedDate, new Date()) ? (isDark ? "rgba(255,255,255,0.3)" : "#a0b4b8") : "#fff",
+                  fontWeight: 600, fontSize: 13, cursor: isSameDay(selectedDate, new Date()) ? "default" : "pointer",
+                  fontFamily: "Poppins, sans-serif",
+                  boxShadow: isSameDay(selectedDate, new Date()) ? "none" : "0 -2px 16px rgba(0,0,0,0.06)",
+                  transition: "all 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                Dnes
+              </button>
+            </div>
             <div
               ref={mobilePickerRef}
               style={{
@@ -796,24 +826,11 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               }}
             >
               <button
-                onClick={() => {
-                  if (selectedMonth === 0) {
-                    setSelectedYear((y) => y - 1);
-                    setSelectedMonth(11);
-                  } else {
-                    setSelectedMonth((m) => m - 1);
-                  }
-                }}
+                onClick={() => setSelectedDate((d) => subDays(d, 1))}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 32, height: 32, borderRadius: 10,
                   background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
                 <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
@@ -821,149 +838,102 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               <button
                 onClick={() => setMobilePickerOpen((o) => !o)}
                 style={{
-                  textAlign: "center",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px 8px",
-                  borderRadius: 10,
+                  textAlign: "center", background: "none", border: "none",
+                  cursor: "pointer", padding: "4px 8px", borderRadius: 10,
                 }}
               >
-                <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>Produkční období</div>
-                <div
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {MONTH_NAMES[selectedMonth]} {selectedYear}
+                <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
+                  {isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
+                </div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+                  {format(selectedDate, "d. MMMM yyyy", { locale: cs })}
                 </div>
               </button>
               <button
-                onClick={() => {
-                  if (selectedMonth === 11) {
-                    setSelectedYear((y) => y + 1);
-                    setSelectedMonth(0);
-                  } else {
-                    setSelectedMonth((m) => m + 1);
-                  }
-                }}
+                onClick={() => setSelectedDate((d) => addDays(d, 1))}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 32, height: 32, borderRadius: 10,
                   background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
                 <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
               </button>
+
+              {/* Calendar popup */}
               {mobilePickerOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "calc(100% + 6px)",
-                    left: 0,
-                    right: 0,
-                    zIndex: 50,
-                    background: isDark ? "#0a1f23" : "#fff",
-                    borderRadius: 14,
-                    border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
-                    boxShadow: "0 -8px 24px rgba(0,0,0,0.08)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 14px",
-                      borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4",
+                <div style={{
+                  position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
+                  background: isDark ? "#0a1f23" : "#fff", borderRadius: 14,
+                  border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                  boxShadow: "0 -8px 24px rgba(0,0,0,0.08)", overflow: "hidden",
+                }}>
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    month={selectedDate}
+                    onMonthChange={() => {}}
+                    onSelect={(date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                        setMobilePickerOpen(false);
+                      }
                     }}
-                  >
-                    <button
-                      onClick={() => setSelectedYear((y) => y - 1)}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        border: "none",
-                        background: isDark ? "rgba(255,255,255,0.1)" : "#eef3f4",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <ChevronLeft size={14} color={isDark ? "#4dd8e8" : "#00555f"} />
-                    </button>
-                    <span
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 700,
-                        fontSize: 15,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {selectedYear}
-                    </span>
-                    <button
-                      onClick={() => setSelectedYear((y) => y + 1)}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        border: "none",
-                        background: isDark ? "rgba(255,255,255,0.1)" : "#eef3f4",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <ChevronRight size={14} color={isDark ? "#4dd8e8" : "#00555f"} />
-                    </button>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, padding: 8 }}>
-                    {MONTH_NAMES.map((name, idx) => {
-                      const isSelected = idx === selectedMonth;
-                      const isCurrent = selectedYear === currentPeriod.year && idx === currentPeriod.month;
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setSelectedMonth(idx);
-                            setMobilePickerOpen(false);
-                          }}
-                          style={{
-                            padding: "8px 4px",
-                            borderRadius: 10,
-                            border: "none",
-                            cursor: "pointer",
-                            fontFamily: "Open Sans, sans-serif",
-                            fontSize: 13,
-                            fontWeight: isSelected ? 700 : 500,
-                            background: isSelected ? "#00abbd" : "transparent",
-                            color: isSelected ? "#fff" : isCurrent ? "#00abbd" : "var(--text-primary)",
-                            transition: "background 0.15s, color 0.15s",
-                          }}
-                        >
-                          {name}
-                        </button>
-                      );
-                    })}
-                  </div>
+                    locale={cs}
+                    weekStartsOn={1}
+                    className="p-3 pointer-events-auto"
+                  />
                 </div>
               )}
             </div>
           </div>
+
+          {/* Mobile meetings list for selected day */}
+          {meetingsForDay.length === 0 ? (
+            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+              Žádné schůzky pro tento den.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {meetingsForDay.map((m) => {
+                const caseObj = cases.find((c) => c.id === m.case_id);
+                return (
+                  <div
+                    key={m.id}
+                    className="legatus-card cursor-pointer"
+                    style={{ padding: "12px 16px", opacity: m.cancelled ? 0.5 : 1 }}
+                    onClick={() => setDetailMeeting(m)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                        style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
+                      >
+                        {meetingTypeLabel(m.meeting_type)}
+                      </span>
+                      <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
+                        {m.case_name || caseObj?.nazev_pripadu || "—"}
+                      </span>
+                      {m.cancelled && (
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#ef4444", background: "rgba(239,68,68,0.12)", borderRadius: 8, padding: "2px 8px" }}>Zrušená</span>
+                      )}
+                      {!m.cancelled && m.outcome_recorded && (
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", background: "rgba(34,197,94,0.12)", borderRadius: 8, padding: "2px 8px" }}>Proběhlá</span>
+                      )}
+                      {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                      )}
+                    </div>
+                    {m.case_name && (
+                      <div style={{ fontSize: 12, color: "var(--text-secondary, #6b8a8e)", marginTop: 4, marginLeft: 2 }}>
+                        {m.case_name}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
           </>)}
           {activeTab === "aktivity" && <MojeAktivityContent />}
         </>
@@ -1064,15 +1034,29 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                   </span>
                 </button>
               )}
-              <PeriodNavigator
-                label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
-                title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
-                onPrev={() => setSelectedDate((d) => subDays(d, 1))}
-                onNext={() => setSelectedDate((d) => addDays(d, 1))}
-                selectedDate={selectedDate}
-                calendarMonth={selectedDate}
-                onSelectDate={(date) => setSelectedDate(date)}
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <PeriodNavigator
+                    label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
+                    title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
+                    onPrev={() => setSelectedDate((d) => subDays(d, 1))}
+                    onNext={() => setSelectedDate((d) => addDays(d, 1))}
+                    selectedDate={selectedDate}
+                    calendarMonth={selectedDate}
+                    onSelectDate={(date) => setSelectedDate(date)}
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setEditMeeting(null);
+                    setPreCaseId("");
+                    setMeetingModalOpen(true);
+                  }}
+                  className="btn btn-primary btn-sm flex items-center gap-1.5"
+                >
+                  <Plus size={14} /> Nová schůzka
+                </button>
+              </div>
             </div>
           )}
 
