@@ -14,6 +14,7 @@ import {
   FileDown,
   Loader2,
   Clock,
+  Plus,
 } from "lucide-react";
 import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
 import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
