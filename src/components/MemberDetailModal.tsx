@@ -85,6 +85,53 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     },
   });
 
+  // Current production period (for BJ chips)
+  const currentPeriod = getProductionPeriodMonth(new Date());
+  const periodRange = getProductionPeriodForMonth(currentPeriod.year, currentPeriod.month);
+  const periodStartStr = format(periodRange.start, "yyyy-MM-dd");
+  const periodEndStr = format(periodRange.end, "yyyy-MM-dd");
+
+  // Personal BJ for the member in current production period (all roles)
+  const { data: personalBj = 0 } = useQuery({
+    queryKey: ["member_personal_bj", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .eq("user_id", member.id)
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      if (error) throw error;
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
+    },
+  });
+
+  // Team BJ — only for vedouci / budouci_vedouci. Sum across the member's subtree (their own + people with vedouci_id = member.id)
+  const isLeader = member.role === "vedouci" || member.role === "budouci_vedouci";
+  const { data: teamBj = 0 } = useQuery({
+    queryKey: ["member_team_bj", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      // Get subtree user ids (member + direct subordinates by vedouci_id)
+      const { data: subs } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("vedouci_id", member.id)
+        .eq("is_active", true);
+      const ids = [member.id, ...((subs || []).map((s: any) => s.id))];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .in("user_id", ids)
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      if (error) throw error;
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
+    },
+    enabled: isLeader,
+  });
+
   const { data: upcomingMeetings = [], isLoading: isMeetingsLoading } = useQuery({
     queryKey: ["member_upcoming_meetings", member.id],
     queryFn: async () => {
@@ -107,6 +154,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         cancelled: boolean;
       }>;
     },
+    enabled: isGodMode,
   });
 
   const { data: promotionHistory = [], isLoading: isHistoryLoading } = useQuery({
