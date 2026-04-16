@@ -103,6 +103,32 @@ export function MeetingDetailModal({
     setPrevSaving(!!savingOutcome);
   }, [savingOutcome]);
 
+  // Count "Staráčci" — other Legatus users from my structure who attended the same INFO/POST event
+  // (RLS filters automatically: vedouci sees subtree, others see only their own → result will be 0 for non-leaders)
+  const isInfoPost = meeting?.meeting_type === "INFO" || meeting?.meeting_type === "POST";
+  const { data: staracciCount = 0 } = useQuery({
+    queryKey: ["info_staracci_count", meeting?.id, meeting?.date, meeting?.meeting_type],
+    queryFn: async () => {
+      if (!meeting || !isInfoPost) return 0;
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("id, user_id, info_zucastnil_se")
+        .eq("date", meeting.date)
+        .eq("meeting_type", meeting.meeting_type)
+        .eq("info_zucastnil_se", true)
+        .eq("cancelled", false);
+      if (error) return 0;
+      // Distinct attending users excluding the current meeting's owner row
+      const ids = new Set<string>();
+      for (const row of data ?? []) {
+        if (row.id !== meeting.id) ids.add(row.user_id);
+      }
+      return ids.size;
+    },
+    enabled: !!meeting && isInfoPost && !!open,
+    staleTime: 30_000,
+  });
+
   if (!open || !meeting) return null;
   const m = meeting;
   const today = format(new Date(), "yyyy-MM-dd");
