@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
