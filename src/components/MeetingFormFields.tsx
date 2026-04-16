@@ -310,7 +310,8 @@ export function MeetingFormModal({
     }
   };
 
-  const canSave = !!(form.case_id || pendingClientName) && !!form.date;
+  const isInfoPost = form.meeting_type === "INFO" || form.meeting_type === "POST";
+  const canSave = isInfoPost ? !!form.date : (!!(form.case_id || pendingClientName) && !!form.date);
 
   const handleSave = async () => {
     if (form.case_id) {
