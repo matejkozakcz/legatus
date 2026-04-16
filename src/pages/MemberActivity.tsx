@@ -98,11 +98,15 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
+  // Show only weeks that lie ENTIRELY within the production period
+  // (week start >= periodStart AND week end <= periodEnd) — so that the
+  // "Celkem" row in the table sums to the same numbers as the cards above.
   const weeks = useMemo(() => {
     const result: Date[] = [];
     let ws = startOfWeek(periodStart, { weekStartsOn: 1 });
     while (ws <= periodEnd) {
-      result.push(ws);
+      const we = endOfWeek(ws, { weekStartsOn: 1 });
+      if (ws >= periodStart && we <= periodEnd) result.push(ws);
       ws = addWeeks(ws, 1);
     }
     return result;
