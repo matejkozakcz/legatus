@@ -359,8 +359,24 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
             {member.full_name}
           </h3>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className={badge.className}>{badge.label}</span>
+            <span
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}
+              title="Osobní BJ — aktuální produkční období"
+            >
+              Osobní {personalBj} BJ
+            </span>
+            {isLeader && (
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
+                title="Týmové BJ — aktuální produkční období"
+              >
+                Tým {teamBj} BJ
+              </span>
+            )}
           </div>
         </div>
 
