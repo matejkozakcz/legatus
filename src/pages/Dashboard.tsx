@@ -202,8 +202,6 @@ function ActivityCard({
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
 // Single source of truth: see src/lib/meetingStats.ts. Same logic is used in
 // MemberActivity and the PDF export so the cards never disagree.
-import { computeMeetingStats } from "@/lib/meetingStats";
-
 function computeStats(meetings: any[], todayStr: string) {
   return computeMeetingStats(meetings, todayStr);
 }
