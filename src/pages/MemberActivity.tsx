@@ -285,6 +285,7 @@ const MemberActivity = () => {
               setSelectedYear(period.year);
               setSelectedMonth(period.month);
             }}
+            pickerMode="month"
           />
         </div>
 
@@ -480,7 +481,11 @@ const MemberActivity = () => {
         <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           {memberProfile?.full_name || "Načítání..."} — Moje aktivity
         </h1>
-        <div className="ml-auto flex items-center gap-3">
+      </div>
+
+      {/* Period toolbar row — centered toolbar + Export PDF on the far right */}
+      <div className="relative flex items-center justify-center">
+        <div style={{ width: "100%", maxWidth: 780 }}>
           <PeriodNavigator
             label="Produkční období"
             title={`${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
@@ -494,17 +499,19 @@ const MemberActivity = () => {
               setSelectedYear(period.year);
               setSelectedMonth(period.month);
             }}
+            pickerMode="month"
+            widthScale={1.5}
           />
-          <button
-            onClick={handleExportPdf}
-            disabled={exporting || !memberProfile}
-            className="btn btn-md btn-primary flex items-center gap-2 whitespace-nowrap"
-            style={{ height: 40 }}
-          >
-            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            Export PDF
-          </button>
         </div>
+        <button
+          onClick={handleExportPdf}
+          disabled={exporting || !memberProfile}
+          className="btn btn-md btn-primary flex items-center gap-2 whitespace-nowrap absolute right-0 top-1/2 -translate-y-1/2"
+          style={{ height: 40 }}
+        >
+          {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          Export PDF
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
