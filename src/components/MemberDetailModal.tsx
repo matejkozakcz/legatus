@@ -417,48 +417,52 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           )}
         </div>
 
-        {/* Upcoming meetings */}
-        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
-        <div>
-          <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-            Nadcházející schůzky
-          </p>
-          {isMeetingsLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
-            </div>
-          ) : upcomingMeetings.length === 0 ? (
-            <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
-              Žádné naplánované schůzky
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {upcomingMeetings.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-3 rounded-lg"
-                  style={{
-                    padding: "8px 12px",
-                    background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.04)",
-                    border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
-                  }}
-                >
-                  <Calendar size={14} style={{ color: "#00abbd", flexShrink: 0 }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-body font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                      {meetingTypeLabels[m.meeting_type] || m.meeting_type}
-                      {m.case_name && ` — ${m.case_name}`}
-                    </p>
-                    <p className="text-[11px] font-body" style={{ color: "var(--text-muted)" }}>
-                      {format(new Date(m.date), "EEEE d. MMMM", { locale: cs })}
-                      {m.meeting_time && `, ${m.meeting_time.slice(0, 5)}`}
-                    </p>
-                  </div>
+        {/* Upcoming meetings — God mode only */}
+        {isGodMode && (
+          <>
+            <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+            <div>
+              <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                Nadcházející schůzky
+              </p>
+              {isMeetingsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
                 </div>
-              ))}
+              ) : upcomingMeetings.length === 0 ? (
+                <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+                  Žádné naplánované schůzky
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center gap-3 rounded-lg"
+                      style={{
+                        padding: "8px 12px",
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.04)",
+                        border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
+                      }}
+                    >
+                      <Calendar size={14} style={{ color: "#00abbd", flexShrink: 0 }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-body font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                          {meetingTypeLabels[m.meeting_type] || m.meeting_type}
+                          {m.case_name && ` — ${m.case_name}`}
+                        </p>
+                        <p className="text-[11px] font-body" style={{ color: "var(--text-muted)" }}>
+                          {format(new Date(m.date), "EEEE d. MMMM", { locale: cs })}
+                          {m.meeting_time && `, ${m.meeting_time.slice(0, 5)}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         {/* Promotion History */}
         {isGodMode && promotionHistory.length > 0 && (
