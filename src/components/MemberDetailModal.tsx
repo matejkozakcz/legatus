@@ -49,9 +49,10 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { profile: viewerProfile } = useAuth();
+  const { profile: viewerProfile, isAdmin, godMode } = useAuth();
   const queryClient = useQueryClient();
   const viewerRole = viewerProfile?.role;
+  const isGodMode = isAdmin && godMode;
   const canEditOnboarding = viewerRole === "vedouci" || viewerRole === "budouci_vedouci";
   const isNovacek = member.role === "novacek";
 
