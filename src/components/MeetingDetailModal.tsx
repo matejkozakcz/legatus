@@ -173,7 +173,8 @@ export function MeetingDetailModal({
       rows.push({ label: "Doporučení", value: String(m.doporuceni_pohovor) });
     } else if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
       rows.push({ label: "Zúčastnil se?", value: m.info_zucastnil_se === true ? "Ano" : m.info_zucastnil_se === false ? "Ne" : "—" });
-      rows.push({ label: "Počet lidí (mimo Legatus)", value: String(m.info_pocet_lidi ?? 0) });
+      rows.push({ label: "Nováčci (mimo Legatus)", value: String(m.info_pocet_lidi ?? 0) });
+      rows.push({ label: "Staráčci (z mojí struktury)", value: String(staracciCount) });
     }
     if (rows.length === 0) return null;
     return (
