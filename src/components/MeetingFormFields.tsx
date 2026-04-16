@@ -356,17 +356,19 @@ export function MeetingFormModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* 1. Case combobox */}
-        <div className="mb-4">
-          <CaseCombobox
-            cases={activeCases}
-            selectedId={form.case_id}
-            onSelect={handleCaseSelect}
-            onClear={handleCaseClear}
-            allowCreateCase={!!createCaseFn}
-            onCreateClick={handleCreateClick}
-          />
-        </div>
+        {/* 1. Case combobox — skip for INFO/POST */}
+        {!isInfoPost && (
+          <div className="mb-4">
+            <CaseCombobox
+              cases={activeCases}
+              selectedId={form.case_id}
+              onSelect={handleCaseSelect}
+              onClear={handleCaseClear}
+              allowCreateCase={!!createCaseFn}
+              onCreateClick={handleCreateClick}
+            />
+          </div>
+        )}
 
         {/* 2. Typ schůzky */}
         <div className="mb-4">
@@ -376,6 +378,10 @@ export function MeetingFormModal({
               {(["FSA", "NAB", "SER", "POR", "POH", "INFO", "POST"] as MeetingType[])
                 .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit) && (t !== "SER" || userRole !== "novacek"))
                 .filter((t) => ((t !== "INFO" && t !== "POST") || canCreateInfoPost(userRole)))
+                // When editing an INFO/POST meeting → only allow INFO/POST chips
+                .filter((t) => !isEdit || !isInfoPost || t === "INFO" || t === "POST")
+                // When editing a non-INFO/POST meeting → hide INFO/POST chips
+                .filter((t) => !isEdit || isInfoPost || (t !== "INFO" && t !== "POST"))
                 .map((t) => (
                   <button
                     key={t}
