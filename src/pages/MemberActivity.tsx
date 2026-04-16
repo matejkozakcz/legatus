@@ -459,22 +459,28 @@ const MemberActivity = () => {
             Info & Postinfo
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-input bg-card px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                Info schůzky
+            {[
+              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
+              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+            ].map(({ label, count, novi, staracci }) => (
+              <div key={label} className="rounded-xl border border-input bg-card p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                  {label}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { l: "Schůzek", v: count },
+                    { l: "Noví", v: novi },
+                    { l: "Staráčci", v: staracci },
+                  ].map(({ l, v }) => (
+                    <div key={l} className="text-center">
+                      <div className="text-[10px] font-semibold text-muted-foreground mb-1">{l}</div>
+                      <div className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
-                {infoPostCounts.info}
-              </div>
-            </div>
-            <div className="rounded-xl border border-input bg-card px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                Postinfo
-              </div>
-              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
-                {infoPostCounts.postinfo}
-              </div>
-            </div>
+            ))}
           </div>
         </section>
       )}
