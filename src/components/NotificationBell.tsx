@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle } from "lucide-react";
+import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
