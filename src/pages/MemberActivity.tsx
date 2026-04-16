@@ -106,6 +106,29 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
+  // Info & Postinfo meeting counts for vedouci/BV members in current production period
+  const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
+  const { data: infoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+    queryKey: ["member_info_post", userId, format(monthStart, "yyyy-MM")],
+    queryFn: async () => {
+      if (!userId) return { info: 0, postinfo: 0 };
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("meeting_type")
+        .eq("user_id", userId)
+        .eq("cancelled", false)
+        .in("meeting_type", ["INFO", "POST"])
+        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+      const rows = data || [];
+      return {
+        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
+        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+      };
+    },
+    enabled: !!userId && isVedouciOrBV,
+  });
+
   const stats = useMemo(() => {
     const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
     return {
