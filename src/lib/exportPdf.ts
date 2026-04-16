@@ -386,6 +386,75 @@ export async function exportDashboardPdf(
     });
   }
 
+  // ── INFO / POST stats — only for vedoucí / BV target ────────────────────
+  const showInfoPost = userRole === "vedouci" || userRole === "budouci_vedouci";
+  if (showInfoPost) {
+    const lastY = (doc as any).lastAutoTable?.finalY || 60;
+    let infoStartY = lastY + 12;
+    if (infoStartY > doc.internal.pageSize.getHeight() - 50) {
+      doc.addPage();
+      infoStartY = 16;
+    }
+
+    doc.setFontSize(13);
+    doc.setFont(fontName, "bold");
+    doc.text("Info & Postinfo", 14, infoStartY);
+
+    const infoHeadRow1: any[] = [
+      { content: "", rowSpan: 2 },
+      { content: "Info schůzky", colSpan: 3 },
+      { content: "Postinfo", colSpan: 3 },
+    ];
+    const infoHeadRow2 = ["Schůzek", "Noví", "Staráčci", "Schůzek", "Noví", "Staráčci"];
+
+    const infoBody: any[] = [
+      [
+        userName,
+        ownStats.infoCount, ownStats.infoNovi, ownStats.infoStaracci,
+        ownStats.postCount, ownStats.postNovi, ownStats.postStaracci,
+      ],
+    ];
+
+    if (showTeam && teamStats.length > 0) {
+      for (const s of teamStats) {
+        infoBody.push([
+          s.name,
+          s.infoCount, s.infoNovi, s.infoStaracci,
+          s.postCount, s.postNovi, s.postStaracci,
+        ]);
+      }
+      const totInfoCount = teamStats.reduce((a, s) => a + s.infoCount, 0) + ownStats.infoCount;
+      const totInfoNovi = teamStats.reduce((a, s) => a + s.infoNovi, 0) + ownStats.infoNovi;
+      const totInfoStar = teamStats.reduce((a, s) => a + s.infoStaracci, 0) + ownStats.infoStaracci;
+      const totPostCount = teamStats.reduce((a, s) => a + s.postCount, 0) + ownStats.postCount;
+      const totPostNovi = teamStats.reduce((a, s) => a + s.postNovi, 0) + ownStats.postNovi;
+      const totPostStar = teamStats.reduce((a, s) => a + s.postStaracci, 0) + ownStats.postStaracci;
+      infoBody.push([
+        "CELKEM",
+        totInfoCount, totInfoNovi, totInfoStar,
+        totPostCount, totPostNovi, totPostStar,
+      ]);
+    }
+
+    autoTable(doc, {
+      startY: infoStartY + 4,
+      head: [infoHeadRow1, infoHeadRow2],
+      body: infoBody,
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 50, halign: "left" } },
+      margin: { left: 14, right: 14 },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.row.index === infoBody.length - 1 && infoBody.length > 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = TOTALS_FILL;
+        }
+      },
+    });
+  }
+
   // Footer
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
