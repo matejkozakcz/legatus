@@ -16,7 +16,16 @@ interface PeriodNavigatorProps {
   selectedDate?: Date;
   /** The month to display in the calendar */
   calendarMonth?: Date;
+  /** Picker mode — "day" (default) or "month" (year nav + month grid) */
+  pickerMode?: "day" | "month";
+  /** Optional widening factor — e.g. 1.5 to make the bar 50 % wider */
+  widthScale?: number;
 }
+
+const MONTH_NAMES_SHORT = [
+  "Led", "Úno", "Bře", "Dub", "Kvě", "Čer",
+  "Čvc", "Srp", "Zář", "Říj", "Lis", "Pro",
+];
 
 export function PeriodNavigator({
   label,
