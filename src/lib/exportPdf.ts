@@ -331,7 +331,14 @@ export async function exportDashboardPdf(
     ]);
 
     // Totals row
-    const zeroStats: PersonStats = { name: "", role: "", planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 };
+    const zeroStats: PersonStats = {
+      name: "", role: "",
+      planFsa: 0, planPoh: 0, planSer: 0, planPor: 0,
+      fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0,
+      newFsa: 0, newPoh: 0, newSer: 0, newPor: 0,
+      infoCount: 0, infoNovi: 0, infoStaracci: 0,
+      postCount: 0, postNovi: 0, postStaracci: 0,
+    };
     const totals = teamStats.reduce<PersonStats>((acc, s) => ({
       ...acc,
       planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
@@ -340,6 +347,12 @@ export async function exportDashboardPdf(
       ref: acc.ref + s.ref, bj: acc.bj + s.bj,
       newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
       newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
+      infoCount: acc.infoCount + s.infoCount,
+      infoNovi: acc.infoNovi + s.infoNovi,
+      infoStaracci: acc.infoStaracci + s.infoStaracci,
+      postCount: acc.postCount + s.postCount,
+      postNovi: acc.postNovi + s.postNovi,
+      postStaracci: acc.postStaracci + s.postStaracci,
     }), zeroStats);
 
     teamBody.push([
