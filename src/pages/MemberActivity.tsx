@@ -106,6 +106,29 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
+  // Info & Postinfo meeting counts for vedouci/BV members in current production period
+  const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
+  const { data: infoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+    queryKey: ["member_info_post", userId, format(monthStart, "yyyy-MM")],
+    queryFn: async () => {
+      if (!userId) return { info: 0, postinfo: 0 };
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("meeting_type")
+        .eq("user_id", userId)
+        .eq("cancelled", false)
+        .in("meeting_type", ["INFO", "POST"])
+        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+      const rows = data || [];
+      return {
+        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
+        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+      };
+    },
+    enabled: !!userId && isVedouciOrBV,
+  });
+
   const stats = useMemo(() => {
     const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
     return {
@@ -311,6 +334,38 @@ const MemberActivity = () => {
             ))}
           </div>
         </div>
+
+        {/* Info & Postinfo — vedouci/BV only */}
+        {isVedouciOrBV && (
+          <div style={{
+            background: "#ffffff",
+            borderRadius: 16,
+            padding: "14px 16px",
+            border: "1px solid #e1e9eb",
+            marginTop: 12,
+          }}>
+            <div style={{
+              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
+              color: "var(--text-primary)", marginBottom: 12,
+            }}>
+              Info & Postinfo
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Info schůzky</div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
+                  {infoPostCounts.info}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Postinfo</div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
+                  {infoPostCounts.postinfo}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -375,6 +430,33 @@ const MemberActivity = () => {
           </table>
         </div>
       </section>
+
+      {/* Info & Postinfo — vedouci/BV only */}
+      {isVedouciOrBV && (
+        <section className="legatus-card p-6">
+          <h2 className="font-heading font-bold mb-4" style={{ fontSize: 18, color: "var(--text-primary)" }}>
+            Info & Postinfo
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-input bg-card px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Info schůzky
+              </div>
+              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
+                {infoPostCounts.info}
+              </div>
+            </div>
+            <div className="rounded-xl border border-input bg-card px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Postinfo
+              </div>
+              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
+                {infoPostCounts.postinfo}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

@@ -40,6 +40,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, defaultMeetingForm } from "@/components/MeetingFormFields";
+import { StatCard } from "@/components/StatCard";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 
@@ -799,6 +800,28 @@ const Dashboard = () => {
     enabled: !!activeUserId,
   });
 
+  // Vedouci/BV: count INFO and POST meetings across team (subtree) for current period
+  // RLS limits visibility to user's subtree + self, so we don't need to filter by user_id explicitly
+  const { data: teamInfoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+    queryKey: ["team_info_post_counts", activeUserId, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      if (!activeUserId) return { info: 0, postinfo: 0 };
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("meeting_type")
+        .eq("cancelled", false)
+        .in("meeting_type", ["INFO", "POST"])
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      const rows = data || [];
+      return {
+        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
+        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+      };
+    },
+    enabled: !!activeUserId && (activeRole === "vedouci" || activeRole === "budouci_vedouci"),
+  });
+
   // Vedoucí goals per period
   const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
     queryKey: ["vedouci_goals", profile?.id, periodKey],
@@ -1211,6 +1234,20 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Info & Postinfo team stats — vedouci/BV only, mobile */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <MobileStatCard
+                label="Info schůzky"
+                actual={teamInfoPostCounts.info}
+                sublabel="v aktuálním období"
+              />
+              <MobileStatCard
+                label="Postinfo"
+                actual={teamInfoPostCounts.postinfo}
+                sublabel="v aktuálním období"
+              />
             </div>
           </>
         ) : (
@@ -1835,6 +1872,22 @@ const Dashboard = () => {
               color="#10b981"
             />
           </div>
+
+          {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
+          {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              <StatCard
+                label="Info schůzky"
+                actual={teamInfoPostCounts.info}
+                actualLabel="v aktuálním období"
+              />
+              <StatCard
+                label="Postinfo"
+                actual={teamInfoPostCounts.postinfo}
+                actualLabel="v aktuálním období"
+              />
+            </div>
+          )}
         </section>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />

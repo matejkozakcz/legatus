@@ -114,6 +114,10 @@ const ACTIVITY_COLUMNS = [
   { key: "fsa_actual", header: "FSA Usc." },
   { key: "por_planned", header: "POR Dom." },
   { key: "por_actual", header: "POR Usc." },
+  { key: "info_planned", header: "INFO Dom." },
+  { key: "info_actual", header: "INFO Usc." },
+  { key: "postinfo_planned", header: "POST Dom." },
+  { key: "postinfo_actual", header: "POST Usc." },
   { key: "kl_fsa_actual", header: "KL z FSA" },
   { key: "ser_planned", header: "SER Dom." },
   { key: "ser_actual", header: "SER Usc." },
@@ -134,6 +138,7 @@ const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 // Columns auto-synced from client_meetings — read-only in this view
 const AUTO_SYNCED_KEYS: Set<string> = new Set([
   "fsa_actual", "ser_actual", "poh_actual",
+  "info_actual", "postinfo_actual",
   "ref_actual", "bj", "bj_fsa_actual", "bj_ser_actual",
 ]);
 
@@ -260,6 +265,10 @@ export const MojeAktivityContent = () => {
       ser_actual: rec?.ser_actual || 0,
       poh_planned: rec?.poh_planned || 0,
       poh_actual: rec?.poh_actual || 0,
+      info_planned: rec?.info_planned || 0,
+      info_actual: rec?.info_actual || 0,
+      postinfo_planned: rec?.postinfo_planned || 0,
+      postinfo_actual: rec?.postinfo_actual || 0,
       ref_actual: rec?.ref_actual || 0,
       bj: rec?.bj || 0,
     };
@@ -286,6 +295,7 @@ export const MojeAktivityContent = () => {
   );
 
   // Activities with both planned and actual keys
+  const isVedouciOrBV = profile?.role === "vedouci" || profile?.role === "budouci_vedouci";
   const MOBILE_ACTIVITIES = [
     {
       label: "Analýzy",
@@ -311,6 +321,26 @@ export const MojeAktivityContent = () => {
       actualLabel: "Proběhlé",
       actualSynced: true,
     },
+    ...(isVedouciOrBV
+      ? ([
+          {
+            label: "Info schůzky",
+            plannedKey: "info_planned" as ActivityKey,
+            plannedLabel: "Domluvené",
+            actualKey: "info_actual" as ActivityKey,
+            actualLabel: "Proběhlé",
+            actualSynced: true,
+          },
+          {
+            label: "Postinfo",
+            plannedKey: "postinfo_planned" as ActivityKey,
+            plannedLabel: "Domluvené",
+            actualKey: "postinfo_actual" as ActivityKey,
+            actualLabel: "Proběhlé",
+            actualSynced: true,
+          },
+        ] as const)
+      : []),
   ] as const;
 
   if (isMobile) {
