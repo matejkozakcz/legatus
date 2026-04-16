@@ -372,6 +372,36 @@ export function MeetingDetailModal({
               </div>
             )}
 
+            {(m.meeting_type === "INFO" || m.meeting_type === "POST") && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Zúčastnil se?</label>
+                  <div className="flex gap-2">
+                    {([true, false] as const).map((val) => (
+                      <button
+                        key={String(val)}
+                        type="button"
+                        onClick={() => setInfoZuc(val)}
+                        className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${infoZuc === val ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
+                        style={
+                          infoZuc === val
+                            ? { background: val === true ? "#00abbd" : "#fc7c71" }
+                            : {}
+                        }
+                      >
+                        {val === true ? "Ano" : "Ne"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Počet lidí (mimo Legatus)</label>
+                  <input type="number" value={infoPocet} onChange={(e) => setInfoPocet(e.target.value)} min={0}
+                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              </div>
+            )}
+
             <button onClick={handleSaveOutcome} disabled={savingOutcome}
               className="btn btn-primary btn-md w-full flex items-center justify-center gap-2 mt-3">
               {savingOutcome && <Loader2 className="h-4 w-4 animate-spin" />} Uložit výsledek
@@ -384,6 +414,8 @@ export function MeetingDetailModal({
           const nextType = m.meeting_type === "FSA" ? "POR"
             : m.meeting_type === "POR" ? "SER"
             : m.meeting_type === "NAB" ? "FSA"
+            : m.meeting_type === "INFO" ? "POST"
+            : m.meeting_type === "POST" ? "FSA"
             : m.meeting_type === "POH" && pohDal === true ? "FSA"
             : null;
           const nextLabel = nextType ? meetingTypeLabel(nextType as MeetingType) : null;
