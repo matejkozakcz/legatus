@@ -24,11 +24,15 @@ export type Database = {
           fsa_actual: number | null
           fsa_planned: number | null
           id: string
+          info_actual: number
+          info_planned: number
           kl_fsa_actual: number | null
           poh_actual: number | null
           poh_planned: number | null
           por_actual: number | null
           por_planned: number | null
+          postinfo_actual: number
+          postinfo_planned: number
           ref_actual: number | null
           ref_planned: number | null
           ser_actual: number | null
@@ -46,11 +50,15 @@ export type Database = {
           fsa_actual?: number | null
           fsa_planned?: number | null
           id?: string
+          info_actual?: number
+          info_planned?: number
           kl_fsa_actual?: number | null
           poh_actual?: number | null
           poh_planned?: number | null
           por_actual?: number | null
           por_planned?: number | null
+          postinfo_actual?: number
+          postinfo_planned?: number
           ref_actual?: number | null
           ref_planned?: number | null
           ser_actual?: number | null
@@ -68,11 +76,15 @@ export type Database = {
           fsa_actual?: number | null
           fsa_planned?: number | null
           id?: string
+          info_actual?: number
+          info_planned?: number
           kl_fsa_actual?: number | null
           poh_actual?: number | null
           poh_planned?: number | null
           por_actual?: number | null
           por_planned?: number | null
+          postinfo_actual?: number
+          postinfo_planned?: number
           ref_actual?: number | null
           ref_planned?: number | null
           ser_actual?: number | null
