@@ -363,20 +363,28 @@ const MemberActivity = () => {
             }}>
               Info & Postinfo
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
-              <div>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Info schůzky</div>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
-                  {infoPostCounts.info}
+            {[
+              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
+              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+            ].map(({ label, count, novi, staracci }) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>{label}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  {[
+                    { l: "Schůzek", v: count },
+                    { l: "Noví", v: novi },
+                    { l: "Staráčci", v: staracci },
+                  ].map(({ l, v }) => (
+                    <div key={l} style={{
+                      background: "#dde8ea", borderRadius: 12, padding: "8px 4px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 10, color: "#00555f", fontWeight: 600, marginBottom: 2 }}>{l}</div>
+                      <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "#00555f" }}>{v}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Postinfo</div>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
-                  {infoPostCounts.postinfo}
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
