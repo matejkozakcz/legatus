@@ -20,6 +20,8 @@ export interface MeetingDetailData {
   pohovor_jde_dal: boolean | null;
   doporuceni_pohovor: number;
   outcome_recorded: boolean;
+  info_zucastnil_se?: boolean | null;
+  info_pocet_lidi?: number | null;
 }
 
 interface MeetingDetailModalProps {
@@ -45,6 +47,8 @@ export function MeetingDetailModal({
   const [dopPor, setDopPor] = useState("0");
   const [pohDal, setPohDal] = useState<boolean | null>(null);
   const [dopPoh, setDopPoh] = useState("0");
+  const [infoZuc, setInfoZuc] = useState<boolean | null>(null);
+  const [infoPocet, setInfoPocet] = useState("0");
   const [editingOutcome, setEditingOutcome] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [showNextStep, setShowNextStep] = useState(false);
@@ -62,6 +66,8 @@ export function MeetingDetailModal({
       setDopPor(meeting.doporuceni_poradenstvi?.toString() || "0");
       setPohDal(meeting.pohovor_jde_dal ?? null);
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
+      setInfoZuc(meeting.info_zucastnil_se ?? null);
+      setInfoPocet(meeting.info_pocet_lidi != null ? String(meeting.info_pocet_lidi) : "0");
       setEditingOutcome(false);
       setShowReschedule(false);
       setShowNextStep(false);
@@ -120,6 +126,9 @@ export function MeetingDetailModal({
     } else if (m.meeting_type === "POH") {
       data.pohovor_jde_dal = pohDal;
       data.doporuceni_pohovor = parseInt(dopPoh) || 0;
+    } else if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+      data.info_zucastnil_se = infoZuc;
+      data.info_pocet_lidi = parseInt(infoPocet) || 0;
     }
     onSaveOutcome(m.id, data);
   };
@@ -134,6 +143,9 @@ export function MeetingDetailModal({
     } else if (m.meeting_type === "POH") {
       rows.push({ label: "Jde dál?", value: m.pohovor_jde_dal === true ? "Ano" : m.pohovor_jde_dal === false ? "Ne" : "—" });
       rows.push({ label: "Doporučení", value: String(m.doporuceni_pohovor) });
+    } else if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+      rows.push({ label: "Zúčastnil se?", value: m.info_zucastnil_se === true ? "Ano" : m.info_zucastnil_se === false ? "Ne" : "—" });
+      rows.push({ label: "Počet lidí (mimo Legatus)", value: String(m.info_pocet_lidi ?? 0) });
     }
     if (rows.length === 0) return null;
     return (
