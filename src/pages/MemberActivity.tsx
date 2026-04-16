@@ -108,22 +108,35 @@ const MemberActivity = () => {
 
   // Info & Postinfo meeting counts for vedouci/BV members in current production period
   const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
-  const { data: infoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+  const { data: infoPostCounts = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 } } = useQuery({
     queryKey: ["member_info_post", userId, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
-      if (!userId) return { info: 0, postinfo: 0 };
+      const empty = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 };
+      if (!userId) return empty;
       const { data } = await supabase
         .from("client_meetings")
-        .select("meeting_type")
+        .select("meeting_type, info_pocet_lidi, info_zucastnil_se, user_id")
         .eq("user_id", userId)
         .eq("cancelled", false)
         .in("meeting_type", ["INFO", "POST"])
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"));
       const rows = data || [];
+      const infoRows = rows.filter((r: any) => r.meeting_type === "INFO");
+      const postRows = rows.filter((r: any) => r.meeting_type === "POST");
+      const sumNovi = (arr: any[]) => arr.reduce((s, r) => s + (Number(r.info_pocet_lidi) || 0), 0);
+      const uniqAttended = (arr: any[]) => {
+        const ids = new Set<string>();
+        for (const r of arr) if (r.info_zucastnil_se === true && r.user_id) ids.add(r.user_id);
+        return ids.size;
+      };
       return {
-        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
-        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+        info: infoRows.length,
+        postinfo: postRows.length,
+        noviInfo: sumNovi(infoRows),
+        staracciInfo: uniqAttended(infoRows),
+        noviPost: sumNovi(postRows),
+        staracciPost: uniqAttended(postRows),
       };
     },
     enabled: !!userId && isVedouciOrBV,
