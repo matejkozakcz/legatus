@@ -519,6 +519,36 @@ export function MeetingFormModal({
                 />
               </div>
             )}
+
+            {(form.meeting_type === "INFO" || form.meeting_type === "POST") && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Zúčastnil se?</label>
+                  <div className="flex gap-2">
+                    {([true, false] as const).map((val) => (
+                      <button
+                        key={String(val)}
+                        type="button"
+                        onClick={() => set({ info_zucastnil_se: val })}
+                        className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${form.info_zucastnil_se === val ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
+                        style={
+                          form.info_zucastnil_se === val
+                            ? { background: val === true ? "#00abbd" : "#fc7c71" }
+                            : {}
+                        }
+                      >
+                        {val === true ? "Ano" : "Ne"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <NumberInput
+                  label="Počet lidí (mimo Legatus)"
+                  value={form.info_pocet_lidi}
+                  onChange={(v) => set({ info_pocet_lidi: v })}
+                />
+              </div>
+            )}
           </div>
         )}
 
