@@ -236,7 +236,7 @@ export async function exportDashboardPdf(
       const subIds = subordinates.map((s: any) => s.id);
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
-        .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+        .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
         .in("user_id", subIds)
         .gte("date", periodFrom)
         .lte("date", periodTo);
