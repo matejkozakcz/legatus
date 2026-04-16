@@ -285,6 +285,7 @@ const MemberActivity = () => {
               setSelectedYear(period.year);
               setSelectedMonth(period.month);
             }}
+            pickerMode="month"
           />
         </div>
 
