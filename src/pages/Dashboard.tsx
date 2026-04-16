@@ -43,6 +43,7 @@ import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, defaul
 import { StatCard } from "@/components/StatCard";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
+import { computeMeetingStats } from "@/lib/meetingStats";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
