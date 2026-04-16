@@ -43,6 +43,7 @@ import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, defaul
 import { StatCard } from "@/components/StatCard";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
+import { computeMeetingStats } from "@/lib/meetingStats";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -199,31 +200,10 @@ function ActivityCard({
 }
 
 // ─── Helper: compute stats from meetings ──────────────────────────────────────
-
+// Single source of truth: see src/lib/meetingStats.ts. Same logic is used in
+// MemberActivity and the PDF export so the cards never disagree.
 function computeStats(meetings: any[], todayStr: string) {
-  // Y = all meetings of a type in the period (proběhlé + zrušené + čekající)
-  const countAll = (type: string) => meetings.filter((m: any) => m.meeting_type === type).length;
-
-  // X = meetings confirmed as completed by user (outcome_recorded = true)
-  const countCompleted = (type: string) =>
-    meetings.filter((m: any) => m.meeting_type === type && !m.cancelled && m.outcome_recorded === true).length;
-
-  const sumAllRefs = () =>
-    meetings
-      .filter((m: any) => !m.cancelled)
-      .reduce(
-        (acc: number, m: any) =>
-          acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
-        0,
-      );
-
-  return {
-    fsa: { actual: countCompleted("FSA"), planned: countAll("FSA") },
-    poh: { actual: countCompleted("POH"), planned: countAll("POH") },
-    ser: { actual: countCompleted("SER"), planned: countAll("SER") },
-    por: { actual: countCompleted("POR"), planned: countAll("POR") },
-    ref: { actual: sumAllRefs(), planned: 0 },
-  };
+  return computeMeetingStats(meetings, todayStr);
 }
 
 // ─── Helper: compute newly arranged meetings this week ────────────────────────

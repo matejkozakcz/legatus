@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
+import { computeMeetingStats } from "@/lib/meetingStats";
 
 function Counter({
   value,
@@ -225,16 +226,25 @@ export const MojeAktivityContent = () => {
     [records, upsertMutation],
   );
 
-  // Stats for the month
-  const stats = useMemo(() => {
-    const sum = (key: string) => records.reduce((acc: number, r: any) => acc + (r[key] || 0), 0);
-    return {
-      fsa: { actual: sum("fsa_actual"), planned: sum("fsa_planned") },
-      poh: { actual: sum("poh_actual"), planned: sum("poh_planned") },
-      ser: { actual: sum("ser_actual"), planned: sum("ser_planned") },
-      ref: { actual: sum("ref_actual"), planned: sum("ref_planned") },
-    };
-  }, [records]);
+  // Stats for the period — single source of truth (computeMeetingStats),
+  // identical to PDF export, Dashboard and MemberActivity. Computed directly
+  // from client_meetings so the cards always agree across the app.
+  const { data: stats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
+    queryKey: ["my_period_stats", profile?.id, format(monthStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
+      if (!profile?.id) return empty;
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .eq("user_id", profile.id)
+        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+      return computeMeetingStats((data || []) as any, todayStr);
+    },
+    enabled: !!profile?.id,
+  });
 
   // Column sums
   const columnSums = useMemo(() => {
