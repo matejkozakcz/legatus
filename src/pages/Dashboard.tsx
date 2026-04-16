@@ -111,6 +111,54 @@ function MobileStatCard({
   );
 }
 
+// ─── Info/Postinfo cards with 3 metrics ──────────────────────────────────────
+
+function InfoPostMobileCard({
+  label, count, novi, staracci,
+}: { label: string; count: number; novi: number; staracci: number }) {
+  return (
+    <div className="mobile-stat-card">
+      <div className="mobile-stat-label">{label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+        {[
+          { v: count, l: "Schůzek" },
+          { v: novi, l: "Noví" },
+          { v: staracci, l: "Staráčci" },
+        ].map((m, i) => (
+          <div key={i} style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 24, color: "#00555f", lineHeight: 1 }}>{m.v}</div>
+            <div style={{ fontSize: 9, color: "var(--text-muted, #8aadb3)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>{m.l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InfoPostDesktopCard({
+  label, count, novi, staracci,
+}: { label: string; count: number; novi: number; staracci: number }) {
+  return (
+    <div className="stat-card flex flex-col gap-3 overflow-hidden">
+      <p className="font-body text-[11px] font-semibold uppercase tracking-[0.08em] truncate" style={{ color: "#fc7c71" }}>
+        {label}
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { v: count, l: "Schůzek" },
+          { v: novi, l: "Noví" },
+          { v: staracci, l: "Staráčci" },
+        ].map((m, i) => (
+          <div key={i} className="text-center">
+            <div className="font-heading font-bold leading-none" style={{ color: "#00555f", fontSize: 28 }}>{m.v}</div>
+            <div className="font-body text-[10px] mt-1.5 uppercase tracking-wide font-semibold" style={{ color: "var(--text-muted, #8aadb3)" }}>{m.l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── ActivityCard — combined stat card for desktop ────────────────────────────
 
 function ActivityCard({
