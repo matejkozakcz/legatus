@@ -20,6 +20,9 @@ interface MeetingRow {
   doporuceni_poradenstvi: number;
   doporuceni_pohovor: number;
   podepsane_bj: number;
+  info_pocet_lidi?: number | null;
+  info_zucastnil_se?: boolean | null;
+  user_id?: string;
 }
 
 interface PersonStats {
@@ -42,6 +45,13 @@ interface PersonStats {
   newPoh: number;
   newSer: number;
   newPor: number;
+  // INFO / POST
+  infoCount: number;
+  infoNovi: number;
+  infoStaracci: number;
+  postCount: number;
+  postNovi: number;
+  postStaracci: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
