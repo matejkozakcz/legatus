@@ -20,6 +20,9 @@ interface MeetingRow {
   doporuceni_poradenstvi: number;
   doporuceni_pohovor: number;
   podepsane_bj: number;
+  info_pocet_lidi?: number | null;
+  info_zucastnil_se?: boolean | null;
+  user_id?: string;
 }
 
 interface PersonStats {
@@ -42,6 +45,13 @@ interface PersonStats {
   newPoh: number;
   newSer: number;
   newPor: number;
+  // INFO / POST
+  infoCount: number;
+  infoNovi: number;
+  infoStaracci: number;
+  postCount: number;
+  postNovi: number;
+  postStaracci: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -70,6 +80,15 @@ function computePersonStats(
     return created && created >= periodFrom && created <= periodTo;
   });
 
+  const infoRows = active.filter((m) => m.meeting_type === "INFO");
+  const postRows = active.filter((m) => m.meeting_type === "POST");
+  const sumNovi = (arr: MeetingRow[]) => arr.reduce((s, r) => s + (Number(r.info_pocet_lidi) || 0), 0);
+  const uniqAttended = (arr: MeetingRow[]) => {
+    const ids = new Set<string>();
+    for (const r of arr) if (r.info_zucastnil_se === true && r.user_id) ids.add(r.user_id);
+    return ids.size;
+  };
+
   return {
     name,
     role,
@@ -87,6 +106,12 @@ function computePersonStats(
     newPoh: newlyBooked.filter((m) => m.meeting_type === "POH").length,
     newSer: newlyBooked.filter((m) => m.meeting_type === "SER").length,
     newPor: newlyBooked.filter((m) => m.meeting_type === "POR").length,
+    infoCount: infoRows.length,
+    infoNovi: sumNovi(infoRows),
+    infoStaracci: uniqAttended(infoRows),
+    postCount: postRows.length,
+    postNovi: sumNovi(postRows),
+    postStaracci: uniqAttended(postRows),
   };
 }
 
@@ -177,7 +202,7 @@ export async function exportDashboardPdf(
   // Fetch own meetings
   const { data: ownMeetings = [] } = await supabase
     .from("client_meetings")
-    .select("meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+    .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
     .eq("user_id", userId)
     .gte("date", periodFrom)
     .lte("date", periodTo);
@@ -211,7 +236,7 @@ export async function exportDashboardPdf(
       const subIds = subordinates.map((s: any) => s.id);
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
-        .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+        .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
         .in("user_id", subIds)
         .gte("date", periodFrom)
         .lte("date", periodTo);
@@ -306,7 +331,14 @@ export async function exportDashboardPdf(
     ]);
 
     // Totals row
-    const zeroStats: PersonStats = { name: "", role: "", planFsa: 0, planPoh: 0, planSer: 0, planPor: 0, fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, newFsa: 0, newPoh: 0, newSer: 0, newPor: 0 };
+    const zeroStats: PersonStats = {
+      name: "", role: "",
+      planFsa: 0, planPoh: 0, planSer: 0, planPor: 0,
+      fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0,
+      newFsa: 0, newPoh: 0, newSer: 0, newPor: 0,
+      infoCount: 0, infoNovi: 0, infoStaracci: 0,
+      postCount: 0, postNovi: 0, postStaracci: 0,
+    };
     const totals = teamStats.reduce<PersonStats>((acc, s) => ({
       ...acc,
       planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
@@ -315,6 +347,12 @@ export async function exportDashboardPdf(
       ref: acc.ref + s.ref, bj: acc.bj + s.bj,
       newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
       newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
+      infoCount: acc.infoCount + s.infoCount,
+      infoNovi: acc.infoNovi + s.infoNovi,
+      infoStaracci: acc.infoStaracci + s.infoStaracci,
+      postCount: acc.postCount + s.postCount,
+      postNovi: acc.postNovi + s.postNovi,
+      postStaracci: acc.postStaracci + s.postStaracci,
     }), zeroStats);
 
     teamBody.push([
@@ -341,6 +379,75 @@ export async function exportDashboardPdf(
       margin: { left: 14, right: 14 },
       didParseCell: (data: any) => {
         if (data.section === "body" && data.row.index === teamBody.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = TOTALS_FILL;
+        }
+      },
+    });
+  }
+
+  // ── INFO / POST stats — only for vedoucí / BV target ────────────────────
+  const showInfoPost = userRole === "vedouci" || userRole === "budouci_vedouci";
+  if (showInfoPost) {
+    const lastY = (doc as any).lastAutoTable?.finalY || 60;
+    let infoStartY = lastY + 12;
+    if (infoStartY > doc.internal.pageSize.getHeight() - 50) {
+      doc.addPage();
+      infoStartY = 16;
+    }
+
+    doc.setFontSize(13);
+    doc.setFont(fontName, "bold");
+    doc.text("Info & Postinfo", 14, infoStartY);
+
+    const infoHeadRow1: any[] = [
+      { content: "", rowSpan: 2 },
+      { content: "Info schůzky", colSpan: 3 },
+      { content: "Postinfo", colSpan: 3 },
+    ];
+    const infoHeadRow2 = ["Schůzek", "Noví", "Staráčci", "Schůzek", "Noví", "Staráčci"];
+
+    const infoBody: any[] = [
+      [
+        userName,
+        ownStats.infoCount, ownStats.infoNovi, ownStats.infoStaracci,
+        ownStats.postCount, ownStats.postNovi, ownStats.postStaracci,
+      ],
+    ];
+
+    if (showTeam && teamStats.length > 0) {
+      for (const s of teamStats) {
+        infoBody.push([
+          s.name,
+          s.infoCount, s.infoNovi, s.infoStaracci,
+          s.postCount, s.postNovi, s.postStaracci,
+        ]);
+      }
+      const totInfoCount = teamStats.reduce((a, s) => a + s.infoCount, 0) + ownStats.infoCount;
+      const totInfoNovi = teamStats.reduce((a, s) => a + s.infoNovi, 0) + ownStats.infoNovi;
+      const totInfoStar = teamStats.reduce((a, s) => a + s.infoStaracci, 0) + ownStats.infoStaracci;
+      const totPostCount = teamStats.reduce((a, s) => a + s.postCount, 0) + ownStats.postCount;
+      const totPostNovi = teamStats.reduce((a, s) => a + s.postNovi, 0) + ownStats.postNovi;
+      const totPostStar = teamStats.reduce((a, s) => a + s.postStaracci, 0) + ownStats.postStaracci;
+      infoBody.push([
+        "CELKEM",
+        totInfoCount, totInfoNovi, totInfoStar,
+        totPostCount, totPostNovi, totPostStar,
+      ]);
+    }
+
+    autoTable(doc, {
+      startY: infoStartY + 4,
+      head: [infoHeadRow1, infoHeadRow2],
+      body: infoBody,
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 50, halign: "left" } },
+      margin: { left: 14, right: 14 },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.row.index === infoBody.length - 1 && infoBody.length > 1) {
           data.cell.styles.fontStyle = "bold";
           data.cell.styles.fillColor = TOTALS_FILL;
         }

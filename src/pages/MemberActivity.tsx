@@ -108,22 +108,35 @@ const MemberActivity = () => {
 
   // Info & Postinfo meeting counts for vedouci/BV members in current production period
   const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
-  const { data: infoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+  const { data: infoPostCounts = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 } } = useQuery({
     queryKey: ["member_info_post", userId, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
-      if (!userId) return { info: 0, postinfo: 0 };
+      const empty = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 };
+      if (!userId) return empty;
       const { data } = await supabase
         .from("client_meetings")
-        .select("meeting_type")
+        .select("meeting_type, info_pocet_lidi, info_zucastnil_se, user_id")
         .eq("user_id", userId)
         .eq("cancelled", false)
         .in("meeting_type", ["INFO", "POST"])
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"));
       const rows = data || [];
+      const infoRows = rows.filter((r: any) => r.meeting_type === "INFO");
+      const postRows = rows.filter((r: any) => r.meeting_type === "POST");
+      const sumNovi = (arr: any[]) => arr.reduce((s, r) => s + (Number(r.info_pocet_lidi) || 0), 0);
+      const uniqAttended = (arr: any[]) => {
+        const ids = new Set<string>();
+        for (const r of arr) if (r.info_zucastnil_se === true && r.user_id) ids.add(r.user_id);
+        return ids.size;
+      };
       return {
-        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
-        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+        info: infoRows.length,
+        postinfo: postRows.length,
+        noviInfo: sumNovi(infoRows),
+        staracciInfo: uniqAttended(infoRows),
+        noviPost: sumNovi(postRows),
+        staracciPost: uniqAttended(postRows),
       };
     },
     enabled: !!userId && isVedouciOrBV,
@@ -350,20 +363,28 @@ const MemberActivity = () => {
             }}>
               Info & Postinfo
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
-              <div>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Info schůzky</div>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
-                  {infoPostCounts.info}
+            {[
+              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
+              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+            ].map(({ label, count, novi, staracci }) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>{label}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  {[
+                    { l: "Schůzek", v: count },
+                    { l: "Noví", v: novi },
+                    { l: "Staráčci", v: staracci },
+                  ].map(({ l, v }) => (
+                    <div key={l} style={{
+                      background: "#dde8ea", borderRadius: 12, padding: "8px 4px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 10, color: "#00555f", fontWeight: 600, marginBottom: 2 }}>{l}</div>
+                      <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "#00555f" }}>{v}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Postinfo</div>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
-                  {infoPostCounts.postinfo}
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
@@ -438,22 +459,28 @@ const MemberActivity = () => {
             Info & Postinfo
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-input bg-card px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                Info schůzky
+            {[
+              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
+              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+            ].map(({ label, count, novi, staracci }) => (
+              <div key={label} className="rounded-xl border border-input bg-card p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                  {label}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { l: "Schůzek", v: count },
+                    { l: "Noví", v: novi },
+                    { l: "Staráčci", v: staracci },
+                  ].map(({ l, v }) => (
+                    <div key={l} className="text-center">
+                      <div className="text-[10px] font-semibold text-muted-foreground mb-1">{l}</div>
+                      <div className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
-                {infoPostCounts.info}
-              </div>
-            </div>
-            <div className="rounded-xl border border-input bg-card px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                Postinfo
-              </div>
-              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
-                {infoPostCounts.postinfo}
-              </div>
-            </div>
+            ))}
           </div>
         </section>
       )}
