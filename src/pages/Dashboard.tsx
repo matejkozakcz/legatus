@@ -1891,15 +1891,17 @@ const Dashboard = () => {
           {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
           {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-              <StatCard
+              <InfoPostDesktopCard
                 label="Info schůzky"
-                actual={teamInfoPostCounts.info}
-                actualLabel="v aktuálním období"
+                count={teamInfoPostCounts.info}
+                novi={teamInfoPostCounts.noviInfo}
+                staracci={teamInfoPostCounts.staracciInfo}
               />
-              <StatCard
+              <InfoPostDesktopCard
                 label="Postinfo"
-                actual={teamInfoPostCounts.postinfo}
-                actualLabel="v aktuálním období"
+                count={teamInfoPostCounts.postinfo}
+                novi={teamInfoPostCounts.noviPost}
+                staracci={teamInfoPostCounts.staracciPost}
               />
             </div>
           )}
