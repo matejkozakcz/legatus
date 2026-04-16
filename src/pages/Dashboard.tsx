@@ -799,6 +799,28 @@ const Dashboard = () => {
     enabled: !!activeUserId,
   });
 
+  // Vedouci/BV: count INFO and POST meetings across team (subtree) for current period
+  // RLS limits visibility to user's subtree + self, so we don't need to filter by user_id explicitly
+  const { data: teamInfoPostCounts = { info: 0, postinfo: 0 } } = useQuery({
+    queryKey: ["team_info_post_counts", activeUserId, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      if (!activeUserId) return { info: 0, postinfo: 0 };
+      const { data } = await supabase
+        .from("client_meetings")
+        .select("meeting_type")
+        .eq("cancelled", false)
+        .in("meeting_type", ["INFO", "POST"])
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      const rows = data || [];
+      return {
+        info: rows.filter((r: any) => r.meeting_type === "INFO").length,
+        postinfo: rows.filter((r: any) => r.meeting_type === "POST").length,
+      };
+    },
+    enabled: !!activeUserId && (activeRole === "vedouci" || activeRole === "budouci_vedouci"),
+  });
+
   // Vedoucí goals per period
   const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
     queryKey: ["vedouci_goals", profile?.id, periodKey],
