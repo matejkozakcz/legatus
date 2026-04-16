@@ -54,6 +54,8 @@ const TYPE_BORDER: Record<string, string> = {
   SER: "#f97316",
   POH: "#3b82f6",
   NAB: "#7e22ce",
+  INFO: "#7b5ea7",
+  POST: "#5e7ab5",
 };
 
 type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
@@ -69,7 +71,11 @@ function needsFollowUp(m: Meeting): boolean {
   if (m.cancelled) return false;
   const todayStr = format(new Date(), "yyyy-MM-dd");
   if (m.date >= todayStr) return false;
-  return !m.outcome_recorded;
+  if (m.outcome_recorded) return false;
+  if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+    return (m as any).info_pocet_lidi == null;
+  }
+  return true;
 }
 
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
