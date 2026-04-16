@@ -1251,15 +1251,17 @@ const Dashboard = () => {
 
             {/* Info & Postinfo team stats — vedouci/BV only, mobile */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <MobileStatCard
+              <InfoPostMobileCard
                 label="Info schůzky"
-                actual={teamInfoPostCounts.info}
-                sublabel="v aktuálním období"
+                count={teamInfoPostCounts.info}
+                novi={teamInfoPostCounts.noviInfo}
+                staracci={teamInfoPostCounts.staracciInfo}
               />
-              <MobileStatCard
+              <InfoPostMobileCard
                 label="Postinfo"
-                actual={teamInfoPostCounts.postinfo}
-                sublabel="v aktuálním období"
+                count={teamInfoPostCounts.postinfo}
+                novi={teamInfoPostCounts.noviPost}
+                staracci={teamInfoPostCounts.staracciPost}
               />
             </div>
           </>
