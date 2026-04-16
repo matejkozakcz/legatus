@@ -396,7 +396,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         </div>
 
         {/* Promotion History */}
-        {promotionHistory.length > 0 && (
+        {isGodMode && promotionHistory.length > 0 && (
           <>
             <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
             <div>
