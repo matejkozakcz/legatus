@@ -6,7 +6,7 @@ import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
-export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB";
+export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB" | "INFO" | "POST";
 
 export interface MeetingForm {
   date: string;
@@ -28,6 +28,14 @@ export interface MeetingForm {
   case_id: string;
   location_type: string;
   location_detail: string;
+  // INFO/POST outcome fields
+  info_zucastnil_se: boolean | null;
+  info_pocet_lidi: string;
+}
+
+/** Roles allowed to create INFO and POST meeting types */
+export function canCreateInfoPost(role: string | undefined): boolean {
+  return role === "vedouci" || role === "budouci_vedouci";
 }
 
 export interface Case {
@@ -44,6 +52,8 @@ export function meetingTypeLabel(t: MeetingType): string {
   if (t === "POR") return "Poradenství";
   if (t === "SER") return "Servis";
   if (t === "NAB") return "Nábor";
+  if (t === "INFO") return "Info";
+  if (t === "POST") return "Postinfo";
   return "Pohovor";
 }
 
@@ -67,6 +77,8 @@ export const defaultMeetingForm = (date?: string): MeetingForm => ({
   case_id: "",
   location_type: "",
   location_detail: "",
+  info_zucastnil_se: null,
+  info_pocet_lidi: "",
 });
 
 // ─── Shared sub-components ───────────────────────────────────────────────────
