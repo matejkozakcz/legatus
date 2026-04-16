@@ -1,1 +1,4 @@
 project_id = "hiisenvrdakfnlzkiand"
+
+[functions.check-followups]
+schedule = "0 19 * * *"

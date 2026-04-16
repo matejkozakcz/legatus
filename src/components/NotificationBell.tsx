@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle } from "lucide-react";
+import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -30,6 +30,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   garant_share: <Share2 className="h-4 w-4 text-muted-foreground" />,
   promotion_eligible: <TrendingUp className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
   followup_needed: <AlertCircle className="h-4 w-4" style={{ color: "#fc7c71" }} />,
+  daily_recap: <ListChecks className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
 };
 
 export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
