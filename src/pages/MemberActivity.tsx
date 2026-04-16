@@ -159,13 +159,11 @@ const MemberActivity = () => {
     enabled: !!userId && isVedouciOrBV,
   });
 
-  // Period stats — computed directly from client_meetings (same logic as PDF export)
-  // planned = ALL meetings in period (incl. cancelled & without recorded outcome)
-  // actual  = non-cancelled meetings with date ≤ today
-  const { data: periodStats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
+  // Period stats — single source of truth (computeMeetingStats), identical to PDF & Dashboard.
+  const { data: periodStats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
     queryKey: ["member_period_stats", userId, selectedYear, selectedMonth],
     queryFn: async () => {
-      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
+      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
       if (!userId) return empty;
       const todayStr = format(new Date(), "yyyy-MM-dd");
       const { data } = await supabase
@@ -174,22 +172,7 @@ const MemberActivity = () => {
         .eq("user_id", userId)
         .gte("date", format(periodStart, "yyyy-MM-dd"))
         .lte("date", format(periodEnd, "yyyy-MM-dd"));
-      const rows = data || [];
-      const planned = rows; // ALL meetings, including cancelled
-      const actual = rows.filter((r: any) => !r.cancelled && r.date <= todayStr);
-      const countType = (arr: any[], type: string) => arr.filter((r: any) => r.meeting_type === type).length;
-      const sumRefs = (arr: any[]) =>
-        arr.reduce(
-          (s, r: any) =>
-            s + (Number(r.doporuceni_fsa) || 0) + (Number(r.doporuceni_poradenstvi) || 0) + (Number(r.doporuceni_pohovor) || 0),
-          0,
-        );
-      return {
-        fsa: { planned: countType(planned, "FSA"), actual: countType(actual, "FSA") },
-        poh: { planned: countType(planned, "POH"), actual: countType(actual, "POH") },
-        ser: { planned: countType(planned, "SER"), actual: countType(actual, "SER") },
-        ref: { planned: sumRefs(planned), actual: sumRefs(actual) },
-      };
+      return computeMeetingStats((data || []) as any, todayStr);
     },
     enabled: !!userId,
   });
