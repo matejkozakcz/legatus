@@ -20,6 +20,7 @@ import {
   getProductionPeriodMonth,
 } from "@/lib/productionPeriod";
 import { exportDashboardPdf } from "@/lib/exportPdf";
+import { computeMeetingStats } from "@/lib/meetingStats";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
