@@ -16,6 +16,7 @@ interface MeetingRow {
   cancelled: boolean;
   date: string;
   created_at: string;
+  outcome_recorded: boolean;
   doporuceni_fsa: number;
   doporuceni_poradenstvi: number;
   doporuceni_pohovor: number;
@@ -65,15 +66,16 @@ function computePersonStats(
   role: string,
 ): PersonStats {
   const active = meetings.filter((m) => !m.cancelled);
-  const past = active.filter((m) => m.date <= todayStr);
+  // "Proběhlá" = uživatel ji potvrdil (outcome_recorded), nikoli jen date <= today
+  const past = active.filter((m) => m.outcome_recorded === true);
 
   const countAll = (type: string) => active.filter((m) => m.meeting_type === type).length;
   const countPast = (type: string) => past.filter((m) => m.meeting_type === type).length;
-  const refs = active.reduce(
+  const refs = past.reduce(
     (acc, m) => acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
     0,
   );
-  const bj = active.reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
+  const bj = past.reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
 
   const newlyBooked = active.filter((m) => {
     const created = m.created_at?.slice(0, 10);
@@ -202,7 +204,7 @@ export async function exportDashboardPdf(
   // Fetch own meetings
   const { data: ownMeetings = [] } = await supabase
     .from("client_meetings")
-    .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
+    .select("user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
     .eq("user_id", userId)
     .gte("date", periodFrom)
     .lte("date", periodTo);
@@ -236,7 +238,7 @@ export async function exportDashboardPdf(
       const subIds = subordinates.map((s: any) => s.id);
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
-        .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
+        .select("user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
         .in("user_id", subIds)
         .gte("date", periodFrom)
         .lte("date", periodTo);
