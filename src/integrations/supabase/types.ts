@@ -165,6 +165,8 @@ export type Database = {
           has_pohovor: boolean
           has_poradenstvi: boolean
           id: string
+          info_pocet_lidi: number | null
+          info_zucastnil_se: boolean | null
           location_detail: string | null
           location_type: string | null
           meeting_time: string | null
@@ -196,6 +198,8 @@ export type Database = {
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
+          info_pocet_lidi?: number | null
+          info_zucastnil_se?: boolean | null
           location_detail?: string | null
           location_type?: string | null
           meeting_time?: string | null
@@ -227,6 +231,8 @@ export type Database = {
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
+          info_pocet_lidi?: number | null
+          info_zucastnil_se?: boolean | null
           location_detail?: string | null
           location_type?: string | null
           meeting_time?: string | null
