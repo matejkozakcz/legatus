@@ -660,8 +660,7 @@ export const MojeAktivityContent = () => {
               </tr>
             </thead>
             <tbody>
-              {weeks.map((weekStart) => {
-                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+              {weeks.map((weekStart, index) => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 const isCurrentWeek = isSameWeek(weekStart, now, { weekStartsOn: 1 });
@@ -671,7 +670,7 @@ export const MojeAktivityContent = () => {
                 return (
                   <tr key={weekStr} className={isCurrentWeek ? "current" : isPast ? "past" : ""}>
                     <td className="text-left whitespace-nowrap font-medium">
-                      {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
+                      Týden {index + 1}
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
                       const cellValue = (record as any)?.[col.key] || 0;

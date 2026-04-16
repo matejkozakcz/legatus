@@ -548,14 +548,13 @@ const MemberActivity = () => {
               </tr>
             </thead>
             <tbody>
-              {weeks.map((weekStart) => {
-                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+              {weeks.map((weekStart, index) => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const record = records.find((r) => r.week_start === weekStr);
                 return (
                   <tr key={weekStr} className="past">
                     <td className="text-left whitespace-nowrap font-medium">
-                      {format(weekStart, "d.", { locale: cs })}–{format(weekEnd, "d. M.", { locale: cs })}
+                      Týden {index + 1}
                     </td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
                       const val = col.key === "bj"
