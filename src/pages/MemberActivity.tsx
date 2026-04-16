@@ -1,10 +1,8 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
 import {
-  startOfMonth,
-  endOfMonth,
   startOfWeek,
   endOfWeek,
   addWeeks,
@@ -16,6 +14,14 @@ import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
+import { PeriodNavigator } from "@/components/PeriodNavigator";
+import {
+  getProductionPeriodForMonth,
+  getProductionPeriodMonth,
+} from "@/lib/productionPeriod";
+import { exportDashboardPdf } from "@/lib/exportPdf";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
@@ -32,6 +38,11 @@ const ROLE_COLORS: Record<string, string> = {
   ziskatel: "#f5a623",
   novacek: "#8e8e93",
 };
+
+const MONTH_NAMES = [
+  "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
+  "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
+];
 
 const ACTIVITY_COLUMNS = [
   { key: "fsa_actual", header: "Analýzy" },
@@ -56,10 +67,21 @@ const MOBILE_ACTIVITIES = [
 const MemberActivity = () => {
   const { userId } = useParams<{ userId: string }>();
   const isMobile = useIsMobile();
+  const { profile: viewerProfile } = useAuth();
   const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  const currentPeriod = getProductionPeriodMonth(now);
+
+  const [selectedYear, setSelectedYear] = useState(currentPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
+  const [exporting, setExporting] = useState(false);
+
+  const periodRange = useMemo(
+    () => getProductionPeriodForMonth(selectedYear, selectedMonth),
+    [selectedYear, selectedMonth],
+  );
+  const periodStart = periodRange.start;
+  const periodEnd = periodRange.end;
 
   const { data: memberProfile } = useQuery({
     queryKey: ["profile", userId],
@@ -77,34 +99,34 @@ const MemberActivity = () => {
 
   const weeks = useMemo(() => {
     const result: Date[] = [];
-    let ws = startOfWeek(monthStart, { weekStartsOn: 1 });
-    while (ws <= monthEnd) {
+    let ws = startOfWeek(periodStart, { weekStartsOn: 1 });
+    while (ws <= periodEnd) {
       result.push(ws);
       ws = addWeeks(ws, 1);
     }
     return result;
-  }, []);
+  }, [periodStart, periodEnd]);
 
   const { data: records = [] } = useQuery({
-    queryKey: ["activity_records", userId, "month", format(monthStart, "yyyy-MM")],
+    queryKey: ["activity_records", userId, "period", selectedYear, selectedMonth],
     queryFn: async () => {
-      const firstWeek = startOfWeek(monthStart, { weekStartsOn: 1 });
+      const firstWeek = startOfWeek(periodStart, { weekStartsOn: 1 });
       const { data, error } = await supabase
         .from("activity_records")
         .select("*")
         .eq("user_id", userId!)
         .gte("week_start", format(firstWeek, "yyyy-MM-dd"))
-        .lte("week_start", format(monthEnd, "yyyy-MM-dd"));
+        .lte("week_start", format(periodEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data || [];
     },
     enabled: !!userId,
   });
 
-  // Info & Postinfo meeting counts for vedouci/BV members in current production period
+  // Info & Postinfo meeting counts for vedouci/BV members in selected production period
   const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
   const { data: infoPostCounts = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 } } = useQuery({
-    queryKey: ["member_info_post", userId, format(monthStart, "yyyy-MM")],
+    queryKey: ["member_info_post", userId, selectedYear, selectedMonth],
     queryFn: async () => {
       const empty = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 };
       if (!userId) return empty;
@@ -114,8 +136,8 @@ const MemberActivity = () => {
         .eq("user_id", userId)
         .eq("cancelled", false)
         .in("meeting_type", ["INFO", "POST"])
-        .gte("date", format(monthStart, "yyyy-MM-dd"))
-        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+        .gte("date", format(periodStart, "yyyy-MM-dd"))
+        .lte("date", format(periodEnd, "yyyy-MM-dd"));
       const rows = data || [];
       const infoRows = rows.filter((r: any) => r.meeting_type === "INFO");
       const postRows = rows.filter((r: any) => r.meeting_type === "POST");
@@ -166,6 +188,36 @@ const MemberActivity = () => {
   const mobileRecord = records.find((r) => r.week_start === mobileWeekStr);
   const isCurrentWeek = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
+  const handlePrevMonth = () => {
+    if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
+    else { setSelectedMonth((m) => m - 1); }
+  };
+  const handleNextMonth = () => {
+    if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
+    else { setSelectedMonth((m) => m + 1); }
+  };
+
+  const handleExportPdf = async () => {
+    if (!userId || !memberProfile) return;
+    setExporting(true);
+    try {
+      await exportDashboardPdf(
+        userId,
+        memberProfile.role,
+        memberProfile.full_name,
+        "month",
+        selectedYear,
+        selectedMonth,
+        viewerProfile?.role,
+      );
+    } catch (e) {
+      console.error("PDF export failed", e);
+      toast.error("Export PDF se nezdařil");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (isMobile) {
     const rec = mobileRecord as any;
     const refPlanned = rec?.ref_planned || 0;
@@ -184,7 +236,7 @@ const MemberActivity = () => {
           <Link to="/tym" style={{ color: "#00555f", display: "flex" }}>
             <ArrowLeft size={20} />
           </Link>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
               {memberProfile?.full_name || "Načítání..."}
             </div>
@@ -203,6 +255,37 @@ const MemberActivity = () => {
               </Badge>
             )}
           </div>
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting || !memberProfile}
+            style={{
+              width: 36, height: 36, borderRadius: 10, background: "#00abbd",
+              border: "none", cursor: exporting ? "default" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: exporting ? 0.6 : 1,
+            }}
+            aria-label="Export PDF"
+          >
+            {exporting ? <Loader2 size={16} color="#fff" className="animate-spin" /> : <Download size={16} color="#fff" />}
+          </button>
+        </div>
+
+        {/* Period navigator (mobile) */}
+        <div style={{ marginBottom: 12 }}>
+          <PeriodNavigator
+            label="Produkční období"
+            title={`${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+            subtitle={`${format(periodStart, "d. M.", { locale: cs })} – ${format(periodEnd, "d. M. yyyy", { locale: cs })}`}
+            onPrev={handlePrevMonth}
+            onNext={handleNextMonth}
+            selectedDate={new Date(selectedYear, selectedMonth, 1)}
+            calendarMonth={new Date(selectedYear, selectedMonth, 1)}
+            onSelectDate={(date) => {
+              const period = getProductionPeriodMonth(date);
+              setSelectedYear(period.year);
+              setSelectedMonth(period.month);
+            }}
+          />
         </div>
 
         {/* Week navigation */}
@@ -308,7 +391,7 @@ const MemberActivity = () => {
           ))}
         </div>
 
-        {/* Monthly summary — single compact card */}
+        {/* Period summary — single compact card */}
         <div style={{
           background: "#ffffff",
           borderRadius: 16,
@@ -319,7 +402,7 @@ const MemberActivity = () => {
             fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
             color: "var(--text-primary)", marginBottom: 12,
           }}>
-            Měsíční souhrn
+            Souhrn za období
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
             {[
@@ -386,10 +469,10 @@ const MemberActivity = () => {
     );
   }
 
-  // Desktop view — unchanged
+  // Desktop view
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Link to="/tym" style={{ color: "var(--text-muted)" }} className="hover:opacity-70 transition-opacity">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -397,6 +480,31 @@ const MemberActivity = () => {
         <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           {memberProfile?.full_name || "Načítání..."} — Moje aktivity
         </h1>
+        <div className="ml-auto flex items-center gap-3">
+          <PeriodNavigator
+            label="Produkční období"
+            title={`${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+            subtitle={`${format(periodStart, "d. M.", { locale: cs })} – ${format(periodEnd, "d. M. yyyy", { locale: cs })}`}
+            onPrev={handlePrevMonth}
+            onNext={handleNextMonth}
+            selectedDate={new Date(selectedYear, selectedMonth, 1)}
+            calendarMonth={new Date(selectedYear, selectedMonth, 1)}
+            onSelectDate={(date) => {
+              const period = getProductionPeriodMonth(date);
+              setSelectedYear(period.year);
+              setSelectedMonth(period.month);
+            }}
+          />
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting || !memberProfile}
+            className="btn btn-md btn-primary flex items-center gap-2 whitespace-nowrap"
+            style={{ height: 40 }}
+          >
+            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Export PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

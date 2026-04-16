@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Bell, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
+import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
+import { getProductionPeriodMonth, getProductionPeriodForMonth } from "@/lib/productionPeriod";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -84,6 +85,53 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     },
   });
 
+  // Current production period (for BJ chips)
+  const currentPeriod = getProductionPeriodMonth(new Date());
+  const periodRange = getProductionPeriodForMonth(currentPeriod.year, currentPeriod.month);
+  const periodStartStr = format(periodRange.start, "yyyy-MM-dd");
+  const periodEndStr = format(periodRange.end, "yyyy-MM-dd");
+
+  // Personal BJ for the member in current production period (all roles)
+  const { data: personalBj = 0 } = useQuery({
+    queryKey: ["member_personal_bj", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .eq("user_id", member.id)
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      if (error) throw error;
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
+    },
+  });
+
+  // Team BJ — only for vedouci / budouci_vedouci. Sum across the member's subtree (their own + people with vedouci_id = member.id)
+  const isLeader = member.role === "vedouci" || member.role === "budouci_vedouci";
+  const { data: teamBj = 0 } = useQuery({
+    queryKey: ["member_team_bj", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      // Get subtree user ids (member + direct subordinates by vedouci_id)
+      const { data: subs } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("vedouci_id", member.id)
+        .eq("is_active", true);
+      const ids = [member.id, ...((subs || []).map((s: any) => s.id))];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("podepsane_bj")
+        .in("user_id", ids)
+        .eq("cancelled", false)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      if (error) throw error;
+      return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
+    },
+    enabled: isLeader,
+  });
+
   const { data: upcomingMeetings = [], isLoading: isMeetingsLoading } = useQuery({
     queryKey: ["member_upcoming_meetings", member.id],
     queryFn: async () => {
@@ -106,6 +154,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         cancelled: boolean;
       }>;
     },
+    enabled: isGodMode,
   });
 
   const { data: promotionHistory = [], isLoading: isHistoryLoading } = useQuery({
@@ -310,8 +359,24 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
             {member.full_name}
           </h3>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className={badge.className}>{badge.label}</span>
+            <span
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}
+              title="Osobní BJ — aktuální produkční období"
+            >
+              Osobní {personalBj} BJ
+            </span>
+            {isLeader && (
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
+                title="Týmové BJ — aktuální produkční období"
+              >
+                Tým {teamBj} BJ
+              </span>
+            )}
           </div>
         </div>
 
@@ -352,48 +417,52 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           )}
         </div>
 
-        {/* Upcoming meetings */}
-        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
-        <div>
-          <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
-            Nadcházející schůzky
-          </p>
-          {isMeetingsLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
-            </div>
-          ) : upcomingMeetings.length === 0 ? (
-            <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
-              Žádné naplánované schůzky
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {upcomingMeetings.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-3 rounded-lg"
-                  style={{
-                    padding: "8px 12px",
-                    background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.04)",
-                    border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
-                  }}
-                >
-                  <Calendar size={14} style={{ color: "#00abbd", flexShrink: 0 }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-body font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                      {meetingTypeLabels[m.meeting_type] || m.meeting_type}
-                      {m.case_name && ` — ${m.case_name}`}
-                    </p>
-                    <p className="text-[11px] font-body" style={{ color: "var(--text-muted)" }}>
-                      {format(new Date(m.date), "EEEE d. MMMM", { locale: cs })}
-                      {m.meeting_time && `, ${m.meeting_time.slice(0, 5)}`}
-                    </p>
-                  </div>
+        {/* Upcoming meetings — God mode only */}
+        {isGodMode && (
+          <>
+            <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+            <div>
+              <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                Nadcházející schůzky
+              </p>
+              {isMeetingsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="animate-spin" size={20} style={{ color: "#00abbd" }} />
                 </div>
-              ))}
+              ) : upcomingMeetings.length === 0 ? (
+                <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+                  Žádné naplánované schůzky
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center gap-3 rounded-lg"
+                      style={{
+                        padding: "8px 12px",
+                        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,85,95,0.04)",
+                        border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e1e9eb",
+                      }}
+                    >
+                      <Calendar size={14} style={{ color: "#00abbd", flexShrink: 0 }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-body font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                          {meetingTypeLabels[m.meeting_type] || m.meeting_type}
+                          {m.case_name && ` — ${m.case_name}`}
+                        </p>
+                        <p className="text-[11px] font-body" style={{ color: "var(--text-muted)" }}>
+                          {format(new Date(m.date), "EEEE d. MMMM", { locale: cs })}
+                          {m.meeting_time && `, ${m.meeting_time.slice(0, 5)}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         {/* Promotion History */}
         {isGodMode && promotionHistory.length > 0 && (
@@ -620,18 +689,6 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
         {/* Action buttons */}
         <div className="flex flex-col gap-2">
-          {onNotify && (
-            <button
-              className="btn btn-md btn-ghost w-full flex items-center justify-center gap-2"
-              onClick={() => {
-                onClose();
-                onNotify();
-              }}
-            >
-              <Bell size={16} />
-              Poslat připomínku
-            </button>
-          )}
           <button
             className="btn btn-md btn-secondary w-full flex items-center justify-center gap-2"
             onClick={() => {
