@@ -237,7 +237,7 @@ export const MojeAktivityContent = () => {
       const todayStr = format(new Date(), "yyyy-MM-dd");
       const { data } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, date, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .select("meeting_type, cancelled, date, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
         .eq("user_id", profile.id)
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"));
