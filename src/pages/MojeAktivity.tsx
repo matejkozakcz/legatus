@@ -163,12 +163,15 @@ export const MojeAktivityContent = () => {
   const monthStart = periodRange.start;
   const monthEnd = periodRange.end;
 
-  // Get weeks in current production period
+  // Show only weeks that lie ENTIRELY within the production period
+  // (week start >= periodStart AND week end <= periodEnd) — so that the
+  // "Celkem" row in the table matches the cards above.
   const weeks = useMemo(() => {
     const result: Date[] = [];
     let weekStart = startOfWeek(monthStart, { weekStartsOn: 1 });
     while (weekStart <= monthEnd) {
-      result.push(weekStart);
+      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+      if (weekStart >= monthStart && weekEnd <= monthEnd) result.push(weekStart);
       weekStart = addWeeks(weekStart, 1);
     }
     return result;
