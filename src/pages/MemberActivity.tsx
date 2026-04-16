@@ -334,6 +334,38 @@ const MemberActivity = () => {
             ))}
           </div>
         </div>
+
+        {/* Info & Postinfo — vedouci/BV only */}
+        {isVedouciOrBV && (
+          <div style={{
+            background: "#ffffff",
+            borderRadius: 16,
+            padding: "14px 16px",
+            border: "1px solid #e1e9eb",
+            marginTop: 12,
+          }}>
+            <div style={{
+              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
+              color: "var(--text-primary)", marginBottom: 12,
+            }}>
+              Info & Postinfo
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Info schůzky</div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
+                  {infoPostCounts.info}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Postinfo</div>
+                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
+                  {infoPostCounts.postinfo}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
