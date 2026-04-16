@@ -364,10 +364,11 @@ export function MeetingFormModal({
         {/* 2. Typ schůzky */}
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
-          <div className="flex gap-2 items-center">
-            <div className="flex gap-2 flex-1">
-              {(["FSA", "NAB", "SER", "POR", "POH"] as MeetingType[])
+          <div className="flex gap-2 items-center flex-wrap">
+            <div className="flex gap-2 flex-1 flex-wrap">
+              {(["FSA", "NAB", "SER", "POR", "POH", "INFO", "POST"] as MeetingType[])
                 .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit) && (t !== "SER" || userRole !== "novacek"))
+                .filter((t) => ((t !== "INFO" && t !== "POST") || canCreateInfoPost(userRole)))
                 .map((t) => (
                   <button
                     key={t}
