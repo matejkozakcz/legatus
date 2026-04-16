@@ -1234,6 +1234,20 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* Info & Postinfo team stats — vedouci/BV only, mobile */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <MobileStatCard
+                label="Info schůzky"
+                actual={teamInfoPostCounts.info}
+                sublabel="v aktuálním období"
+              />
+              <MobileStatCard
+                label="Postinfo"
+                actual={teamInfoPostCounts.postinfo}
+                sublabel="v aktuálním období"
+              />
+            </div>
           </>
         ) : (
           <>
@@ -1857,6 +1871,22 @@ const Dashboard = () => {
               color="#10b981"
             />
           </div>
+
+          {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
+          {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              <StatCard
+                label="Info schůzky"
+                actual={teamInfoPostCounts.info}
+                actualLabel="v aktuálním období"
+              />
+              <StatCard
+                label="Postinfo"
+                actual={teamInfoPostCounts.postinfo}
+                actualLabel="v aktuálním období"
+              />
+            </div>
+          )}
         </section>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
