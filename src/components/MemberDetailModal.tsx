@@ -49,9 +49,10 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { profile: viewerProfile } = useAuth();
+  const { profile: viewerProfile, isAdmin, godMode } = useAuth();
   const queryClient = useQueryClient();
   const viewerRole = viewerProfile?.role;
+  const isGodMode = isAdmin && godMode;
   const canEditOnboarding = viewerRole === "vedouci" || viewerRole === "budouci_vedouci";
   const isNovacek = member.role === "novacek";
 
@@ -395,7 +396,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         </div>
 
         {/* Promotion History */}
-        {promotionHistory.length > 0 && (
+        {isGodMode && promotionHistory.length > 0 && (
           <>
             <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
             <div>
