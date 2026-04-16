@@ -202,7 +202,7 @@ export async function exportDashboardPdf(
   // Fetch own meetings
   const { data: ownMeetings = [] } = await supabase
     .from("client_meetings")
-    .select("meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj")
+    .select("user_id, meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
     .eq("user_id", userId)
     .gte("date", periodFrom)
     .lte("date", periodTo);
