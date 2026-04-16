@@ -314,6 +314,12 @@ export function MeetingFormModal({
   const canSave = isInfoPost ? !!form.date : (!!(form.case_id || pendingClientName) && !!form.date);
 
   const handleSave = async () => {
+    // INFO/POST: never linked to a case
+    if (isInfoPost) {
+      const cleaned = { ...form, case_id: "", case_name: "" };
+      onSave(cleaned);
+      return;
+    }
     if (form.case_id) {
       onSave(form);
     } else if (pendingClientName && createCaseFn) {
