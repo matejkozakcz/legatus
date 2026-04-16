@@ -6,7 +6,7 @@ import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
-export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB";
+export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB" | "INFO" | "POST";
 
 export interface MeetingForm {
   date: string;
@@ -28,6 +28,14 @@ export interface MeetingForm {
   case_id: string;
   location_type: string;
   location_detail: string;
+  // INFO/POST outcome fields
+  info_zucastnil_se: boolean | null;
+  info_pocet_lidi: string;
+}
+
+/** Roles allowed to create INFO and POST meeting types */
+export function canCreateInfoPost(role: string | undefined): boolean {
+  return role === "vedouci" || role === "budouci_vedouci";
 }
 
 export interface Case {
@@ -44,6 +52,8 @@ export function meetingTypeLabel(t: MeetingType): string {
   if (t === "POR") return "Poradenství";
   if (t === "SER") return "Servis";
   if (t === "NAB") return "Nábor";
+  if (t === "INFO") return "Info";
+  if (t === "POST") return "Postinfo";
   return "Pohovor";
 }
 
@@ -67,6 +77,8 @@ export const defaultMeetingForm = (date?: string): MeetingForm => ({
   case_id: "",
   location_type: "",
   location_detail: "",
+  info_zucastnil_se: null,
+  info_pocet_lidi: "",
 });
 
 // ─── Shared sub-components ───────────────────────────────────────────────────
@@ -352,10 +364,11 @@ export function MeetingFormModal({
         {/* 2. Typ schůzky */}
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Typ schůzky</label>
-          <div className="flex gap-2 items-center">
-            <div className="flex gap-2 flex-1">
-              {(["FSA", "NAB", "SER", "POR", "POH"] as MeetingType[])
+          <div className="flex gap-2 items-center flex-wrap">
+            <div className="flex gap-2 flex-1 flex-wrap">
+              {(["FSA", "NAB", "SER", "POR", "POH", "INFO", "POST"] as MeetingType[])
                 .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit) && (t !== "SER" || userRole !== "novacek"))
+                .filter((t) => ((t !== "INFO" && t !== "POST") || canCreateInfoPost(userRole)))
                 .map((t) => (
                   <button
                     key={t}
@@ -503,6 +516,36 @@ export function MeetingFormModal({
                   label="Doporučení"
                   value={form.doporuceni_pohovor}
                   onChange={(v) => set({ doporuceni_pohovor: v })}
+                />
+              </div>
+            )}
+
+            {(form.meeting_type === "INFO" || form.meeting_type === "POST") && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Zúčastnil se?</label>
+                  <div className="flex gap-2">
+                    {([true, false] as const).map((val) => (
+                      <button
+                        key={String(val)}
+                        type="button"
+                        onClick={() => set({ info_zucastnil_se: val })}
+                        className={`flex-1 h-9 rounded-lg border text-xs font-semibold transition-colors ${form.info_zucastnil_se === val ? "border-transparent text-white" : "border-input bg-background text-muted-foreground"}`}
+                        style={
+                          form.info_zucastnil_se === val
+                            ? { background: val === true ? "#00abbd" : "#fc7c71" }
+                            : {}
+                        }
+                      >
+                        {val === true ? "Ano" : "Ne"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <NumberInput
+                  label="Počet lidí (mimo Legatus)"
+                  value={form.info_pocet_lidi}
+                  onChange={(v) => set({ info_pocet_lidi: v })}
                 />
               </div>
             )}

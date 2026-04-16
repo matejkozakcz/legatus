@@ -99,6 +99,8 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
   case_id: m.case_id || "",
   location_type: m.location_type || "",
   location_detail: m.location_detail || "",
+  info_zucastnil_se: (m as any).info_zucastnil_se ?? null,
+  info_pocet_lidi: (m as any).info_pocet_lidi != null ? String((m as any).info_pocet_lidi) : "",
 });
 
 // ─── Helper components ───────────────────────────────────────────────────────
@@ -113,6 +115,8 @@ function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (t === "POR") return { background: "#e8f5e9", color: "#2e7d32" };
   if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
   if (t === "NAB") return { background: "#f3e8ff", color: "#7e22ce" };
+  if (t === "INFO") return { background: "#ede4f6", color: "#7b5ea7" };
+  if (t === "POST") return { background: "#e3eaf5", color: "#5e7ab5" };
   return { background: "#fef3f2", color: "#c0392b" };
 }
 
@@ -514,6 +518,9 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         poradenstvi_status: null,
         has_pohovor: false,
         poznamka: form.poznamka.trim() || null,
+        // INFO/POST výsledek
+        info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
+        info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
       };
       if (id) {
         const { error } = await supabase
@@ -612,6 +619,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         case_id: editMeeting.case_id || "",
         location_type: editMeeting.location_type || "",
         location_detail: editMeeting.location_detail || "",
+        info_zucastnil_se: (editMeeting as any).info_zucastnil_se ?? null,
+        info_pocet_lidi: (editMeeting as any).info_pocet_lidi != null ? String((editMeeting as any).info_pocet_lidi) : "",
       }
     : defaultForm(preCaseId);
 

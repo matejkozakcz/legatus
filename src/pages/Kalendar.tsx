@@ -54,6 +54,8 @@ const TYPE_BORDER: Record<string, string> = {
   SER: "#f97316",
   POH: "#3b82f6",
   NAB: "#7e22ce",
+  INFO: "#7b5ea7",
+  POST: "#5e7ab5",
 };
 
 type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
@@ -69,7 +71,11 @@ function needsFollowUp(m: Meeting): boolean {
   if (m.cancelled) return false;
   const todayStr = format(new Date(), "yyyy-MM-dd");
   if (m.date >= todayStr) return false;
-  return !m.outcome_recorded;
+  if (m.outcome_recorded) return false;
+  if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+    return (m as any).info_pocet_lidi == null;
+  }
+  return true;
 }
 
 function getStatusBg(status: MeetingStatus, dark: boolean): string {
@@ -248,6 +254,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         case_name: form.case_name || null,
         location_type: form.location_type || null,
         location_detail: form.location_detail || null,
+        // INFO/POST výsledek
+        info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
+        info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
       };
       if (editingMeetingId) {
         const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
@@ -1042,6 +1051,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                 case_id: detailMeeting.case_id || "",
                 location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
+                info_zucastnil_se: (detailMeeting as any).info_zucastnil_se ?? null,
+                info_pocet_lidi: (detailMeeting as any).info_pocet_lidi != null ? String((detailMeeting as any).info_pocet_lidi) : "",
               });
               setEditingMeetingId(detailMeeting.id);
               setMeetingFormOpen(true);
@@ -1184,6 +1195,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               case_id: detailMeeting.case_id || "",
               location_type: detailMeeting.location_type || "",
               location_detail: detailMeeting.location_detail || "",
+              info_zucastnil_se: (detailMeeting as any).info_zucastnil_se ?? null,
+              info_pocet_lidi: (detailMeeting as any).info_pocet_lidi != null ? String((detailMeeting as any).info_pocet_lidi) : "",
             });
             setEditingMeetingId(detailMeeting.id);
             setMeetingFormOpen(true);

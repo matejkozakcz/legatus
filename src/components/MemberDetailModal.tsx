@@ -247,6 +247,9 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     SER: "Servis",
     POH: "Pohovor",
     POR: "Porádka",
+    NAB: "Nábor",
+    INFO: "Info",
+    POST: "Postinfo",
   };
 
   return (

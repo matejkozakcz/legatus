@@ -335,6 +335,8 @@ const Dashboard = () => {
         poradenstvi_status: null,
         has_pohovor: false,
         poznamka: form.poznamka.trim() || null,
+        info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
+        info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
       };
       const { error } = await supabase.from("client_meetings").insert(payload as any);
       if (error) throw error;
