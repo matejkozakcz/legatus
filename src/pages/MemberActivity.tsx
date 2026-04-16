@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, BarChart3, ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Download, Loader2 } from "lucide-react";
 import {
   startOfWeek,
   endOfWeek,
@@ -198,10 +198,8 @@ const MemberActivity = () => {
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
     [mobileWeekOffset],
   );
-  const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
   const mobileWeekStr = format(mobileWeekStart, "yyyy-MM-dd");
   const mobileRecord = records.find((r) => r.week_start === mobileWeekStr);
-  const isCurrentWeek = isSameWeek(mobileWeekStart, now, { weekStartsOn: 1 });
 
   const handlePrevMonth = () => {
     if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
@@ -270,19 +268,6 @@ const MemberActivity = () => {
               </Badge>
             )}
           </div>
-          <button
-            onClick={handleExportPdf}
-            disabled={exporting || !memberProfile}
-            style={{
-              width: 36, height: 36, borderRadius: 10, background: "#00abbd",
-              border: "none", cursor: exporting ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              opacity: exporting ? 0.6 : 1,
-            }}
-            aria-label="Export PDF"
-          >
-            {exporting ? <Loader2 size={16} color="#fff" className="animate-spin" /> : <Download size={16} color="#fff" />}
-          </button>
         </div>
 
         {/* Period navigator (mobile) */}
@@ -302,50 +287,6 @@ const MemberActivity = () => {
             }}
             pickerMode="month"
           />
-        </div>
-
-        {/* Week navigation */}
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: 16,
-            padding: "10px 16px",
-            marginBottom: 12,
-            border: "1px solid #e1e9eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <button
-            onClick={() => setMobileWeekOffset((o) => o - 1)}
-            style={{
-              width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
-              border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <ChevronLeft size={15} color="#00555f" />
-          </button>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
-              {isCurrentWeek ? "Aktuální týden" : format(mobileWeekStart, "MMMM yyyy", { locale: cs })}
-            </div>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
-              {format(mobileWeekStart, "d.M.", { locale: cs })} – {format(mobileWeekEnd, "d.M.", { locale: cs })}
-            </div>
-          </div>
-          <button
-            onClick={() => setMobileWeekOffset((o) => Math.min(0, o + 1))}
-            disabled={mobileWeekOffset >= 0}
-            style={{
-              width: 32, height: 32, borderRadius: 10, background: "#dde8ea",
-              border: "none", cursor: mobileWeekOffset >= 0 ? "default" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              opacity: mobileWeekOffset >= 0 ? 0.3 : 1,
-            }}
-          >
-            <ChevronRight size={15} color="#00555f" />
-          </button>
         </div>
 
         {/* Activity cards — read-only */}
