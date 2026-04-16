@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
+import { computeMeetingStats } from "@/lib/meetingStats";
 
 function Counter({
   value,
