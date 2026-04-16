@@ -424,7 +424,7 @@ export function MeetingDetailModal({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Počet lidí (mimo Legatus)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Nováčci (mimo Legatus)</label>
                   <input type="number" value={infoPocet} onChange={(e) => setInfoPocet(e.target.value)} min={0}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
