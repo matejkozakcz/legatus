@@ -556,7 +556,7 @@ export function MeetingFormModal({
                   </div>
                 </div>
                 <NumberInput
-                  label="Počet lidí (mimo Legatus)"
+                  label="Nováčci (mimo Legatus)"
                   value={form.info_pocet_lidi}
                   onChange={(v) => set({ info_pocet_lidi: v })}
                 />
