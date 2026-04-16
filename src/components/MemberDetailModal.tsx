@@ -689,18 +689,6 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
         {/* Action buttons */}
         <div className="flex flex-col gap-2">
-          {onNotify && (
-            <button
-              className="btn btn-md btn-ghost w-full flex items-center justify-center gap-2"
-              onClick={() => {
-                onClose();
-                onNotify();
-              }}
-            >
-              <Bell size={16} />
-              Poslat připomínku
-            </button>
-          )}
           <button
             className="btn btn-md btn-secondary w-full flex items-center justify-center gap-2"
             onClick={() => {
