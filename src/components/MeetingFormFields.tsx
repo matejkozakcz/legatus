@@ -310,9 +310,16 @@ export function MeetingFormModal({
     }
   };
 
-  const canSave = !!(form.case_id || pendingClientName) && !!form.date;
+  const isInfoPost = form.meeting_type === "INFO" || form.meeting_type === "POST";
+  const canSave = isInfoPost ? !!form.date : (!!(form.case_id || pendingClientName) && !!form.date);
 
   const handleSave = async () => {
+    // INFO/POST: never linked to a case
+    if (isInfoPost) {
+      const cleaned = { ...form, case_id: "", case_name: "" };
+      onSave(cleaned);
+      return;
+    }
     if (form.case_id) {
       onSave(form);
     } else if (pendingClientName && createCaseFn) {
@@ -349,17 +356,19 @@ export function MeetingFormModal({
           {isEdit ? "Upravit schůzku" : "Nová schůzka"}
         </h2>
 
-        {/* 1. Case combobox */}
-        <div className="mb-4">
-          <CaseCombobox
-            cases={activeCases}
-            selectedId={form.case_id}
-            onSelect={handleCaseSelect}
-            onClear={handleCaseClear}
-            allowCreateCase={!!createCaseFn}
-            onCreateClick={handleCreateClick}
-          />
-        </div>
+        {/* 1. Case combobox — skip for INFO/POST */}
+        {!isInfoPost && (
+          <div className="mb-4">
+            <CaseCombobox
+              cases={activeCases}
+              selectedId={form.case_id}
+              onSelect={handleCaseSelect}
+              onClear={handleCaseClear}
+              allowCreateCase={!!createCaseFn}
+              onCreateClick={handleCreateClick}
+            />
+          </div>
+        )}
 
         {/* 2. Typ schůzky */}
         <div className="mb-4">
@@ -369,6 +378,10 @@ export function MeetingFormModal({
               {(["FSA", "NAB", "SER", "POR", "POH", "INFO", "POST"] as MeetingType[])
                 .filter((t) => (t !== "POR" || isEdit) && (t !== "SER" || isEdit) && (t !== "SER" || userRole !== "novacek"))
                 .filter((t) => ((t !== "INFO" && t !== "POST") || canCreateInfoPost(userRole)))
+                // When editing an INFO/POST meeting → only allow INFO/POST chips
+                .filter((t) => !isEdit || !isInfoPost || t === "INFO" || t === "POST")
+                // When editing a non-INFO/POST meeting → hide INFO/POST chips
+                .filter((t) => !isEdit || isInfoPost || (t !== "INFO" && t !== "POST"))
                 .map((t) => (
                   <button
                     key={t}
@@ -543,7 +556,7 @@ export function MeetingFormModal({
                   </div>
                 </div>
                 <NumberInput
-                  label="Počet lidí (mimo Legatus)"
+                  label="Nováčci (mimo Legatus)"
                   value={form.info_pocet_lidi}
                   onChange={(v) => set({ info_pocet_lidi: v })}
                 />

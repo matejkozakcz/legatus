@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
@@ -101,6 +103,32 @@ export function MeetingDetailModal({
     setPrevSaving(!!savingOutcome);
   }, [savingOutcome]);
 
+  // Count "Staráčci" — other Legatus users from my structure who attended the same INFO/POST event
+  // (RLS filters automatically: vedouci sees subtree, others see only their own → result will be 0 for non-leaders)
+  const isInfoPost = meeting?.meeting_type === "INFO" || meeting?.meeting_type === "POST";
+  const { data: staracciCount = 0 } = useQuery({
+    queryKey: ["info_staracci_count", meeting?.id, meeting?.date, meeting?.meeting_type],
+    queryFn: async () => {
+      if (!meeting || !isInfoPost) return 0;
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("id, user_id, info_zucastnil_se")
+        .eq("date", meeting.date)
+        .eq("meeting_type", meeting.meeting_type)
+        .eq("info_zucastnil_se", true)
+        .eq("cancelled", false);
+      if (error) return 0;
+      // Distinct attending users excluding the current meeting's owner row
+      const ids = new Set<string>();
+      for (const row of data ?? []) {
+        if (row.id !== meeting.id) ids.add(row.user_id);
+      }
+      return ids.size;
+    },
+    enabled: !!meeting && isInfoPost && !!open,
+    staleTime: 30_000,
+  });
+
   if (!open || !meeting) return null;
   const m = meeting;
   const today = format(new Date(), "yyyy-MM-dd");
@@ -145,7 +173,8 @@ export function MeetingDetailModal({
       rows.push({ label: "Doporučení", value: String(m.doporuceni_pohovor) });
     } else if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
       rows.push({ label: "Zúčastnil se?", value: m.info_zucastnil_se === true ? "Ano" : m.info_zucastnil_se === false ? "Ne" : "—" });
-      rows.push({ label: "Počet lidí (mimo Legatus)", value: String(m.info_pocet_lidi ?? 0) });
+      rows.push({ label: "Nováčci (mimo Legatus)", value: String(m.info_pocet_lidi ?? 0) });
+      rows.push({ label: "Staráčci (z mojí struktury)", value: String(staracciCount) });
     }
     if (rows.length === 0) return null;
     return (
@@ -395,7 +424,7 @@ export function MeetingDetailModal({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Počet lidí (mimo Legatus)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Nováčci (mimo Legatus)</label>
                   <input type="number" value={infoPocet} onChange={(e) => setInfoPocet(e.target.value)} min={0}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
