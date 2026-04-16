@@ -80,6 +80,15 @@ function computePersonStats(
     return created && created >= periodFrom && created <= periodTo;
   });
 
+  const infoRows = active.filter((m) => m.meeting_type === "INFO");
+  const postRows = active.filter((m) => m.meeting_type === "POST");
+  const sumNovi = (arr: MeetingRow[]) => arr.reduce((s, r) => s + (Number(r.info_pocet_lidi) || 0), 0);
+  const uniqAttended = (arr: MeetingRow[]) => {
+    const ids = new Set<string>();
+    for (const r of arr) if (r.info_zucastnil_se === true && r.user_id) ids.add(r.user_id);
+    return ids.size;
+  };
+
   return {
     name,
     role,
@@ -97,6 +106,12 @@ function computePersonStats(
     newPoh: newlyBooked.filter((m) => m.meeting_type === "POH").length,
     newSer: newlyBooked.filter((m) => m.meeting_type === "SER").length,
     newPor: newlyBooked.filter((m) => m.meeting_type === "POR").length,
+    infoCount: infoRows.length,
+    infoNovi: sumNovi(infoRows),
+    infoStaracci: uniqAttended(infoRows),
+    postCount: postRows.length,
+    postNovi: sumNovi(postRows),
+    postStaracci: uniqAttended(postRows),
   };
 }
 
