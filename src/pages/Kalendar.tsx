@@ -254,6 +254,9 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         case_name: form.case_name || null,
         location_type: form.location_type || null,
         location_detail: form.location_detail || null,
+        // INFO/POST výsledek
+        info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
+        info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
       };
       if (editingMeetingId) {
         const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
