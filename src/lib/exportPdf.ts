@@ -8,6 +8,7 @@ import {
   getProductionPeriodMonth,
 } from "@/lib/productionPeriod";
 import { OPEN_SANS_REGULAR, OPEN_SANS_BOLD } from "@/lib/fonts";
+import { computeMeetingStats } from "@/lib/meetingStats";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -65,18 +66,15 @@ function computePersonStats(
   name: string,
   role: string,
 ): PersonStats {
+  // Single source of truth for planned/actual counts of FSA/POH/SER/POR + ref.
+  const stats = computeMeetingStats(meetings, todayStr);
+
+  // BJ — počítáme jen z potvrzených (proběhlých) schůzek, stejně jako ref v computeMeetingStats.
+  const confirmed = meetings.filter((m) => !m.cancelled && m.outcome_recorded === true);
+  const bj = confirmed.reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
+
+  // Newly booked — schůzky vytvořené v daném období (bez ohledu na potvrzení).
   const active = meetings.filter((m) => !m.cancelled);
-  // "Proběhlá" = uživatel ji potvrdil (outcome_recorded), nikoli jen date <= today
-  const past = active.filter((m) => m.outcome_recorded === true);
-
-  const countAll = (type: string) => active.filter((m) => m.meeting_type === type).length;
-  const countPast = (type: string) => past.filter((m) => m.meeting_type === type).length;
-  const refs = past.reduce(
-    (acc, m) => acc + (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0),
-    0,
-  );
-  const bj = past.reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
-
   const newlyBooked = active.filter((m) => {
     const created = m.created_at?.slice(0, 10);
     return created && created >= periodFrom && created <= periodTo;
@@ -94,15 +92,15 @@ function computePersonStats(
   return {
     name,
     role,
-    planFsa: countAll("FSA"),
-    planPoh: countAll("POH"),
-    planSer: countAll("SER"),
-    planPor: countAll("POR"),
-    fsa: countPast("FSA"),
-    poh: countPast("POH"),
-    ser: countPast("SER"),
-    por: countPast("POR"),
-    ref: refs,
+    planFsa: stats.fsa.planned,
+    planPoh: stats.poh.planned,
+    planSer: stats.ser.planned,
+    planPor: stats.por.planned,
+    fsa: stats.fsa.actual,
+    poh: stats.poh.actual,
+    ser: stats.ser.actual,
+    por: stats.por.actual,
+    ref: stats.ref.actual,
     bj,
     newFsa: newlyBooked.filter((m) => m.meeting_type === "FSA").length,
     newPoh: newlyBooked.filter((m) => m.meeting_type === "POH").length,
