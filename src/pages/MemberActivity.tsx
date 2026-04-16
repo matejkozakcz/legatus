@@ -34,23 +34,18 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const ACTIVITY_COLUMNS = [
-  { key: "fsa_planned", header: "FSA Dom." },
-  { key: "fsa_actual", header: "FSA Usc." },
-  { key: "por_planned", header: "POR Dom." },
-  { key: "por_actual", header: "POR Usc." },
-  { key: "kl_fsa_actual", header: "KL z FSA" },
-  { key: "ser_planned", header: "SER Dom." },
-  { key: "ser_actual", header: "SER Usc." },
-  { key: "poh_planned", header: "POH Dom." },
-  { key: "poh_actual", header: "POH Usc." },
-  { key: "ref_planned", header: "REF Dom." },
-  { key: "ref_actual", header: "REF Usc." },
-  { key: "dop_kl_actual", header: "DOP KL" },
+  { key: "fsa_actual", header: "Analýzy" },
+  { key: "ser_actual", header: "Poradky" },
+  { key: "poh_actual", header: "Pohovory" },
+  { key: "por_actual", header: "Poradenství" },
+  { key: "info_actual", header: "Info" },
+  { key: "postinfo_actual", header: "Postinfo" },
+  { key: "ref_actual", header: "Doporučení" },
   { key: "bj_fsa_actual", header: "BJ FSA" },
   { key: "bj_ser_actual", header: "BJ SER" },
 ] as const;
 
-const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ" }] as const;
+const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ celkem" }] as const;
 
 const MOBILE_ACTIVITIES = [
   { label: "Analýzy", plannedKey: "fsa_planned", actualKey: "fsa_actual", plannedLabel: "Domluvené", actualLabel: "Proběhlé" },
