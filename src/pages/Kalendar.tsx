@@ -1042,6 +1042,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                 case_id: detailMeeting.case_id || "",
                 location_type: detailMeeting.location_type || "",
                 location_detail: detailMeeting.location_detail || "",
+                info_zucastnil_se: (detailMeeting as any).info_zucastnil_se ?? null,
+                info_pocet_lidi: (detailMeeting as any).info_pocet_lidi != null ? String((detailMeeting as any).info_pocet_lidi) : "",
               });
               setEditingMeetingId(detailMeeting.id);
               setMeetingFormOpen(true);
@@ -1184,6 +1186,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               case_id: detailMeeting.case_id || "",
               location_type: detailMeeting.location_type || "",
               location_detail: detailMeeting.location_detail || "",
+              info_zucastnil_se: (detailMeeting as any).info_zucastnil_se ?? null,
+              info_pocet_lidi: (detailMeeting as any).info_pocet_lidi != null ? String((detailMeeting as any).info_pocet_lidi) : "",
             });
             setEditingMeetingId(detailMeeting.id);
             setMeetingFormOpen(true);

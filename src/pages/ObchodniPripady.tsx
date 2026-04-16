@@ -99,6 +99,8 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
   case_id: m.case_id || "",
   location_type: m.location_type || "",
   location_detail: m.location_detail || "",
+  info_zucastnil_se: (m as any).info_zucastnil_se ?? null,
+  info_pocet_lidi: (m as any).info_pocet_lidi != null ? String((m as any).info_pocet_lidi) : "",
 });
 
 // ─── Helper components ───────────────────────────────────────────────────────
@@ -612,6 +614,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         case_id: editMeeting.case_id || "",
         location_type: editMeeting.location_type || "",
         location_detail: editMeeting.location_detail || "",
+        info_zucastnil_se: (editMeeting as any).info_zucastnil_se ?? null,
+        info_pocet_lidi: (editMeeting as any).info_pocet_lidi != null ? String((editMeeting as any).info_pocet_lidi) : "",
       }
     : defaultForm(preCaseId);
 
