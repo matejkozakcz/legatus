@@ -430,6 +430,33 @@ const MemberActivity = () => {
           </table>
         </div>
       </section>
+
+      {/* Info & Postinfo — vedouci/BV only */}
+      {isVedouciOrBV && (
+        <section className="legatus-card p-6">
+          <h2 className="font-heading font-bold mb-4" style={{ fontSize: 18, color: "var(--text-primary)" }}>
+            Info & Postinfo
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-input bg-card px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Info schůzky
+              </div>
+              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
+                {infoPostCounts.info}
+              </div>
+            </div>
+            <div className="rounded-xl border border-input bg-card px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Postinfo
+              </div>
+              <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f" }}>
+                {infoPostCounts.postinfo}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 };
