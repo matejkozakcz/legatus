@@ -1845,6 +1845,7 @@ const Dashboard = () => {
               selectedDate={desktopWeekStart}
               calendarMonth={desktopWeekStart}
               pickerMode="day"
+              widthScale={1.3}
             />
 
             {!isMobile && (
