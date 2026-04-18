@@ -35,10 +35,12 @@ import {
   FileText,
   History,
   Target,
+  Activity,
 } from "lucide-react";
 import { format } from "date-fns";
 import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
 import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
+import { NotificationDiagnosticsTab } from "@/components/admin/NotificationDiagnosticsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,12 +153,18 @@ function NotificationsTab() {
         <TabsTrigger value="log" className="gap-1.5">
           <History className="h-3.5 w-3.5" /> Historie odeslaných
         </TabsTrigger>
+        <TabsTrigger value="diagnostics" className="gap-1.5">
+          <Activity className="h-3.5 w-3.5" /> Diagnostika
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="rules">
         <NotificationRulesTab />
       </TabsContent>
       <TabsContent value="log">
         <NotificationLogTab />
+      </TabsContent>
+      <TabsContent value="diagnostics">
+        <NotificationDiagnosticsTab />
       </TabsContent>
     </Tabs>
   );
