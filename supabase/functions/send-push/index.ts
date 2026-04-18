@@ -59,7 +59,8 @@ async function createVapidJwt(
   const enc = new TextEncoder();
   const header = uint8ArrayToBase64url(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
   const now = Math.floor(Date.now() / 1000);
-  const payload = uint8ArrayToBase64url(enc.encode(JSON.stringify({ aud: audience, exp: now + 86400, sub: subject })));
+  // Apple Push Service rejects exp >= 24h. Use 12h to match Parťáq and stay safely under the limit.
+  const payload = uint8ArrayToBase64url(enc.encode(JSON.stringify({ aud: audience, exp: now + 12 * 3600, sub: subject })));
   const unsigned = `${header}.${payload}`;
 
   const signature = await crypto.subtle.sign(
@@ -211,7 +212,9 @@ async function sendWebPush(
   const audience = new URL(endpoint).origin;
 
   const privateKey = await importVapidPrivateKey(vapidPrivateKeyB64);
-  const jwt = await createVapidJwt(audience, "mailto:noreply@legatus.app", privateKey);
+  // VAPID subject MUST be a real, reachable mailto: or https URL.
+  // Apple Push Service silently drops messages with unreachable subjects (returns 201 anyway).
+  const jwt = await createVapidJwt(audience, "mailto:info@weresoft.cz", privateKey);
 
   // Encrypt payload per RFC 8291
   const plaintextBytes = new TextEncoder().encode(payload);
