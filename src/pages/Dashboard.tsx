@@ -1810,6 +1810,24 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
+        {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <InfoPostDesktopCard
+              label="Info schůzky"
+              count={teamInfoPostCounts.info}
+              novi={teamInfoPostCounts.noviInfo}
+              staracci={teamInfoPostCounts.staracciInfo}
+            />
+            <InfoPostDesktopCard
+              label="Postinfo"
+              count={teamInfoPostCounts.postinfo}
+              novi={teamInfoPostCounts.noviPost}
+              staracci={teamInfoPostCounts.staracciPost}
+            />
+          </div>
+        )}
+
         <section className="space-y-6 mt-4">
           <div className="flex items-center justify-between">
             <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
@@ -1918,23 +1936,6 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
-          {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-              <InfoPostDesktopCard
-                label="Info schůzky"
-                count={teamInfoPostCounts.info}
-                novi={teamInfoPostCounts.noviInfo}
-                staracci={teamInfoPostCounts.staracciInfo}
-              />
-              <InfoPostDesktopCard
-                label="Postinfo"
-                count={teamInfoPostCounts.postinfo}
-                novi={teamInfoPostCounts.noviPost}
-                staracci={teamInfoPostCounts.staracciPost}
-              />
-            </div>
-          )}
         </section>
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
