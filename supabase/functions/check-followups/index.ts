@@ -45,16 +45,18 @@ Deno.serve(async (req) => {
       processed++;
       const userId = u.id;
 
-      // Skip if daily recap already sent today
-      const { data: existing } = await supabase
+      // Skip if daily recap already sent today.
+      // Use array + limit(1) instead of .maybeSingle() — maybeSingle throws when >1 row exists,
+      // which would silently fall through and create yet another duplicate.
+      const { data: existingRows } = await supabase
         .from("notifications")
         .select("id")
         .eq("recipient_id", userId)
         .eq("type", "daily_recap")
         .eq("deadline", todayStr)
-        .maybeSingle();
+        .limit(1);
 
-      if (existing) continue;
+      if (existingRows && existingRows.length > 0) continue;
 
       // Fetch today's meetings
       const { data: meetings } = await supabase

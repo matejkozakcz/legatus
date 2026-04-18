@@ -412,7 +412,9 @@ const Dashboard = () => {
       });
   }, [profile]);
 
-  // Trigger check-followups edge function once per session to create meeting notifications
+  // Trigger check-followups edge function once per session to create meeting notifications.
+  // Note: this also runs nightly via cron (config.toml: "0 19 * * *") — the edge function
+  // dedupes per (recipient, day) so client-side trigger is just a safety net.
   const followupCheckDoneRef = useRef(false);
   useEffect(() => {
     if (!user || followupCheckDoneRef.current) return;

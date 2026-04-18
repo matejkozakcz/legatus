@@ -9,6 +9,11 @@ function renderTemplate(template: string, vars: Record<string, string | number>)
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(vars[key] ?? ""));
 }
 
+/** YYYY-MM-DD in Europe/Prague */
+function pragueDateStr(d: Date): string {
+  return d.toLocaleDateString("sv-SE", { timeZone: "Europe/Prague" });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -26,8 +31,9 @@ Deno.serve(async (req) => {
     const currentMinute = pragueTime.getMinutes();
     const currentDow = pragueTime.getDay(); // 0=Sunday
     const currentDom = pragueTime.getDate();
+    const todayPrague = pragueDateStr(now);
 
-    console.log(`[scheduled-notifications] Prague: ${currentHour}:${String(currentMinute).padStart(2,'0')}, dow=${currentDow}`);
+    console.log(`[scheduled-notifications] Prague: ${currentHour}:${String(currentMinute).padStart(2,'0')}, dow=${currentDow}, today=${todayPrague}`);
 
     // Load all active scheduled rules
     const { data: rules, error: rulesError } = await supabase
@@ -45,6 +51,7 @@ Deno.serve(async (req) => {
     }
 
     let totalSent = 0;
+    const ruleResults: any[] = [];
 
     for (const rule of rules) {
       // Parse schedule_time (HH:MM)
@@ -53,50 +60,77 @@ Deno.serve(async (req) => {
       // Check EXACT minute match (cron runs every minute)
       if (currentHour !== schedHour || currentMinute !== schedMin) continue;
 
-      console.log(`[scheduled-notifications] Rule "${rule.name}" matched`);
-
       // Check day constraints (null means "every day")
       if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
       if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
 
-      // Dedup: skip if already sent within the last 23 hours
+      console.log(`[scheduled-notifications] Rule "${rule.name}" matched (type=${rule.schedule_type})`);
+
+      // Dedup: skip if already sent TODAY in Prague TZ
       if (rule.last_scheduled_at) {
-        const lastSent = new Date(rule.last_scheduled_at).getTime();
-        if (now.getTime() - lastSent < 23 * 60 * 60 * 1000) continue;
+        const lastDayPrague = pragueDateStr(new Date(rule.last_scheduled_at));
+        if (lastDayPrague === todayPrague) {
+          console.log(`[scheduled-notifications] Rule "${rule.name}" already sent today (${lastDayPrague}), skipping`);
+          continue;
+        }
       }
 
-      // Mark as sent IMMEDIATELY to prevent parallel cron invocations
-      const { error: updateErr } = await supabase
+      // Atomic CAS lock: update last_scheduled_at ONLY if it's still the same value we read.
+      // This prevents two parallel cron invocations from both proceeding.
+      const previousLast = rule.last_scheduled_at;
+      let lockQuery = supabase
         .from("notification_rules")
         .update({ last_scheduled_at: now.toISOString() })
         .eq("id", rule.id);
-      if (updateErr) console.error(`[scheduled-notifications] Mark sent error: ${updateErr.message}`);
+      lockQuery = previousLast === null
+        ? lockQuery.is("last_scheduled_at", null)
+        : lockQuery.eq("last_scheduled_at", previousLast);
+      const { data: lockedRows, error: lockErr } = await lockQuery.select("id");
+
+      if (lockErr) {
+        console.error(`[scheduled-notifications] Lock error for "${rule.name}": ${lockErr.message}`);
+        continue;
+      }
+      if (!lockedRows || lockedRows.length === 0) {
+        console.log(`[scheduled-notifications] Rule "${rule.name}" lock lost (parallel run), skipping`);
+        continue;
+      }
 
       // Get recipients with profile data
       let recipients: { id: string; full_name: string; role: string }[] = [];
 
       if (rule.recipient_type === "by_role" && rule.recipient_roles?.length > 0) {
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profErr } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("is_active", true)
           .in("role", rule.recipient_roles);
+        if (profErr) console.error(`[scheduled-notifications] Recipients (by_role) error: ${profErr.message}`);
         recipients = profiles || [];
       } else {
-        const { data: profiles } = await supabase
+        // recipient_type "self" or fallback → all active members
+        const { data: profiles, error: profErr } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("is_active", true);
+        if (profErr) console.error(`[scheduled-notifications] Recipients (all) error: ${profErr.message}`);
         recipients = profiles || [];
       }
 
-      if (recipients.length === 0) continue;
+      console.log(`[scheduled-notifications] Rule "${rule.name}" → ${recipients.length} recipients`);
+
+      if (recipients.length === 0) {
+        ruleResults.push({ rule: rule.name, recipients: 0, sent: 0 });
+        continue;
+      }
 
       // Load global aggregate data
       const globalVars = await loadGlobalVars(supabase, pragueTime);
 
       // Send notifications per recipient with personalized vars
       const fnUrl = `${supabaseUrl}/functions/v1/send-push`;
+      let ruleSent = 0;
+      let ruleFailed = 0;
 
       for (const recipient of recipients) {
         // Load per-user vars (activity, meetings planned this week)
@@ -114,14 +148,21 @@ Deno.serve(async (req) => {
         const body = renderTemplate(rule.body_template, allVars);
 
         if (rule.send_in_app) {
-          const { data: notifData } = await supabase.from("notifications").insert({
+          const { data: notifData, error: insErr } = await supabase.from("notifications").insert({
             sender_id: recipient.id,
             recipient_id: recipient.id,
             type: rule.trigger_event || "scheduled",
             title,
             body,
-            deadline: now.toISOString().split("T")[0],
+            message: body, // also fill message for backward compat
+            deadline: todayPrague,
           }).select("id").single();
+
+          if (insErr) {
+            ruleFailed++;
+            console.error(`[scheduled-notifications] Insert failed for ${recipient.id} (rule ${rule.name}): ${insErr.message}`);
+            continue;
+          }
 
           if (notifData?.id && rule.send_push) {
             await fetch(fnUrl, {
@@ -131,18 +172,22 @@ Deno.serve(async (req) => {
                 Authorization: `Bearer ${serviceRoleKey}`,
               },
               body: JSON.stringify({ notification_id: notifData.id }),
-            }).catch(() => {});
+            }).catch((e) => console.error(`[scheduled-notifications] Push fetch error: ${e}`));
           }
         }
 
+        ruleSent++;
         totalSent++;
       }
+
+      ruleResults.push({ rule: rule.name, recipients: recipients.length, sent: ruleSent, failed: ruleFailed });
     }
 
-    return new Response(JSON.stringify({ ok: true, sent: totalSent }), {
+    return new Response(JSON.stringify({ ok: true, sent: totalSent, rules: ruleResults }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("[scheduled-notifications] fatal:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -170,7 +215,7 @@ async function loadUserVars(supabase: any, userId: string, pragueNow: Date): Pro
     .select("*")
     .eq("user_id", userId)
     .eq("week_start", weekStart)
-    .single();
+    .maybeSingle();
 
   // Get user's meetings for today
   const today = `${pragueNow.getFullYear()}-${String(pragueNow.getMonth() + 1).padStart(2, "0")}-${String(pragueNow.getDate()).padStart(2, "0")}`;
@@ -193,7 +238,7 @@ async function loadUserVars(supabase: any, userId: string, pragueNow: Date): Pro
     .from("profiles")
     .select("personal_bj_goal, monthly_bj_goal")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   const a = activity || {};
 
