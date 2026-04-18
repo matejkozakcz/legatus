@@ -41,6 +41,7 @@ import { checkPromotions as runCheckPromotions } from "@/lib/checkPromotions";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, defaultMeetingForm } from "@/components/MeetingFormFields";
 import { StatCard } from "@/components/StatCard";
+import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 import { computeMeetingStats } from "@/lib/meetingStats";
@@ -386,10 +387,10 @@ const Dashboard = () => {
     onError: (err: any) => toast.error(err.message || "Chyba"),
   });
 
-  const [desktopWeekOffset, setDesktopWeekOffset] = useState(0);
+  const [desktopWeekDate, setDesktopWeekDate] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const desktopWeekStart = useMemo(
-    () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), desktopWeekOffset),
-    [desktopWeekOffset],
+    () => startOfWeek(desktopWeekDate, { weekStartsOn: 1 }),
+    [desktopWeekDate],
   );
   const desktopWeekEnd = endOfWeek(desktopWeekStart, { weekStartsOn: 1 });
   const isDesktopWeekCurrent = isSameWeek(desktopWeekStart, now, { weekStartsOn: 1 });
@@ -1834,34 +1835,17 @@ const Dashboard = () => {
               Přehled aktivit
             </h2>
 
-            {/* Desktop week picker — centered */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDesktopWeekOffset((o) => o - 1)}
-                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
-                style={{ width: 30, height: 30 }}
-              >
-                <ChevronLeft size={14} style={{ color: "#00555f" }} />
-              </button>
-              <div style={{ textAlign: "center", minWidth: 160 }}>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, lineHeight: 1.2 }}>
-                  {isDesktopWeekCurrent ? "Aktuální týden" : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
-                </div>
-                <div
-                  style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.3 }}
-                >
-                  {format(desktopWeekStart, "d.M.", { locale: cs })} – {format(desktopWeekEnd, "d.M.", { locale: cs })}
-                </div>
-              </div>
-              <button
-                onClick={() => setDesktopWeekOffset((o) => Math.min(0, o + 1))}
-                disabled={desktopWeekOffset >= 0}
-                className="flex items-center justify-center rounded-lg border border-input bg-card hover:bg-muted transition-colors"
-                style={{ width: 30, height: 30, opacity: desktopWeekOffset >= 0 ? 0.3 : 1 }}
-              >
-                <ChevronRight size={14} style={{ color: "#00555f" }} />
-              </button>
-            </div>
+            {/* Desktop week picker — PeriodNavigator with day calendar */}
+            <PeriodNavigator
+              label={isDesktopWeekCurrent ? "Aktuální týden" : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+              title={`${format(desktopWeekStart, "d.M.", { locale: cs })} – ${format(desktopWeekEnd, "d.M.", { locale: cs })}`}
+              onPrev={() => setDesktopWeekDate((d) => subWeeks(d, 1))}
+              onNext={() => { if (!isDesktopWeekCurrent) setDesktopWeekDate((d) => addWeeks(d, 1)); }}
+              onSelectDate={(date) => setDesktopWeekDate(startOfWeek(date, { weekStartsOn: 1 }))}
+              selectedDate={desktopWeekStart}
+              calendarMonth={desktopWeekStart}
+              pickerMode="day"
+            />
 
             {!isMobile && (
               <div className="relative">
