@@ -332,7 +332,7 @@ const MemberActivity = () => {
         {/* Bottom row: Doporučení, KL z FSA, BJ */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {[
-            { label: "Doporučení", value: formatVal(refActual, refPlanned) },
+            { label: "Doporučení", value: refActual },
             { label: "KL z FSA", value: klFsa },
             { label: "BJ", value: bjValue },
           ].map(({ label, value }) => (
@@ -366,7 +366,7 @@ const MemberActivity = () => {
               { label: "Analýzy", actual: stats.fsa.actual, planned: stats.fsa.planned },
               { label: "Pohovory", actual: stats.poh.actual, planned: stats.poh.planned },
               { label: "Poradka", actual: stats.ser.actual, planned: stats.ser.planned },
-              { label: "Doporučení", actual: stats.ref.actual, planned: stats.ref.planned },
+              { label: "Doporučení", actual: stats.ref.actual, planned: 0 },
             ].map(({ label, actual, planned }) => (
               <div key={label}>
                 <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>
@@ -474,7 +474,7 @@ const MemberActivity = () => {
         <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
         <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
         <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-        <StatCard label="Doporučení" actual={stats.ref.actual} planned={stats.ref.planned} actualLabel="vybraných" plannedLabel="naplánovaných" />
+        <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="vybraných" />
       </div>
 
       <section className="legatus-card overflow-hidden">

@@ -640,9 +640,7 @@ export const MojeAktivityContent = () => {
           <StatCard
             label="Doporučení"
             actual={stats.ref.actual}
-            planned={stats.ref.planned}
             actualLabel="vybraných"
-            plannedLabel="naplánovaných"
           />
         </div>
       </section>
