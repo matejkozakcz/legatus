@@ -53,30 +53,60 @@ Deno.serve(async (req) => {
     let totalSent = 0;
     const ruleResults: any[] = [];
 
+    /** Best-effort log helper — never throws */
+    async function logRun(entry: {
+      rule_id: string;
+      rule_name: string;
+      matched?: boolean;
+      recipients_count?: number;
+      inserted_count?: number;
+      failed_count?: number;
+      push_sent_count?: number;
+      status: "ok" | "partial" | "error" | "skipped";
+      error_message?: string | null;
+      details?: any;
+    }) {
+      try {
+        await supabase.from("notification_rule_runs").insert({
+          rule_id: entry.rule_id,
+          rule_name: entry.rule_name,
+          matched: entry.matched ?? true,
+          recipients_count: entry.recipients_count ?? 0,
+          inserted_count: entry.inserted_count ?? 0,
+          failed_count: entry.failed_count ?? 0,
+          push_sent_count: entry.push_sent_count ?? 0,
+          status: entry.status,
+          error_message: entry.error_message ?? null,
+          details: entry.details ?? null,
+        });
+      } catch (e) {
+        console.error(`[scheduled-notifications] logRun failed: ${e}`);
+      }
+    }
+
     for (const rule of rules) {
-      // Parse schedule_time (HH:MM)
       const [schedHour, schedMin] = (rule.schedule_time || "08:00").split(":").map(Number);
 
-      // Check EXACT minute match (cron runs every minute)
       if (currentHour !== schedHour || currentMinute !== schedMin) continue;
 
-      // Check day constraints (null means "every day")
       if (rule.schedule_type === "weekly" && rule.schedule_day_of_week !== null && currentDow !== rule.schedule_day_of_week) continue;
       if (rule.schedule_type === "monthly" && rule.schedule_day_of_month !== null && currentDom !== rule.schedule_day_of_month) continue;
 
       console.log(`[scheduled-notifications] Rule "${rule.name}" matched (type=${rule.schedule_type})`);
 
-      // Dedup: skip if already sent TODAY in Prague TZ
       if (rule.last_scheduled_at) {
         const lastDayPrague = pragueDateStr(new Date(rule.last_scheduled_at));
         if (lastDayPrague === todayPrague) {
           console.log(`[scheduled-notifications] Rule "${rule.name}" already sent today (${lastDayPrague}), skipping`);
+          await logRun({
+            rule_id: rule.id, rule_name: rule.name,
+            status: "skipped",
+            error_message: `Already sent today (${lastDayPrague})`,
+          });
           continue;
         }
       }
 
-      // Atomic CAS lock: update last_scheduled_at ONLY if it's still the same value we read.
-      // This prevents two parallel cron invocations from both proceeding.
       const previousLast = rule.last_scheduled_at;
       let lockQuery = supabase
         .from("notification_rules")
@@ -89,15 +119,25 @@ Deno.serve(async (req) => {
 
       if (lockErr) {
         console.error(`[scheduled-notifications] Lock error for "${rule.name}": ${lockErr.message}`);
+        await logRun({
+          rule_id: rule.id, rule_name: rule.name,
+          status: "error",
+          error_message: `Lock error: ${lockErr.message}`,
+        });
         continue;
       }
       if (!lockedRows || lockedRows.length === 0) {
         console.log(`[scheduled-notifications] Rule "${rule.name}" lock lost (parallel run), skipping`);
+        await logRun({
+          rule_id: rule.id, rule_name: rule.name,
+          status: "skipped",
+          error_message: "Lock lost (parallel run)",
+        });
         continue;
       }
 
-      // Get recipients with profile data
       let recipients: { id: string; full_name: string; role: string }[] = [];
+      let recipientsError: string | null = null;
 
       if (rule.recipient_type === "by_role" && rule.recipient_roles?.length > 0) {
         const { data: profiles, error: profErr } = await supabase
@@ -105,15 +145,20 @@ Deno.serve(async (req) => {
           .select("id, full_name, role")
           .eq("is_active", true)
           .in("role", rule.recipient_roles);
-        if (profErr) console.error(`[scheduled-notifications] Recipients (by_role) error: ${profErr.message}`);
+        if (profErr) {
+          recipientsError = `Recipients (by_role) error: ${profErr.message}`;
+          console.error(`[scheduled-notifications] ${recipientsError}`);
+        }
         recipients = profiles || [];
       } else {
-        // recipient_type "self" or fallback → all active members
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("is_active", true);
-        if (profErr) console.error(`[scheduled-notifications] Recipients (all) error: ${profErr.message}`);
+        if (profErr) {
+          recipientsError = `Recipients (all) error: ${profErr.message}`;
+          console.error(`[scheduled-notifications] ${recipientsError}`);
+        }
         recipients = profiles || [];
       }
 
@@ -121,19 +166,24 @@ Deno.serve(async (req) => {
 
       if (recipients.length === 0) {
         ruleResults.push({ rule: rule.name, recipients: 0, sent: 0 });
+        await logRun({
+          rule_id: rule.id, rule_name: rule.name,
+          recipients_count: 0,
+          status: recipientsError ? "error" : "ok",
+          error_message: recipientsError ?? "No recipients",
+        });
         continue;
       }
 
-      // Load global aggregate data
       const globalVars = await loadGlobalVars(supabase, pragueTime);
 
-      // Send notifications per recipient with personalized vars
       const fnUrl = `${supabaseUrl}/functions/v1/send-push`;
       let ruleSent = 0;
       let ruleFailed = 0;
+      let rulePushed = 0;
+      const errorSamples: string[] = [];
 
       for (const recipient of recipients) {
-        // Load per-user vars (activity, meetings planned this week)
         const userVars = await loadUserVars(supabase, recipient.id, pragueTime);
 
         const allVars: Record<string, string | number> = {
@@ -154,25 +204,32 @@ Deno.serve(async (req) => {
             type: rule.trigger_event || "scheduled",
             title,
             body,
-            message: body, // also fill message for backward compat
+            message: body,
             deadline: todayPrague,
           }).select("id").single();
 
           if (insErr) {
             ruleFailed++;
-            console.error(`[scheduled-notifications] Insert failed for ${recipient.id} (rule ${rule.name}): ${insErr.message}`);
+            const msg = `Insert failed for ${recipient.id}: ${insErr.message}`;
+            console.error(`[scheduled-notifications] ${msg}`);
+            if (errorSamples.length < 3) errorSamples.push(msg);
             continue;
           }
 
           if (notifData?.id && rule.send_push) {
-            await fetch(fnUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${serviceRoleKey}`,
-              },
-              body: JSON.stringify({ notification_id: notifData.id }),
-            }).catch((e) => console.error(`[scheduled-notifications] Push fetch error: ${e}`));
+            try {
+              const pushRes = await fetch(fnUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${serviceRoleKey}`,
+                },
+                body: JSON.stringify({ notification_id: notifData.id }),
+              });
+              if (pushRes.ok) rulePushed++;
+            } catch (e) {
+              console.error(`[scheduled-notifications] Push fetch error: ${e}`);
+            }
           }
         }
 
@@ -181,6 +238,18 @@ Deno.serve(async (req) => {
       }
 
       ruleResults.push({ rule: rule.name, recipients: recipients.length, sent: ruleSent, failed: ruleFailed });
+
+      await logRun({
+        rule_id: rule.id,
+        rule_name: rule.name,
+        recipients_count: recipients.length,
+        inserted_count: ruleSent,
+        failed_count: ruleFailed,
+        push_sent_count: rulePushed,
+        status: ruleFailed === 0 ? "ok" : (ruleSent === 0 ? "error" : "partial"),
+        error_message: errorSamples[0] ?? null,
+        details: errorSamples.length > 0 ? { errors: errorSamples } : null,
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, sent: totalSent, rules: ruleResults }), {
