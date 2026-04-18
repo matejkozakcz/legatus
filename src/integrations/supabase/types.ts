@@ -279,6 +279,59 @@ export type Database = {
           },
         ]
       }
+      notification_rule_runs: {
+        Row: {
+          details: Json | null
+          error_message: string | null
+          failed_count: number
+          id: string
+          inserted_count: number
+          matched: boolean
+          push_sent_count: number
+          ran_at: string
+          recipients_count: number
+          rule_id: string
+          rule_name: string
+          status: string
+        }
+        Insert: {
+          details?: Json | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          inserted_count?: number
+          matched?: boolean
+          push_sent_count?: number
+          ran_at?: string
+          recipients_count?: number
+          rule_id: string
+          rule_name: string
+          status?: string
+        }
+        Update: {
+          details?: Json | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          inserted_count?: number
+          matched?: boolean
+          push_sent_count?: number
+          ran_at?: string
+          recipients_count?: number
+          rule_id?: string
+          rule_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_rule_runs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_rules: {
         Row: {
           body_template: string
