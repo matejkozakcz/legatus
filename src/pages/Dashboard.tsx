@@ -1740,17 +1740,8 @@ const Dashboard = () => {
 
         <section className="space-y-4">
           <div className="flex gap-6" style={{ alignItems: "stretch", height: 500 }}>
-            {/* Stav byznysu — 1/4 */}
+            {/* Cíle (gauges) — 1/4 */}
             <div style={{ width: "25%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-              <h2
-                className="font-heading font-semibold"
-                style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
-              >
-                Stav byznysu –{" "}
-                <span style={{ fontWeight: 600 }}>
-                  {format(new Date(selectedYear, selectedMonth), "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
-                </span>
-              </h2>
               <div
                 className="legatus-card"
                 style={{
@@ -1763,17 +1754,17 @@ const Dashboard = () => {
                   overflowY: "auto",
                 }}
               >
+                <h2
+                  className="font-heading font-semibold"
+                  style={{ fontSize: 22, color: "var(--text-primary)", alignSelf: "flex-start" }}
+                >
+                  Cíle
+                </h2>
                 {renderStavByznysu()}
               </div>
             </div>
-            {/* Moje struktura — 3/5 */}
+            {/* Org chart — 3/4 */}
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-              <h2
-                className="font-heading font-semibold"
-                style={{ fontSize: 22, color: "var(--text-primary)", marginBottom: 16 }}
-              >
-                {isImpersonating ? `Struktura — ${viewingUserName}` : "Moje struktura"}
-              </h2>
               <div
                 className="legatus-card"
                 style={{
@@ -1845,7 +1836,7 @@ const Dashboard = () => {
               selectedDate={desktopWeekStart}
               calendarMonth={desktopWeekStart}
               pickerMode="day"
-              widthScale={1.3}
+              widthScale={1.35}
             />
 
             {!isMobile && (
