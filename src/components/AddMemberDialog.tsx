@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PersonPicker } from "@/components/PersonPicker";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 const roleLabels: Record<string, string> = {
   vedouci: "Vedoucí",
   garant: "Garant",
