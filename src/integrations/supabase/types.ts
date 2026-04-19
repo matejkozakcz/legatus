@@ -438,6 +438,7 @@ export type Database = {
           recipient_id: string
           redirect_url: string | null
           related_case_id: string | null
+          related_entity_id: string | null
           related_meeting_id: string | null
           reminder_sent: boolean
           sender_id: string
@@ -454,6 +455,7 @@ export type Database = {
           recipient_id: string
           redirect_url?: string | null
           related_case_id?: string | null
+          related_entity_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id: string
@@ -470,6 +472,7 @@ export type Database = {
           recipient_id?: string
           redirect_url?: string | null
           related_case_id?: string | null
+          related_entity_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id?: string
