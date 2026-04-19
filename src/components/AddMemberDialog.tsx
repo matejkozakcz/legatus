@@ -35,10 +35,10 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [selectedGarant, setSelectedGarant] = useState("");
   const [selectedZiskatel, setSelectedZiskatel] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   // Get garanté for Vedoucí to select from (include self)
   const { data: garanti = [] } = useQuery({
