@@ -79,31 +79,61 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     enabled: !!profile?.vedouci_id && profile?.role === "garant",
   });
 
-  // Get possible získatel candidates (self + people in subtree)
+  // Get possible získatel candidates — kompletní struktura Vedoucího / BV.
+  // Vedoucí / BV: všichni aktivní lidé v jejich subtree (vedouci_id = já) + já sám.
+  // Garant / Získatel: všichni aktivní lidé ve struktuře jeho Vedoucího + on sám.
+  // Admin / godMode (isAdmin): všichni aktivní uživatelé napříč systémem.
   const { data: ziskatelCandidates = [] } = useQuery({
-    queryKey: ["ziskatel_candidates", profile?.id, profile?.role],
+    queryKey: ["ziskatel_candidates", profile?.id, profile?.role, profile?.is_admin],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const vedouciId = ["vedouci", "budouci_vedouci"].includes(profile.role) ? profile.id : profile.vedouci_id;
-      // Fetch all active members under this vedoucí
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, garant_id")
-        .eq("is_active", true)
-        .eq("vedouci_id", vedouciId);
-      if (error) throw error;
-      const list = (data || []) as { id: string; full_name: string; role: string; garant_id: string | null }[];
 
-      if (["vedouci", "budouci_vedouci"].includes(profile.role)) {
-        const selfInList = list.some((p) => p.id === profile.id);
-        if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
-        return list;
-      } else {
-        const myPeople = list.filter((p) => p.id === profile.id || p.garant_id === profile.id);
-        const selfInList = myPeople.some((p) => p.id === profile.id);
-        if (!selfInList) myPeople.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
-        return myPeople;
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, role, garant_id, vedouci_id")
+        .eq("is_active", true);
+
+      if (!profile.is_admin) {
+        // Non-admin: jen subtree "mého" vedoucího.
+        const vedouciRootId = ["vedouci", "budouci_vedouci"].includes(profile.role)
+          ? profile.id
+          : profile.vedouci_id;
+        if (!vedouciRootId) return [];
+        // Všichni s vedouci_id = root + sám root.
+        query = query.or(`vedouci_id.eq.${vedouciRootId},id.eq.${vedouciRootId}`);
       }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const list = (data || []) as {
+        id: string;
+        full_name: string;
+        role: string;
+        garant_id: string | null;
+        vedouci_id: string | null;
+      }[];
+
+      // Zajisti, že jsem vždy v seznamu (edge case: moje profil nemusí být vrácen podle filtru)
+      const selfInList = list.some((p) => p.id === profile.id);
+      if (!selfInList) {
+        list.unshift({
+          id: profile.id,
+          full_name: profile.full_name,
+          role: profile.role,
+          garant_id: null,
+          vedouci_id: profile.vedouci_id,
+        });
+      }
+
+      // Seřadit: já první, pak podle jména
+      list.sort((a, b) => {
+        if (a.id === profile.id) return -1;
+        if (b.id === profile.id) return 1;
+        return a.full_name.localeCompare(b.full_name, "cs");
+      });
+
+      return list;
     },
     enabled: !!profile?.id,
   });
