@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
+import { AddMemberDialog } from "@/components/AddMemberDialog";
 
 interface TemplateItem {
   title: string;
@@ -664,6 +665,7 @@ export default function ZapracovaniManagement() {
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [expandedNovacek, setExpandedNovacek] = useState<string | null>(null);
   const [assigningNovacek, setAssigningNovacek] = useState<{ id: string; full_name: string } | null>(null);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
 
   // Task editing state
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -836,11 +838,22 @@ export default function ZapracovaniManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <GraduationCap className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-          ZAPRACOVÁNÍ
-        </h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <GraduationCap className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+            ZAPRACOVÁNÍ
+          </h1>
+        </div>
+        {(profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant") && (
+          <button
+            onClick={() => setAddMemberOpen(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Pozvat nováčka
+          </button>
+        )}
       </div>
 
       {/* Alert for novacci without plan */}
@@ -1188,6 +1201,7 @@ export default function ZapracovaniManagement() {
           onClose={() => setAssigningNovacek(null)}
         />
       )}
+      <AddMemberDialog open={addMemberOpen} onOpenChange={setAddMemberOpen} />
     </div>
   );
 }
