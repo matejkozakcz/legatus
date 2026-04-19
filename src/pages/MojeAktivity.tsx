@@ -115,10 +115,8 @@ const ACTIVITY_COLUMNS = [
   { key: "fsa_actual", header: "FSA Usc." },
   { key: "por_planned", header: "POR Dom." },
   { key: "por_actual", header: "POR Usc." },
-  { key: "info_planned", header: "INFO Dom." },
-  { key: "info_actual", header: "INFO Usc." },
-  { key: "postinfo_planned", header: "POST Dom." },
-  { key: "postinfo_actual", header: "POST Usc." },
+  { key: "nab_planned", header: "NAB Dom." },
+  { key: "nab_actual", header: "NAB Usc." },
   { key: "kl_fsa_actual", header: "KL z FSA" },
   { key: "ser_planned", header: "SER Dom." },
   { key: "ser_actual", header: "SER Usc." },
@@ -138,8 +136,7 @@ const ALL_DISPLAY_COLUMNS = ACTIVITY_COLUMNS;
 
 // Columns auto-synced from client_meetings — read-only in this view
 const AUTO_SYNCED_KEYS: Set<string> = new Set([
-  "fsa_actual", "ser_actual", "poh_actual",
-  "info_actual", "postinfo_actual",
+  "fsa_actual", "ser_actual", "poh_actual", "nab_actual",
   "ref_actual", "bj", "bj_fsa_actual", "bj_ser_actual",
 ]);
 
@@ -278,10 +275,8 @@ export const MojeAktivityContent = () => {
       ser_actual: rec?.ser_actual || 0,
       poh_planned: rec?.poh_planned || 0,
       poh_actual: rec?.poh_actual || 0,
-      info_planned: rec?.info_planned || 0,
-      info_actual: rec?.info_actual || 0,
-      postinfo_planned: rec?.postinfo_planned || 0,
-      postinfo_actual: rec?.postinfo_actual || 0,
+      nab_planned: rec?.nab_planned || 0,
+      nab_actual: rec?.nab_actual || 0,
       ref_actual: rec?.ref_actual || 0,
       bj: rec?.bj || 0,
     };
@@ -337,18 +332,10 @@ export const MojeAktivityContent = () => {
     ...(isVedouciOrBV
       ? ([
           {
-            label: "Info schůzky",
-            plannedKey: "info_planned" as ActivityKey,
+            label: "Nábory",
+            plannedKey: "nab_planned" as ActivityKey,
             plannedLabel: "Domluvené",
-            actualKey: "info_actual" as ActivityKey,
-            actualLabel: "Proběhlé",
-            actualSynced: true,
-          },
-          {
-            label: "Postinfo",
-            plannedKey: "postinfo_planned" as ActivityKey,
-            plannedLabel: "Domluvené",
-            actualKey: "postinfo_actual" as ActivityKey,
+            actualKey: "nab_actual" as ActivityKey,
             actualLabel: "Proběhlé",
             actualSynced: true,
           },

@@ -127,24 +127,47 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Get push subscription
-    const { data: sub } = await supabase.from("push_subscriptions").select("subscription").eq("user_id", user.id).single();
-    if (!sub?.subscription?.keys) {
-      return new Response(JSON.stringify({ ok: false, reason: "no_subscription", message: "Nemáte aktivní push odběr na tomto zařízení." }), {
+    // Get push subscriptions (po P0-2: uživatel může mít víc zařízení)
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("subscription, endpoint")
+      .eq("user_id", user.id);
+
+    const validSubs = (subs || []).filter((s: any) => s.subscription?.keys);
+    if (validSubs.length === 0) {
+      return new Response(JSON.stringify({ ok: false, reason: "no_subscription", message: "Nemáte aktivní push odběr na žádném zařízení." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const pushPayload = JSON.stringify({ title: title || "🧪 Test notifikace", body: body || "Toto je testovací notifikace z admin dashboardu.", data: { type: "test" } });
-    const res = await sendWebPush(sub.subscription, pushPayload, vapidPrivateKey);
-    const status = res.status;
 
-    if (status === 410 || status === 404) {
-      await supabase.from("push_subscriptions").delete().eq("user_id", user.id);
+    let pushed = 0;
+    let lastStatus = 0;
+    const expiredEndpoints: string[] = [];
+
+    for (const s of validSubs) {
+      try {
+        const res = await sendWebPush(s.subscription, pushPayload, vapidPrivateKey);
+        lastStatus = res.status;
+        if (res.status === 201) pushed++;
+        if ((res.status === 410 || res.status === 404) && s.endpoint) {
+          expiredEndpoints.push(s.endpoint);
+        }
+      } catch (e) {
+        console.error("test push failed:", e);
+      }
+    }
+
+    if (expiredEndpoints.length > 0) {
+      await supabase.from("push_subscriptions").delete().in("endpoint", expiredEndpoints);
+    }
+
+    if (pushed === 0 && expiredEndpoints.length === validSubs.length) {
       return new Response(JSON.stringify({ ok: false, reason: "subscription_expired" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ ok: status === 201, status }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: pushed > 0, pushed, total: validSubs.length, status: lastStatus }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("test-notification error:", err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

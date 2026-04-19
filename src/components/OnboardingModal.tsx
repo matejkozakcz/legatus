@@ -217,6 +217,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         await supabase.functions.invoke("notify-new-member", {
           body: {
             member_name: fullName,
+            member_id: user.id,
             vedouci_id: vedouciId,
             garant_id: vedouciId,
             ziskatel_id: finalZiskatelId,

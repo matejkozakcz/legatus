@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           member_name: full_name,
+          member_id: newUser.user.id,
           vedouci_id,
           garant_id,
           ziskatel_id: ziskatel_id || null,

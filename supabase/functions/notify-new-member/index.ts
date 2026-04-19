@@ -135,7 +135,12 @@ async function sendWebPush(subscription: any, payload: string, vapidPrivateKeyB6
  * Sends push notification to vedoucí, BV (budoucí vedoucí), garant, and získatel
  * when a new member registers into their structure.
  *
- * Body: { member_name: string, vedouci_id?: string, garant_id?: string, ziskatel_id?: string }
+ * Body: { member_name: string, member_id?: string, vedouci_id?: string,
+ *         garant_id?: string, ziskatel_id?: string }
+ *
+ * Idempotence (P1-3): pokud je předán member_id, použije se jako idempotency key.
+ * Opakované volání se stejným member_id (např. re-deploy fronty, double-klik v UI,
+ * retry Supabase infrastruktury) neodešle druhou notifikaci.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -143,7 +148,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { member_name, vedouci_id, garant_id, ziskatel_id } = await req.json();
+    const { member_name, member_id, vedouci_id, garant_id, ziskatel_id } = await req.json();
 
     if (!member_name) {
       return new Response(JSON.stringify({ error: "member_name required" }), {
@@ -156,6 +161,25 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // ── Idempotency guard ───────────────────────────────────────────────
+    // Pokud volající nedodá member_id, jedeme best-effort (žádná ochrana).
+    if (member_id) {
+      const { error: idemErr } = await supabase
+        .from("notification_idempotency")
+        .insert({ source: "notify-new-member", idempotency_key: member_id });
+      if (idemErr) {
+        // PK violation (23505) = už jsme pro tohoto člena odeslali. Vracíme 200 OK.
+        if ((idemErr as any).code === "23505") {
+          return new Response(
+            JSON.stringify({ ok: true, pushed: 0, reason: "already_notified" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        console.error("idempotency insert error:", idemErr);
+        // Pokračujeme dál – raději odeslat duplicitně než neodeslat vůbec.
+      }
+    }
 
     // Check notification_rules for active new_member rule
     const { data: rules } = await supabase
@@ -218,10 +242,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get push subscriptions
+    // Get push subscriptions (po P0-2: jeden user může mít víc zařízení / endpointů)
     const { data: subs } = await supabase
       .from("push_subscriptions")
-      .select("user_id, subscription")
+      .select("user_id, subscription, endpoint")
       .in("user_id", recipientIds);
 
     if (!subs || subs.length === 0) {
@@ -249,8 +273,9 @@ Deno.serve(async (req) => {
         const res = await sendWebPush(sub.subscription, pushPayload, vapidPrivateKey);
         console.log(`Push to ${sub.user_id}: ${res.status}`);
         if (res.status === 201) pushed++;
-        if (res.status === 410 || res.status === 404) {
-          await supabase.from("push_subscriptions").delete().eq("user_id", sub.user_id);
+        if ((res.status === 410 || res.status === 404) && sub.endpoint) {
+          // Smaž jen konkrétní stale endpoint, ne všechny řádky uživatele
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
         }
       } catch (e) {
         console.error(`Push to ${sub.user_id} failed:`, e);

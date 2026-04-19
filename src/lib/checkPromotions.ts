@@ -31,14 +31,17 @@ const PROMOTION_ROLES: PromotionRole[] = ["garant", "budouci_vedouci", "vedouci"
 async function ensureNotification(
   vedouciId: string,
   title: string,
-  body: string
+  body: string,
+  relatedEntityId: string
 ): Promise<void> {
+  // Deduplikace podle stabilního klíče (member_id), ne podle title –
+  // šablona title/body se mění (počet BJ, editace šablony v DB).
   const { data: existing } = await supabase
     .from("notifications")
     .select("id")
     .eq("recipient_id", vedouciId)
     .eq("type", PROMOTION_NOTIFICATION_TYPE)
-    .eq("title", title)
+    .eq("related_entity_id", relatedEntityId)
     .eq("read", false)
     .limit(1);
 
@@ -47,7 +50,7 @@ async function ensureNotification(
   const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
   const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  const { data: notifData } = await supabase
+  const { data: notifData, error: insertErr } = await supabase
     .from("notifications")
     .insert({
       sender_id: vedouciId,
@@ -55,10 +58,18 @@ async function ensureNotification(
       type: PROMOTION_NOTIFICATION_TYPE,
       title,
       body,
+      related_entity_id: relatedEntityId,
       deadline: new Date().toISOString().split("T")[0],
     })
     .select("id")
     .single();
+
+  // Partial unique index (uniq_notifications_unread_entity) zajistí, že pokud mezitím
+  // jiná záložka / běh notifikaci vytvoří, INSERT selže s 23505 – bereme to jako OK.
+  if (insertErr) {
+    if ((insertErr as any).code === "23505") return;
+    throw insertErr;
+  }
 
   if (notifData?.id) {
     try {
@@ -141,7 +152,7 @@ async function syncPromotionRequest(
         .delete()
         .eq("recipient_id", profileId)
         .eq("type", PROMOTION_NOTIFICATION_TYPE)
-        .eq("title", title)
+        .eq("related_entity_id", userId)
         .eq("read", false);
     }
     return;
@@ -165,7 +176,7 @@ async function syncPromotionRequest(
     }
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky poprvé splněny");
-    await ensureNotification(profileId, title, body);
+    await ensureNotification(profileId, title, body, userId);
     return;
   }
 
@@ -188,7 +199,7 @@ async function syncPromotionRequest(
     });
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky opět splněny");
-    await ensureNotification(profileId, title, body);
+    await ensureNotification(profileId, title, body, userId);
     return;
   }
 
@@ -216,7 +227,7 @@ async function syncPromotionRequest(
     }
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky znovu splněny po zamítnutí");
-    await ensureNotification(profileId, title, body);
+    await ensureNotification(profileId, title, body, userId);
     return;
   }
 
@@ -231,17 +242,69 @@ async function syncPromotionRequest(
   }
 }
 
+// In-flight mutex per vedouci to prevent duplicate concurrent runs from
+// Dashboard + SpravaTeam / multiple tabs. Key: vedouci_id.
+const inFlightChecks = new Map<string, Promise<void>>();
+// Short cross-tab cooldown via localStorage to prevent tight race between tabs.
+const CHECK_COOLDOWN_MS = 5000;
+
+function isCoolingDown(vedouciId: string): boolean {
+  try {
+    const ts = Number(localStorage.getItem(`__promo_check_ts_${vedouciId}`) || 0);
+    return Date.now() - ts < CHECK_COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markCheckRan(vedouciId: string): void {
+  try {
+    localStorage.setItem(`__promo_check_ts_${vedouciId}`, String(Date.now()));
+  } catch { /* ignore */ }
+}
+
 /**
  * Zkontroluje podmínky povýšení pro všechny členy týmu a vytvoří
  * promotion_request + notifikaci Vedoucímu jen při novém nebo znovu obnoveném nároku.
  *
  * Lze volat z libovolné stránky — stačí předat profile vedoucího a seznam členů.
+ *
+ * Ochrana proti závodům:
+ *  1) in-memory mutex (inFlightChecks) – dvě volání ze stejné záložky ve stejný
+ *     čas sdílí jeden běžící Promise.
+ *  2) cross-tab cooldown (localStorage) – mezi záložkami platí 5s okno, které
+ *     zabrání souběhu mezi Dashboardem a SpravaTeam ve dvou tabech.
  */
 export async function checkPromotions(
   profile: CheckProfile,
   members: CheckMember[]
 ): Promise<void> {
-  if (profile.role !== "vedouci" || members.length === 0) return;
+  // Vedoucí i Budoucí vedoucí spouštějí check pro svůj podstrom.
+  if (!["vedouci", "budouci_vedouci"].includes(profile.role) || members.length === 0) return;
+
+  // In-flight guard: pokud už běží check pro tento profile, počkej na výsledek.
+  const existing = inFlightChecks.get(profile.id);
+  if (existing) return existing;
+
+  // Cross-tab cooldown: druhý tab nespustí duplicitně hned po prvním.
+  if (isCoolingDown(profile.id)) return;
+
+  const run = (async () => {
+    try {
+      await checkPromotionsInner(profile, members);
+    } finally {
+      markCheckRan(profile.id);
+      inFlightChecks.delete(profile.id);
+    }
+  })();
+  inFlightChecks.set(profile.id, run);
+  return run;
+}
+
+async function checkPromotionsInner(
+  profile: CheckProfile,
+  members: CheckMember[]
+): Promise<void> {
 
   // Load notification rule for promotion_eligible (templates from DB)
   const eligibleRule = await getNotificationRule("promotion_eligible");

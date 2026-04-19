@@ -266,14 +266,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get push subscription for recipient
-    const { data: sub } = await supabase
+    // Get push subscriptions for recipient (po P0-2 může user mít víc zařízení)
+    const { data: subs } = await supabase
       .from("push_subscriptions")
-      .select("subscription")
-      .eq("user_id", notif.recipient_id)
-      .single();
+      .select("subscription, endpoint")
+      .eq("user_id", notif.recipient_id);
 
-    if (!sub?.subscription || !sub.subscription.keys) {
+    const validSubs = (subs || []).filter((s: any) => s.subscription?.keys);
+
+    if (validSubs.length === 0) {
       return new Response(JSON.stringify({ ok: true, pushed: false, reason: "no_subscription" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -285,29 +286,45 @@ Deno.serve(async (req) => {
       data: { notification_id: notif.id, type: notif.type, redirect_url: notif.redirect_url || null },
     });
 
-    console.log(`Sending push to ${notif.recipient_id}, endpoint: ${sub.subscription.endpoint?.slice(0, 60)}...`);
+    let pushedCount = 0;
+    let lastStatus = 0;
+    const expiredEndpoints: string[] = [];
 
-    const pushRes = await sendWebPush(sub.subscription, pushPayload, VAPID_PUBLIC_KEY, vapidPrivateKey);
-    const pushStatus = pushRes.status;
-    const pushBody = await pushRes.text();
+    for (const s of validSubs) {
+      console.log(`Sending push to ${notif.recipient_id}, endpoint: ${s.subscription.endpoint?.slice(0, 60)}...`);
+      try {
+        const pushRes = await sendWebPush(s.subscription, pushPayload, VAPID_PUBLIC_KEY, vapidPrivateKey);
+        lastStatus = pushRes.status;
+        const pushBody = await pushRes.text();
+        console.log(`Push response: ${pushRes.status} ${pushBody.slice(0, 200)}`);
 
-    console.log(`Push response: ${pushStatus} ${pushBody.slice(0, 200)}`);
+        if (pushRes.status === 201) {
+          pushedCount++;
+        } else if (pushRes.status === 410 || pushRes.status === 404) {
+          // Smaž jen konkrétní stale endpoint, ne všechny řádky userova
+          if (s.endpoint) expiredEndpoints.push(s.endpoint);
+        }
+      } catch (e) {
+        console.error(`Push failed for endpoint:`, e);
+      }
+    }
 
-    // 410/404 = subscription expired → delete stale subscription
-    if (pushStatus === 410 || pushStatus === 404) {
+    if (expiredEndpoints.length > 0) {
       await supabase
         .from("push_subscriptions")
         .delete()
-        .eq("user_id", notif.recipient_id);
+        .in("endpoint", expiredEndpoints);
+    }
 
+    if (pushedCount === 0 && expiredEndpoints.length === validSubs.length) {
       return new Response(
-        JSON.stringify({ ok: true, pushed: false, reason: "subscription_expired", status: pushStatus }),
+        JSON.stringify({ ok: true, pushed: false, reason: "subscription_expired", status: lastStatus }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ ok: true, pushed: pushStatus === 201, status: pushStatus, detail: pushBody.slice(0, 100) }),
+      JSON.stringify({ ok: true, pushed: pushedCount > 0, pushedCount, total: validSubs.length, status: lastStatus }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

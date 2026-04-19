@@ -207,7 +207,7 @@ const SpravaTeam = () => {
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
     queryKey: ["promotion_requests", profile?.id],
     queryFn: async () => {
-      if (!profile?.id || profile.role !== "vedouci") return [];
+      if (!profile?.id || !["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
       const { data, error } = await supabase
         .from("promotion_requests")
         .select("id, user_id, requested_role, status, cumulative_bj, direct_ziskatels")
@@ -215,7 +215,7 @@ const SpravaTeam = () => {
       if (error) throw error;
       return (data || []) as PromotionRequest[];
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!profile?.id && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci"),
   });
 
   const approveMutation = useMutation({
@@ -521,7 +521,7 @@ const SpravaTeam = () => {
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: 120 }}>
           <div style={{ padding: "0 16px" }}>
             {/* Čekající povýšení */}
-            {profile?.role === "vedouci" && enrichedRequests.length > 0 && (
+            {(profile?.role === "vedouci" || profile?.role === "budouci_vedouci") && enrichedRequests.length > 0 && (
               <section style={{ marginBottom: 20 }}>
                 <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
                   <TrendingUp className="h-4 w-4" style={{ color: "#00abbd" }} />
@@ -633,8 +633,8 @@ const SpravaTeam = () => {
           <MemberDetailModal
             member={detailMember}
             onClose={() => setDetailMember(null)}
-            onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-            onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+            onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+            onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
           />
         )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
@@ -661,7 +661,7 @@ const SpravaTeam = () => {
       </div>
 
       {/* Čekající povýšení */}
-      {profile?.role === "vedouci" && enrichedRequests.length > 0 && (
+      {(profile?.role === "vedouci" || profile?.role === "budouci_vedouci") && enrichedRequests.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" style={{ color: "#00abbd" }} />
@@ -760,8 +760,8 @@ const SpravaTeam = () => {
         <MemberDetailModal
           member={detailMember}
           onClose={() => setDetailMember(null)}
-          onEdit={profile?.role === "vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-          onNotify={profile?.role === "vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
+          onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+          onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
         />
       )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />

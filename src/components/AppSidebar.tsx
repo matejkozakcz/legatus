@@ -50,8 +50,8 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // Pending promotion requests count for vedouci
-  const isVedouci = profile?.role === "vedouci";
+  // Pending promotion requests count for vedouci / budouci_vedouci
+  const isVedouci = profile?.role === "vedouci" || profile?.role === "budouci_vedouci";
   const { data: pendingPromotionCount = 0 } = useQuery({
     queryKey: ["pending_promotions_count", profile?.id],
     queryFn: async () => {

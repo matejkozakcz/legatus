@@ -398,7 +398,7 @@ const Dashboard = () => {
   // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
   const promotionCheckDoneRef = useRef(false);
   useEffect(() => {
-    if (!profile || profile.role !== "vedouci" || promotionCheckDoneRef.current) return;
+    if (!profile || !["vedouci", "budouci_vedouci"].includes(profile.role) || promotionCheckDoneRef.current) return;
     promotionCheckDoneRef.current = true;
 
     supabase

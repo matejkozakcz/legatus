@@ -35,17 +35,14 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     for (const notif of notifications) {
-      // Get push subscription
-      const { data: sub } = await supabase
+      // Check recipient má alespoň jeden aktivní push odběr (může mít víc zařízení)
+      const { count } = await supabase
         .from("push_subscriptions")
-        .select("subscription")
-        .eq("user_id", notif.recipient_id)
-        .single();
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", notif.recipient_id);
 
-      if (sub?.subscription) {
-        // Call send-push function to reuse push logic
-        // But for simplicity, we'll directly send a simple push here too
-        // For now, invoke send-push
+      if ((count ?? 0) > 0) {
+        // Delegate na send-push, která rozesílá na všechny endpointy usera
         const fnUrl = `${supabaseUrl}/functions/v1/send-push`;
         await fetch(fnUrl, {
           method: "POST",

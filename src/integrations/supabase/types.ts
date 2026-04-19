@@ -27,6 +27,8 @@ export type Database = {
           info_actual: number
           info_planned: number
           kl_fsa_actual: number | null
+          nab_actual: number
+          nab_planned: number
           poh_actual: number | null
           poh_planned: number | null
           por_actual: number | null
@@ -53,6 +55,8 @@ export type Database = {
           info_actual?: number
           info_planned?: number
           kl_fsa_actual?: number | null
+          nab_actual?: number
+          nab_planned?: number
           poh_actual?: number | null
           poh_planned?: number | null
           por_actual?: number | null
@@ -79,6 +83,8 @@ export type Database = {
           info_actual?: number
           info_planned?: number
           kl_fsa_actual?: number | null
+          nab_actual?: number
+          nab_planned?: number
           poh_actual?: number | null
           poh_planned?: number | null
           por_actual?: number | null
@@ -412,6 +418,7 @@ export type Database = {
           recipient_id: string
           redirect_url: string | null
           related_case_id: string | null
+          related_entity_id: string | null
           related_meeting_id: string | null
           reminder_sent: boolean
           sender_id: string
@@ -428,6 +435,7 @@ export type Database = {
           recipient_id: string
           redirect_url?: string | null
           related_case_id?: string | null
+          related_entity_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id: string
@@ -444,6 +452,7 @@ export type Database = {
           recipient_id?: string
           redirect_url?: string | null
           related_case_id?: string | null
+          related_entity_id?: string | null
           related_meeting_id?: string | null
           reminder_sent?: boolean
           sender_id?: string
@@ -721,6 +730,7 @@ export type Database = {
       push_subscriptions: {
         Row: {
           created_at: string
+          endpoint: string | null
           id: string
           subscription: Json
           user_id: string
@@ -741,7 +751,7 @@ export type Database = {
           {
             foreignKeyName: "push_subscriptions_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

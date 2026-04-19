@@ -42,7 +42,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const { data: garanti = [] } = useQuery({
     queryKey: ["garanti", profile?.id],
     queryFn: async () => {
-      if (!profile?.id || profile.role !== "vedouci") return [];
+      if (!profile?.id || !["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
@@ -50,7 +50,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         .eq("vedouci_id", profile.id)
         .eq("is_active", true);
       if (error) throw error;
-      // Include the Vedoucí themselves as a garant option
+      // Include the Vedoucí (nebo BV) themselves as a garant option
       const list = data || [];
       const selfInList = list.some((g) => g.id === profile.id);
       if (!selfInList) {
@@ -58,7 +58,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
       }
       return list;
     },
-    enabled: !!profile?.id && profile?.role === "vedouci",
+    enabled: !!profile?.id && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci"),
   });
 
   // Get vedoucí name for Garant users
@@ -82,7 +82,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     queryKey: ["ziskatel_candidates", profile?.id, profile?.role],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
+      const vedouciId = ["vedouci", "budouci_vedouci"].includes(profile.role) ? profile.id : profile.vedouci_id;
       // Fetch all active members under this vedoucí
       const { data, error } = await supabase
         .from("profiles")
@@ -92,7 +92,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
       if (error) throw error;
       const list = (data || []) as { id: string; full_name: string; role: string; garant_id: string | null }[];
 
-      if (profile.role === "vedouci") {
+      if (["vedouci", "budouci_vedouci"].includes(profile.role)) {
         const selfInList = list.some((p) => p.id === profile.id);
         if (!selfInList) list.unshift({ id: profile.id, full_name: profile.full_name, role: profile.role, garant_id: null });
         return list;
@@ -114,7 +114,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
     try {
       const password = Math.random().toString(36).slice(-10) + "A1!";
 
-      const vedouciId = profile.role === "vedouci" ? profile.id : profile.vedouci_id;
+      const vedouciId = ["vedouci", "budouci_vedouci"].includes(profile.role) ? profile.id : profile.vedouci_id;
       const garantId = profile.role === "garant" ? profile.id : selectedGarant;
       const ziskatelId = selectedZiskatel || profile.id;
 
@@ -210,7 +210,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
             <Input value="Nováček" disabled className="bg-muted" />
           </div>
 
-          {profile?.role === "vedouci" ? (
+          {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (
             <div>
               <label className="text-sm font-body font-medium text-foreground mb-1 block">Garant</label>
               <PersonPicker
@@ -249,7 +249,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Vedoucí</label>
             <Input
               value={
-                profile?.role === "vedouci"
+                profile?.role === "vedouci" || profile?.role === "budouci_vedouci"
                   ? `${profile?.full_name || ""} (Já)`
                   : vedouciProfile?.full_name || "(načítání...)"
               }

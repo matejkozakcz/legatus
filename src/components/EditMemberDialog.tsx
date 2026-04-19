@@ -72,7 +72,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
   const [godHistorickyBj, setGodHistorickyBj] = useState("");
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  const isVedouci = profile?.role === "vedouci";
+  const isVedouci = profile?.role === "vedouci" || profile?.role === "budouci_vedouci";
   const isGarant = profile?.role === "garant";
   const canEditOsobniId = isVedouci || isGarant || isGodMode;
 
@@ -243,7 +243,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
   });
 
   const getRoleActions = () => {
-    if (!member || !profile || profile.role !== "vedouci") return [];
+    if (!member || !profile || !["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
     if (member.vedouci_id !== profile.id) return [];
     const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
     if (member.role === "novacek") {
