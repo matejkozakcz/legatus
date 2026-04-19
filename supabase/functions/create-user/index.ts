@@ -129,11 +129,34 @@ Deno.serve(async (req) => {
     }
 
     // Send invite (no password ever generated server-side)
-    const redirectTo = `${Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "")}`;
+    //
+    // redirectTo určuje, kam uživatele po kliknutí na invite link v emailu
+    // přesměruje Supabase. Bez něj použije default ze Supabase Auth settings
+    // (obvykle root domény), takže uživatel skončí na /dashboard se session
+    // navázanou přes URL hash, aniž by si nastavil heslo — a příště se už
+    // nemůže přihlásit.
+    //
+    // Priorita zdrojů (od nejvyšší):
+    //   1. payload.redirect_to — klient posílá window.location.origin
+    //   2. env APP_URL / SITE_URL
+    //   3. Origin hlavička požadavku
+    //   4. Fallback na SUPABASE_URL
+    //
+    // Nakonec přidáme /set-password — klient má guard v main.tsx, který
+    // invite/recovery linky na jakékoli cestě přesměruje sem, ale ať je
+    // i tak default správně.
+    const originHeader = req.headers.get("Origin") || req.headers.get("origin");
+    const payloadRedirect = typeof payload.redirect_to === "string" ? payload.redirect_to : "";
+    const envAppUrl = Deno.env.get("APP_URL") || Deno.env.get("SITE_URL") || "";
+    const baseUrl = (payloadRedirect || envAppUrl || originHeader || Deno.env.get("SUPABASE_URL") || "")
+      .replace(/\/$/, "");
+    const redirectTo = `${baseUrl}/set-password`;
+
     const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
         data: { full_name, role },
+        redirectTo,
       }
     );
 

@@ -2,6 +2,27 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+// Supabase invite/recovery linky pošlou uživatele na <origin>/<path>#access_token=...&type=invite|recovery
+// Chceme, aby tyhle linky vždy přistály na /set-password — ať už redirectTo
+// bylo nastavené jakkoli, nebo ať má uživatel stránku zacachovanou.
+// Přesměrujeme JEŠTĚ PŘED mountováním Reactu, aby SDK nezpracoval hash
+// a nevlítl rovnou do dashboardu bez hesla.
+(() => {
+  try {
+    const hash = window.location.hash || "";
+    if (!hash) return;
+    const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+    const type = params.get("type");
+    const onSetPassword = window.location.pathname === "/set-password";
+    if ((type === "invite" || type === "recovery") && !onSetPassword) {
+      // Zachováme hash (obsahuje access_token, který SDK musí zpracovat na /set-password)
+      window.location.replace(`/set-password${hash}`);
+    }
+  } catch {
+    /* ignore — necháme normální flow */
+  }
+})();
+
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Register service worker for PWA

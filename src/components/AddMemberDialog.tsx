@@ -176,6 +176,10 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           vedouci_id: vedouciId,
           garant_id: garantId,
           ziskatel_id: ziskatelId,
+          // Frontend origin — edge fce na něj nalepí /set-password jako redirectTo.
+          // Bez toho Supabase použije default ze Site URL v Auth settings a
+          // invited user se dostane rovnou do appky bez nastaveného hesla.
+          redirect_to: window.location.origin,
         },
       });
 
