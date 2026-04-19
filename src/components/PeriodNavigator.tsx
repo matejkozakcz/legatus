@@ -93,7 +93,8 @@ export function PeriodNavigator({
           borderRadius: 16,
           padding: "10px 16px",
           border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
-          maxWidth: Math.round(520 * widthScale),
+          width: Math.round(320 * widthScale),
+          maxWidth: "100%",
           margin: "0 auto",
         }}
       >
