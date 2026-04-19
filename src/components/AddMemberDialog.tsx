@@ -111,11 +111,18 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+
+    // Client-side email validation (mirrors server)
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setEmailError("Neplatný formát e-mailu.");
+      return;
+    }
+    setEmailError(null);
+
     setSubmitting(true);
 
     try {
-      const password = Math.random().toString(36).slice(-10) + "A1!";
-
       const vedouciId = ["vedouci", "budouci_vedouci"].includes(profile.role) ? profile.id : profile.vedouci_id;
       const garantId = profile.role === "garant" ? profile.id : selectedGarant;
       const ziskatelId = selectedZiskatel || profile.id;
@@ -131,11 +138,10 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         return;
       }
 
-      const { error } = await supabase.functions.invoke("create-user", {
+      const { data, error } = await supabase.functions.invoke("create-user", {
         body: {
-          email,
-          password,
-          full_name: fullName,
+          email: normalizedEmail,
+          full_name: fullName.trim(),
           role: "novacek",
           vedouci_id: vedouciId,
           garant_id: garantId,
@@ -143,14 +149,47 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         },
       });
 
-      if (error) throw error;
+      // FunctionsHttpError carries status on error.context
+      if (error) {
+        const status = (error as { context?: { status?: number } })?.context?.status;
+        let serverMsg: string | null = null;
+        try {
+          const ctxRes = (error as { context?: { json?: () => Promise<{ error?: string }> } })?.context;
+          if (ctxRes?.json) {
+            const body = await ctxRes.json();
+            serverMsg = body?.error ?? null;
+          }
+        } catch {
+          // ignore
+        }
 
-      setGeneratedPassword(password);
+        if (status === 409) {
+          toast.error(serverMsg || "Tento e-mail už je registrován.");
+        } else if (status === 429) {
+          toast.error(serverMsg || "Překročil jsi limit pozvánek, zkus to za hodinu.");
+        } else if (status === 400 && serverMsg?.toLowerCase().includes("e-mail")) {
+          setEmailError(serverMsg);
+        } else {
+          toast.error(serverMsg || error.message || "Nepodařilo se odeslat pozvánku.");
+        }
+        setSubmitting(false);
+        return;
+      }
+
+      // Server may also return { error } in 2xx body — handle defensively
+      if (data && typeof data === "object" && "error" in data && data.error) {
+        toast.error(String(data.error));
+        setSubmitting(false);
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Člen byl úspěšně přidán.");
+      toast.success(`Pozvánka byla odeslána na ${normalizedEmail}`);
       fireConfetti();
-    } catch (err: any) {
-      toast.error(err.message || "Nepodařilo se vytvořit uživatele.");
+      handleClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Nepodařilo se odeslat pozvánku.";
+      toast.error(message);
     }
     setSubmitting(false);
   };
@@ -158,35 +197,12 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
   const handleClose = () => {
     setFullName("");
     setEmail("");
+    setEmailError(null);
     setSelectedGarant("");
     setSelectedZiskatel("");
-    setGeneratedPassword(null);
     onOpenChange(false);
   };
 
-  if (generatedPassword) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-heading">Člen byl vytvořen</DialogTitle>
-            <DialogDescription className="font-body">
-              Vygenerované heslo (zobrazen pouze jednou):
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-muted p-3 rounded-input font-mono text-sm text-foreground select-all">
-            {generatedPassword}
-          </div>
-          <DialogFooter>
-            <Button onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Heslo zkopírováno."); }}>
-              Kopírovat heslo
-            </Button>
-            <Button variant="ghost" onClick={handleClose}>Zavřít</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
