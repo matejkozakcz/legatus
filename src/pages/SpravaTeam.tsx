@@ -787,6 +787,7 @@ const SpravaTeam = () => {
         />
       )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
+      <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
       {notifyMember && (
         <CreateNotificationDialog
           open={!!notifyMember}
