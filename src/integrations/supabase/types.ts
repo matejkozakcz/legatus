@@ -279,6 +279,32 @@ export type Database = {
           },
         ]
       }
+      invite_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          inviter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inviter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inviter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_attempts_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_rule_runs: {
         Row: {
           details: Json | null
