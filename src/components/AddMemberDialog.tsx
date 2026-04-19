@@ -220,7 +220,21 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
           </div>
           <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">E-mail</label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="jan@email.cz" />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+              required
+              placeholder="jan@email.cz"
+              aria-invalid={!!emailError}
+              className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
+            />
+            {emailError && (
+              <p className="text-xs text-destructive mt-1 font-body">{emailError}</p>
+            )}
           </div>
 
           <div>
