@@ -157,12 +157,12 @@ function CaseCombobox({
       {dropdownOpen && (
         <div style={{
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-          background: "var(--card)", border: "1px solid var(--border)",
+          background: "hsl(var(--card))", border: "1px solid hsl(var(--border))",
           borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
           maxHeight: 220, overflowY: "auto",
         }}>
           {filteredCases.length === 0 && !allowCreateCase && (
-            <div style={{ padding: "10px 14px", fontSize: 13, color: "var(--muted-foreground)" }}>
+            <div style={{ padding: "10px 14px", fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
               Žádný případ nenalezen
             </div>
           )}
