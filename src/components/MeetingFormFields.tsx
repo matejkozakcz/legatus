@@ -195,7 +195,7 @@ function CaseCombobox({
               style={{
                 display: "block", width: "100%", textAlign: "left",
                 padding: "9px 14px", fontSize: 13, border: "none",
-                borderTop: filteredCases.length > 0 ? "1px solid var(--border)" : "none",
+                borderTop: filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
                 background: "transparent",
                 color: "#00abbd", fontWeight: 600, cursor: "pointer",
               }}
