@@ -52,7 +52,7 @@ async function executeSql(statements: string[]) {
     await sql.end();
   } catch (e) {
     await sql.end();
-    throw new Error(`SQL execution failed: ${e.message}`);
+    throw new Error(`SQL execution failed: ${(e as Error).message}`);
   }
 }
 
@@ -435,7 +435,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
