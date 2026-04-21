@@ -177,10 +177,21 @@ Deno.serve(async (req) => {
 
       const globalVars = await loadGlobalVars(supabase, pragueTime);
 
+      // Pre-fetch which recipients have at least one push subscription, ať
+      // můžeme do detailů zalogovat, kolik adresátů push minelo (push_skipped_no_sub).
+      const recipientIds = recipients.map((r) => r.id);
+      const { data: subRows } = await supabase
+        .from("push_subscriptions")
+        .select("user_id")
+        .in("user_id", recipientIds);
+      const usersWithSub = new Set((subRows || []).map((r: any) => r.user_id));
+
       const fnUrl = `${supabaseUrl}/functions/v1/send-push`;
       let ruleSent = 0;
       let ruleFailed = 0;
       let rulePushed = 0;
+      let pushSkippedNoSub = 0;
+      let pushFailed = 0;
       const errorSamples: string[] = [];
 
       for (const recipient of recipients) {
@@ -217,18 +228,30 @@ Deno.serve(async (req) => {
           }
 
           if (notifData?.id && rule.send_push) {
-            try {
-              const pushRes = await fetch(fnUrl, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${serviceRoleKey}`,
-                },
-                body: JSON.stringify({ notification_id: notifData.id }),
-              });
-              if (pushRes.ok) rulePushed++;
-            } catch (e) {
-              console.error(`[scheduled-notifications] Push fetch error: ${e}`);
+            if (!usersWithSub.has(recipient.id)) {
+              pushSkippedNoSub++;
+            } else {
+              try {
+                const pushRes = await fetch(fnUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${serviceRoleKey}`,
+                  },
+                  body: JSON.stringify({ notification_id: notifData.id }),
+                });
+                if (pushRes.ok) {
+                  rulePushed++;
+                } else {
+                  pushFailed++;
+                  if (errorSamples.length < 3) {
+                    errorSamples.push(`Push HTTP ${pushRes.status} for ${recipient.id}`);
+                  }
+                }
+              } catch (e) {
+                pushFailed++;
+                console.error(`[scheduled-notifications] Push fetch error: ${e}`);
+              }
             }
           }
         }
@@ -237,7 +260,17 @@ Deno.serve(async (req) => {
         totalSent++;
       }
 
-      ruleResults.push({ rule: rule.name, recipients: recipients.length, sent: ruleSent, failed: ruleFailed });
+      const pushHealthIssue = rule.send_push && rulePushed === 0 && recipients.length > 0;
+
+      ruleResults.push({
+        rule: rule.name,
+        recipients: recipients.length,
+        sent: ruleSent,
+        failed: ruleFailed,
+        pushed: rulePushed,
+        push_skipped_no_sub: pushSkippedNoSub,
+        push_failed: pushFailed,
+      });
 
       await logRun({
         rule_id: rule.id,
@@ -246,9 +279,16 @@ Deno.serve(async (req) => {
         inserted_count: ruleSent,
         failed_count: ruleFailed,
         push_sent_count: rulePushed,
-        status: ruleFailed === 0 ? "ok" : (ruleSent === 0 ? "error" : "partial"),
-        error_message: errorSamples[0] ?? null,
-        details: errorSamples.length > 0 ? { errors: errorSamples } : null,
+        status: ruleFailed === 0 ? (pushHealthIssue ? "partial" : "ok") : (ruleSent === 0 ? "error" : "partial"),
+        error_message: pushHealthIssue
+          ? `Push: 0/${recipients.length} doručeno (no_sub=${pushSkippedNoSub}, failed=${pushFailed})`
+          : (errorSamples[0] ?? null),
+        details: {
+          push_skipped_no_sub: pushSkippedNoSub,
+          push_failed: pushFailed,
+          push_sent: rulePushed,
+          ...(errorSamples.length > 0 ? { errors: errorSamples } : {}),
+        },
       });
     }
 
