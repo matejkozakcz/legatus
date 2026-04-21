@@ -102,9 +102,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <NotificationPermissionBanner />
             {children}
           </main>
+          <NotificationPermissionBanner />
           <MobileBottomNav />
           <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </div>
@@ -128,13 +128,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Settings className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
-            <NotificationPermissionBanner />
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
               {children}
             </main>
           </div>
         </div>
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <NotificationPermissionBanner />
       </SidebarProvider>
     </ProtectedRoute>
   );
