@@ -136,7 +136,14 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      let recipients: { id: string; full_name: string; role: string }[] = [];
+      let recipients: {
+        id: string;
+        full_name: string;
+        role: string;
+        vedouci_id?: string | null;
+        garant_id?: string | null;
+        ziskatel_id?: string | null;
+      }[] = [];
       let recipientsError: string | null = null;
 
       // Scheduled notifikace nemají "triggering user" (nejsou event-based),
@@ -149,10 +156,12 @@ Deno.serve(async (req) => {
       // což defaultně znamená všichni aktivní.
       const hasRoles = Array.isArray(rule.recipient_roles) && rule.recipient_roles.length > 0;
 
+      const PROFILE_FIELDS = "id, full_name, role, vedouci_id, garant_id, ziskatel_id";
+
       if (hasRoles) {
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
-          .select("id, full_name, role")
+          .select(PROFILE_FIELDS)
           .eq("is_active", true)
           .in("role", rule.recipient_roles);
         if (profErr) {
@@ -164,7 +173,7 @@ Deno.serve(async (req) => {
         // by_role bez vybraných rolí → záměr admina je "všichni" pro scheduled
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
-          .select("id, full_name, role")
+          .select(PROFILE_FIELDS)
           .eq("is_active", true);
         if (profErr) {
           recipientsError = `Recipients (all) error: ${profErr.message}`;
@@ -231,11 +240,30 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // sender_type resolver:
+        //   - "system"    → sender_id = recipient_id (default; "anonymní" systémový odesílatel)
+        //   - "self"      → pro scheduled nemá smysl (není triggering user) → fallback na system
+        //   - "hierarchy" → nejbližší nadřízený v kaskádě vedouci > garant > získatel
+        const resolveSenderId = (): string => {
+          const st = rule.sender_type || "system";
+          if (st === "hierarchy") {
+            return (
+              recipient.vedouci_id ||
+              recipient.garant_id ||
+              recipient.ziskatel_id ||
+              recipient.id
+            );
+          }
+          // "system" a "self" → sender = recipient
+          return recipient.id;
+        };
+        const senderId = resolveSenderId();
+
         let insertedNotifId: string | null = null;
 
         if (rule.send_in_app) {
           const { data: notifData, error: insErr } = await supabase.from("notifications").insert({
-            sender_id: recipient.id,
+            sender_id: senderId,
             recipient_id: recipient.id,
             type: rule.trigger_event || "scheduled",
             title,
