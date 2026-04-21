@@ -304,7 +304,7 @@ export function MeetingDetailModal({
                         className="flex-1 mx-1"
                         style={{
                           height: 2,
-                          background: i < activeIdx ? color : "var(--border, #e1e9eb)",
+                          background: i < activeIdx ? color : "hsl(var(--border))",
                           opacity: i < activeIdx ? 0.5 : 0.3,
                           borderRadius: 1,
                           marginBottom: 16,
