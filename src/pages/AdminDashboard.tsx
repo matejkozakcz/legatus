@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
 import {
   Save,
@@ -1522,6 +1524,30 @@ function NotificationRulesTab() {
   const [testRule, setTestRule] = useState<NotifRule | null>(null);
   const [testVars, setTestVars] = useState<Record<string, string>>({});
   const [showVarsModal, setShowVarsModal] = useState(false);
+  // Příjemce testu: null = admin sobě; jinak UUID vybraného uživatele
+  const [testRecipientId, setTestRecipientId] = useState<string | null>(null);
+  const [recipientPickerOpen, setRecipientPickerOpen] = useState(false);
+
+  // Aktivní uživatelé pro picker (načítáme jen když je otevřený test dialog,
+  // aby se nešidilo loading při prvním kliknutí)
+  const { data: activeUsers = [] } = useQuery({
+    queryKey: ["admin_active_profiles_for_test"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true)
+        .order("full_name");
+      return (data || []) as { id: string; full_name: string; role: string }[];
+    },
+    enabled: !!testRule,
+    staleTime: 60 * 1000,
+  });
+
+  const selectedRecipient = useMemo(
+    () => activeUsers.find((u) => u.id === testRecipientId) || null,
+    [activeUsers, testRecipientId],
+  );
 
   const extractPlaceholders = (rule: NotifRule): string[] => {
     const combined = `${rule.title_template} ${rule.body_template}`;
@@ -1537,6 +1563,7 @@ function NotificationRulesTab() {
     });
     setTestVars(defaults);
     setTestRule(rule);
+    setTestRecipientId(null); // default = admin sobě
   };
 
   const sendTestNotification = async () => {
@@ -1546,9 +1573,13 @@ function NotificationRulesTab() {
       const title = (testRule.title_template || "Test").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
       const body = (testRule.body_template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
 
-      // Test posíláme adminovi sobě, ale RESPEKTUJEME send_in_app a send_push
-      // flagy z pravidla — admin tak vidí přesně to, co reálně dostane
-      // koncový uživatel.
+      // Příjemce: pokud admin nevybral konkrétního uživatele, posíláme sobě.
+      // Pokud vybral, posíláme tomu (pro test reálného doručení push notifikace
+      // konkrétnímu uživateli — vyžaduje, aby cílový uživatel měl push subscription).
+      const recipientId = testRecipientId || user.id;
+      const isCustomRecipient = !!testRecipientId && testRecipientId !== user.id;
+
+      // RESPEKTUJEME send_in_app a send_push flagy z pravidla.
       const wantsInApp = testRule.send_in_app !== false;
       const wantsPush = testRule.send_push !== false;
 
@@ -1559,7 +1590,7 @@ function NotificationRulesTab() {
           .from("notifications")
           .insert({
             sender_id: user.id,
-            recipient_id: user.id,
+            recipient_id: recipientId,
             type: testRule.trigger_event || "test",
             title,
             body,
@@ -1583,7 +1614,7 @@ function NotificationRulesTab() {
         const pushBody = insertedId
           ? { notification_id: insertedId }
           : {
-              recipient_id: user.id,
+              recipient_id: recipientId,
               title,
               body,
               type: testRule.trigger_event || "test",
@@ -1614,14 +1645,18 @@ function NotificationRulesTab() {
       }
       const summary = parts.length ? parts.join(", ") : "nic neodesláno (pravidlo má vypnutý in-app i push)";
 
+      const recipientLabel = isCustomRecipient
+        ? selectedRecipient?.full_name || "vybraný uživatel"
+        : "tobě";
       const allGreen = (!wantsInApp || inAppOk) && (!wantsPush || pushResult.pushed);
       if (allGreen) {
-        toast.success(`Testovací notifikace: ${summary}`);
+        toast.success(`Testovací notifikace pro ${recipientLabel}: ${summary}`);
       } else {
-        toast.warning(`Testovací notifikace částečně: ${summary}`);
+        toast.warning(`Testovací notifikace pro ${recipientLabel} částečně: ${summary}`);
       }
 
       setTestRule(null);
+      setTestRecipientId(null);
     } catch (e: any) {
       toast.error("Chyba: " + e.message);
     } finally {
@@ -1906,39 +1941,98 @@ function NotificationRulesTab() {
       </CardContent>
 
       {/* Test notification dialog */}
-      <Dialog open={!!testRule} onOpenChange={(open) => !open && setTestRule(null)}>
+      <Dialog open={!!testRule} onOpenChange={(open) => { if (!open) { setTestRule(null); setTestRecipientId(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base">Testovací notifikace</DialogTitle>
           </DialogHeader>
-          {testRule &&
-            (() => {
-              const placeholders = extractPlaceholders(testRule);
-              if (placeholders.length === 0) {
-                return (
-                  <p className="text-sm text-muted-foreground">
-                    Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
-                  </p>
-                );
-              }
-              return (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
-                  {placeholders.map((key) => (
-                    <div key={key} className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
-                      <Input
-                        placeholder={key}
-                        value={testVars[key] || ""}
-                        onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
-                      />
-                    </div>
-                  ))}
+          {testRule && (
+            <div className="space-y-3">
+              {/* Příjemce testu — picker s search */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Příjemce</label>
+                <Popover open={recipientPickerOpen} onOpenChange={setRecipientPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={recipientPickerOpen}
+                      className="w-full justify-between h-9 font-normal"
+                    >
+                      {selectedRecipient
+                        ? `${selectedRecipient.full_name} (${selectedRecipient.role})`
+                        : "Já (admin)"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                    <Command>
+                      <CommandInput placeholder="Hledat uživatele…" />
+                      <CommandList>
+                        <CommandEmpty>Žádný uživatel nenalezen.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="__self__ ja admin"
+                            onSelect={() => {
+                              setTestRecipientId(null);
+                              setRecipientPickerOpen(false);
+                            }}
+                          >
+                            Já (admin)
+                          </CommandItem>
+                          {activeUsers.map((u) => (
+                            <CommandItem
+                              key={u.id}
+                              value={`${u.full_name} ${u.role}`}
+                              onSelect={() => {
+                                setTestRecipientId(u.id);
+                                setRecipientPickerOpen(false);
+                              }}
+                            >
+                              <span className="flex-1">{u.full_name}</span>
+                              <span className="text-[10px] text-muted-foreground ml-2">{u.role}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <div className="text-[10px] text-muted-foreground">
+                  Push dorazí jen pokud má cílový uživatel registrované zařízení.
                 </div>
-              );
-            })()}
+              </div>
+
+              {/* Variables */}
+              {(() => {
+                const placeholders = extractPlaceholders(testRule);
+                if (placeholders.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground">
+                      Šablona neobsahuje žádné proměnné. Notifikace bude odeslána tak jak je.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">Vyplňte hodnoty proměnných pro test:</p>
+                    {placeholders.map((key) => (
+                      <div key={key} className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">{`{{${key}}}`}</label>
+                        <Input
+                          placeholder={key}
+                          value={testVars[key] || ""}
+                          onChange={(e) => setTestVars((prev) => ({ ...prev, [key]: e.target.value }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setTestRule(null)}>
+            <Button variant="outline" size="sm" onClick={() => { setTestRule(null); setTestRecipientId(null); }}>
               Zrušit
             </Button>
             <Button size="sm" onClick={sendTestNotification} disabled={sendingTestId === testRule?.id}>
