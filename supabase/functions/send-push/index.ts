@@ -99,13 +99,13 @@ async function hkdfSha256(
   info: Uint8Array,
   length: number
 ): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey("raw", ikm, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   // Extract
-  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", await crypto.subtle.importKey("raw", salt, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]), ikm));
+  const saltKey = await crypto.subtle.importKey("raw", salt as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", saltKey, ikm as BufferSource));
   // Expand
-  const prkKey = await crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prkKey = await crypto.subtle.importKey("raw", prk as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const infoWithCounter = concat(info, new Uint8Array([1]));
-  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", prkKey, infoWithCounter));
+  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", prkKey, infoWithCounter as BufferSource));
   return okm.slice(0, length);
 }
 
@@ -143,7 +143,7 @@ async function encryptPayload(
   // Import client public key
   const clientPublicKey = await crypto.subtle.importKey(
     "raw",
-    clientPublicKeyBytes,
+    clientPublicKeyBytes as BufferSource,
     { name: "ECDH", namedCurve: "P-256" },
     false,
     []
@@ -183,9 +183,9 @@ async function encryptPayload(
   const padded = concat(plaintext, new Uint8Array([2]));
 
   // AES-128-GCM encrypt
-  const aesKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
+  const aesKey = await crypto.subtle.importKey("raw", cek as BufferSource, { name: "AES-GCM" }, false, ["encrypt"]);
   const encrypted = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, padded)
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce as BufferSource }, aesKey, padded as BufferSource)
   );
 
   // Build aes128gcm header: salt(16) + rs(4) + idlen(1) + keyid(65) + ciphertext

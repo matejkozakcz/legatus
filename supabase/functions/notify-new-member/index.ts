@@ -76,10 +76,11 @@ async function createVapidJwt(audience: string, subject: string, privateKey: Cry
 }
 
 async function hkdfSha256(ikm: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
-  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", await crypto.subtle.importKey("raw", salt, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]), ikm));
-  const prkKey = await crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const saltKey = await crypto.subtle.importKey("raw", salt as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", saltKey, ikm as BufferSource));
+  const prkKey = await crypto.subtle.importKey("raw", prk as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const infoWithCounter = concat(info, new Uint8Array([1]));
-  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", prkKey, infoWithCounter));
+  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", prkKey, infoWithCounter as BufferSource));
   return okm.slice(0, length);
 }
 
@@ -88,7 +89,7 @@ async function encryptPayload(plaintext: Uint8Array, subscriptionKeys: { p256dh:
   const authSecret = base64urlToUint8Array(subscriptionKeys.auth);
   const localKeyPair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const localPublicKeyRaw = new Uint8Array(await crypto.subtle.exportKey("raw", localKeyPair.publicKey));
-  const clientPublicKey = await crypto.subtle.importKey("raw", clientPublicKeyBytes, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const clientPublicKey = await crypto.subtle.importKey("raw", clientPublicKeyBytes as BufferSource, { name: "ECDH", namedCurve: "P-256" }, false, []);
   const sharedSecret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: clientPublicKey }, localKeyPair.privateKey, 256));
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
@@ -99,8 +100,8 @@ async function encryptPayload(plaintext: Uint8Array, subscriptionKeys: { p256dh:
   const nonceInfo = concat(enc.encode("Content-Encoding: nonce\0"));
   const nonce = await hkdfSha256(ikm, salt, nonceInfo, 12);
   const padded = concat(plaintext, new Uint8Array([2]));
-  const aesKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
-  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, padded));
+  const aesKey = await crypto.subtle.importKey("raw", cek as BufferSource, { name: "AES-GCM" }, false, ["encrypt"]);
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce as BufferSource }, aesKey, padded as BufferSource));
   const rs = new Uint8Array(4);
   const recordSize = 4096;
   rs[0] = (recordSize >> 24) & 0xff;
@@ -222,7 +223,7 @@ Deno.serve(async (req) => {
     if (vedouciProfile?.vedouci_id) {
       const { data: bvProfile } = await supabase
         .from("profiles")
-        .select("id, role")
+        .select("id, role, vedouci_id")
         .eq("id", vedouciProfile.vedouci_id)
         .single();
       if (bvProfile) {
