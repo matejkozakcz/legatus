@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -101,6 +102,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
             }}
           >
+            <NotificationPermissionBanner />
             {children}
           </main>
           <MobileBottomNav />
@@ -126,6 +128,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Settings className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
+            <NotificationPermissionBanner />
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
               {children}
             </main>
