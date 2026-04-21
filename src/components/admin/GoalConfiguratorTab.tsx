@@ -427,8 +427,8 @@ export function GoalConfiguratorTab() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="increment">Nový přírůstek</SelectItem>
-                              <SelectItem value="total">Celkový stav</SelectItem>
+                              <SelectItem value="increment">Nový přírůstek (default)</SelectItem>
+                              <SelectItem value="total">Celkový stav (default)</SelectItem>
                             </SelectContent>
                           </Select>
                           <Select
@@ -443,6 +443,9 @@ export function GoalConfiguratorTab() {
                               <SelectItem value="full_structure">Celá struktura</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground italic -mt-1">
+                          Způsob měření (celkový stav / přírůstek) si nově nastavuje uživatel sám u svých cílů. Zde nastavený typ slouží jen jako výchozí předvolba.
                         </div>
                       </div>
                     ))}

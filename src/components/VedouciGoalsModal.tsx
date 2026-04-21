@@ -42,6 +42,7 @@ export const GOAL_OPTIONS = BASE_GOAL_OPTIONS;
 
 const PEOPLE_GOAL_KEYS: GoalKey[] = ["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"];
 type ScopeValue = "direct" | "structure";
+type CountType = "total" | "increment";
 
 interface FormData {
   selected_goal_1: GoalKey;
@@ -56,6 +57,10 @@ interface FormData {
   budouci_vedouci_count_scope: ScopeValue;
   garant_count_scope: ScopeValue;
   ziskatel_count_scope: ScopeValue;
+  vedouci_count_type: CountType;
+  budouci_vedouci_count_type: CountType;
+  garant_count_type: CountType;
+  ziskatel_count_type: CountType;
 }
 
 const defaultForm: FormData = {
@@ -71,6 +76,10 @@ const defaultForm: FormData = {
   budouci_vedouci_count_scope: "direct",
   garant_count_scope: "direct",
   ziskatel_count_scope: "direct",
+  vedouci_count_type: "total",
+  budouci_vedouci_count_type: "total",
+  garant_count_type: "total",
+  ziskatel_count_type: "total",
 };
 
 interface Props {
@@ -126,6 +135,16 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
     return options.length > 0 ? options : BASE_GOAL_OPTIONS.slice(0, 2);
   }, [rawConfig, role]);
 
+  // Doporučené defaults pro count_type podle admin konfigurace (pokud
+  // admin u dané promotion role nastavil "increment" jako výchozí, nový
+  // uživatel to dostane jako pre-select; uživatel však může změnit).
+  const defaultTypeForRole = (roleKey: string): CountType => {
+    if (!rawConfig || !role) return "total";
+    const promos = rawConfig[role]?.promotions || [];
+    const match = promos.find((p) => p.role === roleKey);
+    return (match?.type as CountType) || "total";
+  };
+
   useEffect(() => {
     if (!open) return;
     setLoading(true);
@@ -151,16 +170,24 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
             budouci_vedouci_count_scope: d.budouci_vedouci_count_scope || "direct",
             garant_count_scope: d.garant_count_scope || "direct",
             ziskatel_count_scope: d.ziskatel_count_scope || "direct",
+            vedouci_count_type: d.vedouci_count_type || defaultTypeForRole("vedouci"),
+            budouci_vedouci_count_type: d.budouci_vedouci_count_type || defaultTypeForRole("budouci_vedouci"),
+            garant_count_type: d.garant_count_type || defaultTypeForRole("garant"),
+            ziskatel_count_type: d.ziskatel_count_type || defaultTypeForRole("ziskatel"),
           });
         } else {
           setForm({
             ...defaultForm,
             selected_goal_1: availableGoalOptions[0]?.key || "team_bj",
+            vedouci_count_type: defaultTypeForRole("vedouci"),
+            budouci_vedouci_count_type: defaultTypeForRole("budouci_vedouci"),
+            garant_count_type: defaultTypeForRole("garant"),
+            ziskatel_count_type: defaultTypeForRole("ziskatel"),
           });
         }
         setLoading(false);
       });
-  }, [open, userId, periodKey, availableGoalOptions]);
+  }, [open, userId, periodKey, availableGoalOptions, rawConfig, role]);
 
   const selectedKeys: (GoalKey | "")[] = [form.selected_goal_1, form.selected_goal_2].filter(Boolean) as GoalKey[];
 
@@ -282,7 +309,9 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
             {activeGoals.map((g) => {
               const isPeople = PEOPLE_GOAL_KEYS.includes(g.key);
               const scopeField = `${g.key}_scope` as keyof FormData;
+              const typeField = `${g.key}_type` as keyof FormData;
               const currentScope = (form as any)[scopeField] as ScopeValue | undefined;
+              const currentType = (form as any)[typeField] as CountType | undefined;
               return (
                 <div key={g.key}>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Cíl: {g.label}</label>
@@ -297,22 +326,51 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   {isPeople && (
-                    <div className="flex gap-2 mt-2">
-                      {(["direct", "structure"] as ScopeValue[]).map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, [scopeField]: s }))}
-                          className="px-3 py-1 rounded-full text-xs font-medium transition-all"
-                          style={{
-                            background: currentScope === s ? "#00abbd" : "var(--muted)",
-                            color: currentScope === s ? "white" : "var(--text-secondary)",
-                          }}
-                        >
-                          {s === "direct" ? "Přímá linka" : "Celá struktura"}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div className="mt-2">
+                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">Rozsah</div>
+                        <div className="flex gap-2">
+                          {(["direct", "structure"] as ScopeValue[]).map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setForm((prev) => ({ ...prev, [scopeField]: s }))}
+                              className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+                              style={{
+                                background: currentScope === s ? "#00abbd" : "var(--muted)",
+                                color: currentScope === s ? "white" : "var(--text-secondary)",
+                              }}
+                            >
+                              {s === "direct" ? "Přímá linka" : "Celá struktura"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">Způsob měření</div>
+                        <div className="flex gap-2">
+                          {(["total", "increment"] as CountType[]).map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setForm((prev) => ({ ...prev, [typeField]: t }))}
+                              className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+                              style={{
+                                background: currentType === t ? "#00abbd" : "var(--muted)",
+                                color: currentType === t ? "white" : "var(--text-secondary)",
+                              }}
+                            >
+                              {t === "total" ? "Celkový stav" : "Nový přírůstek"}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          {currentType === "total"
+                            ? "Aktuální počet lidí v této pozici."
+                            : "Jen ti, kdo byli povýšeni během tohoto období."}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               );
@@ -341,7 +399,12 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
                         text = `Napsat osobně ${val.toLocaleString("cs-CZ")} BJ.`;
                       } else {
                         const scopeLabel = scope === "direct" ? "v přímé struktuře" : "v celé struktuře";
-                        text = `Mít ${scopeLabel} ${val} ${g.label.replace("Počet ", "")}.`;
+                        const typeField = `${g.key}_type` as keyof FormData;
+                        const type = (form as any)[typeField] as CountType;
+                        const noun = g.label.replace("Počet ", "");
+                        text = type === "increment"
+                          ? `Povýšit ${scopeLabel} ${val} nových ${noun} v tomto období.`
+                          : `Mít ${scopeLabel} ${val} ${noun}.`;
                       }
 
                       return (

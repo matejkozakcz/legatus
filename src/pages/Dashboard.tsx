@@ -798,6 +798,68 @@ const Dashboard = () => {
   const periodEndStr = format(selectedPeriod.end, "yyyy-MM-dd");
   const periodKey = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
 
+  // Vedoucí: INCREMENT counts — lidé povýšení na danou roli v rámci aktuálního
+  // období (zdroj = promotion_requests se statusem 'approved' a reviewed_at
+  // uvnitř period). Děláme 2 varianty: "direct" (jen ti, koho získal přímo
+  // aktuální uživatel) a "structure" (kdokoliv v subtree).
+  const periodStartIso = new Date(selectedPeriod.start).toISOString();
+  const periodEndIso = new Date(
+    new Date(selectedPeriod.end).setHours(23, 59, 59, 999),
+  ).toISOString();
+
+  const { data: incrementCounts = { direct: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 }, structure: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 } } } = useQuery({
+    queryKey: ["promotion_increments", activeUserId, periodStartIso, periodEndIso],
+    queryFn: async () => {
+      const empty = { direct: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 }, structure: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 } };
+      if (!activeUserId) return empty;
+
+      // 1) Najdi všechny schválené promotion_requests v období
+      const { data: approved } = await supabase
+        .from("promotion_requests")
+        .select("user_id, requested_role, reviewed_at")
+        .eq("status", "approved")
+        .gte("reviewed_at", periodStartIso)
+        .lte("reviewed_at", periodEndIso);
+      if (!approved || approved.length === 0) return empty;
+
+      // 2) Zjistí, kdo je v subtree (structure) a kdo je direct (ziskatel_id = me)
+      const { data: allProfiles } = await supabase
+        .from("profiles")
+        .select("id, ziskatel_id");
+      if (!allProfiles) return empty;
+
+      const childMap = new Map<string, string[]>();
+      for (const p of allProfiles as any[]) {
+        if (p.ziskatel_id) {
+          if (!childMap.has(p.ziskatel_id)) childMap.set(p.ziskatel_id, []);
+          childMap.get(p.ziskatel_id)!.push(p.id);
+        }
+      }
+      const subtree = new Set<string>();
+      const queue = [...(childMap.get(activeUserId) || [])];
+      while (queue.length > 0) {
+        const id = queue.shift()!;
+        if (subtree.has(id)) continue;
+        subtree.add(id);
+        queue.push(...(childMap.get(id) || []));
+      }
+      const directSet = new Set<string>(childMap.get(activeUserId) || []);
+
+      const counts = {
+        direct: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 } as Record<string, number>,
+        structure: { vedouci: 0, budouci_vedouci: 0, garant: 0, ziskatel: 0 } as Record<string, number>,
+      };
+      for (const a of approved as any[]) {
+        const role = a.requested_role;
+        if (!(role in counts.direct)) continue;
+        if (directSet.has(a.user_id)) counts.direct[role]++;
+        if (subtree.has(a.user_id)) counts.structure[role]++;
+      }
+      return counts;
+    },
+    enabled: !!activeUserId && activeRole === "vedouci",
+  });
+
   // Vedoucí: monthly BJ for entire subtree (team) — from client_meetings
   const { data: vedouciMonthlyBj = 0 } = useQuery({
     queryKey: ["vedouci_monthly_bj_meetings", activeUserId, periodStartStr],
@@ -907,7 +969,7 @@ const Dashboard = () => {
 
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
-  // Helper: map goal key to current value (scope-aware for people goals)
+  // Helper: map goal key to current value (scope + count_type aware for people goals)
   const getGoalScope = (key: GoalKey): string => {
     if (!vedouciGoals) return "direct";
     switch (key) {
@@ -917,23 +979,54 @@ const Dashboard = () => {
         return vedouciGoals.budouci_vedouci_count_scope || "direct";
       case "garant_count":
         return vedouciGoals.garant_count_scope || "direct";
+      case "ziskatel_count":
+        return (vedouciGoals as any).ziskatel_count_scope || "direct";
       default:
         return "direct";
     }
   };
+  const getGoalType = (key: GoalKey): "total" | "increment" => {
+    if (!vedouciGoals) return "total";
+    switch (key) {
+      case "vedouci_count":
+        return ((vedouciGoals as any).vedouci_count_type || "total") as "total" | "increment";
+      case "budouci_vedouci_count":
+        return ((vedouciGoals as any).budouci_vedouci_count_type || "total") as "total" | "increment";
+      case "garant_count":
+        return ((vedouciGoals as any).garant_count_type || "total") as "total" | "increment";
+      case "ziskatel_count":
+        return ((vedouciGoals as any).ziskatel_count_type || "total") as "total" | "increment";
+      default:
+        return "total";
+    }
+  };
   const getGoalValue = (key: GoalKey): number => {
     const scope = getGoalScope(key);
+    const type = getGoalType(key);
+    // People goals: pokud type=increment, použij počet povýšení v období
+    if (["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key)) {
+      const roleKey = key.replace("_count", "") as "vedouci" | "budouci_vedouci" | "garant" | "ziskatel";
+      if (type === "increment") {
+        const bucket = scope === "direct" ? incrementCounts.direct : incrementCounts.structure;
+        return (bucket as any)[roleKey] ?? 0;
+      }
+      // total — stávající chování
+      switch (key) {
+        case "vedouci_count":
+          return scope === "direct" ? directVedouciCount : vedouciSubCount;
+        case "budouci_vedouci_count":
+          return scope === "direct" ? directBvCount : bvCount;
+        case "garant_count":
+          return scope === "direct" ? directGarantCount : garantCount;
+        default:
+          return 0;
+      }
+    }
     switch (key) {
       case "team_bj":
         return vedouciMonthlyBj;
       case "personal_bj":
         return personalMonthlyBj;
-      case "vedouci_count":
-        return scope === "direct" ? directVedouciCount : vedouciSubCount;
-      case "budouci_vedouci_count":
-        return scope === "direct" ? directBvCount : bvCount;
-      case "garant_count":
-        return scope === "direct" ? directGarantCount : garantCount;
       default:
         return 0;
     }
@@ -951,16 +1044,22 @@ const Dashboard = () => {
         return vedouciGoals.budouci_vedouci_count_goal || 0;
       case "garant_count":
         return vedouciGoals.garant_count_goal || 0;
+      case "ziskatel_count":
+        return (vedouciGoals as any).ziskatel_count_goal || 0;
       default:
         return 0;
     }
   };
   const getGoalLabel = (key: GoalKey): string => {
     const base = GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
-    const isPeopleGoal = ["vedouci_count", "budouci_vedouci_count", "garant_count"].includes(key);
+    const isPeopleGoal = ["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key);
     if (!isPeopleGoal) return base;
     const scope = getGoalScope(key);
-    return scope === "direct" ? `${base} (přímí)` : `${base} (celkem)`;
+    const type = getGoalType(key);
+    const scopeLabel = scope === "direct" ? "přímí" : "celkem";
+    return type === "increment"
+      ? `${base} (${scopeLabel}, přírůstek)`
+      : `${base} (${scopeLabel})`;
   };
   const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
   const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
