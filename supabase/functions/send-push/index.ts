@@ -233,18 +233,36 @@ async function sendWebPush(
 }
 
 // --- Main handler ---
+//
+// Přijímá jeden ze dvou tvarů payloadu:
+//
+//  1. { notification_id: uuid }
+//     Načte notifikaci z DB a pošle push příjemci. Používá se z eventů,
+//     kde už máme řádek v `notifications`.
+//
+//  2. { recipient_id: uuid, title: string, body?: string, type?: string,
+//       redirect_url?: string | null, data?: Record<string,unknown> }
+//     Pošle push přímo bez vyžadování řádku v `notifications`. Slouží
+//     pravidlům, která mají send_in_app=false (jen push), a testu
+//     z admin dashboardu, kde nechceme zaspamovat in-app log.
+//
+// Vždy vrací 200 (až na 4xx validační chyby) a strukturované info,
+// ať volající ví, kolik zařízení reálně dostalo push a proč ne.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { notification_id } = await req.json();
-    if (!notification_id) {
-      return new Response(JSON.stringify({ error: "notification_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const payload = await req.json().catch(() => ({} as Record<string, unknown>));
+    const notification_id = typeof payload.notification_id === "string" ? payload.notification_id : null;
+    const recipient_id_inline = typeof payload.recipient_id === "string" ? payload.recipient_id : null;
+
+    if (!notification_id && !recipient_id_inline) {
+      return new Response(
+        JSON.stringify({ error: "notification_id or recipient_id required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -253,24 +271,48 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get notification
-    const { data: notif, error: nErr } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("id", notification_id)
-      .single();
-    if (nErr || !notif) {
-      return new Response(JSON.stringify({ error: "Notification not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let recipientId: string;
+    let pushTitle: string;
+    let pushBody: string;
+    let pushType: string;
+    let pushRedirect: string | null;
+    let pushExtraData: Record<string, unknown> = {};
+    let resolvedNotifId: string | null = null;
+
+    if (notification_id) {
+      const { data: notif, error: nErr } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("id", notification_id)
+        .single();
+      if (nErr || !notif) {
+        return new Response(JSON.stringify({ error: "Notification not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      recipientId = notif.recipient_id;
+      pushTitle = notif.title;
+      pushBody = notif.body || notif.message || "";
+      pushType = notif.type;
+      pushRedirect = notif.redirect_url || null;
+      resolvedNotifId = notif.id;
+    } else {
+      recipientId = recipient_id_inline!;
+      pushTitle = typeof payload.title === "string" ? payload.title : "Notifikace";
+      pushBody = typeof payload.body === "string" ? payload.body : "";
+      pushType = typeof payload.type === "string" ? payload.type : "custom";
+      pushRedirect = typeof payload.redirect_url === "string" ? payload.redirect_url : null;
+      if (payload.data && typeof payload.data === "object") {
+        pushExtraData = payload.data as Record<string, unknown>;
+      }
     }
 
-    // Get push subscriptions for recipient (po P0-2 může user mít víc zařízení)
+    // Získat push odběry příjemce (po P0-2 může mít víc zařízení)
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("subscription, endpoint")
-      .eq("user_id", notif.recipient_id);
+      .eq("user_id", recipientId);
 
     const validSubs = (subs || []).filter((s: any) => s.subscription?.keys);
 
@@ -281,9 +323,14 @@ Deno.serve(async (req) => {
     }
 
     const pushPayload = JSON.stringify({
-      title: notif.title,
-      body: notif.body || notif.message || "",
-      data: { notification_id: notif.id, type: notif.type, redirect_url: notif.redirect_url || null },
+      title: pushTitle,
+      body: pushBody,
+      data: {
+        ...pushExtraData,
+        notification_id: resolvedNotifId,
+        type: pushType,
+        redirect_url: pushRedirect,
+      },
     });
 
     let pushedCount = 0;
@@ -291,7 +338,7 @@ Deno.serve(async (req) => {
     const expiredEndpoints: string[] = [];
 
     for (const s of validSubs) {
-      console.log(`Sending push to ${notif.recipient_id}, endpoint: ${s.subscription.endpoint?.slice(0, 60)}...`);
+      console.log(`Sending push to ${recipientId}, endpoint: ${s.subscription.endpoint?.slice(0, 60)}...`);
       try {
         const pushRes = await sendWebPush(s.subscription, pushPayload, VAPID_PUBLIC_KEY, vapidPrivateKey);
         lastStatus = pushRes.status;

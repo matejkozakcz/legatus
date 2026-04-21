@@ -1546,23 +1546,81 @@ function NotificationRulesTab() {
       const title = (testRule.title_template || "Test").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
       const body = (testRule.body_template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => testVars[key] || key);
 
-      // Create in-app notification
-      await supabase.from("notifications").insert({
-        sender_id: user.id,
-        recipient_id: user.id,
-        type: testRule.trigger_event || "test",
-        title,
-        body,
-        deadline: new Date().toISOString().split("T")[0],
-      });
+      // Test posíláme adminovi sobě, ale RESPEKTUJEME send_in_app a send_push
+      // flagy z pravidla — admin tak vidí přesně to, co reálně dostane
+      // koncový uživatel.
+      const wantsInApp = testRule.send_in_app !== false;
+      const wantsPush = testRule.send_push !== false;
 
-      // Also send push
-      const { data, error } = await supabase.functions.invoke("test-notification", {
-        body: { title, body },
-      });
-      if (error) console.warn("Push failed:", error);
+      let insertedId: string | null = null;
+      let inAppOk = false;
+      if (wantsInApp) {
+        const { data: insRow, error: insErr } = await supabase
+          .from("notifications")
+          .insert({
+            sender_id: user.id,
+            recipient_id: user.id,
+            type: testRule.trigger_event || "test",
+            title,
+            body,
+            deadline: new Date().toISOString().split("T")[0],
+            redirect_url: testRule.redirect_url || null,
+          })
+          .select("id")
+          .single();
+        if (insErr) {
+          toast.error(`In-app insert selhal: ${insErr.message}`);
+        } else {
+          insertedId = insRow?.id ?? null;
+          inAppOk = true;
+        }
+      }
 
-      toast.success("Testovací notifikace odeslána (in-app" + (data?.ok ? " + push" : "") + ")!");
+      let pushResult: { ok: boolean; pushed?: boolean; reason?: string; pushedCount?: number } = { ok: false };
+      if (wantsPush) {
+        // Posíláme přes send-push (sjednocená cesta), což taky umí inline
+        // payload pokud nemáme notification_id.
+        const pushBody = insertedId
+          ? { notification_id: insertedId }
+          : {
+              recipient_id: user.id,
+              title,
+              body,
+              type: testRule.trigger_event || "test",
+              redirect_url: testRule.redirect_url || null,
+            };
+        const { data, error } = await supabase.functions.invoke("send-push", { body: pushBody });
+        if (error) {
+          console.warn("send-push failed:", error);
+          pushResult = { ok: false, reason: "function_error" };
+        } else {
+          pushResult = data || { ok: false };
+        }
+      }
+
+      // Stavový toast — řekne, co se reálně podařilo doručit.
+      const parts: string[] = [];
+      if (wantsInApp) parts.push(inAppOk ? "in-app ✓" : "in-app ✗");
+      if (wantsPush) {
+        if (pushResult.pushed) {
+          parts.push(`push ✓ (${pushResult.pushedCount ?? 1} zařízení)`);
+        } else if (pushResult.reason === "no_subscription") {
+          parts.push("push ✗ (na tomto účtu nejsou registrovaná žádná zařízení – povol notifikace v prohlížeči)");
+        } else if (pushResult.reason === "subscription_expired") {
+          parts.push("push ✗ (subscription vypršel, znovu povol notifikace)");
+        } else {
+          parts.push("push ✗");
+        }
+      }
+      const summary = parts.length ? parts.join(", ") : "nic neodesláno (pravidlo má vypnutý in-app i push)";
+
+      const allGreen = (!wantsInApp || inAppOk) && (!wantsPush || pushResult.pushed);
+      if (allGreen) {
+        toast.success(`Testovací notifikace: ${summary}`);
+      } else {
+        toast.warning(`Testovací notifikace částečně: ${summary}`);
+      }
+
       setTestRule(null);
     } catch (e: any) {
       toast.error("Chyba: " + e.message);

@@ -139,7 +139,17 @@ Deno.serve(async (req) => {
       let recipients: { id: string; full_name: string; role: string }[] = [];
       let recipientsError: string | null = null;
 
-      if (rule.recipient_type === "by_role" && rule.recipient_roles?.length > 0) {
+      // Scheduled notifikace nemají "triggering user" (nejsou event-based),
+      // takže recipient_type=self a hierarchy nedávají smysl ve stejném
+      // významu jako u eventů. Pro scheduled platí:
+      //   - by_role  → všichni s rolí v recipient_roles
+      //   - self     → totéž co by_role (pokud roles nastavené), jinak skip
+      //   - hierarchy→ totéž co by_role (pokud roles nastavené), jinak skip
+      // Pokud admin nechce omezit role, musí vybrat "by_role" bez roles,
+      // což defaultně znamená všichni aktivní.
+      const hasRoles = Array.isArray(rule.recipient_roles) && rule.recipient_roles.length > 0;
+
+      if (hasRoles) {
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -150,7 +160,8 @@ Deno.serve(async (req) => {
           console.error(`[scheduled-notifications] ${recipientsError}`);
         }
         recipients = profiles || [];
-      } else {
+      } else if (rule.recipient_type === "by_role") {
+        // by_role bez vybraných rolí → záměr admina je "všichni" pro scheduled
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -160,6 +171,11 @@ Deno.serve(async (req) => {
           console.error(`[scheduled-notifications] ${recipientsError}`);
         }
         recipients = profiles || [];
+      } else {
+        // self / hierarchy bez rolí na scheduled → nic k odeslání
+        recipientsError = `recipient_type=${rule.recipient_type} without recipient_roles has no meaning for scheduled rules`;
+        console.warn(`[scheduled-notifications] ${recipientsError}`);
+        recipients = [];
       }
 
       console.log(`[scheduled-notifications] Rule "${rule.name}" → ${recipients.length} recipients`);
@@ -207,6 +223,15 @@ Deno.serve(async (req) => {
 
         const title = renderTemplate(rule.title_template, allVars);
         const body = renderTemplate(rule.body_template, allVars);
+        const redirectUrl = rule.redirect_url || null;
+
+        // Pokud admin nezvolil ani in-app, ani push, pravidlo je fakticky
+        // disabled — preskocime a nic nezapočítáme jako sent.
+        if (!rule.send_in_app && !rule.send_push) {
+          continue;
+        }
+
+        let insertedNotifId: string | null = null;
 
         if (rule.send_in_app) {
           const { data: notifData, error: insErr } = await supabase.from("notifications").insert({
@@ -217,6 +242,7 @@ Deno.serve(async (req) => {
             body,
             message: body,
             deadline: todayPrague,
+            redirect_url: redirectUrl,
           }).select("id").single();
 
           if (insErr) {
@@ -224,34 +250,53 @@ Deno.serve(async (req) => {
             const msg = `Insert failed for ${recipient.id}: ${insErr.message}`;
             console.error(`[scheduled-notifications] ${msg}`);
             if (errorSamples.length < 3) errorSamples.push(msg);
-            continue;
+            // Pokud in-app selhal, push jít může nezávisle (pravidlo má
+            // send_push=true), ale nemáme notification_id — zavoláme
+            // send-push přímo s inline payloadem.
+          } else {
+            insertedNotifId = notifData?.id ?? null;
           }
+        }
 
-          if (notifData?.id && rule.send_push) {
-            if (!usersWithSub.has(recipient.id)) {
-              pushSkippedNoSub++;
-            } else {
-              try {
-                const pushRes = await fetch(fnUrl, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${serviceRoleKey}`,
-                  },
-                  body: JSON.stringify({ notification_id: notifData.id }),
-                });
-                if (pushRes.ok) {
+        if (rule.send_push) {
+          if (!usersWithSub.has(recipient.id)) {
+            pushSkippedNoSub++;
+          } else {
+            try {
+              // Preferujeme volání přes notification_id (lepší proklikatelnost
+              // z push → in-app), jinak pošleme inline payload.
+              const pushBody = insertedNotifId
+                ? { notification_id: insertedNotifId }
+                : {
+                    recipient_id: recipient.id,
+                    title,
+                    body,
+                    type: rule.trigger_event || "scheduled",
+                    redirect_url: redirectUrl,
+                  };
+
+              const pushRes = await fetch(fnUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${serviceRoleKey}`,
+                },
+                body: JSON.stringify(pushBody),
+              });
+              if (pushRes.ok) {
+                const pushJson = await pushRes.json().catch(() => ({}));
+                if (pushJson?.pushed) {
                   rulePushed++;
-                } else {
-                  pushFailed++;
-                  if (errorSamples.length < 3) {
-                    errorSamples.push(`Push HTTP ${pushRes.status} for ${recipient.id}`);
-                  }
                 }
-              } catch (e) {
+              } else {
                 pushFailed++;
-                console.error(`[scheduled-notifications] Push fetch error: ${e}`);
+                if (errorSamples.length < 3) {
+                  errorSamples.push(`Push HTTP ${pushRes.status} for ${recipient.id}`);
+                }
               }
+            } catch (e) {
+              pushFailed++;
+              console.error(`[scheduled-notifications] Push fetch error: ${e}`);
             }
           }
         }
