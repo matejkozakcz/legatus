@@ -127,7 +127,7 @@ async function syncPromotionRequest(
     }
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky poprvé splněny");
-    await ensureNotification(profileId, title, body, userId);
+    await ensureNotification(profileId, title, body, userId, requestedRole);
     return;
   }
 
@@ -150,7 +150,7 @@ async function syncPromotionRequest(
     });
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky opět splněny");
-    await ensureNotification(profileId, title, body, userId);
+    await ensureNotification(profileId, title, body, userId, requestedRole);
     return;
   }
 
@@ -178,7 +178,7 @@ async function syncPromotionRequest(
     }
 
     await logHistory(userId, requestedRole, "eligible", cumulativeBj, directZiskatels, "Podmínky znovu splněny po zamítnutí");
-    await ensureNotification(profileId, title, body, userId);
+    await ensureNotification(profileId, title, body, userId, requestedRole);
     return;
   }
 
