@@ -400,7 +400,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[120]">
                 {TRIGGER_EVENTS.map((t) => (
                   <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
                 ))}
@@ -465,7 +465,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[120]">
                     {ICON_OPTIONS.map((i) => (
                       <SelectItem key={i} value={i}>{i}</SelectItem>
                     ))}
@@ -481,7 +481,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[120]">
                     {ACCENT_COLORS.map((c) => (
                       <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
                     ))}
