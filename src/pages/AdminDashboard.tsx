@@ -156,28 +156,14 @@ function SettingsTab() {
 
 function NotificationsTab() {
   return (
-    <Tabs defaultValue="rules" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="rules" className="gap-1.5">
-          <Settings2 className="h-3.5 w-3.5" /> Pravidla
-        </TabsTrigger>
-        <TabsTrigger value="log" className="gap-1.5">
-          <History className="h-3.5 w-3.5" /> Historie odeslaných
-        </TabsTrigger>
-        <TabsTrigger value="diagnostics" className="gap-1.5">
-          <Activity className="h-3.5 w-3.5" /> Diagnostika
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="rules">
-        <NotificationRulesTab />
-      </TabsContent>
-      <TabsContent value="log">
-        <NotificationLogTab />
-      </TabsContent>
-      <TabsContent value="diagnostics">
-        <NotificationDiagnosticsTab />
-      </TabsContent>
-    </Tabs>
+    <Card>
+      <CardContent className="py-12 flex flex-col items-center text-center gap-3 opacity-60">
+        <Bell className="h-10 w-10 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground max-w-md">
+          Notifikační systém je dočasně vypnutý. Brzy ho nastavíme znovu od nuly.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
