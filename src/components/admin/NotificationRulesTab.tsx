@@ -515,9 +515,8 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                 onChange={(e) => setForm({ ...form, body_template: e.target.value })}
                 placeholder="Právě jsi povýšen na {{new_role}}. Skvělá práce!"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Proměnné: <code>{`{{member_name}}`}</code>, <code>{`{{new_role}}`}</code>,{" "}
-                <code>{`{{sender_name}}`}</code>, <code>{`{{count}}`}</code>
+              <p className="text-[10px] text-muted-foreground mt-1 lg:hidden">
+                Dostupné proměnné jsou na desktopu zobrazeny v panelu vpravo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
