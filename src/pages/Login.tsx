@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 const loginBg = "/login-bg.svg";
 
