@@ -163,6 +163,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    try {
+      if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          await sub.unsubscribe();
+        }
+      }
+    } catch (e) {
+      console.warn("push cleanup on signOut failed:", e);
+    }
+
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);

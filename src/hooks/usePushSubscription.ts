@@ -55,7 +55,7 @@ export function usePushSubscription(): UsePushSubscriptionResult {
       try {
         const reg = await navigator.serviceWorker.ready;
         const sub = await reg.pushManager.getSubscription();
-        if (!cancelled) setIsSubscribed(!!sub);
+        if (!cancelled) setIsSubscribed(!!sub && !!user);
       } catch {
         if (!cancelled) setIsSubscribed(false);
       }
