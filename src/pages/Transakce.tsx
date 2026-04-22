@@ -29,6 +29,7 @@ export default function Transakce() {
   const { godMode, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [hideZero, setHideZero] = useState(false);
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<TransactionRow | null>(null);
   const [adding, setAdding] = useState(false);
@@ -109,6 +110,7 @@ export default function Transakce() {
         const pi = profileMap.get(r.user_id);
         if (pi && !pi.is_active) return false;
       }
+      if (hideZero && r.bj === 0) return false;
       if (!q) return true;
       return (
         r.user_name.toLowerCase().includes(q) ||
@@ -118,7 +120,7 @@ export default function Transakce() {
         format(parseISO(r.date), "d.M.yyyy").includes(q)
       );
     });
-  }, [allRows, search, showInactive, profileMap]);
+  }, [allRows, search, showInactive, hideZero, profileMap]);
 
   if (!godMode || !isAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -178,6 +180,18 @@ export default function Transakce() {
             className="h-4 w-4 rounded border-border"
           />
           Zobrazit deaktivované
+        </label>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hideZero}
+            onChange={(e) => {
+              setHideZero(e.target.checked);
+              setPage(0);
+            }}
+            className="h-4 w-4 rounded border-border"
+          />
+          Skrýt 0 BJ záznamy
         </label>
       </div>
 
