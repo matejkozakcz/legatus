@@ -10,9 +10,22 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-function isMobileUA() {
+function isIOS() {
   if (typeof navigator === "undefined") return false;
-  return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+ reports as Mac but has touch
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
+function isAndroid() {
+  if (typeof navigator === "undefined") return false;
+  return /android/i.test(navigator.userAgent);
+}
+
+function isMobileUA() {
+  return isIOS() || isAndroid();
 }
 
 function isStandalone() {
@@ -22,10 +35,6 @@ function isStandalone() {
   if (window.navigator.standalone === true) return true;
   // Android / others
   return window.matchMedia?.("(display-mode: standalone)")?.matches === true;
-}
-
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
 export function InstallPwaPrompt() {
@@ -74,18 +83,22 @@ export function InstallPwaPrompt() {
       {/* Banner above login modal */}
       <div
         style={{
-          position: "relative",
-          width: "100%",
+          position: "fixed",
+          top: "max(12px, env(safe-area-inset-top, 0px))",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "calc(100% - 24px)",
           maxWidth: 400,
-          margin: "0 16px 12px",
           background: "rgba(255,255,255,0.95)",
           borderRadius: 16,
-          padding: "12px 14px",
+          padding: "10px 12px",
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          boxShadow: "0 4px 16px rgba(0,85,95,0.18)",
+          gap: 10,
+          boxShadow: "0 4px 16px rgba(0,85,95,0.25)",
           backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          zIndex: 50,
         }}
       >
         <div
