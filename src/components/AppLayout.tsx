@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PushOptInBanner } from "@/components/PushOptInBanner";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
@@ -106,6 +107,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
           <MobileBottomNav />
           <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+          <PushOptInBanner />
         </div>
       </ProtectedRoute>
     );
@@ -133,6 +135,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <PushOptInBanner />
       </SidebarProvider>
     </ProtectedRoute>
   );
