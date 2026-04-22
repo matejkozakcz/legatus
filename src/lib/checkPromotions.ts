@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sendNotification } from "@/lib/notifications";
 
 interface CheckProfile {
   id: string;
@@ -26,15 +27,18 @@ const PENDING_STATUS = "pending";
 const NOT_ELIGIBLE_STATUS = "not_eligible";
 const PROMOTION_ROLES: PromotionRole[] = ["garant", "budouci_vedouci", "vedouci"];
 
-// Notification system was removed — keep this as a no-op so the rest of the
-// promotion flow (DB requests + history) keeps working.
+// Fires the 'promotion_eligible' trigger — rules in Admin decide who actually gets notified.
 async function ensureNotification(
   _vedouciId: string,
   _title: string,
   _body: string,
-  _relatedEntityId: string,
+  subjectUserId: string,
+  requestedRole?: string,
 ): Promise<void> {
-  return;
+  await sendNotification("promotion_eligible", {
+    subjectUserId,
+    variables: { new_role: requestedRole ?? "" },
+  });
 }
 
 export async function logPromotionHistory(
