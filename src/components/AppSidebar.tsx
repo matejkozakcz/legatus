@@ -12,6 +12,7 @@ import {
   Search,
   Shield,
   GraduationCap,
+  Coins,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -90,6 +91,7 @@ export function AppSidebar() {
 
   if (godMode && profile?.is_admin) {
     navItems.push({ title: "Admin", url: "/admin", icon: Shield, badge: false });
+    navItems.push({ title: "Transakce", url: "/transakce", icon: Coins, badge: false });
   }
 
   const initials =
