@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle, LogOut, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { registerPushSubscription } from "@/lib/pushSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -46,37 +45,7 @@ const AppleIcon = () => (
   </svg>
 );
 
-const NOTIF_STORAGE_KEY = "legatus_notification_prefs";
-
-interface NotifPrefs {
-  meetingReminder: boolean;
-  meetingReminderCount: number;
-  meetingReminderBefore: string;
-  postMeeting: boolean;
-  postMeetingDelay: string;
-  shareGarant: boolean;
-  deadlineAlert: boolean;
-  deadlineDaysBefore: number;
-}
-
-const defaultNotifPrefs: NotifPrefs = {
-  meetingReminder: false,
-  meetingReminderCount: 1,
-  meetingReminderBefore: "30min",
-  postMeeting: false,
-  postMeetingDelay: "ihned",
-  shareGarant: false,
-  deadlineAlert: false,
-  deadlineDaysBefore: 3,
-};
-
-function loadNotifPrefs(): NotifPrefs {
-  try {
-    const raw = localStorage.getItem(NOTIF_STORAGE_KEY);
-    if (raw) return { ...defaultNotifPrefs, ...JSON.parse(raw) };
-  } catch {}
-  return { ...defaultNotifPrefs };
-}
+// (Notifications system removed — placeholder tab below.)
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
