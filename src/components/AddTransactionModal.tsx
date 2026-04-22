@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,8 +31,40 @@ export function AddTransactionModal({
   const [bj, setBj] = useState<string>("");
   const [poznamka, setPoznamka] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedProfile = profiles.find((p) => p.id === userId);
+
+  const sortedProfiles = useMemo(
+    () => profiles.slice().sort((a, b) => a.full_name.localeCompare(b.full_name)),
+    [profiles]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return sortedProfiles;
+    return sortedProfiles.filter((p) => p.full_name.toLowerCase().includes(q));
+  }, [sortedProfiles, search]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pickerOpen]);
+
+  useEffect(() => {
+    if (pickerOpen) {
+      setTimeout(() => inputRef.current?.focus(), 30);
+    }
+  }, [pickerOpen]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -86,44 +116,67 @@ export function AddTransactionModal({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div>
+          <div ref={wrapperRef} className="relative">
             <Label>Uživatel *</Label>
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between mt-1 font-normal">
-                  {selectedProfile?.full_name || "Vyberte uživatele…"}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Hledat…" />
-                  <CommandList>
-                    <CommandEmpty>Nenalezeno</CommandEmpty>
-                    <CommandGroup>
-                      {profiles
-                        .slice()
-                        .sort((a, b) => a.full_name.localeCompare(b.full_name))
-                        .map((p) => (
-                          <CommandItem
-                            key={p.id}
-                            value={p.full_name}
-                            onSelect={() => {
-                              setUserId(p.id);
-                              setPickerOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={`mr-2 h-4 w-4 ${userId === p.id ? "opacity-100" : "opacity-0"}`}
-                            />
-                            {p.full_name}
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <button
+              type="button"
+              onClick={() => setPickerOpen((o) => !o)}
+              className="w-full mt-1 h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm flex items-center justify-between hover:border-ring transition-colors"
+            >
+              <span className={selectedProfile ? "" : "text-muted-foreground"}>
+                {selectedProfile?.full_name || "Vyberte uživatele…"}
+              </span>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </button>
+
+            {pickerOpen && (
+              <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+                  <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Hledat…"
+                    className="bg-transparent outline-none w-full text-sm placeholder:text-muted-foreground"
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setPickerOpen(false);
+                        setSearch("");
+                      }
+                    }}
+                  />
+                </div>
+                <div className="max-h-56 overflow-y-auto">
+                  {filtered.length === 0 ? (
+                    <div className="px-3 py-3 text-sm text-muted-foreground text-center">
+                      Nenalezeno
+                    </div>
+                  ) : (
+                    filtered.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setUserId(p.id);
+                          setPickerOpen(false);
+                          setSearch("");
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center ${
+                          userId === p.id ? "bg-accent/50 font-medium" : ""
+                        }`}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${userId === p.id ? "opacity-100" : "opacity-0"}`}
+                        />
+                        {p.full_name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
