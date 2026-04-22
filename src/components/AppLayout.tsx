@@ -7,6 +7,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Moon, Sun, Settings } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
@@ -39,6 +40,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               gap: 6,
             }}
           >
+            {/* Notifications bell */}
+            <NotificationBell compact />
+
             {/* Settings gear */}
             <button
               onClick={() => setSettingsOpen(true)}
@@ -114,6 +118,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div className="absolute top-4 right-6 lg:right-8 z-10 flex items-center gap-2">
+              <NotificationBell />
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="p-2 rounded-xl hover:bg-muted transition-colors"
