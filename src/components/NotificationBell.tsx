@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle, ListChecks } from "lucide-react";
+import { Bell, Clock, CalendarCheck, Share2, AlertTriangle, Check, TrendingUp, AlertCircle, ListChecks, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -31,7 +31,58 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   promotion_eligible: <TrendingUp className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
   followup_needed: <AlertCircle className="h-4 w-4" style={{ color: "#fc7c71" }} />,
   daily_recap: <ListChecks className="h-4 w-4" style={{ color: "hsl(var(--teal))" }} />,
+  force_update: <RefreshCw className="h-4 w-4" style={{ color: "hsl(var(--secondary))" }} />,
 };
+
+// Hard-reset app cache PŘED hard reloadem. Cílem je vyřešit "po deployi
+// musím smazat cookies" problém — primární viník je Cache Storage z PWA
+// service workeru, který drží starou verzi index.html a JS bundle.
+//
+// Záměrně NEMAŽEME Supabase auth (auth-token klíč v localStorage + případně
+// IndexedDB), aby uživatel zůstal přihlášený. Smažeme jen ostatní lokální
+// data (cache PWA, app preference), unregistrujeme SW a hard-reloadneme.
+async function performForceUpdate() {
+  try {
+    // 1) localStorage — smaž vše KROMĚ Supabase auth tokenu, aby
+    //    uživatel zůstal přihlášený.
+    try {
+      const KEEP_PREFIXES = ["sb-", "supabase."];
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && !KEEP_PREFIXES.some((p) => k.startsWith(p))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch { /* ignore */ }
+
+    // 2) sessionStorage — kompletně smazat (ephemeral, nic auth-tokenu
+    //    tam být nemá)
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+
+    // 3) Cache Storage (PWA cache) — KLÍČOVÉ, protože staré HTML/JS
+    //    bundles tam zamrznou a uživatel vidí starou verzi.
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch { /* ignore */ }
+
+    // 4) Service Workery — odregistruj všechny, aby se při příštím
+    //    loadu nainstalovala čistá nová verze.
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch { /* ignore */ }
+  } finally {
+    // 5) Hard reload na root — query string vynutí bypass cache.
+    window.location.replace(`/?_v=${Date.now()}`);
+  }
+}
 
 export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
   const { user } = useAuth();
@@ -111,6 +162,11 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
       await supabase.from("notifications").update({ read: true }).eq("id", notif.id);
       setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
     }
+    // Force update notifikace — speciální flow: nečteme jako redirect,
+    // čekáme na klik na "Aktualizovat" tlačítko (vykreslené níže).
+    if (notif.type === "force_update") {
+      return;
+    }
     // Custom redirect_url takes priority
     if (notif.redirect_url) {
       navigate(notif.redirect_url);
@@ -127,6 +183,18 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
       onMeetingClick(notif.related_meeting_id);
       setOpen(false);
     }
+  };
+
+  const handleForceUpdateClick = async (notif: Notification) => {
+    // Nejdřív označit jako přečtené (best effort), pak provést reset+reload.
+    if (!notif.read) {
+      try {
+        await supabase.from("notifications").update({ read: true }).eq("id", notif.id);
+      } catch {
+        /* nezáleží — reload to stejně přepíše */
+      }
+    }
+    await performForceUpdate();
   };
 
   return (
@@ -173,38 +241,63 @@ export function NotificationBell({ onMeetingClick }: NotificationBellProps) {
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">Žádné Oznámení</div>
           ) : (
             <div>
-              {notifications.map((notif) => (
-                <button
-                  key={notif.id}
-                  onClick={() => markRead(notif)}
-                  className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
-                >
-                  {/* Unread dot */}
-                  <div className="flex-shrink-0 mt-1 w-2">
-                    {!notif.read && (
-                      <span className="block w-2 h-2 rounded-full" style={{ background: "hsl(var(--secondary))" }} />
-                    )}
-                  </div>
+              {notifications.map((notif) => {
+                const isForceUpdate = notif.type === "force_update";
+                return (
+                  <div
+                    key={notif.id}
+                    className="px-4 py-3 flex items-start gap-3 border-b border-border last:border-b-0"
+                  >
+                    {/* Unread dot */}
+                    <div className="flex-shrink-0 mt-1 w-2">
+                      {!notif.read && (
+                        <span
+                          className="block w-2 h-2 rounded-full"
+                          style={{ background: "hsl(var(--secondary))" }}
+                        />
+                      )}
+                    </div>
 
-                  {/* Icon */}
-                  <div className="flex-shrink-0 mt-0.5">
-                    {TYPE_ICONS[notif.type] || <Bell className="h-4 w-4 text-muted-foreground" />}
-                  </div>
+                    {/* Icon */}
+                    <div className="flex-shrink-0 mt-0.5">
+                      {TYPE_ICONS[notif.type] || <Bell className="h-4 w-4 text-muted-foreground" />}
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm leading-tight ${notif.read ? "text-muted-foreground" : "text-foreground font-medium"}`}
-                    >
-                      {notif.title}
-                    </p>
-                    {notif.body && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: cs })}
-                    </p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => (isForceUpdate ? handleForceUpdateClick(notif) : markRead(notif))}
+                        className="w-full text-left hover:opacity-90 transition-opacity"
+                      >
+                        <p
+                          className={`text-sm leading-tight ${
+                            notif.read ? "text-muted-foreground" : "text-foreground font-medium"
+                          }`}
+                        >
+                          {notif.title}
+                        </p>
+                        {notif.body && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-3">{notif.body}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: cs })}
+                        </p>
+                      </button>
+
+                      {isForceUpdate && (
+                        <button
+                          onClick={() => handleForceUpdateClick(notif)}
+                          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors"
+                          style={{ background: "hsl(var(--secondary))" }}
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Aktualizovat
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

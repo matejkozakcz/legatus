@@ -38,7 +38,9 @@ import {
   History,
   Target,
   Activity,
+  RefreshCw,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
 import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
@@ -1528,6 +1530,19 @@ function NotificationRulesTab() {
   const [testRecipientId, setTestRecipientId] = useState<string | null>(null);
   const [recipientPickerOpen, setRecipientPickerOpen] = useState(false);
 
+  // ─── Force-update broadcast ───────────────────────────────────────────
+  // Používá se po deployi nové verze, kdy uživatelé mají v PWA cache
+  // staré HTML/JS bundly. Notifikace nese type='force_update' a UI
+  // (NotificationBell.tsx) ho rozpozná a vykreslí tlačítko, které
+  // smaže cache + odregistruje SW + hard reloadne.
+  const FORCE_UPDATE_TITLE_DEFAULT = "Je dostupná nová verze aplikace";
+  const FORCE_UPDATE_BODY_DEFAULT =
+    "Klikni na tlačítko 'Aktualizovat' a aplikace se sama aktualizuje. Zůstaneš přihlášený.";
+  const [forceUpdateOpen, setForceUpdateOpen] = useState(false);
+  const [forceUpdateTitle, setForceUpdateTitle] = useState(FORCE_UPDATE_TITLE_DEFAULT);
+  const [forceUpdateBody, setForceUpdateBody] = useState(FORCE_UPDATE_BODY_DEFAULT);
+  const [forceUpdateSending, setForceUpdateSending] = useState(false);
+
   // Aktivní uživatelé pro picker (načítáme jen když je otevřený test dialog,
   // aby se nešidilo loading při prvním kliknutí)
   const { data: activeUsers = [] } = useQuery({
@@ -1564,6 +1579,87 @@ function NotificationRulesTab() {
     setTestVars(defaults);
     setTestRule(rule);
     setTestRecipientId(null); // default = admin sobě
+  };
+
+  // Broadcast notifikace všem aktivním uživatelům s tlačítkem "Aktualizovat".
+  // Postup: 1) bulk-insert do `notifications` (jeden řádek per recipient),
+  //         2) per-user volání send-push edge funkce (best effort).
+  // Push může selhat (uživatel nemá registrované zařízení) — to nevadí,
+  // in-app notifikace v zvonečku má button, který reset provede.
+  const sendForceUpdateBroadcast = async () => {
+    if (!user) return;
+    const title = forceUpdateTitle.trim() || FORCE_UPDATE_TITLE_DEFAULT;
+    const body = forceUpdateBody.trim() || FORCE_UPDATE_BODY_DEFAULT;
+
+    setForceUpdateSending(true);
+    try {
+      // 1) Vytáhni všechny aktivní uživatele (admin má insert any policy
+      //    z migrace 20260421130000)
+      const { data: recipients, error: recErr } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("is_active", true);
+      if (recErr) {
+        toast.error(`Načtení uživatelů selhalo: ${recErr.message}`);
+        return;
+      }
+      if (!recipients || recipients.length === 0) {
+        toast.warning("Žádní aktivní uživatelé.");
+        return;
+      }
+
+      // 2) Bulk insert in-app notifikací. Deadline=dnes (povinné NOT NULL pole),
+      //    ale pro force_update je irelevantní.
+      const today = new Date().toISOString().split("T")[0];
+      const rows = recipients.map((r) => ({
+        sender_id: user.id,
+        recipient_id: r.id,
+        type: "force_update",
+        title,
+        body,
+        deadline: today,
+      }));
+      const { data: inserted, error: insErr } = await supabase
+        .from("notifications")
+        .insert(rows)
+        .select("id, recipient_id");
+      if (insErr) {
+        toast.error(`Insert notifikací selhal: ${insErr.message}`);
+        return;
+      }
+
+      // 3) Push per recipient (best effort, paralelně)
+      let pushOk = 0;
+      let pushFail = 0;
+      const insertedList = inserted || [];
+      await Promise.all(
+        insertedList.map(async (n: { id: string; recipient_id: string }) => {
+          try {
+            const { data, error } = await supabase.functions.invoke("send-push", {
+              body: { notification_id: n.id },
+            });
+            if (error) {
+              pushFail++;
+            } else if ((data as any)?.pushed) {
+              pushOk++;
+            } else {
+              pushFail++;
+            }
+          } catch {
+            pushFail++;
+          }
+        }),
+      );
+
+      toast.success(
+        `Force-update odesláno: ${insertedList.length} in-app, push ${pushOk}/${insertedList.length} doručeno`,
+      );
+      setForceUpdateOpen(false);
+    } catch (e: any) {
+      toast.error(`Chyba: ${e?.message || e}`);
+    } finally {
+      setForceUpdateSending(false);
+    }
   };
 
   const sendTestNotification = async () => {
@@ -1792,6 +1888,15 @@ function NotificationRulesTab() {
           <Bell className="h-5 w-5" /> Systémové notifikace
         </CardTitle>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setForceUpdateOpen(true)}
+            className="gap-1.5"
+            title="Po deployi nové verze: pošle všem aktivním uživatelům notifikaci s tlačítkem, které smaže PWA cache a načte novou verzi."
+          >
+            <RefreshCw className="h-4 w-4" /> Vynutit aktualizaci
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setShowVarsModal(true)} className="gap-1.5">
             <Info className="h-4 w-4" /> Proměnné
           </Button>
@@ -2041,6 +2146,59 @@ function NotificationRulesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Force-update broadcast dialog */}
+      <Dialog open={forceUpdateOpen} onOpenChange={setForceUpdateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" /> Vynutit aktualizaci u všech
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-xs text-muted-foreground">
+              Pošle všem aktivním uživatelům in-app notifikaci a push s tlačítkem
+              <strong> Aktualizovat</strong>. Po kliknutí se uživateli smaže PWA cache,
+              odregistrují se service workery a aplikace se hard-reloadne. Auth session
+              zůstane zachována (Supabase tokeny se neresetují).
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Titulek</label>
+              <Input
+                value={forceUpdateTitle}
+                onChange={(e) => setForceUpdateTitle(e.target.value)}
+                placeholder={FORCE_UPDATE_TITLE_DEFAULT}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Zpráva</label>
+              <Textarea
+                value={forceUpdateBody}
+                onChange={(e) => setForceUpdateBody(e.target.value)}
+                rows={3}
+                placeholder={FORCE_UPDATE_BODY_DEFAULT}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setForceUpdateOpen(false);
+                setForceUpdateTitle(FORCE_UPDATE_TITLE_DEFAULT);
+                setForceUpdateBody(FORCE_UPDATE_BODY_DEFAULT);
+              }}
+              disabled={forceUpdateSending}
+            >
+              Zrušit
+            </Button>
+            <Button size="sm" onClick={sendForceUpdateBroadcast} disabled={forceUpdateSending}>
+              {forceUpdateSending ? "Odesílám…" : "Odeslat všem"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Variables reference modal */}
       <Dialog open={showVarsModal} onOpenChange={setShowVarsModal}>
         <DialogContent className="max-w-[90vw] w-[900px] max-h-[85vh] overflow-y-auto">
