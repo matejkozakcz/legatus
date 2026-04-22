@@ -39,12 +39,16 @@ import {
   Target,
   Activity,
   RefreshCw,
+  Coins,
+  CalendarDays,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
 import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
 import { NotificationDiagnosticsTab } from "@/components/admin/NotificationDiagnosticsTab";
+import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
+import { TransakceTab } from "@/components/admin/TransakceTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +88,8 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ADMIN_TABS = [
   { key: "users", label: "Uživatelé", icon: Users },
+  { key: "schuzky", label: "Schůzky", icon: CalendarDays },
+  { key: "transakce", label: "Transakce", icon: Coins },
   { key: "settings", label: "Nastavení", icon: Settings2 },
   { key: "permissions", label: "Oprávnění", icon: Lock },
   { key: "notifications", label: "Notifikace", icon: Bell },
@@ -111,6 +117,8 @@ export default function AdminDashboard() {
 
       <div className="mt-4">
         {activeTab === "users" && <UsersTab />}
+        {activeTab === "schuzky" && <SchuzkyTab />}
+        {activeTab === "transakce" && <TransakceTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "permissions" && <PermissionsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
