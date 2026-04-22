@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -321,10 +321,10 @@ interface EditorProps {
 function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
   const [form, setForm] = useState<Partial<NotificationRule>>(rule ?? emptyRule());
 
-  // Reset form when rule changes
-  useState(() => {
+  // Reset form whenever a different rule is opened
+  useEffect(() => {
     if (rule) setForm(rule);
-  });
+  }, [rule]);
 
   if (!rule) return null;
 
