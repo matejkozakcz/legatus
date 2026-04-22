@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 const loginBg = "/login-bg.svg";
 
@@ -150,7 +151,7 @@ const Login = () => {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden flex items-center justify-center"
+      className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center"
       style={{
         backgroundImage: `url(${loginBg})`,
         backgroundSize: "cover",
@@ -158,6 +159,7 @@ const Login = () => {
         backgroundColor: "#00555F",
       }}
     >
+      <InstallPwaPrompt />
       <div
         className="relative z-10 w-full max-w-[400px] mx-4 flex flex-col items-center"
         style={{
