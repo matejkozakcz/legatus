@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PersonPicker } from "@/components/PersonPicker";
 import { toast } from "sonner";
+import { sendNotification } from "@/lib/notifications";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 
 interface OnboardingModalProps {
@@ -230,6 +231,16 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       }
 
 
+
+      // Fire notification trigger (best-effort, never blocks UI)
+      sendNotification("onboarding_completed", {
+        subjectUserId: user.id,
+        senderUserId: user.id,
+        variables: {
+          member_name: fullName,
+          new_role: selectedRole,
+        },
+      });
 
       await refetchProfile();
       toast.success("Účet nastaven!");
