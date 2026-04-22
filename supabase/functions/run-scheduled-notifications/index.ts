@@ -383,7 +383,16 @@ async function handleCustomTime(
   }
   if (recipients.length === 0) return 0;
 
-  // Vars
+  // Načti jména/role příjemců, ať můžeme renderovat {{member_name}} per uživatele
+  const { data: recipientProfiles } = await sb
+    .from("profiles")
+    .select("id, full_name, role")
+    .in("id", recipients);
+  const profileMap = new Map<string, { full_name: string; role: string }>(
+    (recipientProfiles || []).map((p: { id: string; full_name: string; role: string }) => [p.id, { full_name: p.full_name, role: p.role }]),
+  );
+
+  // Globální vars (čas/datum)
   const now = new Date();
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: rule.schedule_timezone || "Europe/Prague",
@@ -391,7 +400,7 @@ async function handleCustomTime(
     day: "2-digit", month: "2-digit", year: "numeric",
   }).formatToParts(now);
   const get = (t: string) => fmt.find((p) => p.type === t)?.value ?? "";
-  const baseVars = {
+  const globalVars = {
     now_time: `${get("hour")}:${get("minute")}`,
     now_date: `${get("year")}-${get("month")}-${get("day")}`,
   };
@@ -405,23 +414,28 @@ async function handleCustomTime(
     .gte("created_at", since);
   const blocked = new Set((recent || []).map((n: { recipient_id: string }) => n.recipient_id));
 
-  const title = renderTemplate(rule.title_template, baseVars);
-  const body = renderTemplate(rule.body_template, baseVars);
-
   const rows = recipients
     .filter((rid) => !blocked.has(rid))
-    .map((rid) => ({
-      recipient_id: rid,
-      sender_id: null,
-      rule_id: rule.id,
-      trigger_event: rule.trigger_event,
-      title,
-      body,
-      icon: rule.icon,
-      accent_color: rule.accent_color,
-      link_url: rule.link_url,
-      payload: { variables: baseVars, scheduled: true },
-    }));
+    .map((rid) => {
+      const p = profileMap.get(rid);
+      const vars = {
+        ...globalVars,
+        member_name: p?.full_name ?? "",
+        member_role: p?.role ?? "",
+      };
+      return {
+        recipient_id: rid,
+        sender_id: null,
+        rule_id: rule.id,
+        trigger_event: rule.trigger_event,
+        title: renderTemplate(rule.title_template, vars),
+        body: renderTemplate(rule.body_template, vars),
+        icon: rule.icon,
+        accent_color: rule.accent_color,
+        link_url: rule.link_url,
+        payload: { variables: vars, scheduled: true },
+      };
+    });
   if (rows.length === 0) return 0;
   const { error } = await sb.from("notifications").insert(rows);
   if (error) {
