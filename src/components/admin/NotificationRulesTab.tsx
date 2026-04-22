@@ -206,6 +206,43 @@ export function NotificationRulesTab() {
     onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
   });
 
+  // "Run now" — calls the scheduled runner edge fn with ?force=<id> to bypass cron check
+  const runNowMutation = useMutation({
+    mutationFn: async (rule: NotificationRule) => {
+      const { data, error } = await supabase.functions.invoke("run-scheduled-notifications", {
+        body: { force: rule.id },
+        // ?force=<id> via query param
+      });
+      // Fallback: invoke doesn't pass query params reliably, so do a direct fetch with query
+      if (error || !data) {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-scheduled-notifications?force=${rule.id}`;
+        const session = (await supabase.auth.getSession()).data.session;
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+      }
+      return data;
+    },
+    onSuccess: (data: { results?: Array<{ rule: string; inserted: number; error?: string }> }) => {
+      const result = data.results?.[0];
+      if (result?.error) {
+        toast.error(`Chyba: ${result.error}`);
+      } else if (result) {
+        toast.success(`Pravidlo "${result.rule}" — odesláno ${result.inserted} notifikací`);
+      } else {
+        toast.success("Spuštěno");
+      }
+      queryClient.invalidateQueries({ queryKey: ["notification_run_log"] });
+    },
+    onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
+  });
+
   if (isLoading) return <p className="text-muted-foreground p-4">Načítání…</p>;
 
   return (
