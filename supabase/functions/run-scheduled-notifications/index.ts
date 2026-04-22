@@ -353,17 +353,22 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    const results: Array<{ rule: string; trigger: string; matched: boolean; inserted: number }> = [];
+    const results: Array<{ rule: string; trigger: string; matched: boolean; inserted: number; error?: string }> = [];
+    const logRows: Array<Record<string, unknown>> = [];
 
     for (const rule of (rules ?? []) as Rule[]) {
+      const t0 = Date.now();
       const matches = forceRuleId === rule.id ||
         (rule.schedule_cron ? cronMatchesNow(rule.schedule_cron, rule.schedule_timezone || "Europe/Prague") : false);
+
       if (!matches) {
         results.push({ rule: rule.name, trigger: rule.trigger_event, matched: false, inserted: 0 });
+        // Don't log non-matched runs to keep log clean
         continue;
       }
 
       let inserted = 0;
+      let errorMsg: string | null = null;
       try {
         switch (rule.trigger_event) {
           case "scheduled.unrecorded_meetings":
@@ -377,12 +382,30 @@ Deno.serve(async (req) => {
             break;
           default:
             console.warn("[scheduled] unknown trigger:", rule.trigger_event);
+            errorMsg = `Unknown trigger: ${rule.trigger_event}`;
         }
         await sb.from("notification_rules").update({ last_run_at: new Date().toISOString() }).eq("id", rule.id);
       } catch (e) {
         console.error(`[scheduled] rule ${rule.name} failed:`, e);
+        errorMsg = e instanceof Error ? e.message : String(e);
       }
-      results.push({ rule: rule.name, trigger: rule.trigger_event, matched: true, inserted });
+
+      results.push({ rule: rule.name, trigger: rule.trigger_event, matched: true, inserted, error: errorMsg ?? undefined });
+      logRows.push({
+        rule_id: rule.id,
+        rule_name: rule.name,
+        trigger_event: rule.trigger_event,
+        matched: true,
+        inserted_count: inserted,
+        forced: forceRuleId === rule.id,
+        error_message: errorMsg,
+        duration_ms: Date.now() - t0,
+      });
+    }
+
+    if (logRows.length > 0) {
+      const { error: logErr } = await sb.from("notification_run_log").insert(logRows);
+      if (logErr) console.warn("[scheduled] log insert failed:", logErr.message);
     }
 
     return new Response(JSON.stringify({ ok: true, results }), {

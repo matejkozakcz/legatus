@@ -12,8 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff } from "lucide-react";
+import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff, History, Zap } from "lucide-react";
 import { PushSetupPanel } from "@/components/admin/PushSetupPanel";
+import { CronPicker } from "@/components/admin/CronPicker";
+import { RunHistorySheet } from "@/components/admin/RunHistorySheet";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -97,6 +99,7 @@ export function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [editingRule, setEditingRule] = useState<Partial<NotificationRule> | null>(null);
+  const [historyRule, setHistoryRule] = useState<NotificationRule | null>(null);
 
   // Cast to any until generated types include notification_rules table
   const sb = supabase as unknown as {
@@ -203,6 +206,43 @@ export function NotificationRulesTab() {
     onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
   });
 
+  // "Run now" — calls the scheduled runner edge fn with ?force=<id> to bypass cron check
+  const runNowMutation = useMutation({
+    mutationFn: async (rule: NotificationRule) => {
+      const { data, error } = await supabase.functions.invoke("run-scheduled-notifications", {
+        body: { force: rule.id },
+        // ?force=<id> via query param
+      });
+      // Fallback: invoke doesn't pass query params reliably, so do a direct fetch with query
+      if (error || !data) {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-scheduled-notifications?force=${rule.id}`;
+        const session = (await supabase.auth.getSession()).data.session;
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+      }
+      return data;
+    },
+    onSuccess: (data: { results?: Array<{ rule: string; inserted: number; error?: string }> }) => {
+      const result = data.results?.[0];
+      if (result?.error) {
+        toast.error(`Chyba: ${result.error}`);
+      } else if (result) {
+        toast.success(`Pravidlo "${result.rule}" — odesláno ${result.inserted} notifikací`);
+      } else {
+        toast.success("Spuštěno");
+      }
+      queryClient.invalidateQueries({ queryKey: ["notification_run_log"] });
+    },
+    onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
+  });
+
   if (isLoading) return <p className="text-muted-foreground p-4">Načítání…</p>;
 
   return (
@@ -259,6 +299,27 @@ export function NotificationRulesTab() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      {rule.schedule_cron && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Otestovat teď (spustí runner s force)"
+                            onClick={() => runNowMutation.mutate(rule)}
+                            disabled={runNowMutation.isPending}
+                          >
+                            <Zap className="h-4 w-4 text-[hsl(38,92%,50%)]" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Historie běhů"
+                            onClick={() => setHistoryRule(rule)}
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
@@ -310,6 +371,13 @@ export function NotificationRulesTab() {
         onSave={(r) => upsertMutation.mutate(r)}
         saving={upsertMutation.isPending}
       />
+
+      <RunHistorySheet
+        open={!!historyRule}
+        onClose={() => setHistoryRule(null)}
+        ruleId={historyRule?.id ?? null}
+        ruleName={historyRule?.name}
+      />
     </div>
   );
 }
@@ -333,7 +401,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
   if (!rule) return null;
 
-  const isScheduled = form.trigger_event === "scheduled";
+  const isScheduled = form.trigger_event === "scheduled" || (form.trigger_event ?? "").startsWith("scheduled.");
 
   const toggleRecipient = (key: string) => {
     const current = form.recipient_roles ?? [];
@@ -418,18 +486,11 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
           {/* Schedule (only if scheduled) */}
           {isScheduled && (
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/40">
-              <div>
-                <Label>Cron výraz</Label>
-                <Input
-                  value={form.schedule_cron ?? ""}
-                  onChange={(e) => setForm({ ...form, schedule_cron: e.target.value })}
-                  placeholder="0 9 * * *"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  např. <code>0 9 * * *</code> = denně 9:00, <code>0 18 * * 5</code> = pátek 18:00
-                </p>
-              </div>
+            <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+              <CronPicker
+                value={form.schedule_cron ?? ""}
+                onChange={(v) => setForm({ ...form, schedule_cron: v })}
+              />
               <div>
                 <Label>Časová zóna</Label>
                 <Input

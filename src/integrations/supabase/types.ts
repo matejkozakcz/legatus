@@ -462,6 +462,53 @@ export type Database = {
           },
         ]
       }
+      notification_run_log: {
+        Row: {
+          duration_ms: number | null
+          error_message: string | null
+          forced: boolean
+          id: string
+          inserted_count: number
+          matched: boolean
+          rule_id: string | null
+          rule_name: string | null
+          run_at: string
+          trigger_event: string | null
+        }
+        Insert: {
+          duration_ms?: number | null
+          error_message?: string | null
+          forced?: boolean
+          id?: string
+          inserted_count?: number
+          matched?: boolean
+          rule_id?: string | null
+          rule_name?: string | null
+          run_at?: string
+          trigger_event?: string | null
+        }
+        Update: {
+          duration_ms?: number | null
+          error_message?: string | null
+          forced?: boolean
+          id?: string
+          inserted_count?: number
+          matched?: boolean
+          rule_id?: string | null
+          rule_name?: string | null
+          run_at?: string
+          trigger_event?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_run_log_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           accent_color: string | null
