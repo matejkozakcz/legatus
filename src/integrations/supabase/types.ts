@@ -388,6 +388,80 @@ export type Database = {
           },
         ]
       }
+      notification_rules: {
+        Row: {
+          accent_color: string | null
+          body_template: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          link_url: string | null
+          name: string
+          recipient_filters: Json
+          recipient_roles: Json
+          schedule_cron: string | null
+          schedule_timezone: string
+          title_template: string
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          body_template: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          link_url?: string | null
+          name: string
+          recipient_filters?: Json
+          recipient_roles?: Json
+          schedule_cron?: string | null
+          schedule_timezone?: string
+          title_template: string
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          body_template?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          link_url?: string | null
+          name?: string
+          recipient_filters?: Json
+          recipient_roles?: Json
+          schedule_cron?: string | null
+          schedule_timezone?: string
+          title_template?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           accent_color: string | null
@@ -440,6 +514,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_rules"
             referencedColumns: ["id"]
           },
           {
