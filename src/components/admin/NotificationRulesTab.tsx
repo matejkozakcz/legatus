@@ -95,21 +95,37 @@ export function NotificationRulesTab() {
   const { user } = useAuth();
   const [editingRule, setEditingRule] = useState<Partial<NotificationRule> | null>(null);
 
+  // Cast to any until generated types include notification_rules table
+  const sb = supabase as unknown as {
+    from: (tbl: string) => {
+      select: (cols: string) => {
+        order: (col: string, opts: { ascending: boolean }) => Promise<{ data: unknown; error: Error | null }>;
+      };
+      insert: (row: Record<string, unknown>) => Promise<{ error: Error | null }>;
+      update: (row: Record<string, unknown>) => {
+        eq: (col: string, val: string) => Promise<{ error: Error | null }>;
+      };
+      delete: () => {
+        eq: (col: string, val: string) => Promise<{ error: Error | null }>;
+      };
+    };
+  };
+
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["notification_rules"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notification_rules" as never)
+      const { data, error } = await sb
+        .from("notification_rules")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as NotificationRule[];
+      return (data || []) as NotificationRule[];
     },
   });
 
   const upsertMutation = useMutation({
     mutationFn: async (rule: Partial<NotificationRule>) => {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: rule.name,
         description: rule.description || null,
         trigger_event: rule.trigger_event,
@@ -127,13 +143,10 @@ export function NotificationRulesTab() {
         created_by: user?.id ?? null,
       };
       if (rule.id) {
-        const { error } = await supabase
-          .from("notification_rules" as never)
-          .update(payload)
-          .eq("id", rule.id);
+        const { error } = await sb.from("notification_rules").update(payload).eq("id", rule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("notification_rules" as never).insert(payload);
+        const { error } = await sb.from("notification_rules").insert(payload);
         if (error) throw error;
       }
     },
@@ -147,7 +160,7 @@ export function NotificationRulesTab() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("notification_rules" as never).delete().eq("id", id);
+      const { error } = await sb.from("notification_rules").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -159,10 +172,7 @@ export function NotificationRulesTab() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from("notification_rules" as never)
-        .update({ is_active })
-        .eq("id", id);
+      const { error } = await sb.from("notification_rules").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification_rules"] }),
