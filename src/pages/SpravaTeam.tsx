@@ -15,6 +15,7 @@ import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
+import { sendNotification } from "@/lib/notifications";
 
 interface Profile {
   id: string;
@@ -290,7 +291,12 @@ const SpravaTeam = () => {
       // Log history
       await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
 
-      // Notification system removed — promotion approval is silent for now.
+      // Fire promotion_approved trigger
+      sendNotification("promotion_approved", {
+        subjectUserId: userId,
+        senderUserId: profile!.id,
+        variables: { new_role: newRole, sender_name: profile!.full_name },
+      });
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
@@ -311,7 +317,12 @@ const SpravaTeam = () => {
       if (error) throw error;
       await logPromotionHistory(userId, requestedRole, "rejected", undefined, undefined, `Zamítnuto vedoucím ${profile!.full_name}`);
 
-      // Notification system removed — promotion rejection is silent for now.
+      // Fire promotion_rejected trigger
+      sendNotification("promotion_rejected", {
+        subjectUserId: userId,
+        senderUserId: profile!.id,
+        variables: { new_role: requestedRole, sender_name: profile!.full_name },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
