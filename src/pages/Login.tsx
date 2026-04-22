@@ -151,7 +151,7 @@ const Login = () => {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden flex items-center justify-center"
+      className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center"
       style={{
         backgroundImage: `url(${loginBg})`,
         backgroundSize: "cover",
@@ -159,6 +159,7 @@ const Login = () => {
         backgroundColor: "#00555F",
       }}
     >
+      <InstallPwaPrompt />
       <div
         className="relative z-10 w-full max-w-[400px] mx-4 flex flex-col items-center"
         style={{
