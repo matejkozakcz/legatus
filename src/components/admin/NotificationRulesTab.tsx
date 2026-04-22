@@ -487,20 +487,13 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
             </Select>
           </div>
 
-          {/* Schedule (only if scheduled) */}
+          {/* Schedule (only if scheduled) — Europe/Prague je nastavena natvrdo */}
           {isScheduled && (
-            <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+            <div className="p-3 rounded-lg bg-muted/40">
               <CronPicker
                 value={form.schedule_cron ?? ""}
                 onChange={(v) => setForm({ ...form, schedule_cron: v })}
               />
-              <div>
-                <Label>Časová zóna</Label>
-                <Input
-                  value={form.schedule_timezone ?? "Europe/Prague"}
-                  onChange={(e) => setForm({ ...form, schedule_timezone: e.target.value })}
-                />
-              </div>
             </div>
           )}
 
