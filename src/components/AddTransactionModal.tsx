@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,7 @@ export function AddTransactionModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Přidat ruční BJ záznam</DialogTitle>
+          <DialogDescription>Záznam se připíše uživateli k vybranému datu.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
