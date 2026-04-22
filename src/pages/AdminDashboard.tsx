@@ -156,16 +156,7 @@ function SettingsTab() {
 // ─── Notifications Tab (with sub-tabs) ────────────────────────────────────────
 
 function NotificationsTab() {
-  return (
-    <Card>
-      <CardContent className="py-12 flex flex-col items-center text-center gap-3 opacity-60">
-        <Bell className="h-10 w-10 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground max-w-md">
-          Notifikační systém je dočasně vypnutý. Brzy ho nastavíme znovu od nuly.
-        </p>
-      </CardContent>
-    </Card>
-  );
+  return <NotificationRulesTab />;
 }
 
 // ─── Promotion Rules Tab ──────────────────────────────────────────────────────
