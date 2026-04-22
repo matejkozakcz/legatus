@@ -84,6 +84,13 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [vedouciOptions, setVedouciOptions] = useState<VedouciOption[]>([]);
   const [memberOptions, setMemberOptions] = useState<VedouciOption[]>([]);
 
+  // Promotion rules from app_config (with sensible fallbacks)
+  const [promoRules, setPromoRules] = useState({
+    ziskatel_to_garant: { min_bj: 1000, min_structure: 2 },
+    garant_to_bv: { min_structure: 5, min_direct: 3 },
+    bv_to_vedouci: { min_structure: 10, min_direct: 6 },
+  });
+
   // Fetch vedouci list
   useEffect(() => {
     if (!open) return;
@@ -95,6 +102,16 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       .then(({ data }) => {
         if (data) {
           setVedouciOptions(data.map((p) => ({ id: p.id, label: p.full_name })));
+        }
+      });
+    supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "promotion_rules")
+      .single()
+      .then(({ data }) => {
+        if (data?.value) {
+          setPromoRules((prev) => ({ ...prev, ...(data.value as unknown as typeof prev) }));
         }
       });
   }, [open]);
