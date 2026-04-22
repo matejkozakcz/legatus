@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { usePushSubscription } from "@/hooks/usePushSubscription";
 import type { UserIdentity } from "@supabase/supabase-js";
 
 interface SettingsModalProps {
@@ -68,6 +69,8 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [identities, setIdentities] = useState<UserIdentity[]>([]);
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
+
+  const pushState = usePushSubscription();
 
   // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
 
