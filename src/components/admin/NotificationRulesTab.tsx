@@ -401,7 +401,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
   if (!rule) return null;
 
-  const isScheduled = form.trigger_event === "scheduled";
+  const isScheduled = form.trigger_event === "scheduled" || (form.trigger_event ?? "").startsWith("scheduled.");
 
   const toggleRecipient = (key: string) => {
     const current = form.recipient_roles ?? [];
@@ -486,18 +486,11 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
           {/* Schedule (only if scheduled) */}
           {isScheduled && (
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/40">
-              <div>
-                <Label>Cron výraz</Label>
-                <Input
-                  value={form.schedule_cron ?? ""}
-                  onChange={(e) => setForm({ ...form, schedule_cron: e.target.value })}
-                  placeholder="0 9 * * *"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  např. <code>0 9 * * *</code> = denně 9:00, <code>0 18 * * 5</code> = pátek 18:00
-                </p>
-              </div>
+            <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+              <CronPicker
+                value={form.schedule_cron ?? ""}
+                onChange={(v) => setForm({ ...form, schedule_cron: v })}
+              />
               <div>
                 <Label>Časová zóna</Label>
                 <Input
