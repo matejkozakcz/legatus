@@ -1,4 +1,4 @@
-const CACHE_NAME = "legatus-v1";
+const CACHE_NAME = "legatus-v2";
 const STATIC_ASSETS = ["/", "/dashboard", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -17,13 +17,11 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first strategy: zkus síť, fallback na cache
+// Network-first strategy
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
-  // OAuth callback musí vždy projít na síť
   if (url.pathname.startsWith("/~oauth")) return;
-  // Supabase requesty necháme projít vždy online
   if (url.hostname.includes("supabase.co")) return;
 
   event.respondWith(
@@ -34,5 +32,55 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// ─── Web Push ────────────────────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Legatus", body: event.data ? event.data.text() : "" };
+  }
+
+  const title = data.title || "Legatus";
+  const options = {
+    body: data.body || "",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: data.notification_id || undefined,
+    renotify: !!data.notification_id,
+    data: {
+      link_url: data.link_url || "/",
+      notification_id: data.notification_id || null,
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const link = (event.notification.data && event.notification.data.link_url) || "/";
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // Try to focus an existing window and navigate it
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.focus();
+            if ("navigate" in client) {
+              try {
+                client.navigate(link);
+              } catch {}
+            }
+            return;
+          }
+        }
+        if (clients.openWindow) return clients.openWindow(link);
+      })
   );
 });
