@@ -198,7 +198,7 @@ const SpravaTeam = () => {
   const isDark = theme === "dark";
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
-  const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
+  // notifyMember state removed — notification system was reset.
   const [detailMember, setDetailMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
@@ -290,34 +290,7 @@ const SpravaTeam = () => {
       // Log history
       await logPromotionHistory(userId, newRole, "approved", undefined, undefined, `Schváleno vedoucím ${profile!.full_name}`);
 
-      // Send notification via notification_rules
-      const roleLabel = roleBadge[newRole]?.label || newRole;
-      const rule = await getNotificationRule("promotion_approved");
-      const vars = { role_label: roleLabel, vedouci_name: profile!.full_name };
-
-      if (rule) {
-        await sendRuleNotification(rule, userId, profile!.id, vars);
-      } else {
-        // Fallback if no rule exists
-        const { data: notifData } = await supabase.from("notifications").insert({
-          sender_id: profile!.id,
-          recipient_id: userId,
-          type: "promotion_approved",
-          title: `Gratulujeme! Tvé povýšení na ${roleLabel} bylo schváleno 🎉`,
-          body: `Vedoucí ${profile!.full_name} schválil tvé povýšení. Nyní máš roli ${roleLabel}.`,
-          deadline: new Date().toISOString().split("T")[0],
-        }).select("id").single();
-
-        if (notifData?.id) {
-          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          fetch(`https://${projectId}.supabase.co/functions/v1/send-push`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-            body: JSON.stringify({ notification_id: notifData.id }),
-          }).catch(() => {});
-        }
-      }
+      // Notification system removed — promotion approval is silent for now.
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
@@ -338,12 +311,7 @@ const SpravaTeam = () => {
       if (error) throw error;
       await logPromotionHistory(userId, requestedRole, "rejected", undefined, undefined, `Zamítnuto vedoucím ${profile!.full_name}`);
 
-      // Send rejection notification via notification_rules
-      const roleLabel = roleBadge[requestedRole]?.label || requestedRole;
-      const rule = await getNotificationRule("promotion_rejected");
-      if (rule) {
-        await sendRuleNotification(rule, userId, userId, { role_label: roleLabel, vedouci_name: profile!.full_name });
-      }
+      // Notification system removed — promotion rejection is silent for now.
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promotion_requests"] });
@@ -658,19 +626,10 @@ const SpravaTeam = () => {
             member={detailMember}
             onClose={() => setDetailMember(null)}
             onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-            onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
           />
         )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
         <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
-        {notifyMember && (
-          <CreateNotificationDialog
-            open={!!notifyMember}
-            onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
-            recipientId={notifyMember.id}
-            recipientName={notifyMember.full_name}
-          />
-        )}
       </div>
     );
   }
@@ -795,19 +754,10 @@ const SpravaTeam = () => {
           member={detailMember}
           onClose={() => setDetailMember(null)}
           onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-          onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
         />
       )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
       <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
-      {notifyMember && (
-        <CreateNotificationDialog
-          open={!!notifyMember}
-          onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
-          recipientId={notifyMember.id}
-          recipientName={notifyMember.full_name}
-        />
-      )}
     </div>
   );
 };
