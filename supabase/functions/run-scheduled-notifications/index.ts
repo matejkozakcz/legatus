@@ -348,6 +348,89 @@ async function handleInactive(
   return total;
 }
 
+/**
+ * scheduled.custom_time — pošle notifikaci v zadaný čas (cron) všem příjemcům
+ * podle pravidla. Žádné podmínky, žádný "subject" — je to prostě časovač.
+ */
+async function handleCustomTime(
+  sb: ReturnType<typeof createClient>,
+  rule: Rule,
+): Promise<number> {
+  // Pro custom_time používáme jen group role (self/ziskatel/garant/vedouci
+  // nedávají bez subjectu smysl).
+  const ids = new Set<string>();
+  for (const r of rule.recipient_roles ?? []) {
+    if (r === "all_vedouci") {
+      const { data } = await sb.from("profiles").select("id").eq("role", "vedouci").eq("is_active", true);
+      (data || []).forEach((p: { id: string }) => ids.add(p.id));
+    } else if (r === "all_active") {
+      const { data } = await sb.from("profiles").select("id").eq("is_active", true);
+      (data || []).forEach((p: { id: string }) => ids.add(p.id));
+    }
+  }
+  if (ids.size === 0) return 0;
+
+  const filters = rule.recipient_filters ?? {};
+  const onlyActive = filters.only_active !== false;
+  const roleIn = filters.role_in ?? [];
+  let recipients: string[] = Array.from(ids);
+  if (onlyActive || roleIn.length > 0) {
+    let q = sb.from("profiles").select("id").in("id", recipients);
+    if (onlyActive) q = q.eq("is_active", true);
+    if (roleIn.length > 0) q = q.in("role", roleIn);
+    const { data } = await q;
+    recipients = (data || []).map((p: { id: string }) => p.id);
+  }
+  if (recipients.length === 0) return 0;
+
+  // Vars
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: rule.schedule_timezone || "Europe/Prague",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+    day: "2-digit", month: "2-digit", year: "numeric",
+  }).formatToParts(now);
+  const get = (t: string) => fmt.find((p) => p.type === t)?.value ?? "";
+  const baseVars = {
+    now_time: `${get("hour")}:${get("minute")}`,
+    now_date: `${get("year")}-${get("month")}-${get("day")}`,
+  };
+
+  // Dedup: max 1× za 30 min na příjemce z tohoto pravidla.
+  const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { data: recent } = await sb
+    .from("notifications")
+    .select("recipient_id")
+    .eq("rule_id", rule.id)
+    .gte("created_at", since);
+  const blocked = new Set((recent || []).map((n: { recipient_id: string }) => n.recipient_id));
+
+  const title = renderTemplate(rule.title_template, baseVars);
+  const body = renderTemplate(rule.body_template, baseVars);
+
+  const rows = recipients
+    .filter((rid) => !blocked.has(rid))
+    .map((rid) => ({
+      recipient_id: rid,
+      sender_id: null,
+      rule_id: rule.id,
+      trigger_event: rule.trigger_event,
+      title,
+      body,
+      icon: rule.icon,
+      accent_color: rule.accent_color,
+      link_url: rule.link_url,
+      payload: { variables: baseVars, scheduled: true },
+    }));
+  if (rows.length === 0) return 0;
+  const { error } = await sb.from("notifications").insert(rows);
+  if (error) {
+    console.error("[scheduled] custom_time insert failed:", error.message);
+    return 0;
+  }
+  return rows.length;
+}
+
 // ─── Entry ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -398,6 +481,9 @@ Deno.serve(async (req) => {
             break;
           case "scheduled.inactive_days":
             inserted = await handleInactive(sb, rule, isForced);
+            break;
+          case "scheduled.custom_time":
+            inserted = await handleCustomTime(sb, rule);
             break;
           default:
             console.warn("[scheduled] unknown trigger:", rule.trigger_event);
