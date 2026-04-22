@@ -24,7 +24,9 @@ const TRIGGER_EVENTS = [
   { key: "onboarding_completed", label: "Nový uživatel — dokončil onboarding" },
   { key: "meeting_outcome_missing", label: "Schůzka — nezadaný výsledek" },
   { key: "weekly_low_activity", label: "Týdenní report — málo aktivity" },
-  { key: "scheduled", label: "Naplánovaná notifikace (cron)" },
+  { key: "scheduled.unrecorded_meetings", label: "🕐 Nezadané výsledky schůzek (cron)" },
+  { key: "scheduled.weekly_report", label: "🕐 Týdenní report (cron)" },
+  { key: "scheduled.inactive_days", label: "🕐 X dní bez aktivity (cron)" },
   { key: "manual", label: "Manuální (jen test)" },
 ] as const;
 
