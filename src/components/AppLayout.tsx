@@ -107,6 +107,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
           <MobileBottomNav />
           <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+          <PushOptInBanner />
         </div>
       </ProtectedRoute>
     );
@@ -134,6 +135,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <PushOptInBanner />
       </SidebarProvider>
     </ProtectedRoute>
   );
