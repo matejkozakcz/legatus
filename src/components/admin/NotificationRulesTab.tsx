@@ -16,6 +16,7 @@ import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff, History, Z
 import { PushSetupPanel } from "@/components/admin/PushSetupPanel";
 import { CronPicker } from "@/components/admin/CronPicker";
 import { RunHistorySheet } from "@/components/admin/RunHistorySheet";
+import { VariablesHelp } from "@/components/admin/VariablesHelp";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
