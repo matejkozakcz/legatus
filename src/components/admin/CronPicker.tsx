@@ -140,7 +140,8 @@ export function CronPicker({ value, onChange }: CronPickerProps) {
           className="font-mono"
         />
         <p className="text-[10px] text-muted-foreground mt-1">
-          Časová zóna: <span className="font-medium">Europe/Prague</span> (automaticky vč. letního času)
+          Časová zóna: <span className="font-medium">Europe/Prague</span> (vč. letního času).
+          Scheduler běží po 15 min, takže čas se automaticky zaokrouhlí na :00, :15, :30 nebo :45.
         </p>
       </div>
 
