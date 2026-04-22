@@ -512,12 +512,22 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               <div className="flex flex-col gap-2">
                 {ROLE_OPTIONS.map((opt) => {
                   const isSelected = selectedRole === opt.value;
+                  let criteria = "";
+                  if (opt.value === "ziskatel") {
+                    criteria = "Splněná supervize";
+                  } else if (opt.value === "garant") {
+                    criteria = `${promoRules.ziskatel_to_garant.min_bj} BJ · ${promoRules.ziskatel_to_garant.min_structure} ve struktuře`;
+                  } else if (opt.value === "budouci_vedouci") {
+                    criteria = `${promoRules.garant_to_bv.min_structure} ve struktuře · ${promoRules.garant_to_bv.min_direct} přímí`;
+                  } else if (opt.value === "vedouci") {
+                    criteria = `${promoRules.bv_to_vedouci.min_structure} ve struktuře · ${promoRules.bv_to_vedouci.min_direct} přímých`;
+                  }
                   return (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => setSelectedRole(opt.value)}
-                      className="w-full text-left font-body transition-all"
+                      className="w-full font-body transition-all"
                       style={{
                         padding: "10px 14px",
                         borderRadius: 10,
@@ -537,9 +547,30 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                         fontWeight: isSelected ? 700 : 500,
                         fontSize: 14,
                         cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        textAlign: "left",
                       }}
                     >
-                      {opt.label}
+                      <span style={{ flexShrink: 0 }}>{opt.label}</span>
+                      {criteria && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 500,
+                            color: isSelected ? "#00abbd" : "#7a9ba0",
+                            opacity: isSelected ? 0.9 : 0.85,
+                            textAlign: "right",
+                            lineHeight: 1.25,
+                            whiteSpace: "nowrap",
+                            minWidth: 0,
+                          }}
+                        >
+                          {criteria}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
