@@ -538,7 +538,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                   <p className="text-[11px] text-muted-foreground">
                     {broad
                       ? "Zúží množinu příjemců vybranou výše."
-                      : "Aktivní pouze pro hromadné příjemce („Všichni vedoucí" / „Všichni aktivní uživatelé"). Pro vztahové příjemce (Sám sobě, Získatel, …) se neuplatní."}
+                      : 'Aktivní pouze pro hromadné příjemce ("Všichni vedoucí" / "Všichni aktivní uživatelé"). Pro vztahové příjemce (Sám sobě, Získatel, …) se neuplatní.'}
                   </p>
                 </div>
 
