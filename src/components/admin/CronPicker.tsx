@@ -1,103 +1,83 @@
 import { useEffect, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+//
+// Zjednodušený picker: čas (HH:MM, 24h) + libovolná kombinace dnů v týdnu.
+// Časová zóna je vždy Europe/Prague (vč. letního času) — viz schedule_timezone
+// na úrovni pravidla. Cron výraz odpovídá:
+//   - "<min> <hour> * * *"               (vybrány všechny dny)
+//   - "<min> <hour> * * <d1>,<d2>,..."   (vybrané dny, 0=Ne..6=So)
 
-type CronMode = "daily" | "weekly" | "monthly" | "interval" | "custom";
-
-interface ParsedCron {
-  mode: CronMode;
+interface ParsedTime {
   hour: number;
   minute: number;
-  daysOfWeek: number[]; // 0=Sun..6=Sat
-  dayOfMonth: number;
-  intervalMinutes: number;
+  daysOfWeek: number[]; // 0=Ne..6=So
 }
 
-const DEFAULT_PARSED: ParsedCron = {
-  mode: "daily",
+const DEFAULT_PARSED: ParsedTime = {
   hour: 9,
   minute: 0,
-  daysOfWeek: [1], // Monday
-  dayOfMonth: 1,
-  intervalMinutes: 15,
+  daysOfWeek: [1, 2, 3, 4, 5], // Po–Pá
 };
 
-const DAY_LABELS = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
+// Zobrazení Po–Ne (sjednoceno s českou konvencí týdne)
+const DAY_ORDER: { idx: number; label: string }[] = [
+  { idx: 1, label: "Po" },
+  { idx: 2, label: "Út" },
+  { idx: 3, label: "St" },
+  { idx: 4, label: "Čt" },
+  { idx: 5, label: "Pá" },
+  { idx: 6, label: "So" },
+  { idx: 0, label: "Ne" },
+];
 
-function tryParse(cron: string): ParsedCron | null {
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+function tryParse(cron: string): ParsedTime | null {
   if (!cron) return null;
   const parts = cron.trim().split(/\s+/);
   if (parts.length !== 5) return null;
   const [m, h, dom, mon, dow] = parts;
 
-  // Interval: */N * * * * (only minute uses step)
-  const intervalMatch = m.match(/^\*\/(\d+)$/);
-  if (intervalMatch && h === "*" && dom === "*" && mon === "*" && dow === "*") {
-    return { ...DEFAULT_PARSED, mode: "interval", intervalMinutes: parseInt(intervalMatch[1], 10) };
+  if (dom !== "*" || mon !== "*") return null;
+  if (!/^\d+$/.test(m) || !/^\d+$/.test(h)) return null;
+  const minute = parseInt(m, 10);
+  const hour = parseInt(h, 10);
+
+  let days: number[];
+  if (dow === "*") {
+    days = [...ALL_DAYS];
+  } else {
+    days = dow
+      .split(",")
+      .map((d) => parseInt(d, 10))
+      .filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+    if (days.length === 0) return null;
   }
 
-  const minute = /^\d+$/.test(m) ? parseInt(m, 10) : NaN;
-  const hour = /^\d+$/.test(h) ? parseInt(h, 10) : NaN;
-  if (isNaN(minute) || isNaN(hour)) return null;
-
-  // Monthly: minute hour dayOfMonth * *
-  if (/^\d+$/.test(dom) && mon === "*" && dow === "*") {
-    return { ...DEFAULT_PARSED, mode: "monthly", hour, minute, dayOfMonth: parseInt(dom, 10) };
-  }
-
-  // Daily: minute hour * * *
-  if (dom === "*" && mon === "*" && dow === "*") {
-    return { ...DEFAULT_PARSED, mode: "daily", hour, minute };
-  }
-
-  // Weekly: minute hour * * dow (single or csv)
-  if (dom === "*" && mon === "*" && dow !== "*") {
-    const days = dow.split(",").map((d) => parseInt(d, 10)).filter((n) => !isNaN(n) && n >= 0 && n <= 6);
-    if (days.length > 0) {
-      return { ...DEFAULT_PARSED, mode: "weekly", hour, minute, daysOfWeek: days };
-    }
-  }
-
-  return null;
+  return { hour, minute, daysOfWeek: days };
 }
 
-function build(parsed: ParsedCron): string {
-  const { mode, hour, minute, daysOfWeek, dayOfMonth, intervalMinutes } = parsed;
-  switch (mode) {
-    case "daily":
-      return `${minute} ${hour} * * *`;
-    case "weekly": {
-      const dow = daysOfWeek.length > 0 ? [...daysOfWeek].sort((a, b) => a - b).join(",") : "*";
-      return `${minute} ${hour} * * ${dow}`;
-    }
-    case "monthly":
-      return `${minute} ${hour} ${dayOfMonth} * *`;
-    case "interval":
-      return `*/${Math.max(1, Math.min(59, intervalMinutes))} * * * *`;
-    case "custom":
-      return ""; // caller uses raw value
-  }
+function build(parsed: ParsedTime): string {
+  const { hour, minute, daysOfWeek } = parsed;
+  const allSelected = ALL_DAYS.every((d) => daysOfWeek.includes(d));
+  const dow = allSelected
+    ? "*"
+    : [...daysOfWeek].sort((a, b) => a - b).join(",");
+  return `${minute} ${hour} * * ${dow}`;
 }
 
-function describe(parsed: ParsedCron): string {
+function describe(parsed: ParsedTime): string {
   const t = `${String(parsed.hour).padStart(2, "0")}:${String(parsed.minute).padStart(2, "0")}`;
-  switch (parsed.mode) {
-    case "daily":
-      return `Každý den v ${t}`;
-    case "weekly":
-      return parsed.daysOfWeek.length === 0
-        ? "Vyber alespoň jeden den"
-        : `Každý ${parsed.daysOfWeek.sort((a, b) => a - b).map((d) => DAY_LABELS[d]).join(", ")} v ${t}`;
-    case "monthly":
-      return `${parsed.dayOfMonth}. den v měsíci v ${t}`;
-    case "interval":
-      return `Každých ${parsed.intervalMinutes} minut`;
-    case "custom":
-      return "Vlastní cron výraz";
-  }
+  if (parsed.daysOfWeek.length === 0) return "Vyber alespoň jeden den";
+  const allSelected = ALL_DAYS.every((d) => parsed.daysOfWeek.includes(d));
+  if (allSelected) return `Každý den v ${t}`;
+  const labels = DAY_ORDER.filter((d) => parsed.daysOfWeek.includes(d.idx)).map(
+    (d) => d.label,
+  );
+  return `Každý ${labels.join(", ")} v ${t}`;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -108,155 +88,112 @@ interface CronPickerProps {
 }
 
 export function CronPicker({ value, onChange }: CronPickerProps) {
-  // Determine initial mode: try to parse, else "custom"
-  const initial = useMemo<{ parsed: ParsedCron; isCustom: boolean }>(() => {
-    const p = tryParse(value);
-    if (p) return { parsed: p, isCustom: false };
-    return { parsed: { ...DEFAULT_PARSED, mode: "custom" }, isCustom: true };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [parsed, setParsed] = useState<ParsedCron>(initial.parsed);
-  const [customValue, setCustomValue] = useState<string>(initial.isCustom ? value : "");
-
-  // Sync upward when parsed changes (non-custom modes)
-  useEffect(() => {
-    if (parsed.mode === "custom") {
-      onChange(customValue);
-    } else {
-      onChange(build(parsed));
-    }
+  const initial = useMemo<ParsedTime>(() => {
+    return tryParse(value) ?? DEFAULT_PARSED;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed, customValue]);
+  }, []);
 
-  const setMode = (m: CronMode) => {
-    if (m === "custom" && parsed.mode !== "custom") {
-      setCustomValue(build(parsed));
-    }
-    setParsed((p) => ({ ...p, mode: m }));
+  const [parsed, setParsed] = useState<ParsedTime>(initial);
+  const [timeStr, setTimeStr] = useState<string>(
+    `${String(initial.hour).padStart(2, "0")}:${String(initial.minute).padStart(2, "0")}`,
+  );
+
+  // Sync upward whenever parsed changes
+  useEffect(() => {
+    onChange(build(parsed));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsed]);
+
+  const handleTimeChange = (v: string) => {
+    setTimeStr(v);
+    const match = v.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return;
+    const h = Math.max(0, Math.min(23, parseInt(match[1], 10)));
+    const m = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    setParsed((p) => ({ ...p, hour: h, minute: m }));
   };
 
   const toggleDay = (d: number) => {
     setParsed((p) => ({
       ...p,
-      daysOfWeek: p.daysOfWeek.includes(d) ? p.daysOfWeek.filter((x) => x !== d) : [...p.daysOfWeek, d],
+      daysOfWeek: p.daysOfWeek.includes(d)
+        ? p.daysOfWeek.filter((x) => x !== d)
+        : [...p.daysOfWeek, d],
     }));
   };
+
+  const setAllDays = () => setParsed((p) => ({ ...p, daysOfWeek: [...ALL_DAYS] }));
+  const setWeekdays = () => setParsed((p) => ({ ...p, daysOfWeek: [1, 2, 3, 4, 5] }));
+  const clearDays = () => setParsed((p) => ({ ...p, daysOfWeek: [] }));
 
   return (
     <div className="space-y-3">
       <div>
-        <Label>Frekvence</Label>
-        <Select value={parsed.mode} onValueChange={(v) => setMode(v as CronMode)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="z-[120]">
-            <SelectItem value="daily">Každý den</SelectItem>
-            <SelectItem value="weekly">Každý týden ve vybrané dny</SelectItem>
-            <SelectItem value="monthly">Každý měsíc</SelectItem>
-            <SelectItem value="interval">Každých N minut</SelectItem>
-            <SelectItem value="custom">Vlastní cron výraz</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label>Čas odeslání (24h)</Label>
+        <Input
+          type="time"
+          value={timeStr}
+          onChange={(e) => handleTimeChange(e.target.value)}
+          className="font-mono"
+        />
+        <p className="text-[10px] text-muted-foreground mt-1">
+          Časová zóna: <span className="font-medium">Europe/Prague</span> (automaticky vč. letního času)
+        </p>
       </div>
 
-      {(parsed.mode === "daily" || parsed.mode === "weekly" || parsed.mode === "monthly") && (
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Hodina</Label>
-            <Input
-              type="number"
-              min={0}
-              max={23}
-              value={parsed.hour}
-              onChange={(e) => setParsed({ ...parsed, hour: Math.max(0, Math.min(23, parseInt(e.target.value || "0", 10))) })}
-            />
-          </div>
-          <div>
-            <Label>Minuta</Label>
-            <Input
-              type="number"
-              min={0}
-              max={59}
-              value={parsed.minute}
-              onChange={(e) => setParsed({ ...parsed, minute: Math.max(0, Math.min(59, parseInt(e.target.value || "0", 10))) })}
-            />
-          </div>
-        </div>
-      )}
-
-      {parsed.mode === "weekly" && (
-        <div>
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
           <Label>Dny v týdnu</Label>
-          <div className="flex gap-1 mt-1.5 flex-wrap">
-            {DAY_LABELS.map((label, idx) => {
-              const active = parsed.daysOfWeek.includes(idx);
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => toggleDay(idx)}
-                  className={`min-w-10 px-2 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background border-border text-muted-foreground hover:bg-muted/40"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={setWeekdays}
+              className="text-[10px] px-2 py-0.5 rounded border border-border text-muted-foreground hover:bg-muted/40 transition-colors"
+            >
+              Po–Pá
+            </button>
+            <button
+              type="button"
+              onClick={setAllDays}
+              className="text-[10px] px-2 py-0.5 rounded border border-border text-muted-foreground hover:bg-muted/40 transition-colors"
+            >
+              Vše
+            </button>
+            <button
+              type="button"
+              onClick={clearDays}
+              className="text-[10px] px-2 py-0.5 rounded border border-border text-muted-foreground hover:bg-muted/40 transition-colors"
+            >
+              Žádný
+            </button>
           </div>
         </div>
-      )}
-
-      {parsed.mode === "monthly" && (
-        <div>
-          <Label>Den v měsíci</Label>
-          <Input
-            type="number"
-            min={1}
-            max={28}
-            value={parsed.dayOfMonth}
-            onChange={(e) => setParsed({ ...parsed, dayOfMonth: Math.max(1, Math.min(28, parseInt(e.target.value || "1", 10))) })}
-          />
-          <p className="text-[10px] text-muted-foreground mt-1">Maximálně 28 (kvůli únoru).</p>
+        <div className="grid grid-cols-7 gap-1">
+          {DAY_ORDER.map(({ idx, label }) => {
+            const active = parsed.daysOfWeek.includes(idx);
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => toggleDay(idx)}
+                className={`px-2 py-2 rounded-md text-xs font-medium border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
-      )}
-
-      {parsed.mode === "interval" && (
-        <div>
-          <Label>Interval (minuty)</Label>
-          <Input
-            type="number"
-            min={1}
-            max={59}
-            value={parsed.intervalMinutes}
-            onChange={(e) => setParsed({ ...parsed, intervalMinutes: Math.max(1, Math.min(59, parseInt(e.target.value || "1", 10))) })}
-          />
-        </div>
-      )}
-
-      {parsed.mode === "custom" && (
-        <div>
-          <Label>Cron výraz</Label>
-          <Input
-            value={customValue}
-            onChange={(e) => setCustomValue(e.target.value)}
-            placeholder="0 9 * * *"
-            className="font-mono"
-          />
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Formát: <code>min hod den-měsíce měsíc den-týdne</code>
-          </p>
-        </div>
-      )}
+      </div>
 
       <div className="rounded-md bg-muted/50 px-3 py-2 text-xs">
         <span className="text-muted-foreground">Náhled: </span>
         <span className="font-medium text-foreground">{describe(parsed)}</span>
-        <span className="ml-2 text-muted-foreground font-mono">
-          ({parsed.mode === "custom" ? customValue || "(prázdné)" : build(parsed)})
+        <span className="ml-2 text-muted-foreground font-mono text-[10px]">
+          ({build(parsed)})
         </span>
       </div>
     </div>

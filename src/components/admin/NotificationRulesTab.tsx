@@ -16,6 +16,7 @@ import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff, History, Z
 import { PushSetupPanel } from "@/components/admin/PushSetupPanel";
 import { CronPicker } from "@/components/admin/CronPicker";
 import { RunHistorySheet } from "@/components/admin/RunHistorySheet";
+import { VariablesHelp } from "@/components/admin/VariablesHelp";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -436,13 +437,15 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
   return (
     <Dialog open={!!rule} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{form.id ? "Upravit pravidlo" : "Nové pravidlo"}</DialogTitle>
-          <DialogDescription>
-            Nakonfiguruj spouštěč, příjemce a šablonu zprávy. Lze otestovat tlačítkem „Test odeslání sobě".
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex flex-1 min-h-0">
+          <div className="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+            <DialogHeader className="mb-4">
+              <DialogTitle>{form.id ? "Upravit pravidlo" : "Nové pravidlo"}</DialogTitle>
+              <DialogDescription>
+                Nakonfiguruj spouštěč, příjemce a šablonu zprávy. Lze otestovat tlačítkem „Test odeslání sobě".
+              </DialogDescription>
+            </DialogHeader>
 
         <div className="space-y-5 py-2">
           {/* Basics */}
@@ -484,20 +487,13 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
             </Select>
           </div>
 
-          {/* Schedule (only if scheduled) */}
+          {/* Schedule (only if scheduled) — Europe/Prague je nastavena natvrdo */}
           {isScheduled && (
-            <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+            <div className="p-3 rounded-lg bg-muted/40">
               <CronPicker
                 value={form.schedule_cron ?? ""}
                 onChange={(v) => setForm({ ...form, schedule_cron: v })}
               />
-              <div>
-                <Label>Časová zóna</Label>
-                <Input
-                  value={form.schedule_timezone ?? "Europe/Prague"}
-                  onChange={(e) => setForm({ ...form, schedule_timezone: e.target.value })}
-                />
-              </div>
             </div>
           )}
 
@@ -519,9 +515,8 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                 onChange={(e) => setForm({ ...form, body_template: e.target.value })}
                 placeholder="Právě jsi povýšen na {{new_role}}. Skvělá práce!"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Proměnné: <code>{`{{member_name}}`}</code>, <code>{`{{new_role}}`}</code>,{" "}
-                <code>{`{{sender_name}}`}</code>, <code>{`{{count}}`}</code>
+              <p className="text-[10px] text-muted-foreground mt-1 lg:hidden">
+                Dostupné proměnné jsou na desktopu zobrazeny v panelu vpravo.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -669,14 +664,18 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Zrušit
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Ukládám…" : "Uložit"}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="mt-6 pt-4 border-t border-border">
+              <Button variant="outline" onClick={onClose} disabled={saving}>
+                Zrušit
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Ukládám…" : "Uložit"}
+              </Button>
+            </DialogFooter>
+          </div>
+
+          <VariablesHelp trigger={form.trigger_event ?? "manual"} />
+        </div>
       </DialogContent>
     </Dialog>
   );
