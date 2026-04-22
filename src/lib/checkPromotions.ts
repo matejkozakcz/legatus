@@ -253,8 +253,7 @@ async function checkPromotionsInner(
   members: CheckMember[]
 ): Promise<void> {
 
-  // Load notification rule for promotion_eligible (templates from DB)
-  const eligibleRule = await getNotificationRule("promotion_eligible");
+  // Notification system removed — eligibility events are tracked only via promotion_requests.
 
   // Load promotion rules from app_config (with hardcoded fallbacks)
   let rules = {
@@ -318,15 +317,6 @@ async function checkPromotionsInner(
   };
 
   const buildTitleBody = (member: CheckMember, role: PromotionRole, bj: number, struct: number, direct?: number) => {
-    const vars = {
-      member_name: member.full_name,
-      role_label: roleLabels[role] || role,
-      cumulative_bj: bj,
-      structure_info: direct != null ? `${struct} lidí ve struktuře · ${direct} přímých` : `${struct} lidí ve struktuře`,
-    };
-    if (eligibleRule) {
-      return { title: renderTemplate(eligibleRule.title_template, vars), body: renderTemplate(eligibleRule.body_template, vars) };
-    }
     return {
       title: `${member.full_name} splňuje podmínky pro povýšení na ${roleLabels[role]}`,
       body: direct != null ? `${struct} lidí ve struktuře · ${direct} přímých` : `Kumulativní BJ: ${bj} · ${struct} lidí ve struktuře`,
