@@ -69,11 +69,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
-  // Oznámení
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(defaultNotifPrefs);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
-  );
+  // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
 
   const fetchIdentities = useCallback(async () => {
     const { data } = await supabase.auth.getUserIdentities();
@@ -218,13 +214,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     }
   };
 
-  const handleSaveNotifications = () => {
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notifPrefs));
-    toast.success("Nastavení notifikací uloženo");
-    onClose();
-  };
 
-  const updateNotif = (patch: Partial<NotifPrefs>) => setNotifPrefs((prev) => ({ ...prev, ...patch }));
 
   const renderProviderRow = (provider: "google" | "apple") => {
     const linked = isProviderLinked(provider);
