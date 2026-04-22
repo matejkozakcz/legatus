@@ -43,9 +43,7 @@ export function UpdateBanner() {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "1 1 auto", justifyContent: "center" }}>
         <RefreshCw size={18} style={{ flexShrink: 0 }} />
-        <span style={{ fontWeight: 600, fontSize: 14 }}>
-          Je dostupná nová verze Legatu
-        </span>
+        <span style={{ fontWeight: 600, fontSize: 14 }}>Je dostupná nová verze Legata</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Button

@@ -189,11 +189,10 @@ function AppUpdateTab() {
       // 2) Pošli in-app + push notifikaci všem aktivním uživatelům.
       //    Insert do `notifications` aktivuje DB trigger trg_fn_send_push_on_notification,
       //    který zavolá edge fn send-push-notification pro každého příjemce.
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: recipients, error: recErr } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("is_active", true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data: recipients, error: recErr } = await supabase.from("profiles").select("id").eq("is_active", true);
       if (recErr) throw recErr;
 
       let pushedCount = 0;
@@ -202,7 +201,7 @@ function AppUpdateTab() {
           recipient_id: r.id,
           sender_id: user?.id ?? null,
           trigger_event: "app_update",
-          title: "Nová verze Legatu je k dispozici",
+          title: "Nová verze Legata je k dispozici",
           body: 'Klikni na „Aktualizovat" v horním banneru pro načtení nejnovější verze.',
           icon: "RefreshCw",
           accent_color: "primary",
@@ -217,9 +216,7 @@ function AppUpdateTab() {
       return { newVersion, pushedCount };
     },
     onSuccess: ({ newVersion, pushedCount }) => {
-      toast.success(
-        `Aktualizace vyvolána (${newVersion.slice(0, 19)}) — push odesláno ${pushedCount} uživatelům`,
-      );
+      toast.success(`Aktualizace vyvolána (${newVersion.slice(0, 19)}) — push odesláno ${pushedCount} uživatelům`);
       queryClient.invalidateQueries({ queryKey: ["app_config", "app_version"] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -237,12 +234,10 @@ function AppUpdateTab() {
         <div className="flex items-start gap-3">
           <RefreshCw className="h-5 w-5 text-primary mt-0.5" />
           <div className="flex-1 space-y-1">
-            <p className="text-sm text-foreground font-medium">
-              Vyvolat aktualizaci u všech uživatelů
-            </p>
+            <p className="text-sm text-foreground font-medium">Vyvolat aktualizaci u všech uživatelů</p>
             <p className="text-sm text-muted-foreground">
-              Všem aktivním uživatelům se zobrazí banner s tlačítkem <strong>Aktualizovat</strong>.
-              Po kliknutí se vymaže lokální cache, service worker i cookies (kromě přihlášení) a načte se aktuální verze.
+              Všem aktivním uživatelům se zobrazí banner s tlačítkem <strong>Aktualizovat</strong>. Po kliknutí se
+              vymaže lokální cache, service worker i cookies (kromě přihlášení) a načte se aktuální verze.
             </p>
           </div>
         </div>
