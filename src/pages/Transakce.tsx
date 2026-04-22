@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Coins, ChevronLeft, ChevronRight } from "lucide-react";
-import { format, parseISO, startOfWeek } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
 import { TransactionDetailModal } from "@/components/TransactionDetailModal";
 import { AddTransactionModal } from "@/components/AddTransactionModal";
