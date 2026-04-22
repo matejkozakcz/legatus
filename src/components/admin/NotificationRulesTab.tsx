@@ -671,8 +671,9 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
             />
           </div>
         </div>
+            </div>
 
-            <DialogFooter className="mt-6 pt-4 border-t border-border">
+            <DialogFooter className="px-7 py-4 border-t border-border bg-muted/20 sm:justify-end">
               <Button variant="outline" onClick={onClose} disabled={saving}>
                 Zrušit
               </Button>
