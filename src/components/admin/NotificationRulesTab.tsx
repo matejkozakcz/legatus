@@ -299,6 +299,27 @@ export function NotificationRulesTab() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      {rule.schedule_cron && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Otestovat teď (spustí runner s force)"
+                            onClick={() => runNowMutation.mutate(rule)}
+                            disabled={runNowMutation.isPending}
+                          >
+                            <Zap className="h-4 w-4 text-[hsl(38,92%,50%)]" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Historie běhů"
+                            onClick={() => setHistoryRule(rule)}
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
@@ -349,6 +370,13 @@ export function NotificationRulesTab() {
         onClose={() => setEditingRule(null)}
         onSave={(r) => upsertMutation.mutate(r)}
         saving={upsertMutation.isPending}
+      />
+
+      <RunHistorySheet
+        open={!!historyRule}
+        onClose={() => setHistoryRule(null)}
+        ruleId={historyRule?.id ?? null}
+        ruleName={historyRule?.name}
       />
     </div>
   );
