@@ -109,7 +109,10 @@ export function CronPicker({ value, onChange }: CronPickerProps) {
     const match = v.match(/^(\d{1,2}):(\d{2})$/);
     if (!match) return;
     const h = Math.max(0, Math.min(23, parseInt(match[1], 10)));
-    const m = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    // Zaokrouhli na nejbližší 15 min — pg_cron jede po :00, :15, :30, :45.
+    // Pokud zadáš např. 21:40, scheduler tu minutu mine a pravidlo se nikdy nespustí.
+    const rawM = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    const m = Math.round(rawM / 15) * 15 % 60;
     setParsed((p) => ({ ...p, hour: h, minute: m }));
   };
 
@@ -137,7 +140,8 @@ export function CronPicker({ value, onChange }: CronPickerProps) {
           className="font-mono"
         />
         <p className="text-[10px] text-muted-foreground mt-1">
-          Časová zóna: <span className="font-medium">Europe/Prague</span> (automaticky vč. letního času)
+          Časová zóna: <span className="font-medium">Europe/Prague</span> (vč. letního času).
+          Scheduler běží po 15 min, takže čas se automaticky zaokrouhlí na :00, :15, :30 nebo :45.
         </p>
       </div>
 

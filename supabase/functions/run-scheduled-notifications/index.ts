@@ -168,18 +168,27 @@ async function insertNotifications(
   const title = renderTemplate(rule.title_template, baseVars);
   const body = renderTemplate(rule.body_template, baseVars);
 
-  // Dedup: skip if same (rule_id, recipient, subject) already sent in last 12h
-  const since = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+  // Safety dedup — dvě úrovně:
+  // 1) Per-(rule, recipient, subject) v posledních 12 h — brání opakování pro stejný předmět.
+  // 2) Per-(rule, recipient) v posledních 6 h — globální spam-stop, aby cron nikdy
+  //    nemohl jednomu uživateli poslat víc než pár notifikací z téhož pravidla
+  //    bez ohledu na to, kolik subjectů handler iteruje.
+  const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+  const since6 = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
   const { data: existing } = await sb
     .from("notifications")
-    .select("recipient_id, payload")
+    .select("recipient_id, payload, created_at")
     .eq("rule_id", rule.id)
-    .gte("created_at", since);
-  const sent = new Set(
-    (existing || [])
-      .filter((n: { payload: Record<string, unknown> }) => (n.payload as { subject_id?: string })?.subject_id === subject.id)
-      .map((n: { recipient_id: string }) => n.recipient_id),
-  );
+    .gte("created_at", since12);
+  const blocked = new Set<string>();
+  for (const n of (existing || []) as Array<{ recipient_id: string; payload: Record<string, unknown>; created_at: string }>) {
+    if ((n.payload as { subject_id?: string })?.subject_id === subject.id) {
+      blocked.add(n.recipient_id);
+    }
+    // Global rate limit: max 1 notifikace z pravidla / příjemce za 6 h
+    if (n.created_at >= since6) blocked.add(n.recipient_id);
+  }
+  const sent = blocked;
 
   const rows = recipients
     .filter((rid) => !sent.has(rid))
