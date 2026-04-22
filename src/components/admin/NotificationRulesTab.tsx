@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff } from "lucide-react";
+import { PushSetupPanel } from "@/components/admin/PushSetupPanel";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
