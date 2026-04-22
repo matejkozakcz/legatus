@@ -37,6 +37,28 @@ function isStandalone() {
   return window.matchMedia?.("(display-mode: standalone)")?.matches === true;
 }
 
+const DISMISS_KEY = "legatus-install-dismissed-until";
+const DISMISS_HOURS = 24;
+
+function safeGetDismissed(): boolean {
+  try {
+    const v = localStorage.getItem(DISMISS_KEY);
+    if (!v) return false;
+    const until = parseInt(v, 10);
+    return Number.isFinite(until) && Date.now() < until;
+  } catch {
+    return false;
+  }
+}
+
+function safeSetDismissed() {
+  try {
+    localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_HOURS * 3600 * 1000));
+  } catch {
+    /* private mode — ignore */
+  }
+}
+
 export function InstallPwaPrompt() {
   const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
@@ -47,9 +69,14 @@ export function InstallPwaPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (!isMobileUA()) return;
-    if (isStandalone()) return;
-    if (sessionStorage.getItem("legatus-install-dismissed") === "1") return;
+    const mobile = isMobileUA();
+    const standalone = isStandalone();
+    const wasDismissed = safeGetDismissed();
+    // Debug pro iOS Safari (zobrazí se v Web Inspectoru)
+    console.log("[InstallPwa]", { mobile, standalone, wasDismissed, ua: navigator.userAgent });
+    if (!mobile) return;
+    if (standalone) return;
+    if (wasDismissed) return;
     setShow(true);
 
     const handler = (e: Event) => {
@@ -61,7 +88,7 @@ export function InstallPwaPrompt() {
   }, []);
 
   const handleDismiss = () => {
-    sessionStorage.setItem("legatus-install-dismissed", "1");
+    safeSetDismissed();
     setDismissed(true);
   };
 
