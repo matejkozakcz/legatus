@@ -10,9 +10,22 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-function isMobileUA() {
+function isIOS() {
   if (typeof navigator === "undefined") return false;
-  return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+ reports as Mac but has touch
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
+function isAndroid() {
+  if (typeof navigator === "undefined") return false;
+  return /android/i.test(navigator.userAgent);
+}
+
+function isMobileUA() {
+  return isIOS() || isAndroid();
 }
 
 function isStandalone() {
@@ -22,10 +35,6 @@ function isStandalone() {
   if (window.navigator.standalone === true) return true;
   // Android / others
   return window.matchMedia?.("(display-mode: standalone)")?.matches === true;
-}
-
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
 export function InstallPwaPrompt() {
