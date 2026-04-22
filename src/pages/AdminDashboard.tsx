@@ -176,6 +176,8 @@ function AppUpdateTab() {
   const triggerUpdate = useMutation({
     mutationFn: async () => {
       const newVersion = new Date().toISOString();
+
+      // 1) Bump verze → klienti zobrazí UpdateBanner (realtime)
       const { error } = await supabase
         .from("app_config")
         .upsert(
@@ -183,10 +185,41 @@ function AppUpdateTab() {
           { onConflict: "key" },
         );
       if (error) throw error;
-      return newVersion;
+
+      // 2) Pošli in-app + push notifikaci všem aktivním uživatelům.
+      //    Insert do `notifications` aktivuje DB trigger trg_fn_send_push_on_notification,
+      //    který zavolá edge fn send-push-notification pro každého příjemce.
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: recipients, error: recErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("is_active", true);
+      if (recErr) throw recErr;
+
+      let pushedCount = 0;
+      if (recipients && recipients.length > 0) {
+        const rows = recipients.map((r) => ({
+          recipient_id: r.id,
+          sender_id: user?.id ?? null,
+          trigger_event: "app_update",
+          title: "Nová verze Legatu je k dispozici",
+          body: 'Klikni na „Aktualizovat" v horním banneru pro načtení nejnovější verze.',
+          icon: "RefreshCw",
+          accent_color: "primary",
+          link_url: "/dashboard",
+          payload: { app_version: newVersion },
+        }));
+        const { error: notifErr } = await supabase.from("notifications").insert(rows);
+        if (notifErr) throw notifErr;
+        pushedCount = rows.length;
+      }
+
+      return { newVersion, pushedCount };
     },
-    onSuccess: (v) => {
-      toast.success(`Notifikace o aktualizaci odeslána všem uživatelům (${v.slice(0, 19)})`);
+    onSuccess: ({ newVersion, pushedCount }) => {
+      toast.success(
+        `Aktualizace vyvolána (${newVersion.slice(0, 19)}) — push odesláno ${pushedCount} uživatelům`,
+      );
       queryClient.invalidateQueries({ queryKey: ["app_config", "app_version"] });
     },
     onError: (err: Error) => toast.error(err.message),
