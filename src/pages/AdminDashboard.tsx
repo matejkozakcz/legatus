@@ -203,7 +203,7 @@ function AppUpdateTab() {
           sender_id: user?.id ?? null,
           trigger_event: "app_update",
           title: "Nová verze Legatu je k dispozici",
-          body: "Klikni na „Aktualizovat" v horním banneru pro načtení nejnovější verze.",
+          body: 'Klikni na „Aktualizovat" v horním banneru pro načtení nejnovější verze.',
           icon: "RefreshCw",
           accent_color: "primary",
           link_url: "/dashboard",
