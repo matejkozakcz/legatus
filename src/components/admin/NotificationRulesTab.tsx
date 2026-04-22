@@ -437,13 +437,15 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
 
   return (
     <Dialog open={!!rule} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{form.id ? "Upravit pravidlo" : "Nové pravidlo"}</DialogTitle>
-          <DialogDescription>
-            Nakonfiguruj spouštěč, příjemce a šablonu zprávy. Lze otestovat tlačítkem „Test odeslání sobě".
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex flex-1 min-h-0">
+          <div className="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+            <DialogHeader className="mb-4">
+              <DialogTitle>{form.id ? "Upravit pravidlo" : "Nové pravidlo"}</DialogTitle>
+              <DialogDescription>
+                Nakonfiguruj spouštěč, příjemce a šablonu zprávy. Lze otestovat tlačítkem „Test odeslání sobě".
+              </DialogDescription>
+            </DialogHeader>
 
         <div className="space-y-5 py-2">
           {/* Basics */}
