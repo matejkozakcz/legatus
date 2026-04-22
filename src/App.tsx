@@ -19,6 +19,7 @@ import Hledani from "./pages/Hledani";
 import Zapracovani from "./pages/Zapracovani";
 import ZapracovaniManagement from "./pages/ZapracovaniManagement";
 import AdminDashboard from "./pages/AdminDashboard";
+import Transakce from "./pages/Transakce";
 import NotFound from "./pages/NotFound";
 import { GodModeRoute } from "@/components/GodModeRoute";
 
@@ -131,6 +132,16 @@ const App = () => (
               element={
                 <AppLayout>
                   <AdminDashboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/transakce"
+              element={
+                <AppLayout>
+                  <GodModeRoute>
+                    <Transakce />
+                  </GodModeRoute>
                 </AppLayout>
               }
             />
