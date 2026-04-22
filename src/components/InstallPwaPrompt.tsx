@@ -83,18 +83,22 @@ export function InstallPwaPrompt() {
       {/* Banner above login modal */}
       <div
         style={{
-          position: "relative",
-          width: "100%",
+          position: "fixed",
+          top: "max(12px, env(safe-area-inset-top, 0px))",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "calc(100% - 24px)",
           maxWidth: 400,
-          margin: "0 16px 12px",
           background: "rgba(255,255,255,0.95)",
           borderRadius: 16,
-          padding: "12px 14px",
+          padding: "10px 12px",
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          boxShadow: "0 4px 16px rgba(0,85,95,0.18)",
+          gap: 10,
+          boxShadow: "0 4px 16px rgba(0,85,95,0.25)",
           backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          zIndex: 50,
         }}
       >
         <div
