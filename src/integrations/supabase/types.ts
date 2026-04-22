@@ -388,6 +388,69 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          accent_color: string | null
+          body: string
+          created_at: string
+          icon: string | null
+          id: string
+          link_url: string | null
+          payload: Json
+          read_at: string | null
+          recipient_id: string
+          rule_id: string | null
+          sender_id: string | null
+          title: string
+          trigger_event: string
+        }
+        Insert: {
+          accent_color?: string | null
+          body: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          link_url?: string | null
+          payload?: Json
+          read_at?: string | null
+          recipient_id: string
+          rule_id?: string | null
+          sender_id?: string | null
+          title: string
+          trigger_event: string
+        }
+        Update: {
+          accent_color?: string | null
+          body?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          link_url?: string | null
+          payload?: Json
+          read_at?: string | null
+          recipient_id?: string
+          rule_id?: string | null
+          sender_id?: string | null
+          title?: string
+          trigger_event?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_tasks: {
         Row: {
           completed: boolean
@@ -618,6 +681,47 @@ export type Database = {
           },
           {
             foreignKeyName: "promotion_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
