@@ -88,7 +88,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       setPasswordError("");
       setActiveTab(initialTab);
       fetchIdentities();
-      setNotifPrefs(loadNotifPrefs());
+      
     }
   }, [open, profile, fetchIdentities, initialTab]);
 
