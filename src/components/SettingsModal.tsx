@@ -454,11 +454,66 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   );
 
 
-  const renderNotifikace = () =>
-    renderPlaceholder(
-      <Bell className="h-10 w-10 text-muted-foreground" />,
-      "Notifikační systém je dočasně vypnutý. Brzy ho nastavíme znovu od nuly.",
+  const renderNotifikace = () => {
+    const { permission, isSubscribed, isLoading, enable, disable } = pushState;
+    const unsupported = permission === "unsupported";
+    const denied = permission === "denied";
+
+    const handleToggle = async () => {
+      if (isSubscribed) {
+        await disable();
+        toast.success("Push notifikace vypnuty");
+        return;
+      }
+      const res = await enable();
+      if (res.ok) toast.success("Push notifikace povoleny");
+      else toast.error(res.error || "Nepodařilo se povolit notifikace");
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <Bell className="h-5 w-5 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">Push notifikace</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                  {unsupported
+                    ? "Tento prohlížeč push notifikace nepodporuje."
+                    : denied
+                    ? "Notifikace jsou v prohlížeči zablokované — povol je v nastavení prohlížeče."
+                    : isSubscribed
+                    ? "Dostáváš notifikace na tomto zařízení."
+                    : "Povol, ať tě upozorníme na schůzky, povýšení a důležité události."}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isSubscribed}
+              onClick={handleToggle}
+              disabled={isLoading || unsupported || denied}
+              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: isSubscribed ? "hsl(var(--accent))" : "hsl(var(--muted))" }}
+            >
+              <span
+                className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                style={{ transform: isSubscribed ? "translateX(1.375rem)" : "translateX(0.25rem)" }}
+              />
+            </button>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed px-1">
+          Notifikace přicházejí na konkrétní zařízení a prohlížeč. Pokud se odhlásíš, push pro toto zařízení se zruší.
+        </p>
+      </div>
     );
+  };
 
   const renderPlaceholder = (icon: React.ReactNode, text: string) => (
     <div className="flex flex-col items-center justify-center py-16 opacity-50">
