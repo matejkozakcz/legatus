@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -321,10 +321,10 @@ interface EditorProps {
 function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
   const [form, setForm] = useState<Partial<NotificationRule>>(rule ?? emptyRule());
 
-  // Reset form when rule changes
-  useState(() => {
+  // Reset form whenever a different rule is opened
+  useEffect(() => {
     if (rule) setForm(rule);
-  });
+  }, [rule]);
 
   if (!rule) return null;
 
@@ -400,7 +400,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[120]">
                 {TRIGGER_EVENTS.map((t) => (
                   <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
                 ))}
@@ -465,7 +465,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[120]">
                     {ICON_OPTIONS.map((i) => (
                       <SelectItem key={i} value={i}>{i}</SelectItem>
                     ))}
@@ -481,7 +481,7 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[120]">
                     {ACCENT_COLORS.map((c) => (
                       <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
                     ))}
@@ -502,6 +502,9 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
           {/* Recipients */}
           <div className="space-y-2">
             <Label>Příjemci</Label>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Komu se notifikace doručí. Vztaženo k subjektu události (např. „Získatel" = získatel toho, koho se trigger týká).
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {RECIPIENT_ROLES.map((r) => {
                 const active = (form.recipient_roles ?? []).includes(r.key);
@@ -523,49 +526,66 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="space-y-3 p-3 rounded-lg bg-muted/40">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm">Jen aktivní uživatelé</Label>
-                <p className="text-[10px] text-muted-foreground">Vynech deaktivované profily</p>
+          {/* Filters — only meaningful for broad recipients (all_*) */}
+          {(() => {
+            const broad = (form.recipient_roles ?? []).some(
+              (r) => r === "all_active" || r === "all_vedouci",
+            );
+            return (
+              <div className="space-y-3 p-3 rounded-lg bg-muted/40">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Doplňkové filtry</h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    {broad
+                      ? "Zúží množinu příjemců vybranou výše."
+                      : 'Aktivní pouze pro hromadné příjemce ("Všichni vedoucí" / "Všichni aktivní uživatelé"). Pro vztahové příjemce (Sám sobě, Získatel, …) se neuplatní.'}
+                  </p>
+                </div>
+
+                <div className={`flex items-center justify-between ${broad ? "" : "opacity-50 pointer-events-none"}`}>
+                  <div>
+                    <Label className="text-sm">Jen aktivní uživatelé</Label>
+                    <p className="text-[10px] text-muted-foreground">Vynech deaktivované profily</p>
+                  </div>
+                  <Switch
+                    checked={form.recipient_filters?.only_active ?? true}
+                    onCheckedChange={(v) =>
+                      setForm({
+                        ...form,
+                        recipient_filters: { ...form.recipient_filters, only_active: v },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className={broad ? "" : "opacity-50 pointer-events-none"}>
+                  <Label className="text-sm">Filtr podle role (volitelné)</Label>
+                  <p className="text-[10px] text-muted-foreground mb-2">
+                    Zaškrtni role, které mají dostat notifikaci. Nic = všechny role.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {APP_ROLES.map((role) => {
+                      const active = (form.recipient_filters?.role_in ?? []).includes(role);
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => toggleRoleFilter(role)}
+                          className={`text-xs px-2 py-1 rounded-md border transition-colors ${
+                            active
+                              ? "bg-accent/20 border-accent text-foreground"
+                              : "bg-background border-border text-muted-foreground hover:bg-muted/40"
+                          }`}
+                        >
+                          {role}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-              <Switch
-                checked={form.recipient_filters?.only_active ?? true}
-                onCheckedChange={(v) =>
-                  setForm({
-                    ...form,
-                    recipient_filters: { ...form.recipient_filters, only_active: v },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label className="text-sm">Filtr podle role (volitelné)</Label>
-              <p className="text-[10px] text-muted-foreground mb-2">
-                Zaškrtni role, které mají dostat notifikaci. Nic = všechny role.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {APP_ROLES.map((role) => {
-                  const active = (form.recipient_filters?.role_in ?? []).includes(role);
-                  return (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => toggleRoleFilter(role)}
-                      className={`text-xs px-2 py-1 rounded-md border transition-colors ${
-                        active
-                          ? "bg-accent/20 border-accent text-foreground"
-                          : "bg-background border-border text-muted-foreground hover:bg-muted/40"
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Active */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40">
