@@ -198,7 +198,7 @@ const SpravaTeam = () => {
   const isDark = theme === "dark";
   const [addOpen, setAddOpen] = useState(false);
   const [editMember, setEditMember] = useState<Profile | null>(null);
-  const [notifyMember, setNotifyMember] = useState<Profile | null>(null);
+  // notifyMember state removed — notification system was reset.
   const [detailMember, setDetailMember] = useState<Profile | null>(null);
 
   // --- Promotion requests ---
@@ -626,19 +626,10 @@ const SpravaTeam = () => {
             member={detailMember}
             onClose={() => setDetailMember(null)}
             onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-            onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
           />
         )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
         <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
-        {notifyMember && (
-          <CreateNotificationDialog
-            open={!!notifyMember}
-            onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
-            recipientId={notifyMember.id}
-            recipientName={notifyMember.full_name}
-          />
-        )}
       </div>
     );
   }
@@ -763,19 +754,10 @@ const SpravaTeam = () => {
           member={detailMember}
           onClose={() => setDetailMember(null)}
           onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
-          onNotify={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode ? () => { setDetailMember(null); setNotifyMember(detailMember); } : undefined}
         />
       )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
       <AddMemberDialog open={addOpen} onOpenChange={setAddOpen} />
-      {notifyMember && (
-        <CreateNotificationDialog
-          open={!!notifyMember}
-          onOpenChange={(open) => { if (!open) setNotifyMember(null); }}
-          recipientId={notifyMember.id}
-          recipientName={notifyMember.full_name}
-        />
-      )}
     </div>
   );
 };
