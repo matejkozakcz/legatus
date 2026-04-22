@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { registerPushSubscription, unregisterPushSubscription } from "@/lib/pushSubscription";
 
 interface Profile {
   id: string;
@@ -129,7 +128,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setLoading(false);
             }
           });
-          setTimeout(() => registerPushSubscription(session.user.id), 2000);
         } else {
           setProfile(null);
           if (!initialSessionHandled) {
@@ -165,10 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // Remove push subscription for this device before signing out
-    if (user?.id) {
-      await unregisterPushSubscription(user.id);
-    }
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
@@ -194,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.from("activity_records").delete().eq("user_id", user.id),
         supabase.from("client_meetings").delete().eq("user_id", user.id),
         supabase.from("cases").delete().eq("user_id", user.id),
-        supabase.from("notifications").delete().eq("recipient_id", user.id),
       ]);
       // Reset profile
       await supabase
