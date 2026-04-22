@@ -30,6 +30,7 @@ const TRIGGER_EVENTS = [
   { key: "scheduled.unrecorded_meetings", label: "🕐 Nezadané výsledky schůzek (cron)" },
   { key: "scheduled.weekly_report", label: "🕐 Týdenní report (cron)" },
   { key: "scheduled.inactive_days", label: "🕐 X dní bez aktivity (cron)" },
+  { key: "scheduled.custom_time", label: "🕐 V určený čas (cron, bez podmínek)" },
   { key: "manual", label: "Manuální (jen test)" },
 ] as const;
 

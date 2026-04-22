@@ -94,6 +94,25 @@ const GROUPS: VariableGroup[] = [
     ],
   },
   {
+    triggers: ["scheduled.custom_time"],
+    title: "V určený čas",
+    hint: "Notifikace odeslaná podle cronu, bez dalších podmínek",
+    vars: [
+      {
+        key: "now_time",
+        label: "Aktuální čas (HH:MM)",
+        example: "09:00",
+        description: "Čas spuštění v Europe/Prague.",
+      },
+      {
+        key: "now_date",
+        label: "Aktuální datum",
+        example: "2026-04-22",
+        description: "Datum spuštění (YYYY-MM-DD).",
+      },
+    ],
+  },
+  {
     triggers: ["scheduled.inactive_days"],
     title: "Bez aktivity",
     hint: "Notifikace při delší pauze",
