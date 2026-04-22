@@ -3,8 +3,6 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { NotificationBell } from "@/components/NotificationBell";
-import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -29,7 +27,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             transition: "background 0.3s ease",
           }}
         >
-          {/* Top-right floating buttons: Settings, Bell, Dark mode */}
+          {/* Top-right floating buttons: Settings, Dark mode */}
           <div
             style={{
               position: "fixed",
@@ -41,8 +39,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               gap: 6,
             }}
           >
-            <NotificationBell />
-
             {/* Settings gear */}
             <button
               onClick={() => setSettingsOpen(true)}
@@ -104,7 +100,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             {children}
           </main>
-          <NotificationPermissionBanner />
           <MobileBottomNav />
           <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </div>
@@ -119,7 +114,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div className="absolute top-4 right-6 lg:right-8 z-10 flex items-center gap-2">
-              <NotificationBell />
               <button
                 onClick={() => setSettingsOpen(true)}
                 className="p-2 rounded-xl hover:bg-muted transition-colors"
@@ -134,7 +128,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-        <NotificationPermissionBanner />
       </SidebarProvider>
     </ProtectedRoute>
   );

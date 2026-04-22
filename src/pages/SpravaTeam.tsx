@@ -10,13 +10,11 @@ import { fireConfetti } from "@/lib/confetti";
 import { format } from "date-fns";
 import { getCurrentProductionPeriod } from "@/lib/productionPeriod";
 
-import { CreateNotificationDialog } from "@/components/CreateNotificationDialog";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
-import { getNotificationRule, sendRuleNotification, renderTemplate } from "@/lib/notificationRules";
 
 interface Profile {
   id: string;

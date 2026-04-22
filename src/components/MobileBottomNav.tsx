@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Calendar, Briefcase, Users, GraduationCap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
 
 export function MobileBottomNav() {
@@ -13,40 +11,7 @@ export function MobileBottomNav() {
   const { profile, godMode } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const queryClient = useQueryClient();
   const { unrecordedCount } = useUnrecordedMeetings();
-
-  // Unread notifications count
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ["unread_notifications_count", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return 0;
-      const { count } = await supabase
-        .from("notifications" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", profile.id)
-        .eq("read", false);
-      return count || 0;
-    },
-    enabled: !!profile?.id,
-    refetchInterval: 30000,
-  });
-
-  // Realtime subscription for notifications
-  useEffect(() => {
-    if (!profile?.id) return;
-    const channel = supabase
-      .channel("notif-badge-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${profile.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["unread_notifications_count", profile.id] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [profile?.id, queryClient]);
 
   const initials = profile
     ? profile.full_name
@@ -59,7 +24,6 @@ export function MobileBottomNav() {
 
   const isDashboardActive = location.pathname === "/dashboard";
 
-  // Godmode styl: coral místo teal
   const avatarBorder = godMode ? "3px solid #fc7c71" : isDashboardActive ? "3px solid #00abbd" : "3px solid white";
   const avatarShadow = godMode
     ? "0 4px 20px rgba(252,124,113,0.5)"
@@ -97,64 +61,28 @@ export function MobileBottomNav() {
           pointerEvents: "all",
         }}
       >
-        {/* Left button */}
         {profile?.role === "vedouci" ||
         profile?.role === "budouci_vedouci" ||
         profile?.role === "garant" ||
         profile?.role === "ziskatel" ? (
-          <NavButton
-            icon={Users}
-            label="Tým"
-            active={location.pathname === "/tym"}
-            onClick={() => navigate("/tym")}
-            isDark={isDark}
-          />
+          <NavButton icon={Users} label="Tým" active={location.pathname === "/tym"} onClick={() => navigate("/tym")} isDark={isDark} />
         ) : (
-          <NavButton
-            icon={Briefcase}
-            label="Byznys"
-            active={location.pathname === "/obchod"}
-            onClick={() => navigate("/obchod")}
-            isDark={isDark}
-            badge={unrecordedCount > 0}
-          />
+          <NavButton icon={Briefcase} label="Byznys" active={location.pathname === "/obchod"} onClick={() => navigate("/obchod")} isDark={isDark} badge={unrecordedCount > 0} />
         )}
 
-        {/* Center spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Right button */}
         {profile?.role === "vedouci" ||
         profile?.role === "budouci_vedouci" ||
         profile?.role === "garant" ||
         profile?.role === "ziskatel" ? (
-          <NavButton
-            icon={Briefcase}
-            label="Byznys"
-            active={location.pathname === "/obchod"}
-            onClick={() => navigate("/obchod")}
-            isDark={isDark}
-            badge={unrecordedCount > 0}
-          />
+          <NavButton icon={Briefcase} label="Byznys" active={location.pathname === "/obchod"} onClick={() => navigate("/obchod")} isDark={isDark} badge={unrecordedCount > 0} />
         ) : profile?.role === "novacek" ? (
-          <NavButton
-            icon={GraduationCap}
-            label="Zapracování"
-            active={location.pathname === "/zapracovani"}
-            onClick={() => navigate("/zapracovani")}
-            isDark={isDark}
-          />
+          <NavButton icon={GraduationCap} label="Zapracování" active={location.pathname === "/zapracovani"} onClick={() => navigate("/zapracovani")} isDark={isDark} />
         ) : godMode ? (
-          <NavButton
-            icon={Calendar}
-            label="Schůzky"
-            active={location.pathname === "/kalendar"}
-            onClick={() => navigate("/kalendar")}
-            isDark={isDark}
-          />
+          <NavButton icon={Calendar} label="Schůzky" active={location.pathname === "/kalendar"} onClick={() => navigate("/kalendar")} isDark={isDark} />
         ) : null}
 
-        {/* Center elevated Dashboard/Avatar button */}
         <div
           style={{
             position: "absolute",
@@ -189,92 +117,18 @@ export function MobileBottomNav() {
               aria-label="Dashboard"
             >
               {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={initials}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    opacity: godMode ? 0.75 : 1,
-                    transition: "opacity 0.25s",
-                  }}
-                />
+                <img src={profile.avatar_url} alt={initials} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: godMode ? 0.75 : 1, transition: "opacity 0.25s" }} />
               ) : (
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 700,
-                    fontSize: 18,
-                    color: "white",
-                    lineHeight: 1,
-                  }}
-                >
-                  {initials}
-                </span>
+                <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "white", lineHeight: 1 }}>{initials}</span>
               )}
             </button>
 
-            {/* Notification badge — top right */}
-            {unreadCount > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: -2,
-                  right: -2,
-                  width: 18,
-                  height: 18,
-                  borderRadius: "50%",
-                  background: "#fc7c71",
-                  border: "2px solid white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span style={{ fontSize: 9, fontWeight: 800, color: "white", lineHeight: 1 }}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              </div>
-            )}
-
-            {/* Godmode indicator — bottom right */}
             {godMode && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  right: -2,
-                  width: 18,
-                  height: 18,
-                  borderRadius: "50%",
-                  background: "white",
-                  border: "1.5px solid #fc7c71",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 9,
-                  lineHeight: 1,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-                }}
-              >
-                ⚡
-              </div>
+              <div style={{ position: "absolute", bottom: 0, right: -2, width: 18, height: 18, borderRadius: "50%", background: "white", border: "1.5px solid #fc7c71", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }}>⚡</div>
             )}
           </div>
 
-          <div
-            style={{
-              textAlign: "center",
-              marginTop: 5,
-              fontSize: 10,
-              fontWeight: 600,
-              color: godMode ? "#fc7c71" : isDark ? "#4a7a80" : "#8aadb3",
-              letterSpacing: "0.02em",
-              fontFamily: "Open Sans, sans-serif",
-              transition: "color 0.25s",
-            }}
-          >
+          <div style={{ textAlign: "center", marginTop: 5, fontSize: 10, fontWeight: 600, color: godMode ? "#fc7c71" : isDark ? "#4a7a80" : "#8aadb3", letterSpacing: "0.02em", fontFamily: "Open Sans, sans-serif", transition: "color 0.25s" }}>
             {godMode ? "Admin ⚡" : "Dashboard"}
           </div>
         </div>
@@ -283,72 +137,18 @@ export function MobileBottomNav() {
   );
 }
 
-function NavButton({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-  isDark = false,
-  badge = false,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  isDark?: boolean;
-  badge?: boolean;
-}) {
+function NavButton({ icon: Icon, label, active, onClick, isDark = false, badge = false }: { icon: React.ElementType; label: string; active: boolean; onClick: () => void; isDark?: boolean; badge?: boolean }) {
   const activeColor = "#00abbd";
   const inactiveColor = isDark ? "#4a7a80" : "#8aadb3";
   const color = active ? activeColor : inactiveColor;
 
   return (
-    <button
-      onClick={onClick}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 3,
-        cursor: "pointer",
-        padding: "8px 20px",
-        borderRadius: 30,
-        border: "none",
-        background: "transparent",
-        flex: 1,
-        position: "relative",
-      }}
-    >
+    <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", padding: "8px 20px", borderRadius: 30, border: "none", background: "transparent", flex: 1, position: "relative" }}>
       <div style={{ position: "relative" }}>
         <Icon size={22} color={color} style={{ transition: "color 0.2s" }} />
-        {badge && (
-          <span
-            style={{
-              position: "absolute",
-              top: -2,
-              right: -4,
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#fc7c71",
-              border: "2px solid transparent",
-            }}
-          />
-        )}
+        {badge && <span style={{ position: "absolute", top: -2, right: -4, width: 8, height: 8, borderRadius: "50%", background: "#fc7c71", border: "2px solid transparent" }} />}
       </div>
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color,
-          letterSpacing: "0.02em",
-          transition: "color 0.2s",
-          fontFamily: "Open Sans, sans-serif",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </span>
+      <span style={{ fontSize: 10, fontWeight: 600, color, letterSpacing: "0.02em", transition: "color 0.2s", fontFamily: "Open Sans, sans-serif", whiteSpace: "nowrap" }}>{label}</span>
     </button>
   );
 }

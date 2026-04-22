@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getNotificationRule, sendRuleNotification, renderTemplate } from "@/lib/notificationRules";
 
 interface CheckProfile {
   id: string;
@@ -23,63 +22,19 @@ interface ExistingPromotionRequest {
 
 type PromotionRole = "garant" | "budouci_vedouci" | "vedouci";
 
-const PROMOTION_NOTIFICATION_TYPE = "promotion_eligible";
 const PENDING_STATUS = "pending";
 const NOT_ELIGIBLE_STATUS = "not_eligible";
 const PROMOTION_ROLES: PromotionRole[] = ["garant", "budouci_vedouci", "vedouci"];
 
+// Notification system was removed — keep this as a no-op so the rest of the
+// promotion flow (DB requests + history) keeps working.
 async function ensureNotification(
-  vedouciId: string,
-  title: string,
-  body: string,
-  relatedEntityId: string
+  _vedouciId: string,
+  _title: string,
+  _body: string,
+  _relatedEntityId: string,
 ): Promise<void> {
-  // Deduplikace podle stabilního klíče (member_id), ne podle title –
-  // šablona title/body se mění (počet BJ, editace šablony v DB).
-  const { data: existing } = await supabase
-    .from("notifications")
-    .select("id")
-    .eq("recipient_id", vedouciId)
-    .eq("type", PROMOTION_NOTIFICATION_TYPE)
-    .eq("related_entity_id", relatedEntityId)
-    .eq("read", false)
-    .limit(1);
-
-  if (existing && existing.length > 0) return;
-
-  const PUSH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
-  const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-  const { data: notifData, error: insertErr } = await supabase
-    .from("notifications")
-    .insert({
-      sender_id: vedouciId,
-      recipient_id: vedouciId,
-      type: PROMOTION_NOTIFICATION_TYPE,
-      title,
-      body,
-      related_entity_id: relatedEntityId,
-      deadline: new Date().toISOString().split("T")[0],
-    })
-    .select("id")
-    .single();
-
-  // Partial unique index (uniq_notifications_unread_entity) zajistí, že pokud mezitím
-  // jiná záložka / běh notifikaci vytvoří, INSERT selže s 23505 – bereme to jako OK.
-  if (insertErr) {
-    if ((insertErr as any).code === "23505") return;
-    throw insertErr;
-  }
-
-  if (notifData?.id) {
-    try {
-      await fetch(PUSH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-        body: JSON.stringify({ notification_id: notifData.id }),
-      });
-    } catch { /* best-effort */ }
-  }
+  return;
 }
 
 export async function logPromotionHistory(
@@ -146,14 +101,6 @@ async function syncPromotionRequest(
       });
 
       await logHistory(userId, requestedRole, "not_eligible", cumulativeBj, directZiskatels, "Podmínky přestaly být splněny");
-
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("recipient_id", profileId)
-        .eq("type", PROMOTION_NOTIFICATION_TYPE)
-        .eq("related_entity_id", userId)
-        .eq("read", false);
     }
     return;
   }

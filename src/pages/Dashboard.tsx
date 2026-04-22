@@ -413,24 +413,7 @@ const Dashboard = () => {
       });
   }, [profile]);
 
-  // Trigger check-followups edge function once per session to create meeting notifications.
-  // Note: this also runs nightly via cron (config.toml: "0 19 * * *") — the edge function
-  // dedupes per (recipient, day) so client-side trigger is just a safety net.
-  const followupCheckDoneRef = useRef(false);
-  useEffect(() => {
-    if (!user || followupCheckDoneRef.current) return;
-    followupCheckDoneRef.current = true;
-    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    fetch(`${projectUrl}/functions/v1/check-followups`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-    }).catch(() => {});
-    fetch(`${projectUrl}/functions/v1/check-reminders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}` },
-    }).catch(() => {});
-  }, [user]);
+
 
   // First login confetti
   useEffect(() => {

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle, LogOut, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { registerPushSubscription } from "@/lib/pushSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -46,37 +45,7 @@ const AppleIcon = () => (
   </svg>
 );
 
-const NOTIF_STORAGE_KEY = "legatus_notification_prefs";
-
-interface NotifPrefs {
-  meetingReminder: boolean;
-  meetingReminderCount: number;
-  meetingReminderBefore: string;
-  postMeeting: boolean;
-  postMeetingDelay: string;
-  shareGarant: boolean;
-  deadlineAlert: boolean;
-  deadlineDaysBefore: number;
-}
-
-const defaultNotifPrefs: NotifPrefs = {
-  meetingReminder: false,
-  meetingReminderCount: 1,
-  meetingReminderBefore: "30min",
-  postMeeting: false,
-  postMeetingDelay: "ihned",
-  shareGarant: false,
-  deadlineAlert: false,
-  deadlineDaysBefore: 3,
-};
-
-function loadNotifPrefs(): NotifPrefs {
-  try {
-    const raw = localStorage.getItem(NOTIF_STORAGE_KEY);
-    if (raw) return { ...defaultNotifPrefs, ...JSON.parse(raw) };
-  } catch {}
-  return { ...defaultNotifPrefs };
-}
+// (Notifications system removed — placeholder tab below.)
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
@@ -100,11 +69,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
-  // Oznámení
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(defaultNotifPrefs);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
-  );
+  // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
 
   const fetchIdentities = useCallback(async () => {
     const { data } = await supabase.auth.getUserIdentities();
@@ -123,7 +88,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       setPasswordError("");
       setActiveTab(initialTab);
       fetchIdentities();
-      setNotifPrefs(loadNotifPrefs());
+      
     }
   }, [open, profile, fetchIdentities, initialTab]);
 
@@ -249,13 +214,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     }
   };
 
-  const handleSaveNotifications = () => {
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notifPrefs));
-    toast.success("Nastavení notifikací uloženo");
-    onClose();
-  };
 
-  const updateNotif = (patch: Partial<NotifPrefs>) => setNotifPrefs((prev) => ({ ...prev, ...patch }));
 
   const renderProviderRow = (provider: "google" | "apple") => {
     const linked = isProviderLinked(provider);
@@ -495,147 +454,11 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   );
 
 
-  const handleRequestPermission = async () => {
-    if (typeof Notification === "undefined") return;
-    const result = await Notification.requestPermission();
-    setNotifPermission(result);
-    if (result === "granted") {
-      toast.success("Oznámení povolena");
-      // Register push subscription
-      if (user) {
-        registerPushSubscription(user.id);
-      }
-    } else if (result === "denied") {
-      toast.error("Oznámení byla zamítnuta. Povolit je můžeš v nastavení prohlížeče.");
-    }
-  };
-
-  const renderNotifikace = () => (
-    <div className="space-y-1">
-      {/* Permission banner */}
-      {notifPermission !== "granted" && (
-        <div className="mb-4 p-4 rounded-xl border border-border bg-muted/50">
-          <div className="flex items-start gap-3">
-            <Bell className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Oznámení nejsou povolena</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {notifPermission === "denied"
-                  ? "Oznámení jsi zablokoval/a v prohlížeči. Povol je v nastavení prohlížeče."
-                  : "Pro příjem připomínek a upozornění povol oznámení."}
-              </p>
-              <button
-                onClick={notifPermission === "denied" ? () => {
-                  toast.info("Otevři nastavení prohlížeče → Oznámení a povol je pro tuto stránku.");
-                } : handleRequestPermission}
-                className="mt-3 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-                style={{
-                  background: "hsl(var(--secondary))",
-                  color: "white",
-                }}
-              >
-                <Bell className="h-3.5 w-3.5" />
-                Povolit oznámení
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Připomínka schůzky */}
-      {renderToggleRow(
-        "Připomínka schůzky",
-        notifPrefs.meetingReminder,
-        (v) => updateNotif({ meetingReminder: v }),
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-xs text-muted-foreground mb-1">Kolikrát</label>
-            <select
-              value={notifPrefs.meetingReminderCount}
-              onChange={(e) => updateNotif({ meetingReminderCount: Number(e.target.value) })}
-              className={selectClass}
-            >
-              <option value={1}>1×</option>
-              <option value={2}>2×</option>
-              <option value={3}>3×</option>
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-muted-foreground mb-1">Jak moc předem</label>
-            <select
-              value={notifPrefs.meetingReminderBefore}
-              onChange={(e) => updateNotif({ meetingReminderBefore: e.target.value })}
-              className={selectClass}
-            >
-              <option value="15min">15 min</option>
-              <option value="30min">30 min</option>
-              <option value="1h">1 hodinu</option>
-              <option value="1d">1 den</option>
-              <option value="2d">2 dny</option>
-            </select>
-          </div>
-        </div>,
-      )}
-
-      <div className="border-t border-border" />
-
-      {/* Post-meeting prompt */}
-      {renderToggleRow(
-        "Tak jak dopadla schůzka? 😎",
-        notifPrefs.postMeeting,
-        (v) => updateNotif({ postMeeting: v }),
-        <div>
-          <label className="block text-xs text-muted-foreground mb-1">Za jak dlouho po skončení</label>
-          <select
-            value={notifPrefs.postMeetingDelay}
-            onChange={(e) => updateNotif({ postMeetingDelay: e.target.value })}
-            className={selectClass}
-          >
-            <option value="ihned">Ihned</option>
-            <option value="30min">Za 30 minut</option>
-            <option value="1h">Za 1 hodinu</option>
-          </select>
-        </div>,
-      )}
-
-      <div className="border-t border-border" />
-
-      {/* Sdílení garantovi */}
-      {renderToggleRow("Sdílení garantovi", notifPrefs.shareGarant, (v) => updateNotif({ shareGarant: v }))}
-
-      <div className="border-t border-border" />
-
-      {/* Deadline */}
-      {renderToggleRow(
-        "Deadline upozornění",
-        notifPrefs.deadlineAlert,
-        (v) => updateNotif({ deadlineAlert: v }),
-        <>
-          <div>
-            <label className="block text-xs text-muted-foreground mb-1">Dní před koncem období</label>
-            <input
-              type="number"
-              min={1}
-              max={14}
-              value={notifPrefs.deadlineDaysBefore}
-              onChange={(e) => updateNotif({ deadlineDaysBefore: Math.max(1, Number(e.target.value)) })}
-              className={`${inputClass} w-24`}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground italic">
-            Pokud máš stanovený cíl, upozornění se přizpůsobí tvému plnění.
-          </p>
-        </>,
-      )}
-
-      {/* Save */}
-      <button
-        onClick={handleSaveNotifications}
-        className="btn btn-primary btn-md w-full flex items-center justify-center gap-2 mt-4"
-      >
-        Uložit nastavení
-      </button>
-    </div>
-  );
+  const renderNotifikace = () =>
+    renderPlaceholder(
+      <Bell className="h-10 w-10 text-muted-foreground" />,
+      "Notifikační systém je dočasně vypnutý. Brzy ho nastavíme znovu od nuly.",
+    );
 
   const renderPlaceholder = (icon: React.ReactNode, text: string) => (
     <div className="flex flex-col items-center justify-center py-16 opacity-50">
