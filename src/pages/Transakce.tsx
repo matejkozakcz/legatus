@@ -33,10 +33,6 @@ export default function Transakce() {
   const [editing, setEditing] = useState<TransactionRow | null>(null);
   const [adding, setAdding] = useState(false);
 
-  if (!godMode || !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const { data: profiles = [] } = useQuery({
     queryKey: ["transakce_profiles"],
     queryFn: async () => {
@@ -45,6 +41,7 @@ export default function Transakce() {
         .select("id, full_name, is_active");
       return data || [];
     },
+    enabled: godMode && isAdmin,
   });
 
   const profileMap = useMemo(() => {
@@ -63,6 +60,7 @@ export default function Transakce() {
         .limit(5000);
       return (data || []).filter((m) => !m.cancelled);
     },
+    enabled: godMode && isAdmin,
   });
 
   const { data: manuals = [], isLoading: loadingManuals } = useQuery({
@@ -75,6 +73,7 @@ export default function Transakce() {
         .limit(5000);
       return data || [];
     },
+    enabled: godMode && isAdmin,
   });
 
   const allRows = useMemo<TransactionRow[]>(() => {
@@ -120,6 +119,10 @@ export default function Transakce() {
       );
     });
   }, [allRows, search, showInactive, profileMap]);
+
+  if (!godMode || !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
