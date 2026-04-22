@@ -127,6 +127,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bj_audit_log: {
+        Row: {
+          action: string
+          change_reason: string | null
+          changed_by: string
+          created_at: string
+          id: string
+          new_bj: number | null
+          old_bj: number | null
+          source: string
+          source_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          change_reason?: string | null
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_bj?: number | null
+          old_bj?: number | null
+          source: string
+          source_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          change_reason?: string | null
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_bj?: number | null
+          old_bj?: number | null
+          source?: string
+          source_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cases: {
         Row: {
           created_at: string
@@ -299,6 +338,50 @@ export type Database = {
           {
             foreignKeyName: "invite_attempts_inviter_id_fkey"
             columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_bj_adjustments: {
+        Row: {
+          bj: number
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          poznamka: string | null
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          bj?: number
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          poznamka?: string | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          bj?: number
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          poznamka?: string | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_bj_adjustments_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
