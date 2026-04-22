@@ -99,6 +99,7 @@ export function NotificationRulesTab() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [editingRule, setEditingRule] = useState<Partial<NotificationRule> | null>(null);
+  const [historyRule, setHistoryRule] = useState<NotificationRule | null>(null);
 
   // Cast to any until generated types include notification_rules table
   const sb = supabase as unknown as {
