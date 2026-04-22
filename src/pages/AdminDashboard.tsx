@@ -134,6 +134,10 @@ function SettingsTab() {
   return (
     <div className="space-y-8">
       <div>
+        <h2 className="text-lg font-heading font-semibold text-foreground mb-4">Aktualizace aplikace</h2>
+        <AppUpdateTab />
+      </div>
+      <div>
         <h2 className="text-lg font-heading font-semibold text-foreground mb-4">Pravidla povýšení</h2>
         <PromotionRulesTab />
       </div>
@@ -150,6 +154,80 @@ function SettingsTab() {
         <PdfExportTab />
       </div>
     </div>
+  );
+}
+
+// ─── App Update Tab ───────────────────────────────────────────────────────────
+
+function AppUpdateTab() {
+  const queryClient = useQueryClient();
+  const { data: currentVersion, isLoading } = useQuery({
+    queryKey: ["app_config", "app_version"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value, updated_at")
+        .eq("key", "app_version")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const triggerUpdate = useMutation({
+    mutationFn: async () => {
+      const newVersion = new Date().toISOString();
+      const { error } = await supabase
+        .from("app_config")
+        .upsert(
+          { key: "app_version", value: newVersion, description: "Forces all clients to clear cache and reload" },
+          { onConflict: "key" },
+        );
+      if (error) throw error;
+      return newVersion;
+    },
+    onSuccess: (v) => {
+      toast.success(`Notifikace o aktualizaci odeslána všem uživatelům (${v.slice(0, 19)})`);
+      queryClient.invalidateQueries({ queryKey: ["app_config", "app_version"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const versionStr = (() => {
+    if (!currentVersion?.value) return "—";
+    const v = currentVersion.value;
+    return typeof v === "string" ? v : JSON.stringify(v);
+  })();
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <RefreshCw className="h-5 w-5 text-primary mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <p className="text-sm text-foreground font-medium">
+              Vyvolat aktualizaci u všech uživatelů
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Všem aktivním uživatelům se zobrazí banner s tlačítkem <strong>Aktualizovat</strong>.
+              Po kliknutí se vymaže lokální cache, service worker i cookies (kromě přihlášení) a načte se aktuální verze.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-muted/40 px-4 py-3 text-xs font-mono text-muted-foreground">
+          Aktuální verze: <span className="text-foreground">{isLoading ? "načítám…" : versionStr}</span>
+        </div>
+
+        <Button
+          onClick={() => triggerUpdate.mutate()}
+          disabled={triggerUpdate.isPending}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          {triggerUpdate.isPending ? "Odesílám…" : "Vyvolat aktualizaci"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
