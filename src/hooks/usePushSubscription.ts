@@ -110,6 +110,45 @@ export function usePushSubscription(): UsePushSubscriptionResult {
     return { ok: true };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    if (permission !== "granted") return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) return;
+
+        const json = sub.toJSON() as {
+          endpoint: string;
+          keys: { p256dh: string; auth: string };
+        };
+
+        const { error } = await supabase.from("push_subscriptions").upsert(
+          {
+            user_id: user.id,
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth,
+            user_agent: navigator.userAgent,
+            last_used_at: new Date().toISOString(),
+          },
+          { onConflict: "endpoint" },
+        );
+
+        if (!cancelled && !error) setIsSubscribed(true);
+      } catch (e) {
+        console.warn("push sync failed:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [permission, user]);
+
   const disable = useCallback(async () => {
     if (!user) return;
     try {
