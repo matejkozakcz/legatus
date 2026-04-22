@@ -664,14 +664,18 @@ function RuleEditorDialog({ rule, onClose, onSave, saving }: EditorProps) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Zrušit
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Ukládám…" : "Uložit"}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="mt-6 pt-4 border-t border-border">
+              <Button variant="outline" onClick={onClose} disabled={saving}>
+                Zrušit
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Ukládám…" : "Uložit"}
+              </Button>
+            </DialogFooter>
+          </div>
+
+          <VariablesHelp trigger={form.trigger_event ?? "manual"} />
+        </div>
       </DialogContent>
     </Dialog>
   );
