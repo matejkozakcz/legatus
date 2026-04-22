@@ -88,7 +88,7 @@ export function InstallPwaPrompt() {
   }, []);
 
   const handleDismiss = () => {
-    sessionStorage.setItem("legatus-install-dismissed", "1");
+    safeSetDismissed();
     setDismissed(true);
   };
 
