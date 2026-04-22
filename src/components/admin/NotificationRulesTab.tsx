@@ -204,6 +204,8 @@ export function NotificationRulesTab() {
 
   return (
     <div className="space-y-4">
+      <PushSetupPanel />
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-heading font-semibold text-foreground">Šablony notifikací</h3>
