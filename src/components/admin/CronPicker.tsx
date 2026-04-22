@@ -109,7 +109,10 @@ export function CronPicker({ value, onChange }: CronPickerProps) {
     const match = v.match(/^(\d{1,2}):(\d{2})$/);
     if (!match) return;
     const h = Math.max(0, Math.min(23, parseInt(match[1], 10)));
-    const m = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    // Zaokrouhli na nejbližší 15 min — pg_cron jede po :00, :15, :30, :45.
+    // Pokud zadáš např. 21:40, scheduler tu minutu mine a pravidlo se nikdy nespustí.
+    const rawM = Math.max(0, Math.min(59, parseInt(match[2], 10)));
+    const m = Math.round(rawM / 15) * 15 % 60;
     setParsed((p) => ({ ...p, hour: h, minute: m }));
   };
 
