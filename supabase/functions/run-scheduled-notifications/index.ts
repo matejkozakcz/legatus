@@ -161,6 +161,7 @@ async function insertNotifications(
   rule: Rule,
   subject: Profile,
   vars: Record<string, unknown>,
+  opts: { forced?: boolean } = {},
 ) {
   const recipients = await resolveRecipients(sb, rule, subject);
   if (recipients.length === 0) return 0;
@@ -170,25 +171,30 @@ async function insertNotifications(
 
   // Safety dedup — dvě úrovně:
   // 1) Per-(rule, recipient, subject) v posledních 12 h — brání opakování pro stejný předmět.
-  // 2) Per-(rule, recipient) v posledních 6 h — globální spam-stop, aby cron nikdy
-  //    nemohl jednomu uživateli poslat víc než pár notifikací z téhož pravidla
-  //    bez ohledu na to, kolik subjectů handler iteruje.
-  const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
-  const since6 = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
-  const { data: existing } = await sb
-    .from("notifications")
-    .select("recipient_id, payload, created_at")
-    .eq("rule_id", rule.id)
-    .gte("created_at", since12);
-  const blocked = new Set<string>();
-  for (const n of (existing || []) as Array<{ recipient_id: string; payload: Record<string, unknown>; created_at: string }>) {
-    if ((n.payload as { subject_id?: string })?.subject_id === subject.id) {
-      blocked.add(n.recipient_id);
+  // 2) Per-(rule, recipient) v posledních 2 min — krátký anti-burst proti tomu, aby
+  //    cron nebo trigger omylem vystřelil 100+ notifikací během několika sekund
+  //    (např. když handler iteruje 50 subjectů s `recipient_roles: all_active`).
+  //
+  // Forced run (manuální „blesk") přeskakuje OBĚ úrovně — testovací tlačítko
+  // musí jít opakovaně bez čekání. Spam ochrana se opírá o správné nastavení
+  // recipient_roles v UI a o validaci scheduleru, ne o tvrdý rate-limit.
+  const sent = new Set<string>();
+
+  if (!opts.forced) {
+    const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+    const since2m = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: existing } = await sb
+      .from("notifications")
+      .select("recipient_id, payload, created_at")
+      .eq("rule_id", rule.id)
+      .gte("created_at", since12);
+    for (const n of (existing || []) as Array<{ recipient_id: string; payload: Record<string, unknown>; created_at: string }>) {
+      if ((n.payload as { subject_id?: string })?.subject_id === subject.id) {
+        sent.add(n.recipient_id);
+      }
+      if (n.created_at >= since2m) sent.add(n.recipient_id);
     }
-    // Global rate limit: max 1 notifikace z pravidla / příjemce za 6 h
-    if (n.created_at >= since6) blocked.add(n.recipient_id);
   }
-  const sent = blocked;
 
   const rows = recipients
     .filter((rid) => !sent.has(rid))
@@ -202,7 +208,7 @@ async function insertNotifications(
       icon: rule.icon,
       accent_color: rule.accent_color,
       link_url: rule.link_url,
-      payload: { variables: baseVars, subject_id: subject.id, scheduled: true },
+      payload: { variables: baseVars, subject_id: subject.id, scheduled: true, forced: !!opts.forced },
     }));
   if (rows.length === 0) return 0;
   const { error } = await sb.from("notifications").insert(rows);
