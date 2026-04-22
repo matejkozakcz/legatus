@@ -225,6 +225,7 @@ async function insertNotifications(
 async function handleUnrecordedMeetings(
   sb: ReturnType<typeof createClient>,
   rule: Rule,
+  forced = false,
 ): Promise<number> {
   const days = Number((rule.conditions as { older_than_days?: number })?.older_than_days ?? 1);
   const cutoff = new Date();
@@ -261,7 +262,7 @@ async function handleUnrecordedMeetings(
     total += await insertNotifications(sb, rule, p, {
       count: list.length,
       oldest_date: list.map((m) => m.date).sort()[0],
-    });
+    }, { forced });
   }
   return total;
 }
@@ -270,6 +271,7 @@ async function handleUnrecordedMeetings(
 async function handleWeeklyReport(
   sb: ReturnType<typeof createClient>,
   rule: Rule,
+  forced = false,
 ): Promise<number> {
   // Last week range (Mon..Sun in Prague tz, approximated via UTC)
   const today = new Date();
@@ -309,7 +311,7 @@ async function handleWeeklyReport(
       total_bj: totalBj,
       week_start: start,
       week_end: end,
-    });
+    }, { forced });
   }
   return total;
 }
@@ -318,6 +320,7 @@ async function handleWeeklyReport(
 async function handleInactive(
   sb: ReturnType<typeof createClient>,
   rule: Rule,
+  forced = false,
 ): Promise<number> {
   const days = Number((rule.conditions as { inactive_days?: number })?.inactive_days ?? 3);
   const cutoff = new Date();
@@ -340,7 +343,7 @@ async function handleInactive(
       .gte("date", cutoffStr)
       .limit(1);
     if (recent && recent.length > 0) continue;
-    total += await insertNotifications(sb, rule, p, { inactive_days: days });
+    total += await insertNotifications(sb, rule, p, { inactive_days: days }, { forced });
   }
   return total;
 }
@@ -385,15 +388,16 @@ Deno.serve(async (req) => {
       let inserted = 0;
       let errorMsg: string | null = null;
       try {
+        const isForced = forceRuleId === rule.id;
         switch (rule.trigger_event) {
           case "scheduled.unrecorded_meetings":
-            inserted = await handleUnrecordedMeetings(sb, rule);
+            inserted = await handleUnrecordedMeetings(sb, rule, isForced);
             break;
           case "scheduled.weekly_report":
-            inserted = await handleWeeklyReport(sb, rule);
+            inserted = await handleWeeklyReport(sb, rule, isForced);
             break;
           case "scheduled.inactive_days":
-            inserted = await handleInactive(sb, rule);
+            inserted = await handleInactive(sb, rule, isForced);
             break;
           default:
             console.warn("[scheduled] unknown trigger:", rule.trigger_event);
