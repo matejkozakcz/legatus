@@ -396,6 +396,15 @@ const Dashboard = () => {
   const desktopWeekEnd = endOfWeek(desktopWeekStart, { weekStartsOn: 1 });
   const isDesktopWeekCurrent = isSameWeek(desktopWeekStart, now, { weekStartsOn: 1 });
 
+  // Independent week state for "Konverze aktivit" section
+  const [conversionWeekDate, setConversionWeekDate] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
+  const conversionWeekStart = useMemo(
+    () => startOfWeek(conversionWeekDate, { weekStartsOn: 1 }),
+    [conversionWeekDate],
+  );
+  const conversionWeekEnd = endOfWeek(conversionWeekStart, { weekStartsOn: 1 });
+  const isConversionWeekCurrent = isSameWeek(conversionWeekStart, now, { weekStartsOn: 1 });
+
   // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
   const promotionCheckDoneRef = useRef(false);
   useEffect(() => {
