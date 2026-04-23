@@ -171,9 +171,18 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 
 export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
   const stats = useMemo(() => {
-    const fsa = calcStats(meetings, "FSA");
-    const por = calcStats(meetings, "POR");
-    const ser = calcStats(meetings, "SER");
+    // Build map: parent_meeting_id -> count of POH children that actually happened (or are planned)
+    // Konverze počítáme nad všemi POH (i necancelled), aby naplánovaný follow-up ihned poznal vazbu.
+    const pohByParent = new Map<string, number>();
+    meetings.forEach((m) => {
+      if (m.meeting_type === "POH" && m.parent_meeting_id) {
+        pohByParent.set(m.parent_meeting_id, (pohByParent.get(m.parent_meeting_id) ?? 0) + 1);
+      }
+    });
+
+    const fsa = calcStats(meetings, "FSA", pohByParent);
+    const por = calcStats(meetings, "POR", pohByParent);
+    const ser = calcStats(meetings, "SER", pohByParent);
 
     // POH karta – domluvené = všechny POH v období, proběhlé = potvrzené
     const pohAll = meetings.filter((m) => m.meeting_type === "POH");
