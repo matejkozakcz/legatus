@@ -121,15 +121,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative">
-            <div className="absolute top-4 right-6 lg:right-8 z-10 flex items-center gap-2">
+            <div
+              id="app-header-actions"
+              className="absolute top-4 right-6 lg:right-8 z-10 flex items-center gap-2"
+            >
+              {/* Pages can portal extra actions (e.g. Export PDF) into this slot, left of the bell */}
+              <div id="app-header-actions-slot" className="flex items-center gap-2" />
               <NotificationBell />
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="p-2 rounded-xl hover:bg-muted transition-colors"
-                aria-label="Nastavení"
-              >
-                <Settings className="h-5 w-5 text-muted-foreground" />
-              </button>
             </div>
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
               {children}
