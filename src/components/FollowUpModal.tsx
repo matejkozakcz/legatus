@@ -10,6 +10,7 @@ export interface FollowUpScheduleData {
   date: string;
   location_type: string;
   location_detail: string;
+  parent_meeting_id?: string | null;
 }
 
 interface FollowUpModalProps {
@@ -18,6 +19,8 @@ interface FollowUpModalProps {
   caseName: string;
   caseId: string;
   meetingType: MeetingType;
+  /** ID of the source meeting that triggered this follow-up modal. Stored on the new meeting as parent_meeting_id. */
+  parentMeetingId?: string | null;
   onSchedule: (data: FollowUpScheduleData) => Promise<void> | void;
 }
 
@@ -183,7 +186,7 @@ function TrackSection({
 
 // ─── Main modal ──────────────────────────────────────────────────────────────
 
-export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, onSchedule }: FollowUpModalProps) {
+export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, parentMeetingId, onSchedule }: FollowUpModalProps) {
   useBodyScrollLock(open);
   const [clientDone, setClientDone] = useState(false);
   const [recruitDone, setRecruitDone] = useState(false);
@@ -240,7 +243,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
               caseId={caseId}
               meetingType={clientSuggestion.type}
               onSchedule={async (data) => {
-                await onSchedule(data);
+                await onSchedule({ ...data, parent_meeting_id: parentMeetingId ?? null });
                 setClientDone(true);
               }}
             />
@@ -253,7 +256,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
               caseId={caseId}
               meetingType="POH"
               onSchedule={async (data) => {
-                await onSchedule(data);
+                await onSchedule({ ...data, parent_meeting_id: parentMeetingId ?? null });
                 setRecruitDone(true);
               }}
             />

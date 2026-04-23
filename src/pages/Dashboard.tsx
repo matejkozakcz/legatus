@@ -332,7 +332,7 @@ const Dashboard = () => {
 
   // ── Mobile FAB: new meeting modal ──
   const [fabMeetingOpen, setFabMeetingOpen] = useState(false);
-  const [fabFollowUp, setFabFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
+  const [fabFollowUp, setFabFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
 
   const { data: fabCases = [] } = useQuery({
     queryKey: ["cases", profile?.id],
@@ -368,11 +368,13 @@ const Dashboard = () => {
         poznamka: form.poznamka.trim() || null,
         info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
         info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
+        parent_meeting_id: form.parent_meeting_id ?? null,
       };
-      const { error } = await supabase.from("client_meetings").insert(payload as any);
+      const { data, error } = await supabase.from("client_meetings").insert(payload as any).select("id").single();
       if (error) throw error;
+      return { insertedId: (data as any)?.id as string | undefined };
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
@@ -382,7 +384,7 @@ const Dashboard = () => {
       const f = variables.form;
       if (!variables.skipFollowUp && !f.cancelled && f.case_id) {
         const c = fabCases.find((c) => c.id === f.case_id);
-        if (c) setFabFollowUp({ caseId: f.case_id, caseName: c.nazev_pripadu, meetingType: f.meeting_type });
+        if (c) setFabFollowUp({ caseId: f.case_id, caseName: c.nazev_pripadu, meetingType: f.meeting_type, parentMeetingId: result?.insertedId ?? null });
       }
     },
     onError: (err: any) => toast.error(err.message || "Chyba"),
@@ -554,7 +556,7 @@ const Dashboard = () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, outcome_recorded, has_pohovor")
+        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id")
         .eq("user_id", activeUserId)
         .gte("date", conversionWeekStartStr)
         .lte("date", conversionWeekEndStr);
@@ -1615,6 +1617,7 @@ const Dashboard = () => {
           caseName={fabFollowUp?.caseName || ""}
           caseId={fabFollowUp?.caseId || ""}
           meetingType={fabFollowUp?.meetingType || "FSA"}
+          parentMeetingId={fabFollowUp?.parentMeetingId ?? null}
           onSchedule={async (data) => {
             const form: MeetingForm = {
               ...defaultMeetingForm(data.date),
@@ -1622,6 +1625,7 @@ const Dashboard = () => {
               case_id: data.case_id,
               location_type: data.location_type,
               location_detail: data.location_detail,
+              parent_meeting_id: data.parent_meeting_id ?? null,
             };
             await new Promise<void>((resolve, reject) => {
               fabSaveMeeting.mutate(
