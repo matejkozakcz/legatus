@@ -556,7 +556,7 @@ const Dashboard = () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, outcome_recorded, has_pohovor")
+        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id")
         .eq("user_id", activeUserId)
         .gte("date", conversionWeekStartStr)
         .lte("date", conversionWeekEndStr);
