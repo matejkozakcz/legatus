@@ -50,25 +50,20 @@ function calcStats(
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MiniCard({
+function MiniColumn({
   label,
   value,
-  color,
 }: {
   label: string;
   value: number;
-  color: string;
 }) {
   return (
-    <div
-      className="rounded-xl bg-card flex flex-col gap-1 px-4 py-3 flex-1 min-w-0"
-      style={{ border: `1.5px solid ${color}`, boxShadow: "var(--shadow-sm)" }}
-    >
-      <span className="font-body text-[11px] font-medium text-muted-foreground lowercase">
+    <div className="flex flex-col gap-1 px-4 py-3 flex-1 min-w-0">
+      <span className="font-body text-[11px] font-medium text-muted-foreground lowercase text-center">
         {label}
       </span>
       <span
-        className="font-heading leading-none"
+        className="font-heading leading-none text-center"
         style={{
           color: "var(--text-primary)",
           fontSize: 28,
@@ -77,6 +72,23 @@ function MiniCard({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+function ReliabilityBar({ reliability, color }: { reliability: number; color: string }) {
+  return (
+    <div
+      className="w-full bg-muted overflow-hidden"
+      style={{ height: 4 }}
+    >
+      <div
+        style={{
+          width: `${Math.max(0, Math.min(100, reliability))}%`,
+          height: "100%",
+          background: color,
+        }}
+      />
     </div>
   );
 }
@@ -100,23 +112,27 @@ function SourceGroup({
 }) {
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-0">
-      {/* Title */}
+      {/* Unified card: title + two columns + progress bar at bottom */}
       <div
-        className="font-body text-center"
-        style={{ marginBottom: 2, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
+        className="rounded-xl bg-card flex flex-col overflow-hidden min-w-0"
+        style={{ border: `1.5px solid ${color}`, boxShadow: "var(--shadow-sm)" }}
       >
-        {title}
-      </div>
+        {/* Title */}
+        <div
+          className="font-body text-center"
+          style={{ paddingTop: 10, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
+        >
+          {title}
+        </div>
 
-      {/* Two cards side-by-side */}
-      <div className="flex" style={{ gap: 6 }}>
-        <MiniCard label="domluvené" value={domluvene} color={color} />
-        <MiniCard label="proběhlé" value={probehle} color={color} />
-      </div>
+        {/* Two columns side-by-side */}
+        <div className="flex flex-1">
+          <MiniColumn label="domluvené" value={domluvene} />
+          <MiniColumn label="proběhlé" value={probehle} />
+        </div>
 
-      {/* Reliability — plain muted text */}
-      <div className="text-center font-body text-xs text-muted-foreground" style={{ marginTop: 2 }}>
-        spolehlivost {reliability} %
+        {/* Progress bar — flush to bottom */}
+        <ReliabilityBar reliability={reliability} color={color} />
       </div>
 
       {/* Down-arrow + conversion to POH — hidden when no conversion */}
@@ -246,53 +262,61 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
         </div>
 
         <div
-          className="rounded-xl bg-card px-5 py-4 flex flex-col sm:flex-row items-stretch"
-          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)", gap: 14 }}
+          className="rounded-xl bg-card flex flex-col overflow-hidden"
+          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
         >
-          {/* Domluvené */}
-          <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
-            <span className="font-body text-[11px] text-muted-foreground lowercase">domluvené</span>
-            <span
-              className="font-heading leading-none"
-              style={{ color: COLORS.poh, fontSize: 32, fontWeight: 600 }}
-            >
-              {stats.pohPlanned}
-            </span>
+          <div
+            className="px-5 py-4 flex flex-col sm:flex-row items-stretch"
+            style={{ gap: 14 }}
+          >
+            {/* Domluvené */}
+            <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
+              <span className="font-body text-[11px] text-muted-foreground lowercase">domluvené</span>
+              <span
+                className="font-heading leading-none"
+                style={{ color: COLORS.poh, fontSize: 32, fontWeight: 600 }}
+              >
+                {stats.pohPlanned}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Reliability — center big */}
+            <div className="flex flex-col items-center justify-center sm:px-3 sm:flex-1">
+              <span
+                className="font-heading leading-none"
+                style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
+              >
+                {stats.pohReliability} %
+              </span>
+              <span className="font-body text-xs text-muted-foreground mt-1">spolehlivost</span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Proběhlé */}
+            <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
+              <span className="font-body text-[11px] text-muted-foreground lowercase">proběhlé</span>
+              <span
+                className="font-heading leading-none"
+                style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
+              >
+                {stats.pohActual}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Origin */}
+            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
           </div>
 
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Reliability — center big */}
-          <div className="flex flex-col items-center justify-center sm:px-3 sm:flex-1">
-            <span
-              className="font-heading leading-none"
-              style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
-            >
-              {stats.pohReliability} %
-            </span>
-            <span className="font-body text-xs text-muted-foreground mt-1">spolehlivost</span>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Proběhlé */}
-          <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
-            <span className="font-body text-[11px] text-muted-foreground lowercase">proběhlé</span>
-            <span
-              className="font-heading leading-none"
-              style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
-            >
-              {stats.pohActual}
-            </span>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Origin */}
-          <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
+          {/* Progress bar — flush to bottom */}
+          <ReliabilityBar reliability={stats.pohReliability} color={COLORS.poh} />
         </div>
       </div>
     </div>
