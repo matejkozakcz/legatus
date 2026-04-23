@@ -101,6 +101,7 @@ const meetingToForm = (m: Meeting): MeetingForm => ({
   location_detail: m.location_detail || "",
   info_zucastnil_se: (m as any).info_zucastnil_se ?? null,
   info_pocet_lidi: (m as any).info_pocet_lidi != null ? String((m as any).info_pocet_lidi) : "",
+  parent_meeting_id: (m as any).parent_meeting_id ?? null,
 });
 
 // ─── Helper components ───────────────────────────────────────────────────────
