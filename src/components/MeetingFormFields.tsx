@@ -31,6 +31,8 @@ export interface MeetingForm {
   // INFO/POST outcome fields
   info_zucastnil_se: boolean | null;
   info_pocet_lidi: string;
+  // Follow-up linkage — set when this meeting was scheduled as a follow-up of another
+  parent_meeting_id?: string | null;
 }
 
 /** Roles allowed to create INFO and POST meeting types */
@@ -79,6 +81,7 @@ export const defaultMeetingForm = (date?: string): MeetingForm => ({
   location_detail: "",
   info_zucastnil_se: null,
   info_pocet_lidi: "",
+  parent_meeting_id: null,
 });
 
 // ─── Shared sub-components ───────────────────────────────────────────────────

@@ -10,6 +10,7 @@ export interface FollowUpScheduleData {
   date: string;
   location_type: string;
   location_detail: string;
+  parent_meeting_id?: string | null;
 }
 
 interface FollowUpModalProps {
@@ -18,6 +19,8 @@ interface FollowUpModalProps {
   caseName: string;
   caseId: string;
   meetingType: MeetingType;
+  /** ID of the source meeting that triggered this follow-up modal. Stored on the new meeting as parent_meeting_id. */
+  parentMeetingId?: string | null;
   onSchedule: (data: FollowUpScheduleData) => Promise<void> | void;
 }
 
