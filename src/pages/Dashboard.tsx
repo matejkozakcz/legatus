@@ -2106,12 +2106,6 @@ const Dashboard = () => {
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (
           <section className="space-y-6 mt-8">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-                Konverze aktivit
-              </h2>
-            </div>
-
             <ConversionFunnel meetings={conversionMeetings as any} />
           </section>
         )}
