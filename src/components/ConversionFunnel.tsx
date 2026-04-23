@@ -188,6 +188,21 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
+function BreakdownRow({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between font-body text-[12px]" style={{ color: "var(--text-primary)" }}>
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        <span
+          className="inline-block rounded-full"
+          style={{ width: 8, height: 8, background: color }}
+        />
+        {label}
+      </span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
