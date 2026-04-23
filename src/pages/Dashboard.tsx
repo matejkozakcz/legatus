@@ -247,6 +247,9 @@ const Dashboard = () => {
   const hasCheckedFirstLogin = useRef(false);
   const [exportingPdf, setExportingPdf] = useState<ExportPeriod | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  // ── Dashboard view mode: "month" (production period) | "week" ──
+  const [viewMode, setViewMode] = useState<"month" | "week">("month");
+  const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
 
   // ── Impersonation: view dashboard as another team member ──
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
