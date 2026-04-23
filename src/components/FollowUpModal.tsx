@@ -186,7 +186,7 @@ function TrackSection({
 
 // ─── Main modal ──────────────────────────────────────────────────────────────
 
-export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, onSchedule }: FollowUpModalProps) {
+export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, parentMeetingId, onSchedule }: FollowUpModalProps) {
   useBodyScrollLock(open);
   const [clientDone, setClientDone] = useState(false);
   const [recruitDone, setRecruitDone] = useState(false);
@@ -243,7 +243,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
               caseId={caseId}
               meetingType={clientSuggestion.type}
               onSchedule={async (data) => {
-                await onSchedule(data);
+                await onSchedule({ ...data, parent_meeting_id: parentMeetingId ?? null });
                 setClientDone(true);
               }}
             />
@@ -256,7 +256,7 @@ export function FollowUpModal({ open, onClose, caseName, caseId, meetingType, on
               caseId={caseId}
               meetingType="POH"
               onSchedule={async (data) => {
-                await onSchedule(data);
+                await onSchedule({ ...data, parent_meeting_id: parentMeetingId ?? null });
                 setRecruitDone(true);
               }}
             />
