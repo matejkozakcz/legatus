@@ -452,13 +452,13 @@ const Dashboard = () => {
     }
   }, [profile?.role]);
 
-  // ── Desktop date range — driven by production period picker ──────────────
+  // ── Desktop date range — month mode = production period, week mode = selected week ──
   const dateRange = useMemo(
-    () => ({
-      from: selectedPeriod.start,
-      to: selectedPeriod.end,
-    }),
-    [selectedPeriod],
+    () =>
+      viewMode === "week"
+        ? { from: desktopWeekStart, to: desktopWeekEnd }
+        : { from: selectedPeriod.start, to: selectedPeriod.end },
+    [viewMode, selectedPeriod, desktopWeekStart, desktopWeekEnd],
   );
 
   // ── Desktop stats from client_meetings ──────────────────────────────────────
