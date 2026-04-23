@@ -560,7 +560,7 @@ const Dashboard = () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id")
+        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
         .eq("user_id", activeUserId)
         .gte("date", conversionRangeStartStr)
         .lte("date", conversionRangeEndStr);

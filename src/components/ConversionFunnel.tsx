@@ -9,6 +9,9 @@ export interface ConversionMeeting {
   cancelled: boolean;
   outcome_recorded?: boolean | null;
   parent_meeting_id?: string | null;
+  doporuceni_fsa?: number | null;
+  doporuceni_poradenstvi?: number | null;
+  doporuceni_pohovor?: number | null;
 }
 
 interface ConversionFunnelProps {
@@ -185,6 +188,21 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
+function BreakdownRow({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between font-body text-[12px]" style={{ color: "var(--text-primary)" }}>
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        <span
+          className="inline-block rounded-full"
+          style={{ width: 8, height: 8, background: color }}
+        />
+        {label}
+      </span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
@@ -216,7 +234,21 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
     const serPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
 
-    return { fsa, por, ser, pohPlanned, pohActual, pohReliability, fsaPct, porPct, serPct };
+    // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
+    const completedMeetings = meetings.filter(
+      (m) => !m.cancelled && m.outcome_recorded === true,
+    );
+    const dopFsa = completedMeetings.reduce((s, m) => s + (m.doporuceni_fsa ?? 0), 0);
+    const dopPor = completedMeetings.reduce((s, m) => s + (m.doporuceni_poradenstvi ?? 0), 0);
+    const dopPoh = completedMeetings.reduce((s, m) => s + (m.doporuceni_pohovor ?? 0), 0);
+    const dopTotal = dopFsa + dopPor + dopPoh;
+
+    return {
+      fsa, por, ser,
+      pohPlanned, pohActual, pohReliability,
+      fsaPct, porPct, serPct,
+      dopFsa, dopPor, dopPoh, dopTotal,
+    };
   }, [meetings]);
 
   return (
@@ -252,8 +284,9 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
         />
       </div>
 
-      {/* Bottom — POH summary card */}
-      <div>
+      {/* Bottom — POH summary card + Doporučení card */}
+      <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr]" style={{ gap: 11 }}>
+        {/* Pohovory card */}
         <div
           className="rounded-xl bg-card flex flex-col overflow-hidden"
           style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
@@ -267,7 +300,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
           </div>
 
           <div
-            className="px-5 py-4 flex flex-col sm:flex-row items-stretch"
+            className="px-5 py-4 flex flex-col sm:flex-row items-stretch flex-1"
             style={{ gap: 14 }}
           >
             {/* Domluvené */}
@@ -279,20 +312,6 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
               >
                 {stats.pohPlanned}
               </span>
-            </div>
-
-            {/* Divider */}
-            <div className="hidden sm:block w-px bg-border" />
-
-            {/* Reliability — center big */}
-            <div className="flex flex-col items-center justify-center sm:px-3 sm:flex-1">
-              <span
-                className="font-heading leading-none"
-                style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
-              >
-                {stats.pohReliability} %
-              </span>
-              <span className="font-body text-xs text-muted-foreground mt-1">spolehlivost</span>
             </div>
 
             {/* Divider */}
@@ -318,6 +337,49 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
 
           {/* Progress bar — flush to bottom */}
           <ReliabilityBar reliability={stats.pohReliability} color={COLORS.poh} />
+        </div>
+
+        {/* Doporučení card */}
+        <div
+          className="rounded-xl bg-card flex flex-col overflow-hidden"
+          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
+        >
+          {/* Title inside card */}
+          <div
+            className="font-body text-center"
+            style={{ paddingTop: 10, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
+          >
+            Doporučení
+          </div>
+
+          <div
+            className="px-5 py-4 flex flex-row items-stretch flex-1"
+            style={{ gap: 14 }}
+          >
+            {/* Total */}
+            <div className="flex flex-col gap-1 sm:px-3 flex-1 min-w-0 items-center justify-center">
+              <span className="font-body text-[11px] text-muted-foreground lowercase">celkem</span>
+              <span
+                className="font-heading leading-none"
+                style={{ color: COLORS.poh, fontSize: 32, fontWeight: 600 }}
+              >
+                {stats.dopTotal}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px bg-border" />
+
+            {/* Breakdown */}
+            <div className="flex flex-col gap-1.5 justify-center flex-1 min-w-0 sm:px-2">
+              <BreakdownRow color={COLORS.fsa} label="FSA" value={stats.dopFsa} />
+              <BreakdownRow color={COLORS.por} label="POR" value={stats.dopPor} />
+              <BreakdownRow color={COLORS.poh} label="POH" value={stats.dopPoh} />
+            </div>
+          </div>
+
+          {/* Progress bar placeholder for visual parity (full teal) */}
+          <ReliabilityBar reliability={100} color={COLORS.poh} />
         </div>
       </div>
     </div>
