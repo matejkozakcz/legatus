@@ -1617,6 +1617,7 @@ const Dashboard = () => {
           caseName={fabFollowUp?.caseName || ""}
           caseId={fabFollowUp?.caseId || ""}
           meetingType={fabFollowUp?.meetingType || "FSA"}
+          parentMeetingId={fabFollowUp?.parentMeetingId ?? null}
           onSchedule={async (data) => {
             const form: MeetingForm = {
               ...defaultMeetingForm(data.date),
@@ -1624,6 +1625,7 @@ const Dashboard = () => {
               case_id: data.case_id,
               location_type: data.location_type,
               location_detail: data.location_detail,
+              parent_meeting_id: data.parent_meeting_id ?? null,
             };
             await new Promise<void>((resolve, reject) => {
               fabSaveMeeting.mutate(
