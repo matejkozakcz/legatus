@@ -109,7 +109,7 @@ function SourceGroup({
       </div>
 
       {/* Two cards side-by-side */}
-      <div className="flex gap-2">
+      <div className="flex" style={{ gap: 6 }}>
         <MiniCard label="domluvené" value={domluvene} color={color} />
         <MiniCard label="proběhlé" value={probehle} color={color} />
       </div>
@@ -206,7 +206,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Top row — 3 source-activity groups */}
-      <div className="flex gap-4 items-stretch">
+      <div className="flex items-stretch" style={{ gap: 11 }}>
         <SourceGroup
           title="Analýzy"
           color={COLORS.fsa}
@@ -246,8 +246,8 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
         </div>
 
         <div
-          className="rounded-xl bg-card px-5 py-4 flex flex-col sm:flex-row gap-5 items-stretch"
-          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
+          className="rounded-xl bg-card px-5 py-4 flex flex-col sm:flex-row items-stretch"
+          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)", gap: 14 }}
         >
           {/* Domluvené */}
           <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
