@@ -119,16 +119,18 @@ function SourceGroup({
         spolehlivost {reliability} %
       </div>
 
-      {/* Down-arrow + conversion to POH */}
-      <div className="flex flex-col items-center gap-1" style={{ marginTop: 6 }}>
-        <div className="font-body text-[11px] text-muted-foreground leading-none">
-          {pohConversion} %
+      {/* Down-arrow + conversion to POH — hidden when no conversion */}
+      {(pohConversion > 0 || pohCount > 0) && (
+        <div className="flex flex-col items-center gap-1" style={{ marginTop: 6 }}>
+          <div className="font-body text-[11px] text-muted-foreground leading-none">
+            {pohConversion} %
+          </div>
+          <ArrowDown size={14} className="text-muted-foreground" />
+          <div className="font-body text-[10px] text-muted-foreground uppercase tracking-wide">
+            {pohCount} POH
+          </div>
         </div>
-        <ArrowDown size={14} className="text-muted-foreground" />
-        <div className="font-body text-[10px] text-muted-foreground uppercase tracking-wide">
-          {pohCount} POH
-        </div>
-      </div>
+      )}
     </div>
   );
 }
