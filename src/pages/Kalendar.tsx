@@ -1027,6 +1027,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
                 meeting_type: data.meeting_type as MeetingType,
                 case_id: detailMeeting.case_id || "",
                 case_name: detailMeeting.case_name || "",
+                parent_meeting_id: detailMeeting.id,
               };
               saveMutation.mutate({ form, skipFollowUp: true });
             }
@@ -1068,6 +1069,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           caseName={followUp?.caseName || ""}
           caseId={followUp?.caseId || ""}
           meetingType={followUp?.meetingType || "FSA"}
+          parentMeetingId={followUp?.parentMeetingId ?? null}
           onSchedule={async (data) => {
             const form: MeetingForm = {
               ...defaultMeetingForm(data.date),
@@ -1075,6 +1077,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               meeting_type: data.meeting_type,
               location_type: data.location_type,
               location_detail: data.location_detail,
+              parent_meeting_id: data.parent_meeting_id ?? null,
             };
             await new Promise<void>((resolve, reject) => {
               saveMutation.mutate({ form, skipFollowUp: true }, {
@@ -1171,6 +1174,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               meeting_type: data.meeting_type as MeetingType,
               case_id: detailMeeting.case_id || "",
               case_name: detailMeeting.case_name || "",
+              parent_meeting_id: detailMeeting.id,
             };
             saveMutation.mutate({ form, skipFollowUp: true });
           }
@@ -1212,6 +1216,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         caseName={followUp?.caseName || ""}
         caseId={followUp?.caseId || ""}
         meetingType={followUp?.meetingType || "FSA"}
+        parentMeetingId={followUp?.parentMeetingId ?? null}
         onSchedule={async (data) => {
             const form: MeetingForm = {
               ...defaultMeetingForm(data.date),
@@ -1219,6 +1224,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
               meeting_type: data.meeting_type,
               location_type: data.location_type,
               location_detail: data.location_detail,
+              parent_meeting_id: data.parent_meeting_id ?? null,
             };
           await new Promise<void>((resolve, reject) => {
             saveMutation.mutate({ form, skipFollowUp: true }, {
