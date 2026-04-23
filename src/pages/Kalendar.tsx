@@ -134,7 +134,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
+  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
 
   // Week grid scroll ref
   const weekGridScrollRef = useRef<HTMLDivElement>(null);
@@ -257,15 +257,18 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         // INFO/POST výsledek
         info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
         info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
+        parent_meeting_id: form.parent_meeting_id ?? null,
       };
+      let insertedId: string | undefined;
       if (editingMeetingId) {
         const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("client_meetings").insert(payload);
+        const { data, error } = await supabase.from("client_meetings").insert(payload).select("id").single();
         if (error) throw error;
+        insertedId = (data as any)?.id;
       }
-      return { form, skipFollowUp };
+      return { form, skipFollowUp, insertedId };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
@@ -278,7 +281,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
       if (!result.skipFollowUp && !form.cancelled && form.case_id) {
         const c = localCases.find((cs) => cs.id === form.case_id);
         if (c) {
-          setFollowUp({ caseId: form.case_id, caseName: c.nazev_pripadu, meetingType: form.meeting_type });
+          setFollowUp({ caseId: form.case_id, caseName: c.nazev_pripadu, meetingType: form.meeting_type, parentMeetingId: result.insertedId ?? null });
         }
       }
     },
@@ -300,7 +303,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
       if (detailMeeting && !detailMeeting.cancelled && detailMeeting.case_id) {
         const c = localCases.find((cs) => cs.id === detailMeeting.case_id);
         if (c) {
-          setFollowUp({ caseId: detailMeeting.case_id, caseName: c.nazev_pripadu, meetingType: detailMeeting.meeting_type });
+          setFollowUp({ caseId: detailMeeting.case_id, caseName: c.nazev_pripadu, meetingType: detailMeeting.meeting_type, parentMeetingId: detailMeeting.id });
         }
       }
     },
