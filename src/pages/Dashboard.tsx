@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Pencil,
   Check,
   ArrowLeft,
