@@ -255,16 +255,17 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
       {/* Bottom — POH summary card */}
       <div>
         <div
-          className="font-body text-center"
-          style={{ marginBottom: 8, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
-        >
-          Pohovory
-        </div>
-
-        <div
           className="rounded-xl bg-card flex flex-col overflow-hidden"
           style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
         >
+          {/* Title inside card */}
+          <div
+            className="font-body text-center"
+            style={{ paddingTop: 10, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
+          >
+            Pohovory
+          </div>
+
           <div
             className="px-5 py-4 flex flex-col sm:flex-row items-stretch"
             style={{ gap: 14 }}
