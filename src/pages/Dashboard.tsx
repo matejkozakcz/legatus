@@ -145,7 +145,7 @@ function InfoPostDesktopCard({
 }: { label: string; count: number; novi: number; staracci: number }) {
   return (
     <div className="stat-card flex flex-col gap-3 overflow-hidden">
-      <p className="font-body text-[11px] font-semibold uppercase tracking-[0.08em] truncate" style={{ color: "#fc7c71" }}>
+      <p className="font-body text-center truncate" style={{ color: "#EF8C6F", fontSize: 13, fontWeight: 500 }}>
         {label}
       </p>
       <div className="grid grid-cols-3 gap-2">
@@ -2090,7 +2090,7 @@ const Dashboard = () => {
         {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <InfoPostDesktopCard
-              label="Info schůzky"
+              label="Info"
               count={teamInfoPostCounts.info}
               novi={teamInfoPostCounts.noviInfo}
               staracci={teamInfoPostCounts.staracciInfo}
