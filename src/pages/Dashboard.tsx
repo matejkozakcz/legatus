@@ -45,6 +45,7 @@ import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 import { computeMeetingStats } from "@/lib/meetingStats";
+import { ConversionFunnel } from "@/components/ConversionFunnel";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
