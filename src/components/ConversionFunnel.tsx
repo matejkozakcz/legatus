@@ -219,7 +219,21 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
     const serPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
 
-    return { fsa, por, ser, pohPlanned, pohActual, pohReliability, fsaPct, porPct, serPct };
+    // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
+    const completedMeetings = meetings.filter(
+      (m) => !m.cancelled && m.outcome_recorded === true,
+    );
+    const dopFsa = completedMeetings.reduce((s, m) => s + (m.doporuceni_fsa ?? 0), 0);
+    const dopPor = completedMeetings.reduce((s, m) => s + (m.doporuceni_poradenstvi ?? 0), 0);
+    const dopPoh = completedMeetings.reduce((s, m) => s + (m.doporuceni_pohovor ?? 0), 0);
+    const dopTotal = dopFsa + dopPor + dopPoh;
+
+    return {
+      fsa, por, ser,
+      pohPlanned, pohActual, pohReliability,
+      fsaPct, porPct, serPct,
+      dopFsa, dopPor, dopPoh, dopTotal,
+    };
   }, [meetings]);
 
   return (
