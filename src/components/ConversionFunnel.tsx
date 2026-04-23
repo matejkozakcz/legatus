@@ -9,6 +9,9 @@ export interface ConversionMeeting {
   cancelled: boolean;
   outcome_recorded?: boolean | null;
   parent_meeting_id?: string | null;
+  doporuceni_fsa?: number | null;
+  doporuceni_poradenstvi?: number | null;
+  doporuceni_pohovor?: number | null;
 }
 
 interface ConversionFunnelProps {
