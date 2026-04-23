@@ -1083,6 +1083,61 @@ const Dashboard = () => {
   const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
   const vedouciGaugeKeys: GoalKey[] = selectedGoal2 ? [selectedGoal1, selectedGoal2] : [selectedGoal1];
 
+  // ── Header period navigator helpers (desktop) ─ MUST be declared before any early return
+  const headerNav = useMemo(() => {
+    if (viewMode === "week") {
+      return {
+        label: isDesktopWeekCurrent
+          ? "Aktuální týden"
+          : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase()),
+        title: `${format(desktopWeekStart, "d.M.", { locale: cs })} – ${format(desktopWeekEnd, "d.M.", { locale: cs })}`,
+        onPrev: () => setDesktopWeekDate((d) => subWeeks(d, 1)),
+        onNext: () => {
+          if (!isDesktopWeekCurrent) setDesktopWeekDate((d) => addWeeks(d, 1));
+        },
+        onSelectDate: (date: Date) => setDesktopWeekDate(startOfWeek(date, { weekStartsOn: 1 })),
+        selectedDate: desktopWeekStart,
+        calendarMonth: desktopWeekStart,
+        pickerMode: "day" as const,
+      };
+    }
+    const monthNamesFull = [
+      "Leden","Únor","Březen","Duben","Květen","Červen",
+      "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+    ];
+    const isCurrentMonth = selectedYear === currentPeriod.year && selectedMonth === currentPeriod.month;
+    return {
+      label: isCurrentMonth ? "Aktuální období" : "Produkční období",
+      title: `${monthNamesFull[selectedMonth]} ${selectedYear}`,
+      onPrev: () => {
+        let m = selectedMonth - 1;
+        let y = selectedYear;
+        if (m < 0) { m = 11; y -= 1; }
+        setSelectedMonth(m); setSelectedYear(y);
+      },
+      onNext: () => {
+        if (selectedYear === currentPeriod.year && selectedMonth === currentPeriod.month) return;
+        let m = selectedMonth + 1;
+        let y = selectedYear;
+        if (m > 11) { m = 0; y += 1; }
+        setSelectedMonth(m); setSelectedYear(y);
+      },
+      onSelectDate: (date: Date) => {
+        setSelectedYear(date.getFullYear());
+        setSelectedMonth(date.getMonth());
+      },
+      selectedDate: new Date(selectedYear, selectedMonth, 1),
+      calendarMonth: new Date(selectedYear, selectedMonth, 1),
+      pickerMode: "month" as const,
+    };
+  }, [viewMode, isDesktopWeekCurrent, desktopWeekStart, desktopWeekEnd, selectedYear, selectedMonth, currentPeriod]);
+
+  // Portal target for the AppLayout header actions slot (Export PDF appears left of the bell)
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHeaderSlot(document.getElementById("app-header-actions-slot"));
+  }, []);
+
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = isImpersonating
