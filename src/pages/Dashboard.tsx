@@ -45,6 +45,7 @@ import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 import { computeMeetingStats } from "@/lib/meetingStats";
+import { ConversionFunnel } from "@/components/ConversionFunnel";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -395,6 +396,15 @@ const Dashboard = () => {
   const desktopWeekEnd = endOfWeek(desktopWeekStart, { weekStartsOn: 1 });
   const isDesktopWeekCurrent = isSameWeek(desktopWeekStart, now, { weekStartsOn: 1 });
 
+  // Independent week state for "Konverze aktivit" section
+  const [conversionWeekDate, setConversionWeekDate] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
+  const conversionWeekStart = useMemo(
+    () => startOfWeek(conversionWeekDate, { weekStartsOn: 1 }),
+    [conversionWeekDate],
+  );
+  const conversionWeekEnd = endOfWeek(conversionWeekStart, { weekStartsOn: 1 });
+  const isConversionWeekCurrent = isSameWeek(conversionWeekStart, now, { weekStartsOn: 1 });
+
   // Vedoucí: kontrola povýšení při načtení Dashboardu (záložní trigger mimo Správa týmu)
   const promotionCheckDoneRef = useRef(false);
   useEffect(() => {
@@ -533,6 +543,26 @@ const Dashboard = () => {
   });
 
   const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
+
+  // ── Konverze aktivit: meetings for selected conversion week ──────────────────
+  const conversionWeekStartStr = format(conversionWeekStart, "yyyy-MM-dd");
+  const conversionWeekEndStr = format(conversionWeekEnd, "yyyy-MM-dd");
+
+  const { data: conversionMeetings = [] } = useQuery({
+    queryKey: ["dashboard_conversion_meetings", activeUserId, conversionWeekStartStr, conversionWeekEndStr],
+    queryFn: async () => {
+      if (!activeUserId) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("meeting_type, cancelled, outcome_recorded, has_pohovor")
+        .eq("user_id", activeUserId)
+        .gte("date", conversionWeekStartStr)
+        .lte("date", conversionWeekEndStr);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeUserId && !isMobile,
+  });
 
   // ── Newly booked meetings (by created_at in the desktop week) ───────────────
   const { data: newlyBookedMeetings = [] } = useQuery({
@@ -1996,7 +2026,43 @@ const Dashboard = () => {
 
         </section>
 
-        <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
+        {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
+        {!isMobile && (
+          <section className="space-y-6 mt-8">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
+                Konverze aktivit
+              </h2>
+
+              <PeriodNavigator
+                label={isConversionWeekCurrent ? "Aktuální týden" : format(conversionWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase())}
+                title={`${format(conversionWeekStart, "d.M.", { locale: cs })} – ${format(conversionWeekEnd, "d.M.", { locale: cs })}`}
+                onPrev={() => setConversionWeekDate((d) => subWeeks(d, 1))}
+                onNext={() => { if (!isConversionWeekCurrent) setConversionWeekDate((d) => addWeeks(d, 1)); }}
+                onSelectDate={(date) => setConversionWeekDate(startOfWeek(date, { weekStartsOn: 1 }))}
+                selectedDate={conversionWeekStart}
+                calendarMonth={conversionWeekStart}
+                pickerMode="day"
+                widthScale={1.35}
+              />
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu((v) => !v)}
+                  disabled={!!exportingPdf}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                  Export PDF
+                </button>
+              </div>
+            </div>
+
+            <ConversionFunnel meetings={conversionMeetings as any} />
+          </section>
+        )}
+
+
         {profile?.id && (
           <VedouciGoalsModal
             open={goalsModalOpen}
