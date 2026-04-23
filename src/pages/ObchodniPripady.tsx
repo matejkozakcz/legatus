@@ -378,7 +378,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType } | null>(null);
+  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
@@ -521,7 +521,9 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         // INFO/POST výsledek
         info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
         info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
+        parent_meeting_id: form.parent_meeting_id ?? null,
       };
+      let insertedId: string | undefined;
       if (id) {
         const { error } = await supabase
           .from("client_meetings")
@@ -529,11 +531,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           .eq("id", id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("client_meetings").insert(payload as any);
+        const { data, error } = await supabase.from("client_meetings").insert(payload as any).select("id").single();
         if (error) throw error;
+        insertedId = (data as any)?.id;
       }
+      return { insertedId };
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
       queryClient.invalidateQueries({ queryKey: ["activity_records"] });
       toast.success(variables.id ? "Schůzka upravena" : "Schůzka přidána");
@@ -544,7 +548,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       setEditMeeting(null);
       // Show follow-up if not cancelled and not already from follow-up
       if (!variables.skipFollowUp && !savedForm.cancelled && savedCaseId && savedCase) {
-        setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type });
+        setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type, parentMeetingId: result?.insertedId ?? null });
       }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
@@ -1270,6 +1274,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               meeting_type: data.meeting_type as MeetingType,
               case_id: detailMeeting.case_id || "",
               case_name: detailMeeting.case_name || "",
+              parent_meeting_id: detailMeeting.id,
             };
             saveMeetingMutation.mutate({ form, skipFollowUp: true });
             setDetailMeeting(null);
@@ -1308,6 +1313,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         caseName={followUp?.caseName || ""}
         caseId={followUp?.caseId || ""}
         meetingType={followUp?.meetingType || "FSA"}
+        parentMeetingId={followUp?.parentMeetingId ?? null}
         onSchedule={async (data) => {
           const form: MeetingForm = {
             ...defaultForm(data.case_id),
@@ -1315,6 +1321,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             date: data.date,
             location_type: data.location_type,
             location_detail: data.location_detail,
+            parent_meeting_id: data.parent_meeting_id ?? null,
           };
           await new Promise<void>((resolve, reject) => {
             saveMeetingMutation.mutate(
