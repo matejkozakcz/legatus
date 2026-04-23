@@ -4,10 +4,11 @@ import { ArrowDown } from "lucide-react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ConversionMeeting {
+  id: string;
   meeting_type: string;       // "FSA" | "POR" | "SER" | "POH" | …
   cancelled: boolean;
   outcome_recorded?: boolean | null;
-  has_pohovor?: boolean | null;
+  parent_meeting_id?: string | null;
 }
 
 interface ConversionFunnelProps {
@@ -25,16 +26,25 @@ const COLORS = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function calcStats(meetings: ConversionMeeting[], type: string) {
+/**
+ * Počítá konverzi: kolik proběhlých schůzek dané aktivity má v datasetu navazující POH
+ * skrze parent_meeting_id (skutečná follow-up vazba), a kolik POH celkem z této aktivity vzniklo.
+ */
+function calcStats(
+  meetings: ConversionMeeting[],
+  type: string,
+  pohByParent: Map<string, number>,
+) {
   const all = meetings.filter((m) => m.meeting_type === type);
   const planned = all.length;
-  const actual = all.filter((m) => !m.cancelled && m.outcome_recorded === true).length;
-  // POH navázaných na proběhlou schůzku tohoto typu
-  const pohFromHere = all.filter(
-    (m) => !m.cancelled && m.outcome_recorded === true && m.has_pohovor === true,
-  ).length;
+  const actualMeetings = all.filter((m) => !m.cancelled && m.outcome_recorded === true);
+  const actual = actualMeetings.length;
+  // Počet proběhlých schůzek tohoto typu, na které je v datasetu navázán alespoň jeden POH
+  const meetingsWithFollowup = actualMeetings.filter((m) => (pohByParent.get(m.id) ?? 0) > 0).length;
+  // Absolutní počet POH navázaných na proběhlé schůzky tohoto typu
+  const pohFromHere = actualMeetings.reduce((sum, m) => sum + (pohByParent.get(m.id) ?? 0), 0);
   const reliability = planned > 0 ? Math.round((actual / planned) * 100) : 0;
-  const pohConversion = actual > 0 ? Math.round((pohFromHere / actual) * 100) : 0;
+  const pohConversion = actual > 0 ? Math.round((meetingsWithFollowup / actual) * 100) : 0;
   return { planned, actual, pohFromHere, reliability, pohConversion };
 }
 
