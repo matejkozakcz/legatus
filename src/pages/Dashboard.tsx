@@ -1878,97 +1878,114 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-4 flex-wrap">
-        <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-        <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
-          DASHBOARD
-        </h1>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
+          gap: 16,
+          minHeight: 56,
+        }}
+      >
+        {/* Left: title + view mode dropdown */}
+        <div className="flex items-center gap-4 flex-wrap" style={{ justifySelf: "start" }}>
+          <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+            DASHBOARD
+          </h1>
 
-        {/* View mode dropdown: Měsíc / Týden */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => setViewModeMenuOpen((o) => !o)}
-            className="flex items-center gap-2"
-            style={{
-              padding: "8px 14px",
-              cursor: "pointer",
-              border: "1px solid var(--border)",
-              borderRadius: 12,
-              background: "var(--card)",
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 600,
-              fontSize: 14,
-              color: "var(--text-primary)",
-            }}
-          >
-            <span>{viewMode === "month" ? "Měsíc" : "Týden"}</span>
-            <ChevronDown
-              size={14}
+          {/* View mode dropdown: Měsíc / Týden — styled to match PeriodNavigator */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setViewModeMenuOpen((o) => !o)}
+              className="flex items-center gap-2"
               style={{
-                color: "var(--text-muted)",
-                transition: "transform 0.2s",
-                transform: viewModeMenuOpen ? "rotate(180deg)" : "rotate(0)",
+                padding: "10px 16px",
+                cursor: "pointer",
+                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                borderRadius: 16,
+                background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 15,
+                color: "var(--text-primary)",
+                boxShadow: "none",
               }}
-            />
-          </button>
-          {viewModeMenuOpen && (
-            <>
-              <div
-                onClick={() => setViewModeMenuOpen(false)}
-                style={{ position: "fixed", inset: 0, zIndex: 49 }}
-              />
-              <div
+            >
+              <span>{viewMode === "month" ? "Měsíc" : "Týden"}</span>
+              <ChevronDown
+                size={15}
                 style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: 0,
-                  zIndex: 50,
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-                  minWidth: 140,
-                  overflow: "hidden",
+                  color: isDark ? "#4dd8e8" : "#00555f",
+                  transition: "transform 0.2s",
+                  transform: viewModeMenuOpen ? "rotate(180deg)" : "rotate(0)",
                 }}
-              >
-                {(["month", "week"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "10px 14px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: viewMode === m ? "rgba(0,171,189,0.1)" : "transparent",
-                      color: viewMode === m ? "#00abbd" : "var(--text-primary)",
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: viewMode === m ? 700 : 500,
-                      fontSize: 14,
-                    }}
-                  >
-                    {m === "month" ? "Měsíc" : "Týden"}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+              />
+            </button>
+            {viewModeMenuOpen && (
+              <>
+                <div
+                  onClick={() => setViewModeMenuOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 49 }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    left: 0,
+                    zIndex: 50,
+                    background: isDark ? "#0a1f23" : "#ffffff",
+                    border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                    borderRadius: 14,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    minWidth: 160,
+                    overflow: "hidden",
+                  }}
+                >
+                  {(["month", "week"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "12px 16px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: viewMode === m ? "rgba(0,171,189,0.12)" : "transparent",
+                        color: viewMode === m ? "#00abbd" : "var(--text-primary)",
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: viewMode === m ? 700 : 500,
+                        fontSize: 14,
+                      }}
+                    >
+                      {m === "month" ? "Měsíc" : "Týden"}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Period navigator (week or month) — drives the whole dashboard */}
-        <PeriodNavigator
-          label={headerNav.label}
-          title={headerNav.title}
-          onPrev={headerNav.onPrev}
-          onNext={headerNav.onNext}
-          onSelectDate={headerNav.onSelectDate}
-          selectedDate={headerNav.selectedDate}
-          calendarMonth={headerNav.calendarMonth}
-          pickerMode={headerNav.pickerMode}
-          widthScale={1.35}
-        />
+        {/* Center: period navigator — horizontally centered */}
+        <div style={{ justifySelf: "center" }}>
+          <PeriodNavigator
+            label={headerNav.label}
+            title={headerNav.title}
+            onPrev={headerNav.onPrev}
+            onNext={headerNav.onNext}
+            onSelectDate={headerNav.onSelectDate}
+            selectedDate={headerNav.selectedDate}
+            calendarMonth={headerNav.calendarMonth}
+            pickerMode={headerNav.pickerMode}
+            widthScale={1.35}
+          />
+        </div>
+
+        {/* Right: spacer reserved for the portaled Export PDF + bell (rendered by AppLayout) */}
+        <div style={{ justifySelf: "end" }} />
       </div>
 
       {/* Export PDF button — portaled into the AppLayout header slot, left of the bell */}
@@ -2089,12 +2106,6 @@ const Dashboard = () => {
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (
           <section className="space-y-6 mt-8">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-semibold" style={{ fontSize: 22, color: "var(--text-primary)" }}>
-                Konverze aktivit
-              </h2>
-            </div>
-
             <ConversionFunnel meetings={conversionMeetings as any} />
           </section>
         )}

@@ -123,7 +123,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div
               id="app-header-actions"
-              className="absolute top-4 right-6 lg:right-8 z-10 flex items-center gap-2"
+              className="absolute top-10 right-6 lg:right-8 z-10 flex items-center gap-2"
             >
               {/* Pages can portal extra actions (e.g. Export PDF) into this slot, left of the bell */}
               <div id="app-header-actions-slot" className="flex items-center gap-2" />
