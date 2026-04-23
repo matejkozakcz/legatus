@@ -223,6 +223,7 @@ export type Database = {
           meeting_time: string | null
           meeting_type: string
           outcome_recorded: boolean
+          parent_meeting_id: string | null
           podepsane_bj: number
           pohovor_date: string | null
           pohovor_jde_dal: boolean | null
@@ -256,6 +257,7 @@ export type Database = {
           meeting_time?: string | null
           meeting_type: string
           outcome_recorded?: boolean
+          parent_meeting_id?: string | null
           podepsane_bj?: number
           pohovor_date?: string | null
           pohovor_jde_dal?: boolean | null
@@ -289,6 +291,7 @@ export type Database = {
           meeting_time?: string | null
           meeting_type?: string
           outcome_recorded?: boolean
+          parent_meeting_id?: string | null
           podepsane_bj?: number
           pohovor_date?: string | null
           pohovor_jde_dal?: boolean | null
@@ -307,6 +310,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_meetings_parent_meeting_id_fkey"
+            columns: ["parent_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "client_meetings"
             referencedColumns: ["id"]
           },
           {
