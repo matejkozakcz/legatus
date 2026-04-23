@@ -1818,23 +1818,168 @@ const Dashboard = () => {
     }
   };
 
+  // ── Header period navigator helpers (desktop) ────────────────────────────
+  const headerNav = useMemo(() => {
+    if (viewMode === "week") {
+      return {
+        label: isDesktopWeekCurrent
+          ? "Aktuální týden"
+          : format(desktopWeekStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase()),
+        title: `${format(desktopWeekStart, "d.M.", { locale: cs })} – ${format(desktopWeekEnd, "d.M.", { locale: cs })}`,
+        onPrev: () => setDesktopWeekDate((d) => subWeeks(d, 1)),
+        onNext: () => {
+          if (!isDesktopWeekCurrent) setDesktopWeekDate((d) => addWeeks(d, 1));
+        },
+        onSelectDate: (date: Date) => setDesktopWeekDate(startOfWeek(date, { weekStartsOn: 1 })),
+        selectedDate: desktopWeekStart,
+        calendarMonth: desktopWeekStart,
+        pickerMode: "day" as const,
+      };
+    }
+    const monthNamesFull = [
+      "Leden","Únor","Březen","Duben","Květen","Červen",
+      "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+    ];
+    const isCurrentMonth = selectedYear === currentPeriod.year && selectedMonth === currentPeriod.month;
+    return {
+      label: isCurrentMonth ? "Aktuální období" : "Produkční období",
+      title: `${monthNamesFull[selectedMonth]} ${selectedYear}`,
+      onPrev: () => {
+        let m = selectedMonth - 1;
+        let y = selectedYear;
+        if (m < 0) { m = 11; y -= 1; }
+        setSelectedMonth(m); setSelectedYear(y);
+      },
+      onNext: () => {
+        if (selectedYear === currentPeriod.year && selectedMonth === currentPeriod.month) return;
+        let m = selectedMonth + 1;
+        let y = selectedYear;
+        if (m > 11) { m = 0; y += 1; }
+        setSelectedMonth(m); setSelectedYear(y);
+      },
+      onSelectDate: (date: Date) => {
+        setSelectedYear(date.getFullYear());
+        setSelectedMonth(date.getMonth());
+      },
+      selectedDate: new Date(selectedYear, selectedMonth, 1),
+      calendarMonth: new Date(selectedYear, selectedMonth, 1),
+      pickerMode: "month" as const,
+    };
+  }, [viewMode, isDesktopWeekCurrent, desktopWeekStart, desktopWeekEnd, selectedYear, selectedMonth, currentPeriod]);
+
+  // Portal target for header actions slot in AppLayout
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHeaderSlot(document.getElementById("app-header-actions-slot"));
+  }, []);
+
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <LayoutDashboard className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
         <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
           DASHBOARD
         </h1>
-        <ProductionMonthPicker
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          onChange={(y, m) => {
-            setSelectedYear(y);
-            setSelectedMonth(m);
-          }}
+
+        {/* View mode dropdown: Měsíc / Týden */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setViewModeMenuOpen((o) => !o)}
+            className="flex items-center gap-2"
+            style={{
+              padding: "8px 14px",
+              cursor: "pointer",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              background: "var(--card)",
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 600,
+              fontSize: 14,
+              color: "var(--text-primary)",
+            }}
+          >
+            <span>{viewMode === "month" ? "Měsíc" : "Týden"}</span>
+            <ChevronDown
+              size={14}
+              style={{
+                color: "var(--text-muted)",
+                transition: "transform 0.2s",
+                transform: viewModeMenuOpen ? "rotate(180deg)" : "rotate(0)",
+              }}
+            />
+          </button>
+          {viewModeMenuOpen && (
+            <>
+              <div
+                onClick={() => setViewModeMenuOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 49 }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  zIndex: 50,
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                  minWidth: 140,
+                  overflow: "hidden",
+                }}
+              >
+                {(["month", "week"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      padding: "10px 14px",
+                      border: "none",
+                      cursor: "pointer",
+                      background: viewMode === m ? "rgba(0,171,189,0.1)" : "transparent",
+                      color: viewMode === m ? "#00abbd" : "var(--text-primary)",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: viewMode === m ? 700 : 500,
+                      fontSize: 14,
+                    }}
+                  >
+                    {m === "month" ? "Měsíc" : "Týden"}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Period navigator (week or month) — drives the whole dashboard */}
+        <PeriodNavigator
+          label={headerNav.label}
+          title={headerNav.title}
+          onPrev={headerNav.onPrev}
+          onNext={headerNav.onNext}
+          onSelectDate={headerNav.onSelectDate}
+          selectedDate={headerNav.selectedDate}
+          calendarMonth={headerNav.calendarMonth}
+          pickerMode={headerNav.pickerMode}
+          widthScale={1.35}
         />
-        {/* PDF export button moved to Přehled aktivit section */}
       </div>
+
+      {/* Export PDF button — portaled into the AppLayout header slot, left of the bell */}
+      {headerSlot && createPortal(
+        <button
+          onClick={() => handleExport(viewMode)}
+          disabled={!!exportingPdf}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+        >
+          {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+          Export PDF
+        </button>,
+        headerSlot,
+      )}
 
       <div>
         {/* Impersonation banner */}
