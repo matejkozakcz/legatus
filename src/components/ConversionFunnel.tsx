@@ -62,7 +62,7 @@ function MiniCard({
   return (
     <div
       className="rounded-xl bg-card flex flex-col gap-1 px-4 py-3 flex-1 min-w-0"
-      style={{ border: `1.5px solid ${color}` }}
+      style={{ border: `1.5px solid ${color}`, boxShadow: "var(--shadow-sm)" }}
     >
       <span className="font-body text-[11px] font-medium text-muted-foreground lowercase">
         {label}
@@ -102,8 +102,8 @@ function SourceGroup({
     <div className="flex flex-col gap-2 flex-1 min-w-0">
       {/* Title */}
       <div
-        className="font-body text-center text-sm font-semibold text-muted-foreground"
-        style={{ marginBottom: 2 }}
+        className="font-body text-center"
+        style={{ marginBottom: 2, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
       >
         {title}
       </div>
@@ -237,15 +237,15 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
       {/* Bottom — POH summary card */}
       <div>
         <div
-          className="font-body text-sm font-semibold text-muted-foreground"
-          style={{ marginBottom: 8 }}
+          className="font-body text-center"
+          style={{ marginBottom: 8, fontSize: 13, fontWeight: 500, color: "#EF8C6F" }}
         >
           Pohovory
         </div>
 
         <div
           className="rounded-xl bg-card px-5 py-4 flex flex-col sm:flex-row gap-5 items-stretch"
-          style={{ border: `2px solid ${COLORS.poh}` }}
+          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
         >
           {/* Domluvené */}
           <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
