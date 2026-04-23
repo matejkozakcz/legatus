@@ -262,53 +262,61 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
         </div>
 
         <div
-          className="rounded-xl bg-card px-5 py-4 flex flex-col sm:flex-row items-stretch"
-          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)", gap: 14 }}
+          className="rounded-xl bg-card flex flex-col overflow-hidden"
+          style={{ border: `2px solid ${COLORS.poh}`, boxShadow: "var(--shadow-sm)" }}
         >
-          {/* Domluvené */}
-          <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
-            <span className="font-body text-[11px] text-muted-foreground lowercase">domluvené</span>
-            <span
-              className="font-heading leading-none"
-              style={{ color: COLORS.poh, fontSize: 32, fontWeight: 600 }}
-            >
-              {stats.pohPlanned}
-            </span>
+          <div
+            className="px-5 py-4 flex flex-col sm:flex-row items-stretch"
+            style={{ gap: 14 }}
+          >
+            {/* Domluvené */}
+            <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
+              <span className="font-body text-[11px] text-muted-foreground lowercase">domluvené</span>
+              <span
+                className="font-heading leading-none"
+                style={{ color: COLORS.poh, fontSize: 32, fontWeight: 600 }}
+              >
+                {stats.pohPlanned}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Reliability — center big */}
+            <div className="flex flex-col items-center justify-center sm:px-3 sm:flex-1">
+              <span
+                className="font-heading leading-none"
+                style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
+              >
+                {stats.pohReliability} %
+              </span>
+              <span className="font-body text-xs text-muted-foreground mt-1">spolehlivost</span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Proběhlé */}
+            <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
+              <span className="font-body text-[11px] text-muted-foreground lowercase">proběhlé</span>
+              <span
+                className="font-heading leading-none"
+                style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
+              >
+                {stats.pohActual}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px bg-border" />
+
+            {/* Origin */}
+            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
           </div>
 
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Reliability — center big */}
-          <div className="flex flex-col items-center justify-center sm:px-3 sm:flex-1">
-            <span
-              className="font-heading leading-none"
-              style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
-            >
-              {stats.pohReliability} %
-            </span>
-            <span className="font-body text-xs text-muted-foreground mt-1">spolehlivost</span>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Proběhlé */}
-          <div className="flex flex-col gap-1 sm:px-3 sm:flex-1 min-w-0">
-            <span className="font-body text-[11px] text-muted-foreground lowercase">proběhlé</span>
-            <span
-              className="font-heading leading-none"
-              style={{ color: "var(--text-primary)", fontSize: 32, fontWeight: 500 }}
-            >
-              {stats.pohActual}
-            </span>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px bg-border" />
-
-          {/* Origin */}
-          <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
+          {/* Progress bar — flush to bottom */}
+          <ReliabilityBar reliability={stats.pohReliability} color={COLORS.poh} />
         </div>
       </div>
     </div>
