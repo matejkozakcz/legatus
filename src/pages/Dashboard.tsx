@@ -32,7 +32,7 @@ import {
 import { cs } from "date-fns/locale";
 
 import { OrgChart } from "@/components/OrgChart";
-import { ProductionMonthPicker } from "@/components/ProductionMonthPicker";
+
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
 import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
