@@ -549,20 +549,21 @@ const Dashboard = () => {
 
   const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
 
-  // ── Konverze aktivit: meetings for selected conversion week ──────────────────
-  const conversionWeekStartStr = format(conversionWeekStart, "yyyy-MM-dd");
-  const conversionWeekEndStr = format(conversionWeekEnd, "yyyy-MM-dd");
+  // ── Konverze aktivit: meetings for the currently selected dashboard period ────
+  // (follows the global viewMode — week or month — via dateRange)
+  const conversionRangeStartStr = format(dateRange.from, "yyyy-MM-dd");
+  const conversionRangeEndStr = format(dateRange.to, "yyyy-MM-dd");
 
   const { data: conversionMeetings = [] } = useQuery({
-    queryKey: ["dashboard_conversion_meetings", activeUserId, conversionWeekStartStr, conversionWeekEndStr],
+    queryKey: ["dashboard_conversion_meetings", activeUserId, conversionRangeStartStr, conversionRangeEndStr],
     queryFn: async () => {
       if (!activeUserId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
         .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id")
         .eq("user_id", activeUserId)
-        .gte("date", conversionWeekStartStr)
-        .lte("date", conversionWeekEndStr);
+        .gte("date", conversionRangeStartStr)
+        .lte("date", conversionRangeEndStr);
       if (error) throw error;
       return data || [];
     },
