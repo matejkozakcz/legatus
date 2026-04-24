@@ -1331,12 +1331,16 @@ const Dashboard = () => {
             ) : (
               (() => {
                 const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
+                const monthName = new Date(selectedYear, selectedMonth, 1).toLocaleDateString("cs-CZ", { month: "long" });
+                const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
                 return (
                   <GoalsSection
                     monthlyGoals={monthlyGoals}
                     promotionGoals={promotionGoals}
                     promotionTargetRole={promotionTargetRole}
                     dark
+                    compact
+                    monthlyTitle={`Cíle pro ${capitalizedMonth} ${selectedYear}`}
                     onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
                   />
                 );
@@ -1736,6 +1740,7 @@ const Dashboard = () => {
         monthlyGoals={monthlyGoals}
         promotionGoals={promotionGoals}
         promotionTargetRole={promotionTargetRole}
+        hideMonthlyTitle
         onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
       />
     );

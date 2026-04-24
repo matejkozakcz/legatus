@@ -9,13 +9,15 @@ interface GaugeIndicatorProps {
   completed?: boolean;
   /** Přepíše zobrazovanou hodnotu ve středu gauge (místo raw value) */
   valueLabel?: string;
+  /** Zmenšená varianta pro mobil — užší, aby se vedle sebe vešly 2–3 ks. */
+  compact?: boolean;
 }
 
-export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false, valueLabel }: GaugeIndicatorProps) {
-  const radius = 70;
-  const stroke = 12;
-  const cx = 90;
-  const cy = 85;
+export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false, valueLabel, compact = false }: GaugeIndicatorProps) {
+  const radius = compact ? 48 : 70;
+  const stroke = compact ? 9 : 12;
+  const cx = compact ? 60 : 90;
+  const cy = compact ? 60 : 85;
   const circumference = Math.PI * radius;
   const ratio = placeholder || max === 0 ? 0 : Math.min(1, value / max);
   const dashOffset = circumference * (1 - ratio);
@@ -59,7 +61,7 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <svg width={180} height={100} viewBox="0 0 180 100" style={{ overflow: "visible" }}>
+      <svg width={compact ? 120 : 180} height={compact ? 70 : 100} viewBox={compact ? "0 0 120 70" : "0 0 180 100"} style={{ overflow: "visible" }}>
         <path
           d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
           fill="none"
@@ -87,18 +89,18 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
         </defs>
         <text
           x={cx}
-          y={valueLabel ? cy - 8 : cy - 16}
+          y={valueLabel ? cy - (compact ? 5 : 8) : cy - (compact ? 11 : 16)}
           textAnchor="middle"
-          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: valueLabel ? 26 : 32, fill: valueColor }}
+          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: valueLabel ? (compact ? 18 : 26) : (compact ? 22 : 32), fill: valueColor }}
         >
           {placeholder ? "—" : (valueLabel ?? value)}
         </text>
         {!placeholder && max > 0 && !valueLabel && (
           <text
             x={cx}
-            y={cy + 4}
+            y={cy + (compact ? 3 : 4)}
             textAnchor="middle"
-            style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14, fill: maxColor }}
+            style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: compact ? 11 : 14, fill: maxColor }}
           >
             z {max}
           </text>

@@ -25,6 +25,12 @@ export interface GoalsSectionProps {
   dark?: boolean;
   /** Callback pro tlačítko úpravy cílů (jen pokud je definován) */
   onEditGoals?: () => void;
+  /** Override nadpisu měsíční sekce (např. „Cíle pro Duben 2026"). Když undefined a `hideMonthlyTitle` je false → výchozí „Měsíční cíle". */
+  monthlyTitle?: string;
+  /** Skrýt nadpis měsíční sekce úplně. */
+  hideMonthlyTitle?: boolean;
+  /** Kompaktní gauges (menší – pro mobil, aby se vešly vedle sebe). */
+  compact?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,14 +62,15 @@ function SectionTitle({ children, dark }: { children: React.ReactNode; dark?: bo
   );
 }
 
-function GaugeRow({ items, dark }: { items: GoalGaugeItem[]; dark?: boolean }) {
+function GaugeRow({ items, dark, compact }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean }) {
   return (
     <div
       style={{
         display: "flex",
-        flexWrap: "wrap",
+        flexWrap: "nowrap",
         justifyContent: "center",
-        gap: items.length > 1 ? 8 : 0,
+        alignItems: "flex-start",
+        gap: items.length > 1 ? (compact ? 4 : 8) : 0,
       }}
     >
       {items.map((item) => (
@@ -76,6 +83,7 @@ function GaugeRow({ items, dark }: { items: GoalGaugeItem[]; dark?: boolean }) {
           placeholder={item.placeholder || item.max === 0}
           valueLabel={item.valueLabel ?? (item.max === 0 ? String(item.value) : undefined)}
           dark={dark}
+          compact={compact}
         />
       ))}
     </div>
@@ -90,11 +98,16 @@ export function GoalsSection({
   promotionTargetRole,
   dark = false,
   onEditGoals,
+  monthlyTitle,
+  hideMonthlyTitle = false,
+  compact = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
   const hasPromotion = promotionGoals.length > 0;
 
   if (!hasMonthly && !hasPromotion) return null;
+
+  const resolvedMonthlyTitle = monthlyTitle ?? "Měsíční cíle";
 
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 18, width: "100%" }}>
@@ -128,8 +141,8 @@ export function GoalsSection({
 
       {hasMonthly && (
         <div>
-          <SectionTitle dark={dark}>Měsíční cíle</SectionTitle>
-          <GaugeRow items={monthlyGoals} dark={dark} />
+          {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
+          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} />
         </div>
       )}
 
@@ -148,7 +161,7 @@ export function GoalsSection({
           <SectionTitle dark={dark}>
             {promotionTargetRole ? `Postup k povýšení na ${promotionTargetRole}` : "Postup k povýšení"}
           </SectionTitle>
-          <GaugeRow items={promotionGoals} dark={dark} />
+          <GaugeRow items={promotionGoals} dark={dark} compact={compact} />
         </div>
       )}
     </div>
