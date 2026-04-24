@@ -61,7 +61,7 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <svg width={180} height={100} viewBox="0 0 180 100" style={{ overflow: "visible" }}>
+      <svg width={compact ? 120 : 180} height={compact ? 70 : 100} viewBox={compact ? "0 0 120 70" : "0 0 180 100"} style={{ overflow: "visible" }}>
         <path
           d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
           fill="none"
