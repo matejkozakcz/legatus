@@ -2,6 +2,8 @@
 // Triggered by DB AFTER INSERT on public.notifications via pg_net.
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+// deno-lint-ignore-file no-explicit-any
+// @ts-ignore - npm specifier resolved at deploy time, not at local typecheck
 import webpush from "npm:web-push@3.6.7";
 
 interface Payload {
