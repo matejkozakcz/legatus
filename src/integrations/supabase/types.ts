@@ -871,9 +871,11 @@ export type Database = {
         Row: {
           budouci_vedouci_count_goal: number
           budouci_vedouci_count_scope: string
+          budouci_vedouci_count_type: string
           created_at: string
           garant_count_goal: number
           garant_count_scope: string
+          garant_count_type: string
           id: string
           period_key: string
           personal_bj_goal: number
@@ -884,15 +886,19 @@ export type Database = {
           user_id: string
           vedouci_count_goal: number
           vedouci_count_scope: string
+          vedouci_count_type: string
           ziskatel_count_goal: number
           ziskatel_count_scope: string
+          ziskatel_count_type: string
         }
         Insert: {
           budouci_vedouci_count_goal?: number
           budouci_vedouci_count_scope?: string
+          budouci_vedouci_count_type?: string
           created_at?: string
           garant_count_goal?: number
           garant_count_scope?: string
+          garant_count_type?: string
           id?: string
           period_key: string
           personal_bj_goal?: number
@@ -903,15 +909,19 @@ export type Database = {
           user_id: string
           vedouci_count_goal?: number
           vedouci_count_scope?: string
+          vedouci_count_type?: string
           ziskatel_count_goal?: number
           ziskatel_count_scope?: string
+          ziskatel_count_type?: string
         }
         Update: {
           budouci_vedouci_count_goal?: number
           budouci_vedouci_count_scope?: string
+          budouci_vedouci_count_type?: string
           created_at?: string
           garant_count_goal?: number
           garant_count_scope?: string
+          garant_count_type?: string
           id?: string
           period_key?: string
           personal_bj_goal?: number
@@ -922,8 +932,10 @@ export type Database = {
           user_id?: string
           vedouci_count_goal?: number
           vedouci_count_scope?: string
+          vedouci_count_type?: string
           ziskatel_count_goal?: number
           ziskatel_count_scope?: string
+          ziskatel_count_type?: string
         }
         Relationships: [
           {
