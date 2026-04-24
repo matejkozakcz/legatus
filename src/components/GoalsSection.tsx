@@ -104,6 +104,7 @@ export function GoalsSection({
   monthlyTitle,
   hideMonthlyTitle = false,
   compact = false,
+  stacked = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
   const hasPromotion = promotionGoals.length > 0;
@@ -112,40 +113,39 @@ export function GoalsSection({
 
   const resolvedMonthlyTitle = monthlyTitle ?? "Měsíční cíle";
 
+  // Edit button v light variantě je skrytý — v desktop layoutu ho renderuje rodič
+  // vedle nadpisu „Cíle". Mobile (dark) si ho stále zobrazuje uvnitř.
+  const showInternalEdit = !!onEditGoals && dark;
+
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 18, width: "100%" }}>
-      {onEditGoals && (
+      {showInternalEdit && (
         <button
           onClick={onEditGoals}
           aria-label="Upravit cíle"
           style={{
             position: "absolute",
-            top: dark ? 0 : -2,
+            top: 0,
             right: 0,
             zIndex: 2,
-            background: dark ? "rgba(255,255,255,0.15)" : "transparent",
-            border: dark ? "none" : "1px solid var(--border)",
+            background: "rgba(255,255,255,0.15)",
+            border: "none",
             borderRadius: 8,
             padding: 6,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: 4,
-            color: dark ? "rgba(255,255,255,0.85)" : "#00abbd",
-            fontSize: 11,
-            fontWeight: 600,
-            fontFamily: "Open Sans, sans-serif",
+            color: "rgba(255,255,255,0.85)",
           }}
         >
           <Pencil size={12} />
-          {!dark && <span>Upravit</span>}
         </button>
       )}
 
       {hasMonthly && (
         <div>
           {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
-          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} />
+          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} stacked={stacked} />
         </div>
       )}
 
@@ -164,7 +164,7 @@ export function GoalsSection({
           <SectionTitle dark={dark}>
             {promotionTargetRole ? `Postup k povýšení na ${promotionTargetRole}` : "Postup k povýšení"}
           </SectionTitle>
-          <GaugeRow items={promotionGoals} dark={dark} compact={compact} />
+          <GaugeRow items={promotionGoals} dark={dark} compact={compact} stacked={stacked} />
         </div>
       )}
     </div>
