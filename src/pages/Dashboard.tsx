@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Pencil,
+  
   Check,
   ArrowLeft,
   Target,
@@ -21,6 +21,7 @@ import {
 import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
 import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
+import { GoalsSection, type GoalGaugeItem } from "@/components/GoalsSection";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
 import {
   getProductionPeriodStart,
@@ -1139,6 +1140,77 @@ const Dashboard = () => {
     setHeaderSlot(document.getElementById("app-header-actions-slot"));
   }, []);
 
+  // Sestavení goal items pro GoalsSection podle role.
+  // Měsíční cíle = výkonnostní (BJ + vybrané), Povýšení = kumulativní BJ + struktura.
+  // Sdíleno mezi mobile a desktop renderem.
+  const buildGoalItems = (): {
+    monthlyGoals: GoalGaugeItem[];
+    promotionGoals: GoalGaugeItem[];
+    promotionTargetRole?: string;
+  } => {
+    const monthlyGoals: GoalGaugeItem[] = [];
+    const promotionGoals: GoalGaugeItem[] = [];
+    let promotionTargetRole: string | undefined;
+    const r = activeRole;
+
+    if (r === "vedouci" || r === "budouci_vedouci") {
+      vedouciGaugeKeys.forEach((gk) => {
+        const max = getGoalMax(gk);
+        const value = getGoalValue(gk);
+        monthlyGoals.push({
+          key: gk,
+          value,
+          max,
+          label: getGoalLabel(gk),
+          placeholder: max === 0,
+        });
+      });
+      if (r === "budouci_vedouci") {
+        promotionTargetRole = "Vedoucího";
+        promotionGoals.push(
+          { key: "bv_struct", value: structureCount, max: promoThresholds.bv_structure, label: "Lidé ve struktuře" },
+          { key: "bv_direct", value: directSubordinateCount, max: promoThresholds.bv_direct, label: "Přímá linka" },
+        );
+      }
+    } else if (r === "ziskatel") {
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
+      monthlyGoals.push({
+        key: "personal_bj",
+        value: personalMonthlyBj,
+        max: personalGoal,
+        label: "Osobní BJ",
+        placeholder: personalGoal === 0,
+      });
+      promotionTargetRole = "Garanta";
+      promotionGoals.push(
+        {
+          key: "z_bj",
+          value: totalBjAllTime,
+          max: promoThresholds.ziskatel_bj,
+          label: "Kumulativní BJ",
+          valueLabel: totalBjAllTime >= 1000 ? totalBjAllTime.toLocaleString("cs-CZ") : undefined,
+        },
+        { key: "z_struct", value: ziskatelStructureCount, max: promoThresholds.ziskatel_structure, label: "Lidé ve struktuře" },
+      );
+    } else if (r === "garant") {
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
+      monthlyGoals.push({
+        key: "personal_bj",
+        value: personalMonthlyBj,
+        max: personalGoal,
+        label: "Osobní BJ",
+        placeholder: personalGoal === 0,
+      });
+      promotionTargetRole = "Budoucího vedoucího";
+      promotionGoals.push(
+        { key: "g_struct", value: structureCount, max: promoThresholds.garant_structure, label: "Lidé ve struktuře" },
+        { key: "g_direct", value: directSubordinateCount, max: promoThresholds.garant_direct, label: "Přímá linka" },
+      );
+    }
+
+    return { monthlyGoals, promotionGoals, promotionTargetRole };
+  };
+
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = isImpersonating
@@ -1203,24 +1275,6 @@ const Dashboard = () => {
 
         {/* ── STAV BYZNYSU GAUGES ── */}
         <div style={{ position: "relative" }}>
-          {role === "vedouci" && !isImpersonating && (
-            <button
-              onClick={() => setGoalsModalOpen(true)}
-              style={{
-                position: "absolute",
-                top: 10,
-                right: 10,
-                zIndex: 2,
-                background: "rgba(255,255,255,0.15)",
-                border: "none",
-                borderRadius: 8,
-                padding: 6,
-                cursor: "pointer",
-              }}
-            >
-              <Pencil size={14} color="rgba(255,255,255,0.8)" />
-            </button>
-          )}
           <div
             style={{
               background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
@@ -1274,97 +1328,19 @@ const Dashboard = () => {
                   </>
                 )}
               </div>
-            ) : role === "vedouci" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                {vedouciGaugeKeys.map((gk) => {
-                  const val = getGoalValue(gk);
-                  const max = getGoalMax(gk);
-                  const done = max > 0 && val >= max;
-                  return (
-                    <div key={gk} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <GaugeIndicator
-                        value={val}
-                        max={max || 1}
-                        label={getGoalLabel(gk)}
-                        sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
-                        dark
-                        completed={done}
-                        placeholder={max === 0}
-                        valueLabel={max === 0 ? String(val) : undefined}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : role === "ziskatel" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={totalBjAllTime}
-                    max={promoThresholds.ziskatel_bj}
-                    label="Kumulativní BJ"
-                    sublabel={totalBjAllTime >= promoThresholds.ziskatel_bj ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
-                    dark
-                    completed={totalBjAllTime >= promoThresholds.ziskatel_bj}
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={ziskatelStructureCount}
-                    max={promoThresholds.ziskatel_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={ziskatelStructureCount >= promoThresholds.ziskatel_structure ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
-                    dark
-                    completed={ziskatelStructureCount >= promoThresholds.ziskatel_structure}
-                  />
-                </div>
-              </div>
-            ) : role === "garant" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={structureCount}
-                    max={promoThresholds.garant_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={structureCount >= promoThresholds.garant_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
-                    dark
-                    completed={structureCount >= promoThresholds.garant_structure}
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={directSubordinateCount}
-                    max={promoThresholds.garant_direct}
-                    label="Přímá linka"
-                    sublabel={directSubordinateCount >= promoThresholds.garant_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
-                    dark
-                    completed={directSubordinateCount >= promoThresholds.garant_direct}
-                  />
-                </div>
-              </div>
             ) : (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={structureCount}
-                    max={promoThresholds.bv_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={structureCount >= promoThresholds.bv_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
+              (() => {
+                const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
+                return (
+                  <GoalsSection
+                    monthlyGoals={monthlyGoals}
+                    promotionGoals={promotionGoals}
+                    promotionTargetRole={promotionTargetRole}
                     dark
-                    completed={structureCount >= promoThresholds.bv_structure}
+                    onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
                   />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={directSubordinateCount}
-                    max={promoThresholds.bv_direct}
-                    label="Přímá linka"
-                    sublabel={directSubordinateCount >= promoThresholds.bv_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
-                    dark
-                    completed={directSubordinateCount >= promoThresholds.bv_direct}
-                  />
-                </div>
-              </div>
+                );
+              })()
             )}
           </div>
         </div>
@@ -1702,6 +1678,7 @@ const Dashboard = () => {
   const role = activeRole;
 
   const renderStavByznysu = () => {
+
     if (role === "novacek") {
       if (onboardingProgress.total === 0) {
         return (
@@ -1752,105 +1729,15 @@ const Dashboard = () => {
       );
     }
 
-    if (role === "vedouci") {
-      return (
-        <>
-          {!isImpersonating && (
-            <button
-              onClick={() => setGoalsModalOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold self-end transition-colors hover:opacity-80"
-              style={{ color: "#00abbd", marginBottom: -8 }}
-            >
-              <Pencil size={12} /> Upravit cíle
-            </button>
-          )}
-          {vedouciGaugeKeys.map((gk) => {
-            const val = getGoalValue(gk);
-            const max = getGoalMax(gk);
-            const done = max > 0 && val >= max;
-            return (
-              <GaugeIndicator
-                key={gk}
-                value={val}
-                max={max || 1}
-                label={getGoalLabel(gk)}
-                sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
-                completed={done}
-                placeholder={max === 0}
-                valueLabel={max === 0 ? String(val) : undefined}
-              />
-            );
-          })}
-        </>
-      );
-    }
-
-    if (role === "ziskatel") {
-      const bjDone = totalBjAllTime >= promoThresholds.ziskatel_bj;
-      const peopleDone = ziskatelStructureCount >= promoThresholds.ziskatel_structure;
-      return (
-        <>
-          <GaugeIndicator
-            value={totalBjAllTime}
-            max={promoThresholds.ziskatel_bj}
-            label="Kumulativní BJ"
-            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
-            completed={bjDone}
-          />
-          <GaugeIndicator
-            value={ziskatelStructureCount}
-            max={promoThresholds.ziskatel_structure}
-            label="Lidé ve struktuře"
-            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
-            completed={peopleDone}
-          />
-        </>
-      );
-    }
-
-    if (role === "garant") {
-      const structDone = structureCount >= promoThresholds.garant_structure;
-      const directDone = directSubordinateCount >= promoThresholds.garant_direct;
-      return (
-        <>
-          <GaugeIndicator
-            value={structureCount}
-            max={promoThresholds.garant_structure}
-            label="Lidé ve struktuře"
-            sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
-            completed={structDone}
-          />
-          <GaugeIndicator
-            value={directSubordinateCount}
-            max={promoThresholds.garant_direct}
-            label="Přímá linka"
-            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
-            completed={directDone}
-          />
-        </>
-      );
-    }
-
-    // budouci_vedouci
-    const structDone = structureCount >= promoThresholds.bv_structure;
-    const directDone = directSubordinateCount >= promoThresholds.bv_direct;
+    // Vedoucí, BV, Získatel, Garant — sjednocený layout
+    const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
     return (
-      <>
-        <GaugeIndicator
-          value={structureCount}
-          max={promoThresholds.bv_structure}
-          label="Lidé ve struktuře"
-          sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
-          completed={structDone}
-        />
-        <GaugeIndicator
-          value={directSubordinateCount}
-          max={promoThresholds.bv_direct}
-          label="Přímá linka"
-          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
-          completed={directDone}
-        />
-      </>
+      <GoalsSection
+        monthlyGoals={monthlyGoals}
+        promotionGoals={promotionGoals}
+        promotionTargetRole={promotionTargetRole}
+        onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
+      />
     );
   };
 
