@@ -1275,97 +1275,18 @@ const Dashboard = () => {
                   </>
                 )}
               </div>
-            ) : role === "vedouci" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                {vedouciGaugeKeys.map((gk) => {
-                  const val = getGoalValue(gk);
-                  const max = getGoalMax(gk);
-                  const done = max > 0 && val >= max;
-                  return (
-                    <div key={gk} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <GaugeIndicator
-                        value={val}
-                        max={max || 1}
-                        label={getGoalLabel(gk)}
-                        sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
-                        dark
-                        completed={done}
-                        placeholder={max === 0}
-                        valueLabel={max === 0 ? String(val) : undefined}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : role === "ziskatel" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={totalBjAllTime}
-                    max={promoThresholds.ziskatel_bj}
-                    label="Kumulativní BJ"
-                    sublabel={totalBjAllTime >= promoThresholds.ziskatel_bj ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
-                    dark
-                    completed={totalBjAllTime >= promoThresholds.ziskatel_bj}
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={ziskatelStructureCount}
-                    max={promoThresholds.ziskatel_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={ziskatelStructureCount >= promoThresholds.ziskatel_structure ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
-                    dark
-                    completed={ziskatelStructureCount >= promoThresholds.ziskatel_structure}
-                  />
-                </div>
-              </div>
-            ) : role === "garant" ? (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={structureCount}
-                    max={promoThresholds.garant_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={structureCount >= promoThresholds.garant_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
-                    dark
-                    completed={structureCount >= promoThresholds.garant_structure}
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={directSubordinateCount}
-                    max={promoThresholds.garant_direct}
-                    label="Přímá linka"
-                    sublabel={directSubordinateCount >= promoThresholds.garant_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
-                    dark
-                    completed={directSubordinateCount >= promoThresholds.garant_direct}
-                  />
-                </div>
-              </div>
             ) : (
-              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={structureCount}
-                    max={promoThresholds.bv_structure}
-                    label="Lidé ve struktuře"
-                    sublabel={structureCount >= promoThresholds.bv_structure ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
+              (() => {
+                const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
+                return (
+                  <GoalsSection
+                    monthlyGoals={monthlyGoals}
+                    promotionGoals={promotionGoals}
+                    promotionTargetRole={promotionTargetRole}
                     dark
-                    completed={structureCount >= promoThresholds.bv_structure}
                   />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <GaugeIndicator
-                    value={directSubordinateCount}
-                    max={promoThresholds.bv_direct}
-                    label="Přímá linka"
-                    sublabel={directSubordinateCount >= promoThresholds.bv_direct ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
-                    dark
-                    completed={directSubordinateCount >= promoThresholds.bv_direct}
-                  />
-                </div>
-              </div>
+                );
+              })()
             )}
           </div>
         </div>
