@@ -1740,6 +1740,7 @@ const Dashboard = () => {
         monthlyGoals={monthlyGoals}
         promotionGoals={promotionGoals}
         promotionTargetRole={promotionTargetRole}
+        hideMonthlyTitle
         onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
       />
     );
