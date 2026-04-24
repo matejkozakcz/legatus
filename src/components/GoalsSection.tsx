@@ -31,6 +31,8 @@ export interface GoalsSectionProps {
   hideMonthlyTitle?: boolean;
   /** Kompaktní gauges (menší – pro mobil, aby se vešly vedle sebe). */
   compact?: boolean;
+  /** Zobrazit gauges pod sebou (sloupec) místo vedle sebe. */
+  stacked?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
