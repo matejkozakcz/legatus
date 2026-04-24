@@ -111,7 +111,7 @@ function renderTemplate(tpl: string, vars: Record<string, unknown>): string {
 // ─── Recipient resolution (server-side, similar to client lib/notifications.ts) ─
 
 async function resolveRecipients(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   subject: Profile,
 ): Promise<string[]> {
@@ -132,12 +132,12 @@ async function resolveRecipients(
         break;
       case "all_vedouci": {
         const { data } = await sb.from("profiles").select("id").eq("role", "vedouci").eq("is_active", true);
-        (data || []).forEach((p: { id: string }) => ids.add(p.id));
+        ((data || []) as Array<{ id: string }>).forEach((p) => ids.add(p.id));
         break;
       }
       case "all_active": {
         const { data } = await sb.from("profiles").select("id").eq("is_active", true);
-        (data || []).forEach((p: { id: string }) => ids.add(p.id));
+        ((data || []) as Array<{ id: string }>).forEach((p) => ids.add(p.id));
         break;
       }
     }
@@ -157,7 +157,7 @@ async function resolveRecipients(
 }
 
 async function insertNotifications(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   subject: Profile,
   vars: Record<string, unknown>,
@@ -223,7 +223,7 @@ async function insertNotifications(
 
 /** scheduled.unrecorded_meetings — meetings older than N days with outcome_recorded=false. */
 async function handleUnrecordedMeetings(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -261,7 +261,7 @@ async function handleUnrecordedMeetings(
     const list = byUser.get(p.id) ?? [];
     total += await insertNotifications(sb, rule, p, {
       count: list.length,
-      oldest_date: list.map((m) => m.date).sort()[0],
+      oldest_date: list.map((m: { date: string }) => m.date).sort()[0],
     }, { forced });
   }
   return total;
@@ -269,7 +269,7 @@ async function handleUnrecordedMeetings(
 
 /** scheduled.weekly_report — Monday morning summary of last week. */
 async function handleWeeklyReport(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -318,7 +318,7 @@ async function handleWeeklyReport(
 
 /** scheduled.inactive_3days — no meetings in last 3 days. */
 async function handleInactive(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -353,7 +353,7 @@ async function handleInactive(
  * podle pravidla. Žádné podmínky, žádný "subject" — je to prostě časovač.
  */
 async function handleCustomTime(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
 ): Promise<number> {
   // Pro custom_time používáme jen group role (self/ziskatel/garant/vedouci
