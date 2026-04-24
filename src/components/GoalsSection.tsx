@@ -98,11 +98,16 @@ export function GoalsSection({
   promotionTargetRole,
   dark = false,
   onEditGoals,
+  monthlyTitle,
+  hideMonthlyTitle = false,
+  compact = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
   const hasPromotion = promotionGoals.length > 0;
 
   if (!hasMonthly && !hasPromotion) return null;
+
+  const resolvedMonthlyTitle = monthlyTitle ?? "Měsíční cíle";
 
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 18, width: "100%" }}>
@@ -136,8 +141,8 @@ export function GoalsSection({
 
       {hasMonthly && (
         <div>
-          <SectionTitle dark={dark}>Měsíční cíle</SectionTitle>
-          <GaugeRow items={monthlyGoals} dark={dark} />
+          {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
+          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} />
         </div>
       )}
 
@@ -156,7 +161,7 @@ export function GoalsSection({
           <SectionTitle dark={dark}>
             {promotionTargetRole ? `Postup k povýšení na ${promotionTargetRole}` : "Postup k povýšení"}
           </SectionTitle>
-          <GaugeRow items={promotionGoals} dark={dark} />
+          <GaugeRow items={promotionGoals} dark={dark} compact={compact} />
         </div>
       )}
     </div>
