@@ -1826,107 +1826,16 @@ const Dashboard = () => {
       );
     }
 
-    if (role === "vedouci") {
-      return (
-        <>
-          {!isImpersonating && (
-            <button
-              onClick={() => setGoalsModalOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold self-end transition-colors hover:opacity-80"
-              style={{ color: "#00abbd", marginBottom: -8 }}
-            >
-              <Pencil size={12} /> Upravit cíle
-            </button>
-          )}
-          {vedouciGaugeKeys.map((gk) => {
-            const val = getGoalValue(gk);
-            const max = getGoalMax(gk);
-            const done = max > 0 && val >= max;
-            return (
-              <GaugeIndicator
-                key={gk}
-                value={val}
-                max={max || 1}
-                label={getGoalLabel(gk)}
-                sublabel={max > 0 ? (done ? "✓ Splněno" : `${val} z ${max}`) : `${val}`}
-                completed={done}
-                placeholder={max === 0}
-                valueLabel={max === 0 ? String(val) : undefined}
-              />
-            );
-          })}
-        </>
-      );
-    }
-
-    if (role === "ziskatel") {
-      const bjDone = totalBjAllTime >= promoThresholds.ziskatel_bj;
-      const peopleDone = ziskatelStructureCount >= promoThresholds.ziskatel_structure;
-      return (
-        <>
-          <GaugeIndicator
-            value={totalBjAllTime}
-            max={promoThresholds.ziskatel_bj}
-            label="Kumulativní BJ"
-            sublabel={bjDone ? "✓ Splněno" : `${totalBjAllTime} z ${promoThresholds.ziskatel_bj.toLocaleString("cs-CZ")}`}
-            completed={bjDone}
-          />
-          <GaugeIndicator
-            value={ziskatelStructureCount}
-            max={promoThresholds.ziskatel_structure}
-            label="Lidé ve struktuře"
-            sublabel={peopleDone ? "✓ Splněno" : `${ziskatelStructureCount} z ${promoThresholds.ziskatel_structure}`}
-            completed={peopleDone}
-          />
-        </>
-      );
-    }
-
-    if (role === "garant") {
-      const structDone = structureCount >= promoThresholds.garant_structure;
-      const directDone = directSubordinateCount >= promoThresholds.garant_direct;
-      return (
-        <>
-          <GaugeIndicator
-            value={structureCount}
-            max={promoThresholds.garant_structure}
-            label="Lidé ve struktuře"
-            sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.garant_structure}`}
-            completed={structDone}
-          />
-          <GaugeIndicator
-            value={directSubordinateCount}
-            max={promoThresholds.garant_direct}
-            label="Přímá linka"
-            sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.garant_direct}`}
-            completed={directDone}
-          />
-        </>
-      );
-    }
-
-    // budouci_vedouci
-    const structDone = structureCount >= promoThresholds.bv_structure;
-    const directDone = directSubordinateCount >= promoThresholds.bv_direct;
+    // Vedoucí, BV, Získatel, Garant — sjednocený layout
+    const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
     return (
-      <>
-        <GaugeIndicator
-          value={structureCount}
-          max={promoThresholds.bv_structure}
-          label="Lidé ve struktuře"
-          sublabel={structDone ? "✓ Splněno" : `${structureCount} z ${promoThresholds.bv_structure}`}
-          completed={structDone}
-        />
-        <GaugeIndicator
-          value={directSubordinateCount}
-          max={promoThresholds.bv_direct}
-          label="Přímá linka"
-          sublabel={directDone ? "✓ Splněno" : `${directSubordinateCount} z ${promoThresholds.bv_direct}`}
-          completed={directDone}
-        />
-      </>
+      <GoalsSection
+        monthlyGoals={monthlyGoals}
+        promotionGoals={promotionGoals}
+        promotionTargetRole={promotionTargetRole}
+        onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
+      />
     );
-  };
 
   const handleExport = async (period: ExportPeriod) => {
     if (!activeUserId || !activeProfile) return;
