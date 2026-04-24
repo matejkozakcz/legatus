@@ -132,12 +132,12 @@ async function resolveRecipients(
         break;
       case "all_vedouci": {
         const { data } = await sb.from("profiles").select("id").eq("role", "vedouci").eq("is_active", true);
-        (data || []).forEach((p: { id: string }) => ids.add(p.id));
+        ((data || []) as Array<{ id: string }>).forEach((p) => ids.add(p.id));
         break;
       }
       case "all_active": {
         const { data } = await sb.from("profiles").select("id").eq("is_active", true);
-        (data || []).forEach((p: { id: string }) => ids.add(p.id));
+        ((data || []) as Array<{ id: string }>).forEach((p) => ids.add(p.id));
         break;
       }
     }
