@@ -1736,7 +1736,7 @@ const Dashboard = () => {
       }
     } else if (role === "ziskatel") {
       // Získatel: měsíční BJ vůči osobnímu cíli
-      const personalGoal = activeProfile?.personal_bj_goal || 0;
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
       monthlyGoals.push({
         key: "personal_bj",
         value: personalMonthlyBj,
@@ -1756,7 +1756,7 @@ const Dashboard = () => {
         { key: "z_struct", value: ziskatelStructureCount, max: promoThresholds.ziskatel_structure, label: "Lidé ve struktuře" },
       );
     } else if (role === "garant") {
-      const personalGoal = activeProfile?.personal_bj_goal || 0;
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
       monthlyGoals.push({
         key: "personal_bj",
         value: personalMonthlyBj,
