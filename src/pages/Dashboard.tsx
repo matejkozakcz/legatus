@@ -1140,6 +1140,77 @@ const Dashboard = () => {
     setHeaderSlot(document.getElementById("app-header-actions-slot"));
   }, []);
 
+  // Sestavení goal items pro GoalsSection podle role.
+  // Měsíční cíle = výkonnostní (BJ + vybrané), Povýšení = kumulativní BJ + struktura.
+  // Sdíleno mezi mobile a desktop renderem.
+  const buildGoalItems = (): {
+    monthlyGoals: GoalGaugeItem[];
+    promotionGoals: GoalGaugeItem[];
+    promotionTargetRole?: string;
+  } => {
+    const monthlyGoals: GoalGaugeItem[] = [];
+    const promotionGoals: GoalGaugeItem[] = [];
+    let promotionTargetRole: string | undefined;
+    const r = activeRole;
+
+    if (r === "vedouci" || r === "budouci_vedouci") {
+      vedouciGaugeKeys.forEach((gk) => {
+        const max = getGoalMax(gk);
+        const value = getGoalValue(gk);
+        monthlyGoals.push({
+          key: gk,
+          value,
+          max,
+          label: getGoalLabel(gk),
+          placeholder: max === 0,
+        });
+      });
+      if (r === "budouci_vedouci") {
+        promotionTargetRole = "Vedoucího";
+        promotionGoals.push(
+          { key: "bv_struct", value: structureCount, max: promoThresholds.bv_structure, label: "Lidé ve struktuře" },
+          { key: "bv_direct", value: directSubordinateCount, max: promoThresholds.bv_direct, label: "Přímá linka" },
+        );
+      }
+    } else if (r === "ziskatel") {
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
+      monthlyGoals.push({
+        key: "personal_bj",
+        value: personalMonthlyBj,
+        max: personalGoal,
+        label: "Osobní BJ",
+        placeholder: personalGoal === 0,
+      });
+      promotionTargetRole = "Garanta";
+      promotionGoals.push(
+        {
+          key: "z_bj",
+          value: totalBjAllTime,
+          max: promoThresholds.ziskatel_bj,
+          label: "Kumulativní BJ",
+          valueLabel: totalBjAllTime >= 1000 ? totalBjAllTime.toLocaleString("cs-CZ") : undefined,
+        },
+        { key: "z_struct", value: ziskatelStructureCount, max: promoThresholds.ziskatel_structure, label: "Lidé ve struktuře" },
+      );
+    } else if (r === "garant") {
+      const personalGoal = (activeProfile as any)?.personal_bj_goal || 0;
+      monthlyGoals.push({
+        key: "personal_bj",
+        value: personalMonthlyBj,
+        max: personalGoal,
+        label: "Osobní BJ",
+        placeholder: personalGoal === 0,
+      });
+      promotionTargetRole = "Budoucího vedoucího";
+      promotionGoals.push(
+        { key: "g_struct", value: structureCount, max: promoThresholds.garant_structure, label: "Lidé ve struktuře" },
+        { key: "g_direct", value: directSubordinateCount, max: promoThresholds.garant_direct, label: "Přímá linka" },
+      );
+    }
+
+    return { monthlyGoals, promotionGoals, promotionTargetRole };
+  };
+
   // ── Mobile render ───────────────────────────────────────────────────────────
   if (isMobile) {
     const firstName = isImpersonating
