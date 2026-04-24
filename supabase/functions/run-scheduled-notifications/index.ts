@@ -111,7 +111,7 @@ function renderTemplate(tpl: string, vars: Record<string, unknown>): string {
 // ─── Recipient resolution (server-side, similar to client lib/notifications.ts) ─
 
 async function resolveRecipients(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   subject: Profile,
 ): Promise<string[]> {
@@ -157,7 +157,7 @@ async function resolveRecipients(
 }
 
 async function insertNotifications(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   subject: Profile,
   vars: Record<string, unknown>,
@@ -223,7 +223,7 @@ async function insertNotifications(
 
 /** scheduled.unrecorded_meetings — meetings older than N days with outcome_recorded=false. */
 async function handleUnrecordedMeetings(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -269,7 +269,7 @@ async function handleUnrecordedMeetings(
 
 /** scheduled.weekly_report — Monday morning summary of last week. */
 async function handleWeeklyReport(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -318,7 +318,7 @@ async function handleWeeklyReport(
 
 /** scheduled.inactive_3days — no meetings in last 3 days. */
 async function handleInactive(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
   forced = false,
 ): Promise<number> {
@@ -353,7 +353,7 @@ async function handleInactive(
  * podle pravidla. Žádné podmínky, žádný "subject" — je to prostě časovač.
  */
 async function handleCustomTime(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   rule: Rule,
 ): Promise<number> {
   // Pro custom_time používáme jen group role (self/ziskatel/garant/vedouci
