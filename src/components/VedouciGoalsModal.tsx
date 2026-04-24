@@ -222,10 +222,18 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
 
   const handleSave = async () => {
     setSaving(true);
+    // Strip fields that don't exist in DB schema (count_type is local-only preference for now)
+    const {
+      vedouci_count_type,
+      budouci_vedouci_count_type,
+      garant_count_type,
+      ziskatel_count_type,
+      ...persistableForm
+    } = form;
     const payload = {
       user_id: userId,
       period_key: periodKey,
-      ...form,
+      ...persistableForm,
       updated_at: new Date().toISOString(),
     };
 
@@ -238,7 +246,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
 
     let error;
     if (existing) {
-      const { selected_goal_1, selected_goal_2, ...goalValues } = form;
+      const { selected_goal_1, selected_goal_2, ...goalValues } = persistableForm;
       ({ error } = await supabase
         .from("vedouci_goals" as any)
         .update({ ...goalValues, selected_goal_1, selected_goal_2 } as any)
