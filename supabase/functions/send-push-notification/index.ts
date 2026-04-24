@@ -106,6 +106,13 @@ Deno.serve(async (req) => {
     let sent = 0;
     let failed = 0;
     const expired: string[] = [];
+    const errors: Array<{
+      sub_id: string;
+      endpoint_host: string;
+      status?: number;
+      message?: string;
+      body?: string;
+    }> = [];
 
     for (const sub of subs) {
       try {
@@ -119,9 +126,21 @@ Deno.serve(async (req) => {
         sent++;
       } catch (err: unknown) {
         failed++;
-        const status = (err as { statusCode?: number })?.statusCode;
+        const e = err as { statusCode?: number; body?: string; message?: string };
+        const status = e?.statusCode;
         if (status === 404 || status === 410) expired.push(sub.id);
-        console.warn("push send failed:", status, err);
+        let host = "unknown";
+        try {
+          host = new URL(sub.endpoint).host;
+        } catch {}
+        errors.push({
+          sub_id: sub.id,
+          endpoint_host: host,
+          status,
+          message: e?.message,
+          body: typeof e?.body === "string" ? e.body.slice(0, 300) : undefined,
+        });
+        console.warn("push send failed:", status, e?.message, e?.body);
       }
     }
 
@@ -130,7 +149,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ sent, failed, expired_removed: expired.length }),
+      JSON.stringify({ sent, failed, expired_removed: expired.length, errors }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
