@@ -113,10 +113,8 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
   // Build available goal options dynamically from admin config
   const availableGoalOptions: GoalOption[] = useMemo(() => {
     if (!rawConfig || !role || !rawConfig[role]) {
-      // Fallback to legacy options if no admin config
-      return BASE_GOAL_OPTIONS.filter((g) =>
-        ["team_bj", "personal_bj", "vedouci_count", "budouci_vedouci_count", "garant_count"].includes(g.key),
-      );
+      // Fallback to all options if no admin config (includes "Lidi po SV")
+      return BASE_GOAL_OPTIONS;
     }
 
     const roleConfig = rawConfig[role];
