@@ -1275,24 +1275,6 @@ const Dashboard = () => {
 
         {/* ── STAV BYZNYSU GAUGES ── */}
         <div style={{ position: "relative" }}>
-          {role === "vedouci" && !isImpersonating && (
-            <button
-              onClick={() => setGoalsModalOpen(true)}
-              style={{
-                position: "absolute",
-                top: 10,
-                right: 10,
-                zIndex: 2,
-                background: "rgba(255,255,255,0.15)",
-                border: "none",
-                borderRadius: 8,
-                padding: 6,
-                cursor: "pointer",
-              }}
-            >
-              <Pencil size={14} color="rgba(255,255,255,0.8)" />
-            </button>
-          )}
           <div
             style={{
               background: "linear-gradient(135deg, #00555f 0%, #007a84 100%)",
@@ -1355,6 +1337,7 @@ const Dashboard = () => {
                     promotionGoals={promotionGoals}
                     promotionTargetRole={promotionTargetRole}
                     dark
+                    onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
                   />
                 );
               })()
