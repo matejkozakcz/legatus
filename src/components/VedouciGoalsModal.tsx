@@ -4,13 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useGoalConfiguration } from "@/hooks/useGoalConfiguration";
 
-export type GoalKey = "team_bj" | "personal_bj" | "vedouci_count" | "budouci_vedouci_count" | "garant_count" | "ziskatel_count";
+export type GoalKey =
+  | "team_bj"
+  | "personal_bj"
+  | "vedouci_count"
+  | "budouci_vedouci_count"
+  | "garant_count"
+  | "ziskatel_count";
 
 const ROLE_COUNT_LABELS: Record<string, string> = {
   vedouci: "Počet Vedoucích",
   budouci_vedouci: "Počet Budoucích vedoucích",
   garant: "Počet Garantů",
-  ziskatel: "Počet Získatelů",
+  ziskatel: "Lidi po SV",
 };
 
 const ROLE_TO_GOAL_KEY: Record<string, GoalKey> = {
@@ -32,9 +38,14 @@ const BASE_GOAL_OPTIONS: GoalOption[] = [
   { key: "team_bj", label: "Týmové BJ", placeholder: "např. 5000", goalField: "team_bj_goal" },
   { key: "personal_bj", label: "Osobní BJ", placeholder: "např. 500", goalField: "personal_bj_goal" },
   { key: "vedouci_count", label: "Počet Vedoucích", placeholder: "0", goalField: "vedouci_count_goal" },
-  { key: "budouci_vedouci_count", label: "Počet Budoucích vedoucích", placeholder: "0", goalField: "budouci_vedouci_count_goal" },
+  {
+    key: "budouci_vedouci_count",
+    label: "Počet Budoucích vedoucích",
+    placeholder: "0",
+    goalField: "budouci_vedouci_count_goal",
+  },
   { key: "garant_count", label: "Počet Garantů", placeholder: "0", goalField: "garant_count_goal" },
-  { key: "ziskatel_count", label: "Počet Získatelů", placeholder: "0", goalField: "ziskatel_count_goal" },
+  { key: "ziskatel_count", label: "Lidi po SV", placeholder: "0", goalField: "ziskatel_count_goal" },
 ];
 
 // Exported for Dashboard usage
@@ -103,7 +114,9 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
   const availableGoalOptions: GoalOption[] = useMemo(() => {
     if (!rawConfig || !role || !rawConfig[role]) {
       // Fallback to legacy options if no admin config
-      return BASE_GOAL_OPTIONS.filter(g => ["team_bj", "personal_bj", "vedouci_count", "budouci_vedouci_count", "garant_count"].includes(g.key));
+      return BASE_GOAL_OPTIONS.filter((g) =>
+        ["team_bj", "personal_bj", "vedouci_count", "budouci_vedouci_count", "garant_count"].includes(g.key),
+      );
     }
 
     const roleConfig = rawConfig[role];
@@ -111,12 +124,12 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
 
     // Add team_bj if configured
     if (roleConfig.team_bj) {
-      options.push(BASE_GOAL_OPTIONS.find(g => g.key === "team_bj")!);
+      options.push(BASE_GOAL_OPTIONS.find((g) => g.key === "team_bj")!);
     }
 
     // Always offer personal_bj as an option for roles that have monthly_bj
     if (roleConfig.monthly_bj) {
-      options.push(BASE_GOAL_OPTIONS.find(g => g.key === "personal_bj")!);
+      options.push(BASE_GOAL_OPTIONS.find((g) => g.key === "personal_bj")!);
     }
 
     // Add promotion targets as count goals
@@ -124,7 +137,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
       for (const promo of roleConfig.promotions) {
         const goalKey = ROLE_TO_GOAL_KEY[promo.role];
         if (goalKey) {
-          const existing = BASE_GOAL_OPTIONS.find(g => g.key === goalKey);
+          const existing = BASE_GOAL_OPTIONS.find((g) => g.key === goalKey);
           if (existing) {
             options.push(existing);
           }
@@ -196,7 +209,8 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
       const keys = [prev.selected_goal_1, prev.selected_goal_2].filter(Boolean);
       if (keys.includes(key)) {
         if (keys.length <= 1) return prev;
-        if (prev.selected_goal_1 === key) return { ...prev, selected_goal_1: prev.selected_goal_2 as GoalKey, selected_goal_2: "" };
+        if (prev.selected_goal_1 === key)
+          return { ...prev, selected_goal_1: prev.selected_goal_2 as GoalKey, selected_goal_2: "" };
         return { ...prev, selected_goal_2: "" };
       } else {
         if (!prev.selected_goal_1) return { ...prev, selected_goal_1: key };
@@ -319,16 +333,16 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
                     type="number"
                     min={0}
                     value={(form as any)[g.goalField] || ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [g.goalField]: parseInt(e.target.value) || 0 }))
-                    }
+                    onChange={(e) => setForm((prev) => ({ ...prev, [g.goalField]: parseInt(e.target.value) || 0 }))}
                     placeholder={g.placeholder}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   {isPeople && (
                     <>
                       <div className="mt-2">
-                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">Rozsah</div>
+                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                          Rozsah
+                        </div>
                         <div className="flex gap-2">
                           {(["direct", "structure"] as ScopeValue[]).map((s) => (
                             <button
@@ -347,7 +361,9 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
                         </div>
                       </div>
                       <div className="mt-2">
-                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">Způsob měření</div>
+                        <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                          Způsob měření
+                        </div>
                         <div className="flex gap-2">
                           {(["total", "increment"] as CountType[]).map((t) => (
                             <button
@@ -378,10 +394,7 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
 
             {/* Textové shrnutí */}
             {activeGoals.some((g) => (form as any)[g.goalField] > 0) && (
-              <div
-                className="rounded-xl p-3"
-                style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
-              >
+              <div className="rounded-xl p-3" style={{ background: "var(--muted)", border: "1px solid var(--border)" }}>
                 <div className="text-xs font-semibold text-muted-foreground mb-1.5">Shrnutí cílů</div>
                 <ol className="list-decimal list-inside space-y-0.5">
                   {activeGoals
@@ -402,9 +415,10 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
                         const typeField = `${g.key}_type` as keyof FormData;
                         const type = (form as any)[typeField] as CountType;
                         const noun = g.label.replace("Počet ", "");
-                        text = type === "increment"
-                          ? `Povýšit ${scopeLabel} ${val} nových ${noun} v tomto období.`
-                          : `Mít ${scopeLabel} ${val} ${noun}.`;
+                        text =
+                          type === "increment"
+                            ? `Povýšit ${scopeLabel} ${val} nových ${noun} v tomto období.`
+                            : `Mít ${scopeLabel} ${val} ${noun}.`;
                       }
 
                       return (
