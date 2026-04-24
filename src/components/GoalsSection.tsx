@@ -62,15 +62,16 @@ function SectionTitle({ children, dark }: { children: React.ReactNode; dark?: bo
   );
 }
 
-function GaugeRow({ items, dark, compact }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean }) {
+function GaugeRow({ items, dark, compact, stacked }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean; stacked?: boolean }) {
   return (
     <div
       style={{
         display: "flex",
-        flexWrap: "nowrap",
+        flexDirection: stacked ? "column" : "row",
+        flexWrap: stacked ? "nowrap" : "nowrap",
         justifyContent: "center",
-        alignItems: "flex-start",
-        gap: items.length > 1 ? (compact ? 4 : 8) : 0,
+        alignItems: "center",
+        gap: stacked ? 12 : items.length > 1 ? (compact ? 4 : 8) : 0,
       }}
     >
       {items.map((item) => (
