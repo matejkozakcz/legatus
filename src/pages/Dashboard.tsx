@@ -1836,6 +1836,7 @@ const Dashboard = () => {
         onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
       />
     );
+  };
 
   const handleExport = async (period: ExportPeriod) => {
     if (!activeUserId || !activeProfile) return;
