@@ -62,14 +62,15 @@ function SectionTitle({ children, dark }: { children: React.ReactNode; dark?: bo
   );
 }
 
-function GaugeRow({ items, dark }: { items: GoalGaugeItem[]; dark?: boolean }) {
+function GaugeRow({ items, dark, compact }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean }) {
   return (
     <div
       style={{
         display: "flex",
-        flexWrap: "wrap",
+        flexWrap: "nowrap",
         justifyContent: "center",
-        gap: items.length > 1 ? 8 : 0,
+        alignItems: "flex-start",
+        gap: items.length > 1 ? (compact ? 4 : 8) : 0,
       }}
     >
       {items.map((item) => (
@@ -82,6 +83,7 @@ function GaugeRow({ items, dark }: { items: GoalGaugeItem[]; dark?: boolean }) {
           placeholder={item.placeholder || item.max === 0}
           valueLabel={item.valueLabel ?? (item.max === 0 ? String(item.value) : undefined)}
           dark={dark}
+          compact={compact}
         />
       ))}
     </div>
