@@ -261,7 +261,7 @@ async function handleUnrecordedMeetings(
     const list = byUser.get(p.id) ?? [];
     total += await insertNotifications(sb, rule, p, {
       count: list.length,
-      oldest_date: list.map((m) => m.date).sort()[0],
+      oldest_date: list.map((m: { date: string }) => m.date).sort()[0],
     }, { forced });
   }
   return total;
