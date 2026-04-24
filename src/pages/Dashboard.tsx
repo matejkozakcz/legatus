@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  
+  Pencil,
   Check,
   ArrowLeft,
   Target,
