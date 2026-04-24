@@ -9,13 +9,15 @@ interface GaugeIndicatorProps {
   completed?: boolean;
   /** Přepíše zobrazovanou hodnotu ve středu gauge (místo raw value) */
   valueLabel?: string;
+  /** Zmenšená varianta pro mobil — užší, aby se vedle sebe vešly 2–3 ks. */
+  compact?: boolean;
 }
 
-export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false, valueLabel }: GaugeIndicatorProps) {
-  const radius = 70;
-  const stroke = 12;
-  const cx = 90;
-  const cy = 85;
+export function GaugeIndicator({ value, max, label, sublabel, placeholder = false, dark = false, completed = false, valueLabel, compact = false }: GaugeIndicatorProps) {
+  const radius = compact ? 48 : 70;
+  const stroke = compact ? 9 : 12;
+  const cx = compact ? 60 : 90;
+  const cy = compact ? 60 : 85;
   const circumference = Math.PI * radius;
   const ratio = placeholder || max === 0 ? 0 : Math.min(1, value / max);
   const dashOffset = circumference * (1 - ratio);
