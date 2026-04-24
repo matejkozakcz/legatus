@@ -89,18 +89,18 @@ export function GaugeIndicator({ value, max, label, sublabel, placeholder = fals
         </defs>
         <text
           x={cx}
-          y={valueLabel ? cy - 8 : cy - 16}
+          y={valueLabel ? cy - (compact ? 5 : 8) : cy - (compact ? 11 : 16)}
           textAnchor="middle"
-          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: valueLabel ? 26 : 32, fill: valueColor }}
+          style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: valueLabel ? (compact ? 18 : 26) : (compact ? 22 : 32), fill: valueColor }}
         >
           {placeholder ? "—" : (valueLabel ?? value)}
         </text>
         {!placeholder && max > 0 && !valueLabel && (
           <text
             x={cx}
-            y={cy + 4}
+            y={cy + (compact ? 3 : 4)}
             textAnchor="middle"
-            style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: 14, fill: maxColor }}
+            style={{ fontFamily: "Poppins, sans-serif", fontWeight: 600, fontSize: compact ? 11 : 14, fill: maxColor }}
           >
             z {max}
           </text>
