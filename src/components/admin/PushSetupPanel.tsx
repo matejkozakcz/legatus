@@ -7,12 +7,32 @@ import { toast } from "sonner";
 import { KeyRound, Copy, Check, AlertTriangle, Smartphone } from "lucide-react";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
 
+const STORAGE_KEY = "vapid_generated_pair_v1";
+
+interface StoredPair {
+  publicKey: string;
+  privateKey: string;
+  generatedAt: string;
+}
+
+function loadStoredPair(): StoredPair | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.publicKey && parsed?.privateKey) return parsed as StoredPair;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function PushSetupPanel() {
   const { permission, isSubscribed, enable, disable } = usePushSubscription();
   const [vapidPublic, setVapidPublic] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [generatedPrivate, setGeneratedPrivate] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [generatedPair, setGeneratedPair] = useState<StoredPair | null>(() => loadStoredPair());
+  const [copiedField, setCopiedField] = useState<"public" | "private" | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Load current VAPID public key from app_config
@@ -28,7 +48,7 @@ export function PushSetupPanel() {
         setVapidPublic(v);
       }
     })();
-  }, [generatedPrivate]);
+  }, [generatedPair]);
 
   const handleGenerate = async () => {
     if (
@@ -45,9 +65,16 @@ export function PushSetupPanel() {
         body: {},
       });
       if (error) throw error;
+      const pub = (data as { publicKey?: string })?.publicKey;
       const priv = (data as { privateKey?: string })?.privateKey;
-      if (!priv) throw new Error("Funkce nevrátila private key");
-      setGeneratedPrivate(priv);
+      if (!pub || !priv) throw new Error("Funkce nevrátila kompletní pár klíčů");
+      const pair: StoredPair = {
+        publicKey: pub,
+        privateKey: priv,
+        generatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pair));
+      setGeneratedPair(pair);
       toast.success("Pár vygenerován. Zkopíruj private key do secretu.");
     } catch (e) {
       toast.error(`Chyba: ${e instanceof Error ? e.message : "neznámá"}`);
@@ -56,11 +83,10 @@ export function PushSetupPanel() {
     }
   };
 
-  const copyPrivate = async () => {
-    if (!generatedPrivate) return;
-    await navigator.clipboard.writeText(generatedPrivate);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyValue = async (value: string, field: "public" | "private") => {
+    await navigator.clipboard.writeText(value);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const handleToggleSelf = async () => {
@@ -109,21 +135,41 @@ export function PushSetupPanel() {
               </Button>
             </div>
 
-            {generatedPrivate && (
-              <div className="mt-3 p-3 rounded-lg border border-warning/40 bg-warning/5">
-                <p className="text-xs font-semibold text-foreground mb-1">
-                  Private key — zkopíruj a vlož do secretu <code>VAPID_PRIVATE_KEY</code>:
-                </p>
-                <p className="text-[10px] text-muted-foreground mb-2">
-                  Tenhle klíč se zobrazí jen jednou. Po obnovení stránky ho už neuvidíš.
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 text-[11px] bg-muted px-2 py-1.5 rounded break-all font-mono">
-                    {generatedPrivate}
-                  </code>
-                  <Button size="sm" variant="outline" onClick={copyPrivate}>
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
+            {generatedPair && (
+              <div className="mt-3 p-3 rounded-lg border border-warning/40 bg-warning/5 space-y-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Vygenerováno: {new Date(generatedPair.generatedAt).toLocaleString("cs-CZ")}. Klíče zůstanou
+                    zobrazené, dokud znovu nepřegeneruješ pár.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-1">
+                    Public key <span className="text-muted-foreground font-normal">(uložen v app_config)</span>:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-[11px] bg-muted px-2 py-1.5 rounded break-all font-mono">
+                      {generatedPair.publicKey}
+                    </code>
+                    <Button size="sm" variant="outline" onClick={() => copyValue(generatedPair.publicKey, "public")}>
+                      {copiedField === "public" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-1">
+                    Private key — vlož do secretu <code>VAPID_PRIVATE_KEY</code>:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-[11px] bg-muted px-2 py-1.5 rounded break-all font-mono">
+                      {generatedPair.privateKey}
+                    </code>
+                    <Button size="sm" variant="outline" onClick={() => copyValue(generatedPair.privateKey, "private")}>
+                      {copiedField === "private" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
