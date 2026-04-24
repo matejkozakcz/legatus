@@ -1881,16 +1881,32 @@ const Dashboard = () => {
         <div style={{ justifySelf: "end" }} />
       </div>
 
-      {/* Export PDF button — portaled into the AppLayout header slot, left of the bell */}
+      {/* Header actions — portaled into the AppLayout header slot, left of the bell */}
       {headerSlot && createPortal(
-        <button
-          onClick={() => handleExport(viewMode)}
-          disabled={!!exportingPdf}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
-        >
-          {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-          Export PDF
-        </button>,
+        <>
+          <button
+            onClick={() => setFabMeetingOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors"
+            style={{
+              background: "#fc7c71",
+              borderColor: "#fc7c71",
+              color: "#fff",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#fb6a5e")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#fc7c71")}
+          >
+            <Plus className="h-4 w-4" />
+            Schůzka
+          </button>
+          <button
+            onClick={() => handleExport(viewMode)}
+            disabled={!!exportingPdf}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-input bg-card text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+          >
+            {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+            Export PDF
+          </button>
+        </>,
         headerSlot,
       )}
 
