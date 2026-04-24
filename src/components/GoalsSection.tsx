@@ -25,6 +25,12 @@ export interface GoalsSectionProps {
   dark?: boolean;
   /** Callback pro tlačítko úpravy cílů (jen pokud je definován) */
   onEditGoals?: () => void;
+  /** Override nadpisu měsíční sekce (např. „Cíle pro Duben 2026"). Když undefined a `hideMonthlyTitle` je false → výchozí „Měsíční cíle". */
+  monthlyTitle?: string;
+  /** Skrýt nadpis měsíční sekce úplně. */
+  hideMonthlyTitle?: boolean;
+  /** Kompaktní gauges (menší – pro mobil, aby se vešly vedle sebe). */
+  compact?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
