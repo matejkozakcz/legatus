@@ -347,7 +347,7 @@ const Dashboard = () => {
       const { data } = await supabase.from("cases").select("*").eq("user_id", profile.id).eq("status", "aktivni").order("nazev_pripadu");
       return (data || []) as Case[];
     },
-    enabled: !!profile?.id && isMobile,
+    enabled: !!profile?.id,
   });
 
   const fabSaveMeeting = useMutation({
