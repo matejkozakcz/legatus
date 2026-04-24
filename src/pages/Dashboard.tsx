@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  
+  Pencil,
   Check,
   ArrowLeft,
   Target,
@@ -1741,7 +1741,7 @@ const Dashboard = () => {
         promotionGoals={promotionGoals}
         promotionTargetRole={promotionTargetRole}
         hideMonthlyTitle
-        onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
+        stacked
       />
     );
   };
@@ -1930,12 +1930,32 @@ const Dashboard = () => {
                   overflowY: "auto",
                 }}
               >
-                <h2
-                  className="font-heading font-semibold"
-                  style={{ fontSize: 22, color: "var(--text-primary)", alignSelf: "flex-start" }}
-                >
-                  Cíle
-                </h2>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <h2
+                    className="font-heading font-semibold"
+                    style={{ fontSize: 22, color: "var(--text-primary)" }}
+                  >
+                    Cíle
+                  </h2>
+                  {role === "vedouci" && !isImpersonating && (
+                    <button
+                      onClick={() => setGoalsModalOpen(true)}
+                      aria-label="Upravit cíle"
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: 6,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        color: "#00abbd",
+                      }}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  )}
+                </div>
                 {renderStavByznysu()}
               </div>
             </div>
