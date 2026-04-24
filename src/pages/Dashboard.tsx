@@ -1741,7 +1741,7 @@ const Dashboard = () => {
         promotionGoals={promotionGoals}
         promotionTargetRole={promotionTargetRole}
         hideMonthlyTitle
-        onEditGoals={role === "vedouci" && !isImpersonating ? () => setGoalsModalOpen(true) : undefined}
+        stacked
       />
     );
   };
