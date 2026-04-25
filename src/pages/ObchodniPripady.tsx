@@ -115,6 +115,14 @@ function totalRefs(m: Meeting): number {
   return (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0);
 }
 
+// Unified meeting-type colors across the system (matches Kalendář)
+const MEETING_TYPE_COLORS: Record<MeetingType, string> = {
+  FSA: "#00abbd",
+  POR: "#8b5cf6",
+  SER: "#f97316",
+  POH: "#3b82f6",
+};
+
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
   if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
