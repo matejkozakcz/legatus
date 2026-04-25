@@ -1220,6 +1220,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                   <PeriodNavigator
                     label={schuzkyHeaderNav.label}
                     title={schuzkyHeaderNav.title}
+                    subtitle={(schuzkyHeaderNav as { subtitle?: string }).subtitle}
                     onPrev={schuzkyHeaderNav.onPrev}
                     onNext={schuzkyHeaderNav.onNext}
                     selectedDate={schuzkyHeaderNav.selectedDate}
