@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,9 +21,26 @@ interface SearchResult {
 export default function Hledani() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const [inputValue, setInputValue] = useState(query);
   const navigate = useNavigate();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+
+  // Debounce input → URL param (300 ms) to avoid spamming requests on every keystroke
+  useEffect(() => {
+    if (inputValue === query) return;
+    const t = setTimeout(() => {
+      setSearchParams(inputValue ? { q: inputValue } : {}, { replace: true });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputValue]);
+
+  // Keep input synced if URL changes externally (back/forward nav)
+  useEffect(() => {
+    if (query !== inputValue) setInputValue(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   // Modal states
   const [selectedMember, setSelectedMember] = useState<{
@@ -198,8 +215,8 @@ export default function Hledani() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <input
           type="text"
-          value={query}
-          onChange={(e) => setSearchParams({ q: e.target.value })}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           placeholder="Hledat lidi, případy, schůzky…"
           autoFocus
           className="w-full h-12 pl-12 pr-4 rounded-2xl border border-border bg-card text-foreground font-body text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
