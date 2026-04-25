@@ -463,7 +463,9 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
       };
     }
-    return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+    // Měsíc = produkční období (např. duben = 28.3. – 27.4.)
+    const pm = getProductionPeriodMonth(selectedDate);
+    return getProductionPeriodForMonth(pm.year, pm.month);
   }, [viewMode, selectedDate]);
 
   // Meetings within selected range (Schůzky tab)
