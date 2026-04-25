@@ -10,7 +10,7 @@ import {
   isSameWeek,
 } from "date-fns";
 import { cs } from "date-fns/locale";
-import { StatCard } from "@/components/StatCard";
+import { ConversionFunnel } from "@/components/ConversionFunnel";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
