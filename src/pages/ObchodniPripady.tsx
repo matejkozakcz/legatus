@@ -389,6 +389,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
   const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
+  // Filtry pro Schůzky (jen desktop)
+  const ALL_FILTER_TYPES: MeetingType[] = ["FSA", "POR", "SER", "POH"];
+  const [typeFilter, setTypeFilter] = useState<Set<MeetingType>>(new Set(ALL_FILTER_TYPES));
+  const [showCancelled, setShowCancelled] = useState(false);
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
   const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
 
