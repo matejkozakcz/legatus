@@ -46,6 +46,7 @@ import {
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
+import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
