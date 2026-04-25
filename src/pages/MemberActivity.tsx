@@ -486,12 +486,7 @@ const MemberActivity = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
-        <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-        <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-        <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="vybraných" />
-      </div>
+      <ConversionFunnel meetings={conversionMeetings as any} />
 
       <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
