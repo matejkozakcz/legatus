@@ -116,7 +116,7 @@ function totalRefs(m: Meeting): number {
 }
 
 // Unified meeting-type colors across the system (matches Kalendář)
-const MEETING_TYPE_COLORS: Record<MeetingType, string> = {
+const MEETING_TYPE_COLORS: Record<"FSA" | "POR" | "SER" | "POH", string> = {
   FSA: "#00abbd",
   POR: "#8b5cf6",
   SER: "#f97316",
