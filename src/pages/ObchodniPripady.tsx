@@ -512,16 +512,34 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       "Leden","Únor","Březen","Duben","Květen","Červen",
       "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
     ];
-    const todayMonth = startOfMonth(new Date());
-    const cur = startOfMonth(selectedDate);
+    const curPeriod = getProductionPeriodMonth(selectedDate);
+    const todayPeriod = getProductionPeriodMonth(new Date());
+    const range = getProductionPeriodForMonth(curPeriod.year, curPeriod.month);
+    const isCurrent = curPeriod.year === todayPeriod.year && curPeriod.month === todayPeriod.month;
     return {
-      label: isSameDay(cur, todayMonth) ? "Aktuální měsíc" : "Měsíc",
-      title: `${monthNamesFull[cur.getMonth()]} ${cur.getFullYear()}`,
-      onPrev: () => setSelectedDate((d) => subMonths(startOfMonth(d), 1)),
-      onNext: () => setSelectedDate((d) => addMonths(startOfMonth(d), 1)),
-      onSelectDate: (date: Date) => setSelectedDate(startOfMonth(date)),
-      selectedDate: cur,
-      calendarMonth: cur,
+      label: isCurrent ? "Aktuální období" : "Produkční období",
+      title: `${monthNamesFull[curPeriod.month]} ${curPeriod.year}`,
+      subtitle: `${format(range.start, "d. M.", { locale: cs })} – ${format(range.end, "d. M. yyyy", { locale: cs })}`,
+      onPrev: () => {
+        const prevM = curPeriod.month === 0 ? 11 : curPeriod.month - 1;
+        const prevY = curPeriod.month === 0 ? curPeriod.year - 1 : curPeriod.year;
+        const prevRange = getProductionPeriodForMonth(prevY, prevM);
+        setSelectedDate(prevRange.start);
+      },
+      onNext: () => {
+        const nextM = curPeriod.month === 11 ? 0 : curPeriod.month + 1;
+        const nextY = curPeriod.month === 11 ? curPeriod.year + 1 : curPeriod.year;
+        const nextRange = getProductionPeriodForMonth(nextY, nextM);
+        setSelectedDate(nextRange.start);
+      },
+      onSelectDate: (date: Date) => {
+        // Klik v měsíčním pickeru → mapuj kalendářní měsíc na produkční období
+        const pm = getProductionPeriodMonth(date);
+        const r = getProductionPeriodForMonth(pm.year, pm.month);
+        setSelectedDate(r.start);
+      },
+      selectedDate: new Date(curPeriod.year, curPeriod.month, 1),
+      calendarMonth: new Date(curPeriod.year, curPeriod.month, 1),
       pickerMode: "month" as const,
     };
   }, [viewMode, selectedDate]);
