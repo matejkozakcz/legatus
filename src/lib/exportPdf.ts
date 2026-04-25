@@ -344,7 +344,7 @@ export async function exportDashboardPdf(
     const zeroStats: PersonStats = {
       name: "", role: "",
       planFsa: 0, planPoh: 0, planSer: 0, planPor: 0,
-      fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0,
+      fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, bjFsa: 0, bjSer: 0,
       newFsa: 0, newPoh: 0, newSer: 0, newPor: 0,
       infoCount: 0, infoNovi: 0, infoStaracci: 0,
       postCount: 0, postNovi: 0, postStaracci: 0,
