@@ -320,6 +320,78 @@ export async function exportDashboardPdf(
     });
   }
 
+  // ── Týdenní rozpis (osobní) — mirrors the on-screen table in MemberActivity ──
+  // Show only weeks fully inside the period so that totals match the cards above.
+  const { data: weekRecords = [] } = await supabase
+    .from("activity_records")
+    .select("week_start, fsa_actual, ser_actual, poh_actual, por_actual, ref_actual, bj_fsa_actual, bj_ser_actual, bj")
+    .eq("user_id", userId)
+    .gte("week_start", periodFrom)
+    .lte("week_start", periodTo);
+
+  type WeekRow = {
+    week_start: string;
+    fsa_actual: number | null; ser_actual: number | null; poh_actual: number | null;
+    por_actual: number | null; ref_actual: number | null;
+    bj_fsa_actual: number | null; bj_ser_actual: number | null; bj: number | null;
+  };
+  const weekRows = ((weekRecords || []) as WeekRow[])
+    .filter((r) => {
+      // Only weeks whose entire Mon–Sun window falls inside the production period
+      const ws = new Date(r.week_start + "T00:00:00");
+      const we = endOfWeek(ws, { weekStartsOn: 1 });
+      return format(ws, "yyyy-MM-dd") >= periodFrom && format(we, "yyyy-MM-dd") <= periodTo;
+    })
+    .sort((a, b) => a.week_start.localeCompare(b.week_start));
+
+  if (weekRows.length > 0) {
+    const lastY = (doc as any).lastAutoTable?.finalY || 60;
+    let weekStartY = lastY + 10;
+    if (weekStartY > doc.internal.pageSize.getHeight() - 50) {
+      doc.addPage();
+      weekStartY = 16;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont(fontName, "bold");
+    doc.text("Týdenní rozpis", 14, weekStartY);
+
+    const weekHead = ["Týden", "Analýzy", "Poradky", "Pohovory", "Poradenství", "Doporučení", "BJ FSA", "BJ SER", "BJ celkem"];
+    const sums = { fsa: 0, ser: 0, poh: 0, por: 0, ref: 0, bjFsa: 0, bjSer: 0, bj: 0 };
+    const weekBody: any[] = weekRows.map((r, i) => {
+      const fsa = r.fsa_actual || 0;
+      const ser = r.ser_actual || 0;
+      const poh = r.poh_actual || 0;
+      const por = r.por_actual || 0;
+      const ref = r.ref_actual || 0;
+      const bjFsa = Number(r.bj_fsa_actual) || 0;
+      const bjSer = Number(r.bj_ser_actual) || 0;
+      const bj = Number(r.bj) || 0;
+      sums.fsa += fsa; sums.ser += ser; sums.poh += poh; sums.por += por;
+      sums.ref += ref; sums.bjFsa += bjFsa; sums.bjSer += bjSer; sums.bj += bj;
+      return [`Týden ${i + 1}`, fsa, ser, poh, por, ref, bjFsa, bjSer, bj];
+    });
+    weekBody.push(["Celkem", sums.fsa, sums.ser, sums.poh, sums.por, sums.ref, sums.bjFsa, sums.bjSer, sums.bj]);
+
+    autoTable(doc, {
+      startY: weekStartY + 4,
+      head: [weekHead],
+      body: weekBody,
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
+      columnStyles: { 0: { fontStyle: "bold", halign: "left", cellWidth: 28 } },
+      margin: { left: 14, right: 14 },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.row.index === weekBody.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = TOTALS_FILL;
+        }
+      },
+    });
+  }
+
   // ── Team stats ──────────────────────────────────────────────────────────
 
   if (showTeam && teamStats.length > 0 && groups.length > 0) {
