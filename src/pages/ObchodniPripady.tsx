@@ -387,6 +387,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
+  const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
   const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
 
