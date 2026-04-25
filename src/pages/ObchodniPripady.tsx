@@ -1124,15 +1124,89 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 </button>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ flex: 1 }}>
+                {/* View mode dropdown: Den / Týden / Měsíc — styled to match PeriodNavigator (Dashboard) */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setViewModeMenuOpen((o) => !o)}
+                    className="flex items-center gap-2"
+                    style={{
+                      padding: "10px 16px",
+                      cursor: "pointer",
+                      border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                      borderRadius: 16,
+                      background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    <span>{viewMode === "day" ? "Den" : viewMode === "week" ? "Týden" : "Měsíc"}</span>
+                    <ChevronDown
+                      size={14}
+                      style={{
+                        color: isDark ? "#4dd8e8" : "#00555f",
+                        transition: "transform 0.2s",
+                        transform: viewModeMenuOpen ? "rotate(180deg)" : "rotate(0)",
+                      }}
+                    />
+                  </button>
+                  {viewModeMenuOpen && (
+                    <>
+                      <div
+                        onClick={() => setViewModeMenuOpen(false)}
+                        style={{ position: "fixed", inset: 0, zIndex: 49 }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "calc(100% + 6px)",
+                          left: 0,
+                          zIndex: 50,
+                          background: isDark ? "#0a1f23" : "#ffffff",
+                          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                          borderRadius: 14,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                          minWidth: 140,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {(["day", "week", "month"] as const).map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
+                            style={{
+                              display: "block",
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "12px 16px",
+                              border: "none",
+                              cursor: "pointer",
+                              background: viewMode === m ? "rgba(0,171,189,0.12)" : "transparent",
+                              color: viewMode === m ? "#00abbd" : "var(--text-primary)",
+                              fontFamily: "Poppins, sans-serif",
+                              fontWeight: viewMode === m ? 700 : 500,
+                              fontSize: 14,
+                            }}
+                          >
+                            {m === "day" ? "Den" : m === "week" ? "Týden" : "Měsíc"}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
                   <PeriodNavigator
-                    label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
-                    title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
-                    onPrev={() => setSelectedDate((d) => subDays(d, 1))}
-                    onNext={() => setSelectedDate((d) => addDays(d, 1))}
-                    selectedDate={selectedDate}
-                    calendarMonth={selectedDate}
-                    onSelectDate={(date) => setSelectedDate(date)}
+                    label={schuzkyHeaderNav.label}
+                    title={schuzkyHeaderNav.title}
+                    onPrev={schuzkyHeaderNav.onPrev}
+                    onNext={schuzkyHeaderNav.onNext}
+                    selectedDate={schuzkyHeaderNav.selectedDate}
+                    calendarMonth={schuzkyHeaderNav.calendarMonth}
+                    onSelectDate={schuzkyHeaderNav.onSelectDate}
+                    pickerMode={schuzkyHeaderNav.pickerMode}
+                    widthScale={1.2}
                   />
                 </div>
                 <button
