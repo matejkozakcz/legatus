@@ -3,7 +3,12 @@ import { MojeAktivityContent } from "@/pages/MojeAktivity";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, addDays, subDays, isSameDay } from "date-fns";
+import {
+  format, parseISO, addDays, subDays, isSameDay,
+  startOfWeek, endOfWeek, addWeeks, subWeeks,
+  startOfMonth, endOfMonth, addMonths, subMonths,
+  isWithinInterval,
+} from "date-fns";
 import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { useUnrecordedMeetings } from "@/hooks/useUnrecordedMeetings";
@@ -382,6 +387,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
+  const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
   const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
 
@@ -445,11 +452,78 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     return map;
   }, [meetings]);
 
-  // Meetings for selected day (desktop Schůzky tab)
+  // Date range for selected period (Schůzky tab) — Den / Týden / Měsíc
+  const dateRange = useMemo(() => {
+    if (viewMode === "day") {
+      return { start: selectedDate, end: selectedDate };
+    }
+    if (viewMode === "week") {
+      return {
+        start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
+        end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
+      };
+    }
+    return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+  }, [viewMode, selectedDate]);
+
+  // Meetings within selected range (Schůzky tab)
   const meetingsForDay = useMemo(() => {
-    const dayStr = format(selectedDate, "yyyy-MM-dd");
-    return meetings.filter((m) => m.date === dayStr).sort((a, b) => a.date.localeCompare(b.date));
-  }, [meetings, selectedDate]);
+    const startStr = format(dateRange.start, "yyyy-MM-dd");
+    const endStr = format(dateRange.end, "yyyy-MM-dd");
+    return meetings
+      .filter((m) => m.date >= startStr && m.date <= endStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [meetings, dateRange]);
+
+  // Header navigator props for Schůzky tab (desktop) — mirrors Dashboard mechanics
+  const schuzkyHeaderNav = useMemo(() => {
+    if (viewMode === "day") {
+      return {
+        label: isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs }),
+        title: format(selectedDate, "d. MMMM yyyy", { locale: cs }),
+        onPrev: () => setSelectedDate((d) => subDays(d, 1)),
+        onNext: () => setSelectedDate((d) => addDays(d, 1)),
+        onSelectDate: (date: Date) => setSelectedDate(date),
+        selectedDate,
+        calendarMonth: selectedDate,
+        pickerMode: "day" as const,
+      };
+    }
+    if (viewMode === "week") {
+      const wStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+      const wEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      const todayWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+      return {
+        label: isSameDay(wStart, todayWeek)
+          ? "Aktuální týden"
+          : format(wStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase()),
+        title: `${format(wStart, "d.M.", { locale: cs })} – ${format(wEnd, "d.M.", { locale: cs })}`,
+        onPrev: () => setSelectedDate((d) => subWeeks(d, 1)),
+        onNext: () => setSelectedDate((d) => addWeeks(d, 1)),
+        onSelectDate: (date: Date) => setSelectedDate(startOfWeek(date, { weekStartsOn: 1 })),
+        selectedDate: wStart,
+        calendarMonth: wStart,
+        pickerMode: "day" as const,
+      };
+    }
+    const monthNamesFull = [
+      "Leden","Únor","Březen","Duben","Květen","Červen",
+      "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+    ];
+    const todayMonth = startOfMonth(new Date());
+    const cur = startOfMonth(selectedDate);
+    return {
+      label: isSameDay(cur, todayMonth) ? "Aktuální měsíc" : "Měsíc",
+      title: `${monthNamesFull[cur.getMonth()]} ${cur.getFullYear()}`,
+      onPrev: () => setSelectedDate((d) => subMonths(startOfMonth(d), 1)),
+      onNext: () => setSelectedDate((d) => addMonths(startOfMonth(d), 1)),
+      onSelectDate: (date: Date) => setSelectedDate(startOfMonth(date)),
+      selectedDate: cur,
+      calendarMonth: cur,
+      pickerMode: "month" as const,
+    };
+  }, [viewMode, selectedDate]);
+
 
   // ── Case mutations ──
   const saveCaseMutation = useMutation({
@@ -1050,15 +1124,89 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 </button>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ flex: 1 }}>
+                {/* View mode dropdown: Den / Týden / Měsíc — styled to match PeriodNavigator (Dashboard) */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setViewModeMenuOpen((o) => !o)}
+                    className="flex items-center gap-2"
+                    style={{
+                      padding: "10px 16px",
+                      cursor: "pointer",
+                      border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                      borderRadius: 16,
+                      background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    <span>{viewMode === "day" ? "Den" : viewMode === "week" ? "Týden" : "Měsíc"}</span>
+                    <ChevronDown
+                      size={14}
+                      style={{
+                        color: isDark ? "#4dd8e8" : "#00555f",
+                        transition: "transform 0.2s",
+                        transform: viewModeMenuOpen ? "rotate(180deg)" : "rotate(0)",
+                      }}
+                    />
+                  </button>
+                  {viewModeMenuOpen && (
+                    <>
+                      <div
+                        onClick={() => setViewModeMenuOpen(false)}
+                        style={{ position: "fixed", inset: 0, zIndex: 49 }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "calc(100% + 6px)",
+                          left: 0,
+                          zIndex: 50,
+                          background: isDark ? "#0a1f23" : "#ffffff",
+                          border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                          borderRadius: 14,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                          minWidth: 140,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {(["day", "week", "month"] as const).map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
+                            style={{
+                              display: "block",
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "12px 16px",
+                              border: "none",
+                              cursor: "pointer",
+                              background: viewMode === m ? "rgba(0,171,189,0.12)" : "transparent",
+                              color: viewMode === m ? "#00abbd" : "var(--text-primary)",
+                              fontFamily: "Poppins, sans-serif",
+                              fontWeight: viewMode === m ? 700 : 500,
+                              fontSize: 14,
+                            }}
+                          >
+                            {m === "day" ? "Den" : m === "week" ? "Týden" : "Měsíc"}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
                   <PeriodNavigator
-                    label={isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
-                    title={format(selectedDate, "d. MMMM yyyy", { locale: cs })}
-                    onPrev={() => setSelectedDate((d) => subDays(d, 1))}
-                    onNext={() => setSelectedDate((d) => addDays(d, 1))}
-                    selectedDate={selectedDate}
-                    calendarMonth={selectedDate}
-                    onSelectDate={(date) => setSelectedDate(date)}
+                    label={schuzkyHeaderNav.label}
+                    title={schuzkyHeaderNav.title}
+                    onPrev={schuzkyHeaderNav.onPrev}
+                    onNext={schuzkyHeaderNav.onNext}
+                    selectedDate={schuzkyHeaderNav.selectedDate}
+                    calendarMonth={schuzkyHeaderNav.calendarMonth}
+                    onSelectDate={schuzkyHeaderNav.onSelectDate}
+                    pickerMode={schuzkyHeaderNav.pickerMode}
+                    widthScale={1.2}
                   />
                 </div>
                 <button
@@ -1112,7 +1260,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           ) : meetingsForDay.length === 0 ? (
             <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-              Žádné schůzky pro tento den.
+              {viewMode === "day" ? "Žádné schůzky pro tento den." : viewMode === "week" ? "Žádné schůzky pro tento týden." : "Žádné schůzky pro tento měsíc."}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -1132,6 +1280,18 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       >
                         {meetingTypeLabel(m.meeting_type)}
                       </span>
+                      {viewMode !== "day" && (
+                        <span
+                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                          style={{
+                            background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+                            color: isDark ? "#7aadb3" : "#6b8a8f",
+                            fontFamily: "Poppins, sans-serif",
+                          }}
+                        >
+                          {format(parseISO(m.date), "d.M.", { locale: cs })}
+                        </span>
+                      )}
                       <span className="font-heading font-semibold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
                         {m.case_name || caseObj?.nazev_pripadu || "—"}
                       </span>
