@@ -47,16 +47,10 @@ interface Meeting {
 }
 
 // ─── Color mapping by status + type ─────────────────────────────────────────
+// Single source of truth lives in src/lib/meetingColors.ts so badges, filters
+// and calendar entries stay aligned with the Dashboard.
 
-const TYPE_BORDER: Record<string, string> = {
-  FSA: "#00abbd",
-  POR: "#8b5cf6",
-  SER: "#f97316",
-  POH: "#3b82f6",
-  NAB: "#7e22ce",
-  INFO: "#7b5ea7",
-  POST: "#5e7ab5",
-};
+import { MEETING_TYPE_COLORS as TYPE_BORDER } from "@/lib/meetingColors";
 
 type MeetingStatus = "naplanovana" | "probehla" | "zrusena";
 

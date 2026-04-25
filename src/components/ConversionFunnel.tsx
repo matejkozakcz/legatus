@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ArrowDown } from "lucide-react";
+import { MEETING_TYPE_COLORS_LOWER } from "@/lib/meetingColors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,12 +21,7 @@ interface ConversionFunnelProps {
 
 // ─── Style tokens ─────────────────────────────────────────────────────────────
 
-const COLORS = {
-  fsa: "#F59E0B",     // Analýzy – yellow
-  por: "#8B5CF6",     // Poradenství – purple
-  ser: "#EF4444",     // Servisy – red
-  poh: "#0D9488",     // Pohovory – teal
-};
+const COLORS = MEETING_TYPE_COLORS_LOWER;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

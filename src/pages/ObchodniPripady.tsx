@@ -46,6 +46,7 @@ import {
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
+import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
@@ -115,23 +116,8 @@ function totalRefs(m: Meeting): number {
   return (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0);
 }
 
-// Unified meeting-type colors across the system (matches Kalendář)
-const MEETING_TYPE_COLORS: Record<"FSA" | "POR" | "SER" | "POH", string> = {
-  FSA: "#00abbd",
-  POR: "#8b5cf6",
-  SER: "#f97316",
-  POH: "#3b82f6",
-};
-
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
-  if (cancelled) return { background: "#e5e7eb", color: "#6b7280" };
-  if (t === "FSA") return { background: "#e0f5f7", color: "#00737f" };
-  if (t === "POR") return { background: "#e8f5e9", color: "#2e7d32" };
-  if (t === "POH") return { background: "#fef9e7", color: "#92700c" };
-  if (t === "NAB") return { background: "#f3e8ff", color: "#7e22ce" };
-  if (t === "INFO") return { background: "#ede4f6", color: "#7b5ea7" };
-  if (t === "POST") return { background: "#e3eaf5", color: "#5e7ab5" };
-  return { background: "#fef3f2", color: "#c0392b" };
+  return meetingTypeBadgeColors(t, cancelled);
 }
 
 // ─── Case Modal (create / edit) ──────────────────────────────────────────────
