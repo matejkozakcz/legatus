@@ -181,6 +181,23 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
+  // Raw meetings for ConversionFunnel — same shape & filter as Dashboard
+  const { data: conversionMeetings = [] } = useQuery({
+    queryKey: ["member_conversion_meetings", userId, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .eq("user_id", userId)
+        .gte("date", format(periodStart, "yyyy-MM-dd"))
+        .lte("date", format(periodEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userId,
+  });
+
   const stats = periodStats;
 
   const columnSums = useMemo(() => {
