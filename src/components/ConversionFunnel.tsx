@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ArrowDown } from "lucide-react";
+import { MEETING_TYPE_COLORS_LOWER } from "@/lib/meetingColors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
