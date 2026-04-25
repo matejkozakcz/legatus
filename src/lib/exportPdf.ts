@@ -110,6 +110,8 @@ function computePersonStats(
     por: stats.por.actual,
     ref: stats.ref.actual,
     bj,
+    bjFsa,
+    bjSer,
     newFsa: newlyBooked.filter((m) => m.meeting_type === "FSA").length,
     newPoh: newlyBooked.filter((m) => m.meeting_type === "POH").length,
     newSer: newlyBooked.filter((m) => m.meeting_type === "SER").length,
