@@ -21,9 +21,26 @@ interface SearchResult {
 export default function Hledani() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const [inputValue, setInputValue] = useState(query);
   const navigate = useNavigate();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+
+  // Debounce input → URL param (300 ms) to avoid spamming requests on every keystroke
+  useEffect(() => {
+    if (inputValue === query) return;
+    const t = setTimeout(() => {
+      setSearchParams(inputValue ? { q: inputValue } : {}, { replace: true });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputValue]);
+
+  // Keep input synced if URL changes externally (back/forward nav)
+  useEffect(() => {
+    if (query !== inputValue) setInputValue(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   // Modal states
   const [selectedMember, setSelectedMember] = useState<{
