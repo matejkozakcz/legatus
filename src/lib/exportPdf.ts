@@ -354,7 +354,7 @@ export async function exportDashboardPdf(
       planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
       planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
       fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
-      ref: acc.ref + s.ref, bj: acc.bj + s.bj,
+      ref: acc.ref + s.ref, bj: acc.bj + s.bj, bjFsa: acc.bjFsa + s.bjFsa, bjSer: acc.bjSer + s.bjSer,
       newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
       newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
       infoCount: acc.infoCount + s.infoCount,
