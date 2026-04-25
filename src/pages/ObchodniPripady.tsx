@@ -451,8 +451,9 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   }, [meetings]);
 
   // Date range for selected period (Schůzky tab) — Den / Týden / Měsíc
+  // Mobile vždy zobrazuje pouze vybraný den (denní picker), desktop respektuje viewMode.
   const dateRange = useMemo(() => {
-    if (viewMode === "day") {
+    if (isMobile || viewMode === "day") {
       return { start: selectedDate, end: selectedDate };
     }
     if (viewMode === "week") {
@@ -464,7 +465,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     // Měsíc = produkční období (např. duben = 28.3. – 27.4.)
     const pm = getProductionPeriodMonth(selectedDate);
     return getProductionPeriodForMonth(pm.year, pm.month);
-  }, [viewMode, selectedDate]);
+  }, [viewMode, selectedDate, isMobile]);
 
   // Meetings within selected range (Schůzky tab)
   const meetingsForDay = useMemo(() => {
