@@ -1295,13 +1295,15 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : meetingsForDay.length === 0 ? (
+          ) : meetingsForDayDesktop.length === 0 ? (
             <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-              {viewMode === "day" ? "Žádné schůzky pro tento den." : viewMode === "week" ? "Žádné schůzky pro tento týden." : "Žádné schůzky pro tento měsíc."}
+              {meetingsForDay.length === 0
+                ? (viewMode === "day" ? "Žádné schůzky pro tento den." : viewMode === "week" ? "Žádné schůzky pro tento týden." : "Žádné schůzky pro tento měsíc.")
+                : "Žádné schůzky neodpovídají filtrům."}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {meetingsForDay.map((m) => {
+              {meetingsForDayDesktop.map((m) => {
                 const caseObj = cases.find((c) => c.id === m.case_id);
                 return (
                   <div
