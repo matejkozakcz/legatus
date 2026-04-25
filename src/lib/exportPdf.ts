@@ -42,6 +42,8 @@ interface PersonStats {
   por: number;
   ref: number;
   bj: number;
+  bjFsa: number;
+  bjSer: number;
   // Newly booked
   newFsa: number;
   newPoh: number;
