@@ -1260,7 +1260,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           ) : meetingsForDay.length === 0 ? (
             <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-              Žádné schůzky pro tento den.
+              {viewMode === "day" ? "Žádné schůzky pro tento den." : viewMode === "week" ? "Žádné schůzky pro tento týden." : "Žádné schůzky pro tento měsíc."}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
