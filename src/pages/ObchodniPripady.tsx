@@ -1257,6 +1257,141 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                   <Plus size={14} /> Nová schůzka
                 </button>
               </div>
+
+              {/* Filtry: typ schůzky + zobrazit zrušené */}
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  padding: "10px 14px",
+                  borderRadius: 14,
+                  background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+                  border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: isDark ? "#7aadb3" : "#6b8a8f",
+                    fontFamily: "Poppins, sans-serif",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  Typ:
+                </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {ALL_FILTER_TYPES.map((t) => {
+                    const checked = typeFilter.has(t);
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => {
+                          setTypeFilter((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(t)) next.delete(t); else next.add(t);
+                            return next;
+                          });
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "6px 12px",
+                          borderRadius: 999,
+                          border: checked
+                            ? "1px solid #00abbd"
+                            : (isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid #d8e2e4"),
+                          background: checked
+                            ? "rgba(0,171,189,0.12)"
+                            : "transparent",
+                          color: checked
+                            ? "#00abbd"
+                            : (isDark ? "#a8c8cc" : "#6b8a8f"),
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: checked ? 700 : 500,
+                          fontSize: 12.5,
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: 4,
+                            border: checked ? "1px solid #00abbd" : "1px solid #c4d0d3",
+                            background: checked ? "#00abbd" : "transparent",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#fff",
+                            fontSize: 10,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {checked ? "✓" : ""}
+                        </span>
+                        {meetingTypeLabel(t)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ flex: 1 }} />
+
+                {/* Toggle: zobrazit zrušené */}
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: isDark ? "#a8c8cc" : "#6b8a8f",
+                  }}
+                >
+                  <span>Zobrazit zrušené</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showCancelled}
+                    onClick={() => setShowCancelled((v) => !v)}
+                    style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 999,
+                      border: "none",
+                      cursor: "pointer",
+                      background: showCancelled ? "#00abbd" : (isDark ? "rgba(255,255,255,0.15)" : "#d8e2e4"),
+                      position: "relative",
+                      transition: "background 0.2s",
+                      padding: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        left: showCancelled ? 18 : 2,
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        transition: "left 0.2s",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                      }}
+                    />
+                  </button>
+                </label>
+              </div>
             </div>
           )}
 
