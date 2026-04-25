@@ -472,7 +472,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     const endStr = format(dateRange.end, "yyyy-MM-dd");
     return meetings
       .filter((m) => m.date >= startStr && m.date <= endStr)
-      .sort((a, b) => a.date.localeCompare(b.date) || (a.meeting_time ?? "").localeCompare(b.meeting_time ?? ""));
+      .sort((a, b) => a.date.localeCompare(b.date));
   }, [meetings, dateRange]);
 
   // Header navigator props for Schůzky tab (desktop) — mirrors Dashboard mechanics
