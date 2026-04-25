@@ -10,7 +10,7 @@ import {
   isSameWeek,
 } from "date-fns";
 import { cs } from "date-fns/locale";
-import { StatCard } from "@/components/StatCard";
+import { ConversionFunnel } from "@/components/ConversionFunnel";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -177,6 +177,23 @@ const MemberActivity = () => {
         .gte("date", format(periodStart, "yyyy-MM-dd"))
         .lte("date", format(periodEnd, "yyyy-MM-dd"));
       return computeMeetingStats((data || []) as any, todayStr);
+    },
+    enabled: !!userId,
+  });
+
+  // Raw meetings for ConversionFunnel — same shape & filter as Dashboard
+  const { data: conversionMeetings = [] } = useQuery({
+    queryKey: ["member_conversion_meetings", userId, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .eq("user_id", userId)
+        .gte("date", format(periodStart, "yyyy-MM-dd"))
+        .lte("date", format(periodEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!userId,
   });
@@ -469,12 +486,7 @@ const MemberActivity = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Analýzy" actual={stats.fsa.actual} planned={stats.fsa.planned} actualLabel="proběhlých" plannedLabel="domluvenných" />
-        <StatCard label="Pohovory" actual={stats.poh.actual} planned={stats.poh.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-        <StatCard label="Poradka" actual={stats.ser.actual} planned={stats.ser.planned} actualLabel="proběhlých" plannedLabel="naplánovaných" />
-        <StatCard label="Doporučení" actual={stats.ref.actual} actualLabel="vybraných" />
-      </div>
+      <ConversionFunnel meetings={conversionMeetings as any} />
 
       <section className="legatus-card overflow-hidden">
         <div className="overflow-x-auto">
