@@ -1287,6 +1287,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {ALL_FILTER_TYPES.map((t) => {
                     const checked = typeFilter.has(t);
+                    const typeColor = MEETING_TYPE_COLORS[t];
                     return (
                       <button
                         key={t}
@@ -1304,13 +1305,13 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                           padding: "6px 12px",
                           borderRadius: 999,
                           border: checked
-                            ? "1px solid #00abbd"
+                            ? `1px solid ${typeColor}`
                             : (isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid #d8e2e4"),
                           background: checked
-                            ? "rgba(0,171,189,0.12)"
+                            ? `${typeColor}1f`
                             : "transparent",
                           color: checked
-                            ? "#00abbd"
+                            ? typeColor
                             : (isDark ? "#a8c8cc" : "#6b8a8f"),
                           fontFamily: "Poppins, sans-serif",
                           fontWeight: checked ? 700 : 500,
@@ -1325,8 +1326,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                             width: 14,
                             height: 14,
                             borderRadius: 4,
-                            border: checked ? "1px solid #00abbd" : "1px solid #c4d0d3",
-                            background: checked ? "#00abbd" : "transparent",
+                            border: checked ? `1px solid ${typeColor}` : "1px solid #c4d0d3",
+                            background: checked ? typeColor : "transparent",
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
