@@ -481,6 +481,18 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [meetings, dateRange]);
 
+  // Desktop: aplikuj filtry typu schůzky a viditelnost zrušených
+  const meetingsForDayDesktop = useMemo(() => {
+    return meetingsForDay.filter((m) => {
+      if (!showCancelled && m.cancelled) return false;
+      // Filtr typu se vztahuje jen na 4 hlavní typy. Ostatní (NAB / INFO / POST) se zobrazí vždy.
+      if ((ALL_FILTER_TYPES as string[]).includes(m.meeting_type)) {
+        if (!typeFilter.has(m.meeting_type as MeetingType)) return false;
+      }
+      return true;
+    });
+  }, [meetingsForDay, typeFilter, showCancelled]);
+
   // Header navigator props for Schůzky tab (desktop) — mirrors Dashboard mechanics
   const schuzkyHeaderNav = useMemo(() => {
     if (viewMode === "day") {
