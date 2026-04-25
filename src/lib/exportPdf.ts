@@ -74,6 +74,12 @@ function computePersonStats(
   // BJ — počítáme jen z potvrzených (proběhlých) schůzek, stejně jako ref v computeMeetingStats.
   const confirmed = meetings.filter((m) => !m.cancelled && m.outcome_recorded === true);
   const bj = confirmed.reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
+  const bjFsa = confirmed
+    .filter((m) => m.meeting_type === "FSA")
+    .reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
+  const bjSer = confirmed
+    .filter((m) => m.meeting_type === "SER")
+    .reduce((acc, m) => acc + (Number(m.podepsane_bj) || 0), 0);
 
   // Newly booked — schůzky vytvořené v daném období (bez ohledu na potvrzení).
   const active = meetings.filter((m) => !m.cancelled);
