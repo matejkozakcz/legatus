@@ -1280,6 +1280,18 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       >
                         {meetingTypeLabel(m.meeting_type)}
                       </span>
+                      {viewMode !== "day" && (
+                        <span
+                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                          style={{
+                            background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+                            color: isDark ? "#7aadb3" : "#6b8a8f",
+                            fontFamily: "Poppins, sans-serif",
+                          }}
+                        >
+                          {format(parseISO(m.date), "d.M.", { locale: cs })}
+                        </span>
+                      )}
                       <span className="font-heading font-semibold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
                         {m.case_name || caseObj?.nazev_pripadu || "—"}
                       </span>
