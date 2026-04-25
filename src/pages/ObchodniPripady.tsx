@@ -116,9 +116,6 @@ function totalRefs(m: Meeting): number {
   return (m.doporuceni_fsa || 0) + (m.doporuceni_poradenstvi || 0) + (m.doporuceni_pohovor || 0);
 }
 
-// Unified meeting-type colors — single source of truth in src/lib/meetingColors.ts
-import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
-
 function meetingTypeBadgeStyle(t: MeetingType, cancelled: boolean) {
   return meetingTypeBadgeColors(t, cancelled);
 }
