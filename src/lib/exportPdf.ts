@@ -289,8 +289,8 @@ export async function exportDashboardPdf(
     values: (s) => [s.planFsa, s.planPoh, s.planSer, s.planPor],
   });
   if (pdfCfg.show_completed) groups.push({
-    label: "Proběhlé", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ"],
-    values: (s) => [s.fsa, s.poh, s.ser, s.por, s.ref, s.bj],
+    label: "Proběhlé", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ FSA", "BJ SER", "BJ celkem"],
+    values: (s) => [s.fsa, s.poh, s.ser, s.por, s.ref, s.bjFsa, s.bjSer, s.bj],
   });
   if (pdfCfg.show_newly_booked) groups.push({
     label: "Nově domluvené", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
