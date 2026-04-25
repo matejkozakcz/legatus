@@ -452,11 +452,78 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     return map;
   }, [meetings]);
 
-  // Meetings for selected day (desktop Schůzky tab)
+  // Date range for selected period (Schůzky tab) — Den / Týden / Měsíc
+  const dateRange = useMemo(() => {
+    if (viewMode === "day") {
+      return { start: selectedDate, end: selectedDate };
+    }
+    if (viewMode === "week") {
+      return {
+        start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
+        end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
+      };
+    }
+    return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+  }, [viewMode, selectedDate]);
+
+  // Meetings within selected range (Schůzky tab)
   const meetingsForDay = useMemo(() => {
-    const dayStr = format(selectedDate, "yyyy-MM-dd");
-    return meetings.filter((m) => m.date === dayStr).sort((a, b) => a.date.localeCompare(b.date));
-  }, [meetings, selectedDate]);
+    const startStr = format(dateRange.start, "yyyy-MM-dd");
+    const endStr = format(dateRange.end, "yyyy-MM-dd");
+    return meetings
+      .filter((m) => m.date >= startStr && m.date <= endStr)
+      .sort((a, b) => a.date.localeCompare(b.date) || (a.meeting_time ?? "").localeCompare(b.meeting_time ?? ""));
+  }, [meetings, dateRange]);
+
+  // Header navigator props for Schůzky tab (desktop) — mirrors Dashboard mechanics
+  const schuzkyHeaderNav = useMemo(() => {
+    if (viewMode === "day") {
+      return {
+        label: isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs }),
+        title: format(selectedDate, "d. MMMM yyyy", { locale: cs }),
+        onPrev: () => setSelectedDate((d) => subDays(d, 1)),
+        onNext: () => setSelectedDate((d) => addDays(d, 1)),
+        onSelectDate: (date: Date) => setSelectedDate(date),
+        selectedDate,
+        calendarMonth: selectedDate,
+        pickerMode: "day" as const,
+      };
+    }
+    if (viewMode === "week") {
+      const wStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+      const wEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      const todayWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+      return {
+        label: isSameDay(wStart, todayWeek)
+          ? "Aktuální týden"
+          : format(wStart, "LLLL yyyy", { locale: cs }).replace(/^./, (c) => c.toUpperCase()),
+        title: `${format(wStart, "d.M.", { locale: cs })} – ${format(wEnd, "d.M.", { locale: cs })}`,
+        onPrev: () => setSelectedDate((d) => subWeeks(d, 1)),
+        onNext: () => setSelectedDate((d) => addWeeks(d, 1)),
+        onSelectDate: (date: Date) => setSelectedDate(startOfWeek(date, { weekStartsOn: 1 })),
+        selectedDate: wStart,
+        calendarMonth: wStart,
+        pickerMode: "day" as const,
+      };
+    }
+    const monthNamesFull = [
+      "Leden","Únor","Březen","Duben","Květen","Červen",
+      "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+    ];
+    const todayMonth = startOfMonth(new Date());
+    const cur = startOfMonth(selectedDate);
+    return {
+      label: isSameDay(cur, todayMonth) ? "Aktuální měsíc" : "Měsíc",
+      title: `${monthNamesFull[cur.getMonth()]} ${cur.getFullYear()}`,
+      onPrev: () => setSelectedDate((d) => subMonths(startOfMonth(d), 1)),
+      onNext: () => setSelectedDate((d) => addMonths(startOfMonth(d), 1)),
+      onSelectDate: (date: Date) => setSelectedDate(startOfMonth(date)),
+      selectedDate: cur,
+      calendarMonth: cur,
+      pickerMode: "month" as const,
+    };
+  }, [viewMode, selectedDate]);
+
 
   // ── Case mutations ──
   const saveCaseMutation = useMutation({
