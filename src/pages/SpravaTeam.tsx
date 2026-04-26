@@ -702,14 +702,6 @@ const SpravaTeam = () => {
               <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
                 <p className="font-body animate-pulse">Načítání členů...</p>
               </div>
-            ) : members.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
-                <Users className="h-10 w-10 mx-auto mb-3" style={{ color: isDark ? "#2a5a62" : "#c4d8db" }} />
-                <div className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--text-primary)", marginBottom: 4 }}>
-                  Zatím žádní členové
-                </div>
-                <div className="text-sm">V týmu zatím nemáte žádné členy.</div>
-              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {profile && (
