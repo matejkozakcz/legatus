@@ -294,11 +294,14 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const colors = avatarColors[member.role] || avatarColors.novacek;
   const badge = roleBadgeConfig[member.role] || roleBadgeConfig.novacek;
 
+  const meetingStats = computeMeetingStats(weekMeetings as any);
+
   const stats = [
-    { label: "Analýzy", actual: record?.fsa_actual ?? 0, planned: record?.fsa_planned ?? 0 },
-    { label: "Pohovory", actual: record?.poh_actual ?? 0, planned: record?.poh_planned ?? 0 },
-    { label: "Porádka", actual: record?.por_actual ?? 0, planned: record?.por_planned ?? 0 },
-    { label: "Doporučení", actual: record?.ref_actual ?? 0, planned: record?.ref_planned ?? 0 },
+    { label: "Analýzy", actual: meetingStats.fsa.actual, planned: meetingStats.fsa.planned },
+    { label: "Pohovory", actual: meetingStats.poh.actual, planned: meetingStats.poh.planned },
+    { label: "Servisy", actual: meetingStats.ser.actual, planned: meetingStats.ser.planned },
+    { label: "Poradenství", actual: meetingStats.por.actual, planned: meetingStats.por.planned },
+    { label: "Doporučení", actual: meetingStats.ref.actual, planned: meetingStats.ref.planned },
   ];
 
   const meetingTypeLabels: Record<string, string> = {
