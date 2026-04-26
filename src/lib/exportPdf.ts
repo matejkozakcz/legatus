@@ -3,10 +3,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { cs } from "date-fns/locale";
-import {
-  getProductionPeriodForMonth,
-  getProductionPeriodMonth,
-} from "@/lib/productionPeriod";
+import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { OPEN_SANS_REGULAR, OPEN_SANS_BOLD } from "@/lib/fonts";
 import { computeMeetingStats } from "@/lib/meetingStats";
 
@@ -154,20 +151,18 @@ interface PdfConfig {
 }
 
 async function fetchPdfConfig(): Promise<PdfConfig> {
-  const { data } = await supabase
-    .from("app_config")
-    .select("value")
-    .eq("key", "pdf_export")
-    .single();
+  const { data } = await supabase.from("app_config").select("value").eq("key", "pdf_export").single();
   const val = data?.value as unknown as PdfConfig | null;
-  return val ?? {
-    company_name: "LEGATUS",
-    orientation: "landscape",
-    head_color: DEFAULT_HEAD_FILL,
-    show_planned: true,
-    show_completed: true,
-    show_newly_booked: true,
-  };
+  return (
+    val ?? {
+      company_name: "LEGATUS",
+      orientation: "landscape",
+      head_color: DEFAULT_HEAD_FILL,
+      show_planned: true,
+      show_completed: true,
+      show_newly_booked: true,
+    }
+  );
 }
 
 // ─── Main export function ────────────────────────────────────────────────────
@@ -198,12 +193,13 @@ export async function exportDashboardPdf(
     periodTo = format(we, "yyyy-MM-dd");
     periodLabel = `Týden ${format(ws, "d. M.", { locale: cs })} – ${format(we, "d. M. yyyy", { locale: cs })}`;
   } else {
-    const pm = selectedYear && selectedMonth
-      ? getProductionPeriodForMonth(selectedYear, selectedMonth)
-      : (() => {
-        const cp = getProductionPeriodMonth(now);
-        return getProductionPeriodForMonth(cp.year, cp.month);
-      })();
+    const pm =
+      selectedYear && selectedMonth
+        ? getProductionPeriodForMonth(selectedYear, selectedMonth)
+        : (() => {
+            const cp = getProductionPeriodMonth(now);
+            return getProductionPeriodForMonth(cp.year, cp.month);
+          })();
     periodFrom = format(pm.start, "yyyy-MM-dd");
     periodTo = format(pm.end, "yyyy-MM-dd");
     periodLabel = `Období ${format(pm.start, "d. M.", { locale: cs })} – ${format(pm.end, "d. M. yyyy", { locale: cs })}`;
@@ -212,7 +208,9 @@ export async function exportDashboardPdf(
   // Fetch own meetings
   const { data: ownMeetings = [] } = await supabase
     .from("client_meetings")
-    .select("user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
+    .select(
+      "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se",
+    )
     .eq("user_id", userId)
     .gte("date", periodFrom)
     .lte("date", periodTo);
@@ -226,10 +224,7 @@ export async function exportDashboardPdf(
   let teamStats: PersonStats[] = [];
 
   if (showTeam) {
-    let subordinateQuery = supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .eq("is_active", true);
+    let subordinateQuery = supabase.from("profiles").select("id, full_name, role").eq("is_active", true);
 
     if (userRole === "vedouci" || userRole === "budouci_vedouci") {
       subordinateQuery = subordinateQuery.eq("vedouci_id", userId);
@@ -246,16 +241,16 @@ export async function exportDashboardPdf(
       const subIds = subordinates.map((s: any) => s.id);
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
-        .select("user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se")
+        .select(
+          "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se",
+        )
         .in("user_id", subIds)
         .gte("date", periodFrom)
         .lte("date", periodTo);
 
       for (const sub of subordinates) {
         const subMeetings = (teamMeetings || []).filter((m: any) => m.user_id === sub.id) as MeetingRow[];
-        teamStats.push(
-          computePersonStats(subMeetings, todayStr, periodFrom, periodTo, sub.full_name, sub.role),
-        );
+        teamStats.push(computePersonStats(subMeetings, todayStr, periodFrom, periodTo, sub.full_name, sub.role));
       }
       teamStats.sort((a, b) => a.name.localeCompare(b.name, "cs"));
     }
@@ -284,18 +279,24 @@ export async function exportDashboardPdf(
   // ── Helper: build dynamic column groups based on config ─────────────────
   type ColGroup = { label: string; cols: string[]; values: (s: PersonStats) => (string | number)[] };
   const groups: ColGroup[] = [];
-  if (pdfCfg.show_planned) groups.push({
-    label: "Naplánované", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
-    values: (s) => [s.planFsa, s.planPoh, s.planSer, s.planPor],
-  });
-  if (pdfCfg.show_completed) groups.push({
-    label: "Proběhlé", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ FSA", "BJ SER", "BJ celkem"],
-    values: (s) => [s.fsa, s.poh, s.ser, s.por, s.ref, s.bjFsa, s.bjSer, s.bj],
-  });
-  if (pdfCfg.show_newly_booked) groups.push({
-    label: "Nově domluvené", cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
-    values: (s) => [s.newFsa, s.newPoh, s.newSer, s.newPor],
-  });
+  if (pdfCfg.show_planned)
+    groups.push({
+      label: "Naplánované",
+      cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
+      values: (s) => [s.planFsa, s.planPoh, s.planSer, s.planPor],
+    });
+  if (pdfCfg.show_completed)
+    groups.push({
+      label: "Proběhlé",
+      cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství", "Doporučení", "BJ FSA", "BJ SER", "BJ celkem"],
+      values: (s) => [s.fsa, s.poh, s.ser, s.por, s.ref, s.bjFsa, s.bjSer, s.bj],
+    });
+  if (pdfCfg.show_newly_booked)
+    groups.push({
+      label: "Nově domluvené",
+      cols: ["Analýzy", "Pohovory", "Servisy", "Poradenství"],
+      values: (s) => [s.newFsa, s.newPoh, s.newSer, s.newPor],
+    });
 
   // ── Personal stats ──────────────────────────────────────────────────────
 
@@ -314,7 +315,14 @@ export async function exportDashboardPdf(
       body: [ownBodyRow],
       theme: "grid",
       styles: { font: fontName },
-      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
       bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
       margin: { left: 14, right: 14 },
     });
@@ -331,9 +339,14 @@ export async function exportDashboardPdf(
 
   type WeekRow = {
     week_start: string;
-    fsa_actual: number | null; ser_actual: number | null; poh_actual: number | null;
-    por_actual: number | null; ref_actual: number | null;
-    bj_fsa_actual: number | null; bj_ser_actual: number | null; bj: number | null;
+    fsa_actual: number | null;
+    ser_actual: number | null;
+    poh_actual: number | null;
+    por_actual: number | null;
+    ref_actual: number | null;
+    bj_fsa_actual: number | null;
+    bj_ser_actual: number | null;
+    bj: number | null;
   };
   const weekRows = ((weekRecords || []) as WeekRow[])
     .filter((r) => {
@@ -356,7 +369,17 @@ export async function exportDashboardPdf(
     doc.setFont(fontName, "bold");
     doc.text("Týdenní rozpis", 14, weekStartY);
 
-    const weekHead = ["Týden", "Analýzy", "Poradky", "Pohovory", "Poradenství", "Doporučení", "BJ FSA", "BJ SER", "BJ celkem"];
+    const weekHead = [
+      "Týden",
+      "Analýzy",
+      "Poradka",
+      "Pohovory",
+      "Poradenství",
+      "Doporučení",
+      "BJ FSA",
+      "BJ SER",
+      "BJ celkem",
+    ];
     const sums = { fsa: 0, ser: 0, poh: 0, por: 0, ref: 0, bjFsa: 0, bjSer: 0, bj: 0 };
     const weekBody: any[] = weekRows.map((r, i) => {
       const fsa = r.fsa_actual || 0;
@@ -367,8 +390,14 @@ export async function exportDashboardPdf(
       const bjFsa = Number(r.bj_fsa_actual) || 0;
       const bjSer = Number(r.bj_ser_actual) || 0;
       const bj = Number(r.bj) || 0;
-      sums.fsa += fsa; sums.ser += ser; sums.poh += poh; sums.por += por;
-      sums.ref += ref; sums.bjFsa += bjFsa; sums.bjSer += bjSer; sums.bj += bj;
+      sums.fsa += fsa;
+      sums.ser += ser;
+      sums.poh += poh;
+      sums.por += por;
+      sums.ref += ref;
+      sums.bjFsa += bjFsa;
+      sums.bjSer += bjSer;
+      sums.bj += bj;
       return [`Týden ${i + 1}`, fsa, ser, poh, por, ref, bjFsa, bjSer, bj];
     });
     weekBody.push(["Celkem", sums.fsa, sums.ser, sums.poh, sums.por, sums.ref, sums.bjFsa, sums.bjSer, sums.bj]);
@@ -379,7 +408,14 @@ export async function exportDashboardPdf(
       body: weekBody,
       theme: "grid",
       styles: { font: fontName },
-      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
       bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
       columnStyles: { 0: { fontStyle: "bold", halign: "left", cellWidth: 28 } },
       margin: { left: 14, right: 14 },
@@ -408,39 +444,68 @@ export async function exportDashboardPdf(
     doc.text("Výsledky týmu", 14, teamStartY);
 
     const teamBody = teamStats.map((s) => [
-      s.name, ROLE_LABEL[s.role] || s.role,
+      s.name,
+      ROLE_LABEL[s.role] || s.role,
       ...groups.flatMap((g) => g.values(s)),
     ]);
 
     // Totals row
     const zeroStats: PersonStats = {
-      name: "", role: "",
-      planFsa: 0, planPoh: 0, planSer: 0, planPor: 0,
-      fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bj: 0, bjFsa: 0, bjSer: 0,
-      newFsa: 0, newPoh: 0, newSer: 0, newPor: 0,
-      infoCount: 0, infoNovi: 0, infoStaracci: 0,
-      postCount: 0, postNovi: 0, postStaracci: 0,
+      name: "",
+      role: "",
+      planFsa: 0,
+      planPoh: 0,
+      planSer: 0,
+      planPor: 0,
+      fsa: 0,
+      poh: 0,
+      ser: 0,
+      por: 0,
+      ref: 0,
+      bj: 0,
+      bjFsa: 0,
+      bjSer: 0,
+      newFsa: 0,
+      newPoh: 0,
+      newSer: 0,
+      newPor: 0,
+      infoCount: 0,
+      infoNovi: 0,
+      infoStaracci: 0,
+      postCount: 0,
+      postNovi: 0,
+      postStaracci: 0,
     };
-    const totals = teamStats.reduce<PersonStats>((acc, s) => ({
-      ...acc,
-      planFsa: acc.planFsa + s.planFsa, planPoh: acc.planPoh + s.planPoh,
-      planSer: acc.planSer + s.planSer, planPor: acc.planPor + s.planPor,
-      fsa: acc.fsa + s.fsa, poh: acc.poh + s.poh, ser: acc.ser + s.ser, por: acc.por + s.por,
-      ref: acc.ref + s.ref, bj: acc.bj + s.bj, bjFsa: acc.bjFsa + s.bjFsa, bjSer: acc.bjSer + s.bjSer,
-      newFsa: acc.newFsa + s.newFsa, newPoh: acc.newPoh + s.newPoh,
-      newSer: acc.newSer + s.newSer, newPor: acc.newPor + s.newPor,
-      infoCount: acc.infoCount + s.infoCount,
-      infoNovi: acc.infoNovi + s.infoNovi,
-      infoStaracci: acc.infoStaracci + s.infoStaracci,
-      postCount: acc.postCount + s.postCount,
-      postNovi: acc.postNovi + s.postNovi,
-      postStaracci: acc.postStaracci + s.postStaracci,
-    }), zeroStats);
+    const totals = teamStats.reduce<PersonStats>(
+      (acc, s) => ({
+        ...acc,
+        planFsa: acc.planFsa + s.planFsa,
+        planPoh: acc.planPoh + s.planPoh,
+        planSer: acc.planSer + s.planSer,
+        planPor: acc.planPor + s.planPor,
+        fsa: acc.fsa + s.fsa,
+        poh: acc.poh + s.poh,
+        ser: acc.ser + s.ser,
+        por: acc.por + s.por,
+        ref: acc.ref + s.ref,
+        bj: acc.bj + s.bj,
+        bjFsa: acc.bjFsa + s.bjFsa,
+        bjSer: acc.bjSer + s.bjSer,
+        newFsa: acc.newFsa + s.newFsa,
+        newPoh: acc.newPoh + s.newPoh,
+        newSer: acc.newSer + s.newSer,
+        newPor: acc.newPor + s.newPor,
+        infoCount: acc.infoCount + s.infoCount,
+        infoNovi: acc.infoNovi + s.infoNovi,
+        infoStaracci: acc.infoStaracci + s.infoStaracci,
+        postCount: acc.postCount + s.postCount,
+        postNovi: acc.postNovi + s.postNovi,
+        postStaracci: acc.postStaracci + s.postStaracci,
+      }),
+      zeroStats,
+    );
 
-    teamBody.push([
-      "CELKEM", "",
-      ...groups.flatMap((g) => g.values(totals)),
-    ]);
+    teamBody.push(["CELKEM", "", ...groups.flatMap((g) => g.values(totals))]);
 
     const teamHeadRow1: any[] = [
       { content: "Jméno", rowSpan: 2 },
@@ -455,7 +520,14 @@ export async function exportDashboardPdf(
       body: teamBody,
       theme: "grid",
       styles: { font: fontName },
-      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
       bodyStyles: { fontSize: 8, font: fontName },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 35 }, 1: { cellWidth: 28 } },
       margin: { left: 14, right: 14 },
@@ -492,18 +564,18 @@ export async function exportDashboardPdf(
     const infoBody: any[] = [
       [
         userName,
-        ownStats.infoCount, ownStats.infoNovi, ownStats.infoStaracci,
-        ownStats.postCount, ownStats.postNovi, ownStats.postStaracci,
+        ownStats.infoCount,
+        ownStats.infoNovi,
+        ownStats.infoStaracci,
+        ownStats.postCount,
+        ownStats.postNovi,
+        ownStats.postStaracci,
       ],
     ];
 
     if (showTeam && teamStats.length > 0) {
       for (const s of teamStats) {
-        infoBody.push([
-          s.name,
-          s.infoCount, s.infoNovi, s.infoStaracci,
-          s.postCount, s.postNovi, s.postStaracci,
-        ]);
+        infoBody.push([s.name, s.infoCount, s.infoNovi, s.infoStaracci, s.postCount, s.postNovi, s.postStaracci]);
       }
       const totInfoCount = teamStats.reduce((a, s) => a + s.infoCount, 0) + ownStats.infoCount;
       const totInfoNovi = teamStats.reduce((a, s) => a + s.infoNovi, 0) + ownStats.infoNovi;
@@ -511,11 +583,7 @@ export async function exportDashboardPdf(
       const totPostCount = teamStats.reduce((a, s) => a + s.postCount, 0) + ownStats.postCount;
       const totPostNovi = teamStats.reduce((a, s) => a + s.postNovi, 0) + ownStats.postNovi;
       const totPostStar = teamStats.reduce((a, s) => a + s.postStaracci, 0) + ownStats.postStaracci;
-      infoBody.push([
-        "CELKEM",
-        totInfoCount, totInfoNovi, totInfoStar,
-        totPostCount, totPostNovi, totPostStar,
-      ]);
+      infoBody.push(["CELKEM", totInfoCount, totInfoNovi, totInfoStar, totPostCount, totPostNovi, totPostStar]);
     }
 
     autoTable(doc, {
@@ -524,7 +592,14 @@ export async function exportDashboardPdf(
       body: infoBody,
       theme: "grid",
       styles: { font: fontName },
-      headStyles: { fillColor: HEAD_FILL, textColor: 255, fontSize: 8, fontStyle: "bold", halign: "center", font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
       bodyStyles: { fontSize: 9, font: fontName, halign: "center" },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 50, halign: "left" } },
       margin: { left: 14, right: 14 },
@@ -544,12 +619,7 @@ export async function exportDashboardPdf(
     doc.setFontSize(8);
     doc.setFont(fontName, "normal");
     doc.setTextColor(160);
-    doc.text(
-      `Strana ${i} z ${pageCount}`,
-      pageWidth / 2,
-      doc.internal.pageSize.getHeight() - 6,
-      { align: "center" },
-    );
+    doc.text(`Strana ${i} z ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" });
   }
 
   // Download

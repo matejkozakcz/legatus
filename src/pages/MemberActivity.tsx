@@ -2,23 +2,14 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, BarChart3, Download, Loader2 } from "lucide-react";
-import {
-  startOfWeek,
-  endOfWeek,
-  addWeeks,
-  format,
-  isSameWeek,
-} from "date-fns";
+import { startOfWeek, endOfWeek, addWeeks, format, isSameWeek } from "date-fns";
 import { cs } from "date-fns/locale";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
-import {
-  getProductionPeriodForMonth,
-  getProductionPeriodMonth,
-} from "@/lib/productionPeriod";
+import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { exportDashboardPdf } from "@/lib/exportPdf";
 import { computeMeetingStats } from "@/lib/meetingStats";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,13 +32,23 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const MONTH_NAMES = [
-  "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
-  "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
+  "Leden",
+  "Únor",
+  "Březen",
+  "Duben",
+  "Květen",
+  "Červen",
+  "Červenec",
+  "Srpen",
+  "Září",
+  "Říjen",
+  "Listopad",
+  "Prosinec",
 ];
 
 const ACTIVITY_COLUMNS = [
   { key: "fsa_actual", header: "Analýzy" },
-  { key: "ser_actual", header: "Poradky" },
+  { key: "ser_actual", header: "Poradka" },
   { key: "poh_actual", header: "Pohovory" },
   { key: "por_actual", header: "Poradenství" },
   { key: "nab_actual", header: "Nábory" },
@@ -59,9 +60,27 @@ const ACTIVITY_COLUMNS = [
 const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ celkem" }] as const;
 
 const MOBILE_ACTIVITIES = [
-  { label: "Analýzy", plannedKey: "fsa_planned", actualKey: "fsa_actual", plannedLabel: "Domluvené", actualLabel: "Proběhlé" },
-  { label: "Poradka", plannedKey: "ser_planned", actualKey: "ser_actual", plannedLabel: "Domluvená", actualLabel: "Proběhlá" },
-  { label: "Pohovory", plannedKey: "poh_planned", actualKey: "poh_actual", plannedLabel: "Domluvené", actualLabel: "Proběhlé" },
+  {
+    label: "Analýzy",
+    plannedKey: "fsa_planned",
+    actualKey: "fsa_actual",
+    plannedLabel: "Domluvené",
+    actualLabel: "Proběhlé",
+  },
+  {
+    label: "Poradka",
+    plannedKey: "ser_planned",
+    actualKey: "ser_actual",
+    plannedLabel: "Domluvená",
+    actualLabel: "Proběhlá",
+  },
+  {
+    label: "Pohovory",
+    plannedKey: "poh_planned",
+    actualKey: "poh_actual",
+    plannedLabel: "Domluvené",
+    actualLabel: "Proběhlé",
+  },
 ] as const;
 
 const MemberActivity = () => {
@@ -86,11 +105,7 @@ const MemberActivity = () => {
   const { data: memberProfile } = useQuery({
     queryKey: ["profile", userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId!)
-        .single();
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId!).single();
       if (error) throw error;
       return data;
     },
@@ -129,7 +144,9 @@ const MemberActivity = () => {
 
   // Info & Postinfo meeting counts for vedouci/BV members in selected production period
   const isVedouciOrBV = memberProfile?.role === "vedouci" || memberProfile?.role === "budouci_vedouci";
-  const { data: infoPostCounts = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 } } = useQuery({
+  const {
+    data: infoPostCounts = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 },
+  } = useQuery({
     queryKey: ["member_info_post", userId, selectedYear, selectedMonth],
     queryFn: async () => {
       const empty = { info: 0, postinfo: 0, noviInfo: 0, staracciInfo: 0, noviPost: 0, staracciPost: 0 };
@@ -164,15 +181,31 @@ const MemberActivity = () => {
   });
 
   // Period stats — single source of truth (computeMeetingStats), identical to PDF & Dashboard.
-  const { data: periodStats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
+  const {
+    data: periodStats = {
+      fsa: { actual: 0, planned: 0 },
+      poh: { actual: 0, planned: 0 },
+      ser: { actual: 0, planned: 0 },
+      por: { actual: 0, planned: 0 },
+      ref: { actual: 0, planned: 0 },
+    },
+  } = useQuery({
     queryKey: ["member_period_stats", userId, selectedYear, selectedMonth],
     queryFn: async () => {
-      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
+      const empty = {
+        fsa: { actual: 0, planned: 0 },
+        poh: { actual: 0, planned: 0 },
+        ser: { actual: 0, planned: 0 },
+        por: { actual: 0, planned: 0 },
+        ref: { actual: 0, planned: 0 },
+      };
       if (!userId) return empty;
       const todayStr = format(new Date(), "yyyy-MM-dd");
       const { data } = await supabase
         .from("client_meetings")
-        .select("meeting_type, cancelled, date, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .select(
+          "meeting_type, cancelled, date, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
         .eq("user_id", userId)
         .gte("date", format(periodStart, "yyyy-MM-dd"))
         .lte("date", format(periodEnd, "yyyy-MM-dd"));
@@ -188,7 +221,9 @@ const MemberActivity = () => {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("id, meeting_type, cancelled, outcome_recorded, parent_meeting_id, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor")
+        .select(
+          "id, meeting_type, cancelled, outcome_recorded, parent_meeting_id, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
         .eq("user_id", userId)
         .gte("date", format(periodStart, "yyyy-MM-dd"))
         .lte("date", format(periodEnd, "yyyy-MM-dd"));
@@ -218,12 +253,20 @@ const MemberActivity = () => {
   const mobileRecord = records.find((r) => r.week_start === mobileWeekStr);
 
   const handlePrevMonth = () => {
-    if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
-    else { setSelectedMonth((m) => m - 1); }
+    if (selectedMonth === 0) {
+      setSelectedYear((y) => y - 1);
+      setSelectedMonth(11);
+    } else {
+      setSelectedMonth((m) => m - 1);
+    }
   };
   const handleNextMonth = () => {
-    if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
-    else { setSelectedMonth((m) => m + 1); }
+    if (selectedMonth === 11) {
+      setSelectedYear((y) => y + 1);
+      setSelectedMonth(0);
+    } else {
+      setSelectedMonth((m) => m + 1);
+    }
   };
 
   const handleExportPdf = async () => {
@@ -252,11 +295,10 @@ const MemberActivity = () => {
     const refPlanned = rec?.ref_planned || 0;
     const refActual = rec?.ref_actual || 0;
     const dopKl = rec?.dop_kl_actual || 0;
-    const bjValue = ((rec?.bj_fsa_actual || 0) + (rec?.bj_ser_actual || 0));
+    const bjValue = (rec?.bj_fsa_actual || 0) + (rec?.bj_ser_actual || 0);
     const klFsa = rec?.kl_fsa_actual || 0;
 
-    const formatVal = (actual: number, planned: number) =>
-      planned > 0 ? `${actual} / ${planned}` : `${actual}`;
+    const formatVal = (actual: number, planned: number) => (planned > 0 ? `${actual} / ${planned}` : `${actual}`);
 
     return (
       <div className="mobile-page">
@@ -266,7 +308,9 @@ const MemberActivity = () => {
             <ArrowLeft size={20} />
           </Link>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+            <div
+              style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}
+            >
               {memberProfile?.full_name || "Načítání..."}
             </div>
             {memberProfile?.role && (
@@ -311,32 +355,48 @@ const MemberActivity = () => {
           const actualVal = rec?.[actualKey] || 0;
           return (
             <div key={label} className="mobile-activity-card">
-              <div style={{
-                fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15,
-                color: "var(--text-primary)", textAlign: "center", marginBottom: 10,
-              }}>
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: "var(--text-primary)",
+                  textAlign: "center",
+                  marginBottom: 10,
+                }}
+              >
                 {label}
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>
-                    Domluveno
-                  </div>
-                  <div style={{
-                    background: "#dde8ea", borderRadius: 12, padding: "8px 0",
-                    fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)",
-                  }}>
+                  <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>Domluveno</div>
+                  <div
+                    style={{
+                      background: "#dde8ea",
+                      borderRadius: 12,
+                      padding: "8px 0",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 17,
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     {plannedVal}
                   </div>
                 </div>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>
-                    Splněno
-                  </div>
-                  <div style={{
-                    background: "#dde8ea", borderRadius: 12, padding: "8px 0",
-                    fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)",
-                  }}>
+                  <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>Splněno</div>
+                  <div
+                    style={{
+                      background: "#dde8ea",
+                      borderRadius: 12,
+                      padding: "8px 0",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 17,
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     {actualVal}
                   </div>
                 </div>
@@ -352,12 +412,26 @@ const MemberActivity = () => {
             { label: "KL z FSA", value: klFsa },
             { label: "BJ", value: bjValue },
           ].map(({ label, value }) => (
-            <div key={label} style={{
-              flex: 1, background: "#ffffff", borderRadius: 16, padding: "12px 8px",
-              border: "1px solid #e1e9eb", textAlign: "center",
-            }}>
+            <div
+              key={label}
+              style={{
+                flex: 1,
+                background: "#ffffff",
+                borderRadius: 16,
+                padding: "12px 8px",
+                border: "1px solid #e1e9eb",
+                textAlign: "center",
+              }}
+            >
               <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 4 }}>{label}</div>
-              <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+              <div
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 17,
+                  color: "var(--text-primary)",
+                }}
+              >
                 {value}
               </div>
             </div>
@@ -365,16 +439,23 @@ const MemberActivity = () => {
         </div>
 
         {/* Period summary — single compact card */}
-        <div style={{
-          background: "#ffffff",
-          borderRadius: 16,
-          padding: "14px 16px",
-          border: "1px solid #e1e9eb",
-        }}>
-          <div style={{
-            fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
-            color: "var(--text-primary)", marginBottom: 12,
-          }}>
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 16,
+            padding: "14px 16px",
+            border: "1px solid #e1e9eb",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "var(--text-primary)",
+              marginBottom: 12,
+            }}
+          >
             Souhrn za období
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
@@ -385,14 +466,10 @@ const MemberActivity = () => {
               { label: "Doporučení", actual: stats.ref.actual, planned: 0 },
             ].map(({ label, actual, planned }) => (
               <div key={label}>
-                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>
-                  {label}
-                </div>
+                <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>{label}</div>
                 <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 18, color: "#00555f" }}>
                   {actual}
-                  {planned > 0 && (
-                    <span style={{ fontWeight: 600, fontSize: 14, color: "#00abbd" }}> / {planned}</span>
-                  )}
+                  {planned > 0 && <span style={{ fontWeight: 600, fontSize: 14, color: "#00abbd" }}> / {planned}</span>}
                 </div>
               </div>
             ))}
@@ -401,22 +478,39 @@ const MemberActivity = () => {
 
         {/* Info & Postinfo — vedouci/BV only */}
         {isVedouciOrBV && (
-          <div style={{
-            background: "#ffffff",
-            borderRadius: 16,
-            padding: "14px 16px",
-            border: "1px solid #e1e9eb",
-            marginTop: 12,
-          }}>
-            <div style={{
-              fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 14,
-              color: "var(--text-primary)", marginBottom: 12,
-            }}>
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 16,
+              padding: "14px 16px",
+              border: "1px solid #e1e9eb",
+              marginTop: 12,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                color: "var(--text-primary)",
+                marginBottom: 12,
+              }}
+            >
               Info & Postinfo
             </div>
             {[
-              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
-              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+              {
+                label: "Info schůzky",
+                count: infoPostCounts.info,
+                novi: infoPostCounts.noviInfo,
+                staracci: infoPostCounts.staracciInfo,
+              },
+              {
+                label: "Postinfo",
+                count: infoPostCounts.postinfo,
+                novi: infoPostCounts.noviPost,
+                staracci: infoPostCounts.staracciPost,
+              },
             ].map(({ label, count, novi, staracci }) => (
               <div key={label} style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 11, color: "#00abbd", fontWeight: 600, marginBottom: 6 }}>{label}</div>
@@ -426,11 +520,21 @@ const MemberActivity = () => {
                     { l: "Noví", v: novi },
                     { l: "Staráčci", v: staracci },
                   ].map(({ l, v }) => (
-                    <div key={l} style={{
-                      background: "#dde8ea", borderRadius: 12, padding: "8px 4px", textAlign: "center",
-                    }}>
+                    <div
+                      key={l}
+                      style={{
+                        background: "#dde8ea",
+                        borderRadius: 12,
+                        padding: "8px 4px",
+                        textAlign: "center",
+                      }}
+                    >
                       <div style={{ fontSize: 10, color: "#00555f", fontWeight: 600, marginBottom: 2 }}>{l}</div>
-                      <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "#00555f" }}>{v}</div>
+                      <div
+                        style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 16, color: "#00555f" }}
+                      >
+                        {v}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -505,13 +609,12 @@ const MemberActivity = () => {
                 const record = records.find((r) => r.week_start === weekStr);
                 return (
                   <tr key={weekStr} className="past">
-                    <td className="text-left whitespace-nowrap font-medium">
-                      Týden {index + 1}
-                    </td>
+                    <td className="text-left whitespace-nowrap font-medium">Týden {index + 1}</td>
                     {ALL_DISPLAY_COLUMNS.map((col) => {
-                      const val = col.key === "bj"
-                        ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
-                        : (record as any)?.[col.key] || 0;
+                      const val =
+                        col.key === "bj"
+                          ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
+                          : (record as any)?.[col.key] || 0;
                       return <td key={col.key}>{val}</td>;
                     })}
                   </tr>
@@ -536,13 +639,21 @@ const MemberActivity = () => {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { label: "Info schůzky", count: infoPostCounts.info, novi: infoPostCounts.noviInfo, staracci: infoPostCounts.staracciInfo },
-              { label: "Postinfo", count: infoPostCounts.postinfo, novi: infoPostCounts.noviPost, staracci: infoPostCounts.staracciPost },
+              {
+                label: "Info schůzky",
+                count: infoPostCounts.info,
+                novi: infoPostCounts.noviInfo,
+                staracci: infoPostCounts.staracciInfo,
+              },
+              {
+                label: "Postinfo",
+                count: infoPostCounts.postinfo,
+                novi: infoPostCounts.noviPost,
+                staracci: infoPostCounts.staracciPost,
+              },
             ].map(({ label, count, novi, staracci }) => (
               <div key={label} className="rounded-xl border border-input bg-card p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                  {label}
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{label}</div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { l: "Schůzek", v: count },
@@ -551,7 +662,9 @@ const MemberActivity = () => {
                   ].map(({ l, v }) => (
                     <div key={l} className="text-center">
                       <div className="text-[10px] font-semibold text-muted-foreground mb-1">{l}</div>
-                      <div className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>{v}</div>
+                      <div className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>
+                        {v}
+                      </div>
                     </div>
                   ))}
                 </div>
