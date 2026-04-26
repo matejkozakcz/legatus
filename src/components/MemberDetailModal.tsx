@@ -7,6 +7,7 @@ import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
 import { getProductionPeriodMonth, getProductionPeriodForMonth } from "@/lib/productionPeriod";
+import { computeMeetingStats } from "@/lib/meetingStats";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -71,17 +72,26 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
   const weekStart = getWeekStart();
 
-  const { data: record, isLoading } = useQuery({
-    queryKey: ["member_week_stats", member.id, weekStart],
+  // Pull all client_meetings for the current week and compute stats client-side
+  // via computeMeetingStats — same source of truth as MemberActivity / Dashboard,
+  // so cards match the rest of the app (outcome_recorded = true & not cancelled).
+  const { data: weekMeetings = [], isLoading } = useQuery({
+    queryKey: ["member_week_meetings", member.id, weekStart],
     queryFn: async () => {
+      const weekEnd = format(
+        new Date(new Date(weekStart).getTime() + 6 * 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd",
+      );
       const { data, error } = await supabase
-        .from("activity_records")
-        .select("fsa_actual, fsa_planned, poh_actual, poh_planned, por_actual, por_planned, ref_actual, ref_planned")
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, date, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
         .eq("user_id", member.id)
-        .eq("week_start", weekStart)
-        .maybeSingle();
+        .gte("date", weekStart)
+        .lte("date", weekEnd);
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -285,18 +295,21 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const colors = avatarColors[member.role] || avatarColors.novacek;
   const badge = roleBadgeConfig[member.role] || roleBadgeConfig.novacek;
 
+  const meetingStats = computeMeetingStats(weekMeetings as any);
+
   const stats = [
-    { label: "Analýzy", actual: record?.fsa_actual ?? 0, planned: record?.fsa_planned ?? 0 },
-    { label: "Pohovory", actual: record?.poh_actual ?? 0, planned: record?.poh_planned ?? 0 },
-    { label: "Porádka", actual: record?.por_actual ?? 0, planned: record?.por_planned ?? 0 },
-    { label: "Doporučení", actual: record?.ref_actual ?? 0, planned: record?.ref_planned ?? 0 },
+    { label: "Analýzy", actual: meetingStats.fsa.actual, planned: meetingStats.fsa.planned },
+    { label: "Pohovory", actual: meetingStats.poh.actual, planned: meetingStats.poh.planned },
+    { label: "Servisy", actual: meetingStats.ser.actual, planned: meetingStats.ser.planned },
+    { label: "Poradenství", actual: meetingStats.por.actual, planned: meetingStats.por.planned },
+    { label: "Doporučení", actual: meetingStats.ref.actual, planned: meetingStats.ref.planned },
   ];
 
   const meetingTypeLabels: Record<string, string> = {
     FSA: "Analýza",
     SER: "Servis",
     POH: "Pohovor",
-    POR: "Porádka",
+    POR: "Poradenství",
     NAB: "Nábor",
     INFO: "Info",
     POST: "Postinfo",
