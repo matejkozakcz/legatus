@@ -85,15 +85,19 @@ function MemberCard({
   depth = 0,
   readOnly = false,
   bjInfo,
+  progress,
 }: {
   member: Profile;
   onClick: () => void;
   depth?: number;
   readOnly?: boolean;
   bjInfo?: { value: number; isTeam: boolean };
+  progress?: number;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
+  const barColor = PROGRESS_BAR_COLOR[member.role] || "#89ADB4";
+  const pct = progress != null ? Math.min(Math.max(progress, 0), 100) : undefined;
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
@@ -103,8 +107,8 @@ function MemberCard({
 
   return (
     <div
-      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow"
-      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px" }}
+      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden"
+      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px", paddingBottom: pct != null ? 11 : 8 }}
       onClick={onClick}
     >
       {member.avatar_url ? (
@@ -125,6 +129,30 @@ function MemberCard({
           )}
         </div>
       </div>
+
+      {/* Progress bar at bottom edge — same style as OrgChart */}
+      {pct != null && (
+        <div
+          className="absolute"
+          style={{
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: "rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${pct}%`,
+              height: "100%",
+              background: barColor,
+              transition: "width 0.4s ease-out",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
