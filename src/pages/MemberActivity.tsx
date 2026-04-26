@@ -248,14 +248,74 @@ const MemberActivity = () => {
 
   const stats = periodStats;
 
+  // Weekly breakdown — single source of truth: client_meetings + computeMeetingStats.
+  // Same definition of "actual" as the cards above (outcome_recorded = true AND not cancelled),
+  // so the Celkem row matches the cards and the PDF.
+  const { data: weeklyMeetings = [] } = useQuery({
+    queryKey: ["member_weekly_meetings", userId, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!userId) return [];
+      const firstWeek = startOfWeek(periodStart, { weekStartsOn: 1 });
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
+        .eq("user_id", userId)
+        .gte("date", format(firstWeek, "yyyy-MM-dd"))
+        .lte("date", format(periodEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userId,
+  });
+
+  // Aggregate per Mon–Sun week, keyed by week_start (yyyy-MM-dd).
+  const weeklyRows = useMemo(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const map = new Map<string, WeeklyRow>();
+    for (const ws of weeks) {
+      const wsStr = format(ws, "yyyy-MM-dd");
+      const we = endOfWeek(ws, { weekStartsOn: 1 });
+      const weStr = format(we, "yyyy-MM-dd");
+      const inWeek = (weeklyMeetings as any[]).filter((m) => {
+        const d = m.date as string;
+        return d >= wsStr && d <= weStr;
+      });
+      const wstats = computeMeetingStats(inWeek as any, todayStr);
+      const confirmed = inWeek.filter((m) => !m.cancelled && m.outcome_recorded === true);
+      const bj_por = confirmed
+        .filter((m) => m.meeting_type === "POR")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      const bj_ser = confirmed
+        .filter((m) => m.meeting_type === "SER")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      map.set(wsStr, {
+        fsa: wstats.fsa.actual,
+        poh: wstats.poh.actual,
+        ser: wstats.ser.actual,
+        por: wstats.por.actual,
+        ref: wstats.ref.actual,
+        bj_por,
+        bj_ser,
+        bj_total: bj_por + bj_ser,
+      });
+    }
+    return map;
+  }, [weeks, weeklyMeetings]);
+
   const columnSums = useMemo(() => {
     const sums: Record<string, number> = {};
     ACTIVITY_COLUMNS.forEach((col) => {
-      sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
+      sums[col.key] = 0;
     });
-    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
+    weeklyRows.forEach((row) => {
+      ACTIVITY_COLUMNS.forEach((col) => {
+        sums[col.key] += row[col.key as keyof WeeklyRow] || 0;
+      });
+    });
     return sums;
-  }, [records]);
+  }, [weeklyRows]);
 
   // Mobile week navigation
   const mobileWeekStart = useMemo(
