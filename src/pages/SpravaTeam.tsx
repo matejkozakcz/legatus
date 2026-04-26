@@ -753,7 +753,7 @@ const SpravaTeam = () => {
           <MemberDetailModal
             member={detailMember}
             onClose={() => setDetailMember(null)}
-            onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+            onEdit={detailMember.id !== profile?.id && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode) ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
           />
         )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
