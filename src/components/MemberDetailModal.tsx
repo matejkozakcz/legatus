@@ -309,7 +309,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     FSA: "Analýza",
     SER: "Servis",
     POH: "Pohovor",
-    POR: "Porádka",
+    POR: "Poradenství",
     NAB: "Nábor",
     INFO: "Info",
     POST: "Postinfo",
