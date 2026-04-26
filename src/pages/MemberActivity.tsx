@@ -46,18 +46,31 @@ const MONTH_NAMES = [
   "Prosinec",
 ];
 
+// Columns for the weekly breakdown table.
+// Computed from client_meetings via computeMeetingStats so the totals
+// always match the cards above (single source of truth: "actual" =
+// outcome_recorded = true AND not cancelled).
 const ACTIVITY_COLUMNS = [
-  { key: "fsa_actual", header: "Analýzy" },
-  { key: "ser_actual", header: "Poradka" },
-  { key: "poh_actual", header: "Pohovory" },
-  { key: "por_actual", header: "Poradenství" },
-  { key: "nab_actual", header: "Nábory" },
-  { key: "ref_actual", header: "Doporučení" },
-  { key: "bj_fsa_actual", header: "BJ FSA" },
-  { key: "bj_ser_actual", header: "BJ SER" },
+  { key: "fsa", header: "Analýzy" },
+  { key: "poh", header: "Pohovory" },
+  { key: "ser", header: "Servisy" },
+  { key: "por", header: "Poradenství" },
+  { key: "ref", header: "Doporučení" },
+  { key: "bj_por", header: "BJ z Poradenství" },
+  { key: "bj_ser", header: "BJ Servisy" },
+  { key: "bj_total", header: "BJ celkem" },
 ] as const;
 
-const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ celkem" }] as const;
+type WeeklyRow = {
+  fsa: number;
+  poh: number;
+  ser: number;
+  por: number;
+  ref: number;
+  bj_por: number;
+  bj_ser: number;
+  bj_total: number;
+};
 
 const MOBILE_ACTIVITIES = [
   {
