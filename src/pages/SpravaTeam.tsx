@@ -451,6 +451,17 @@ const SpravaTeam = () => {
       .sort((a, b) => (ROLE_ORDER[a.role] ?? 99) - (ROLE_ORDER[b.role] ?? 99));
   }, [members, profile?.id]);
 
+  // Children map including self → root members so the current user can be rendered as the top node
+  const childrenMapWithSelf = useMemo(() => {
+    const map = new Map(childrenMap);
+    if (profile) map.set(profile.id, rootMembers);
+    return map;
+  }, [childrenMap, rootMembers, profile?.id]);
+
+  const handleMemberClick = useCallback((m: Profile) => {
+    setDetailMember(m);
+  }, []);
+
   const enrichedRequests: PromotionRequest[] = pendingRequests
     .filter((req) => profileMap.has(req.user_id))
     .map((req) => ({
@@ -691,32 +702,21 @@ const SpravaTeam = () => {
               <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
                 <p className="font-body animate-pulse">Načítání členů...</p>
               </div>
-            ) : members.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)" }}>
-                <Users className="h-10 w-10 mx-auto mb-3" style={{ color: isDark ? "#2a5a62" : "#c4d8db" }} />
-                <div className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--text-primary)", marginBottom: 4 }}>
-                  Zatím žádní členové
-                </div>
-                <div className="text-sm">V týmu zatím nemáte žádné členy.</div>
-              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {rootMembers.map((member) => {
-                  const children = childrenMap.get(member.id) || [];
-                  return (
-                    <HierarchyGroup
-                      key={member.id}
-                      parent={member}
-                      children={children}
-                      childrenMap={childrenMap}
-                      onEdit={setDetailMember}
-                      depth={0}
-                      readOnly={isReadOnly}
-                      bjMap={bjMap}
-                      progressMap={progressMap}
-                    />
-                  );
-                })}
+                {profile && (
+                  <HierarchyGroup
+                    key={profile.id}
+                    parent={profile as unknown as Profile}
+                    children={rootMembers}
+                    childrenMap={childrenMapWithSelf}
+                    onEdit={handleMemberClick}
+                    depth={0}
+                    readOnly={isReadOnly}
+                    bjMap={bjMap}
+                    progressMap={progressMap}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -753,7 +753,7 @@ const SpravaTeam = () => {
           <MemberDetailModal
             member={detailMember}
             onClose={() => setDetailMember(null)}
-            onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+            onEdit={detailMember.id !== profile?.id && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode) ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
           />
         )}
         <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
@@ -851,28 +851,26 @@ const SpravaTeam = () => {
           <div className="legatus-card p-8 text-center">
             <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
           </div>
-        ) : members.length === 0 ? (
-          <div className="legatus-card p-8 text-center">
-            <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
-          </div>
         ) : (
           <div className="space-y-1">
-            {rootMembers.map((member) => {
-              const children = childrenMap.get(member.id) || [];
-              return (
-                <HierarchyGroup
-                  key={member.id}
-                  parent={member}
-                  children={children}
-                  childrenMap={childrenMap}
-                  onEdit={setDetailMember}
-                  depth={0}
-                  readOnly={isReadOnly}
-                  bjMap={bjMap}
-                  progressMap={progressMap}
-                />
-              );
-            })}
+            {profile && (
+              <HierarchyGroup
+                key={profile.id}
+                parent={profile as unknown as Profile}
+                children={rootMembers}
+                childrenMap={childrenMapWithSelf}
+                onEdit={handleMemberClick}
+                depth={0}
+                readOnly={isReadOnly}
+                bjMap={bjMap}
+                progressMap={progressMap}
+              />
+            )}
+            {members.length === 0 && (
+              <div className="legatus-card p-6 text-center" style={{ marginTop: 12 }}>
+                <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -882,7 +880,7 @@ const SpravaTeam = () => {
         <MemberDetailModal
           member={detailMember}
           onClose={() => setDetailMember(null)}
-          onEdit={profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
+          onEdit={detailMember.id !== profile?.id && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || isGodMode) ? () => { setDetailMember(null); setEditMember(detailMember); } : undefined}
         />
       )}
       <EditMemberDialog member={editMember} onClose={() => setEditMember(null)} />
