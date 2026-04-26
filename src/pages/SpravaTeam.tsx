@@ -62,6 +62,15 @@ const ROLE_BORDER_COLOR: Record<string, string> = {
   novacek: "#3b82f6",
 };
 
+// Same palette as OrgChart progress bar
+const PROGRESS_BAR_COLOR: Record<string, string> = {
+  vedouci: "#45AABD",
+  budouci_vedouci: "#45AABD",
+  garant: "#3FC55D",
+  ziskatel: "#7c6fcd",
+  novacek: "#F39E0A",
+};
+
 const ROLE_ORDER: Record<string, number> = {
   vedouci: 0,
   budouci_vedouci: 1,
