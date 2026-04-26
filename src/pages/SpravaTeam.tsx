@@ -62,6 +62,15 @@ const ROLE_BORDER_COLOR: Record<string, string> = {
   novacek: "#3b82f6",
 };
 
+// Same palette as OrgChart progress bar
+const PROGRESS_BAR_COLOR: Record<string, string> = {
+  vedouci: "#45AABD",
+  budouci_vedouci: "#45AABD",
+  garant: "#3FC55D",
+  ziskatel: "#7c6fcd",
+  novacek: "#F39E0A",
+};
+
 const ROLE_ORDER: Record<string, number> = {
   vedouci: 0,
   budouci_vedouci: 1,
@@ -76,15 +85,19 @@ function MemberCard({
   depth = 0,
   readOnly = false,
   bjInfo,
+  progress,
 }: {
   member: Profile;
   onClick: () => void;
   depth?: number;
   readOnly?: boolean;
   bjInfo?: { value: number; isTeam: boolean };
+  progress?: number;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
   const borderColor = ROLE_BORDER_COLOR[member.role] || ROLE_BORDER_COLOR.novacek;
+  const barColor = PROGRESS_BAR_COLOR[member.role] || "#89ADB4";
+  const pct = progress != null ? Math.min(Math.max(progress, 0), 100) : undefined;
   const initials = member.full_name
     .split(" ")
     .map((n) => n[0])
@@ -94,8 +107,8 @@ function MemberCard({
 
   return (
     <div
-      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow"
-      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px" }}
+      className="legatus-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden"
+      style={{ marginLeft: depth * 24, borderLeft: `3px solid ${borderColor}`, padding: "8px 12px", paddingBottom: pct != null ? 11 : 8 }}
       onClick={onClick}
     >
       {member.avatar_url ? (
@@ -116,6 +129,30 @@ function MemberCard({
           )}
         </div>
       </div>
+
+      {/* Progress bar at bottom edge — same style as OrgChart */}
+      {pct != null && (
+        <div
+          className="absolute"
+          style={{
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: "rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${pct}%`,
+              height: "100%",
+              background: barColor,
+              transition: "width 0.4s ease-out",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -128,6 +165,7 @@ function HierarchyGroup({
   depth,
   readOnly = false,
   bjMap,
+  progressMap,
 }: {
   parent: Profile;
   children: Profile[];
@@ -136,6 +174,7 @@ function HierarchyGroup({
   depth: number;
   readOnly?: boolean;
   bjMap?: Map<string, { value: number; isTeam: boolean }>;
+  progressMap?: Map<string, number>;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
@@ -163,6 +202,7 @@ function HierarchyGroup({
             depth={0}
             readOnly={readOnly}
             bjInfo={bjMap?.get(parent.id)}
+            progress={progressMap?.get(parent.id)}
           />
         </div>
       </div>
@@ -180,6 +220,7 @@ function HierarchyGroup({
                 depth={depth + 1}
                 readOnly={readOnly}
                 bjMap={bjMap}
+                progressMap={progressMap}
               />
             );
           })}
@@ -482,6 +523,81 @@ const SpravaTeam = () => {
     return map;
   }, [members, periodMeetingBj, childrenMap, profile]);
 
+  // ── Progress (same logic as OrgChart) ──
+  // All-time cumulative BJ from activity_records + client_meetings
+  const { data: allBjData = [] } = useQuery({
+    queryKey: ["team_all_activity_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_records")
+        .select("user_id, bj");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: members.length > 0,
+  });
+
+  const { data: allMeetingBj = [] } = useQuery({
+    queryKey: ["team_all_meeting_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: members.length > 0,
+  });
+
+  // Recursive structure count (entire subtree below each user)
+  const structureCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    function countBelow(nodeId: string): number {
+      const kids = childrenMap.get(nodeId) || [];
+      let total = kids.length;
+      kids.forEach((k) => { total += countBelow(k.id); });
+      counts.set(nodeId, total);
+      return total;
+    }
+    members.forEach((m) => { if (!counts.has(m.id)) countBelow(m.id); });
+    return counts;
+  }, [members, childrenMap]);
+
+  const cumulativeBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    allBjData.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.bj) || 0));
+    });
+    allMeetingBj.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
+    return map;
+  }, [allBjData, allMeetingBj]);
+
+  // Same thresholds as OrgChart
+  const progressMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const allUsers: Profile[] = [...members];
+    if (profile) allUsers.push(profile as unknown as Profile);
+    allUsers.forEach((p) => {
+      let pct: number | undefined;
+      if (p.role === "ziskatel") {
+        const bjPct = Math.min((cumulativeBjMap.get(p.id) || 0) / 1000, 1) * 75;
+        const peoplePct = Math.min((structureCountMap.get(p.id) || 0) / 2, 1) * 25;
+        pct = Math.round((bjPct + peoplePct) * 10) / 10;
+      } else if (p.role === "garant") {
+        pct = ((structureCountMap.get(p.id) || 0) / 5) * 100;
+      } else if (p.role === "budouci_vedouci") {
+        pct = ((structureCountMap.get(p.id) || 0) / 10) * 100;
+      } else if (p.role === "vedouci") {
+        pct = 100;
+      }
+      if (pct != null) map.set(p.id, pct);
+    });
+    return map;
+  }, [members, profile, cumulativeBjMap, structureCountMap]);
+
 
   if (isMobile) {
     return (
@@ -597,6 +713,7 @@ const SpravaTeam = () => {
                       depth={0}
                       readOnly={isReadOnly}
                       bjMap={bjMap}
+                      progressMap={progressMap}
                     />
                   );
                 })}
@@ -752,6 +869,7 @@ const SpravaTeam = () => {
                   depth={0}
                   readOnly={isReadOnly}
                   bjMap={bjMap}
+                  progressMap={progressMap}
                 />
               );
             })}
