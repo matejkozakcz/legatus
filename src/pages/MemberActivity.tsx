@@ -46,18 +46,31 @@ const MONTH_NAMES = [
   "Prosinec",
 ];
 
+// Columns for the weekly breakdown table.
+// Computed from client_meetings via computeMeetingStats so the totals
+// always match the cards above (single source of truth: "actual" =
+// outcome_recorded = true AND not cancelled).
 const ACTIVITY_COLUMNS = [
-  { key: "fsa_actual", header: "Analýzy" },
-  { key: "ser_actual", header: "Poradka" },
-  { key: "poh_actual", header: "Pohovory" },
-  { key: "por_actual", header: "Poradenství" },
-  { key: "nab_actual", header: "Nábory" },
-  { key: "ref_actual", header: "Doporučení" },
-  { key: "bj_fsa_actual", header: "BJ FSA" },
-  { key: "bj_ser_actual", header: "BJ SER" },
+  { key: "fsa", header: "Analýzy" },
+  { key: "poh", header: "Pohovory" },
+  { key: "ser", header: "Servisy" },
+  { key: "por", header: "Poradenství" },
+  { key: "ref", header: "Doporučení" },
+  { key: "bj_por", header: "BJ z Poradenství" },
+  { key: "bj_ser", header: "BJ Servisy" },
+  { key: "bj_total", header: "BJ celkem" },
 ] as const;
 
-const ALL_DISPLAY_COLUMNS = [...ACTIVITY_COLUMNS, { key: "bj" as const, header: "BJ celkem" }] as const;
+type WeeklyRow = {
+  fsa: number;
+  poh: number;
+  ser: number;
+  por: number;
+  ref: number;
+  bj_por: number;
+  bj_ser: number;
+  bj_total: number;
+};
 
 const MOBILE_ACTIVITIES = [
   {
@@ -235,14 +248,74 @@ const MemberActivity = () => {
 
   const stats = periodStats;
 
+  // Weekly breakdown — single source of truth: client_meetings + computeMeetingStats.
+  // Same definition of "actual" as the cards above (outcome_recorded = true AND not cancelled),
+  // so the Celkem row matches the cards and the PDF.
+  const { data: weeklyMeetings = [] } = useQuery({
+    queryKey: ["member_weekly_meetings", userId, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!userId) return [];
+      const firstWeek = startOfWeek(periodStart, { weekStartsOn: 1 });
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
+        .eq("user_id", userId)
+        .gte("date", format(firstWeek, "yyyy-MM-dd"))
+        .lte("date", format(periodEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userId,
+  });
+
+  // Aggregate per Mon–Sun week, keyed by week_start (yyyy-MM-dd).
+  const weeklyRows = useMemo(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const map = new Map<string, WeeklyRow>();
+    for (const ws of weeks) {
+      const wsStr = format(ws, "yyyy-MM-dd");
+      const we = endOfWeek(ws, { weekStartsOn: 1 });
+      const weStr = format(we, "yyyy-MM-dd");
+      const inWeek = (weeklyMeetings as any[]).filter((m) => {
+        const d = m.date as string;
+        return d >= wsStr && d <= weStr;
+      });
+      const wstats = computeMeetingStats(inWeek as any, todayStr);
+      const confirmed = inWeek.filter((m) => !m.cancelled && m.outcome_recorded === true);
+      const bj_por = confirmed
+        .filter((m) => m.meeting_type === "POR")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      const bj_ser = confirmed
+        .filter((m) => m.meeting_type === "SER")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      map.set(wsStr, {
+        fsa: wstats.fsa.actual,
+        poh: wstats.poh.actual,
+        ser: wstats.ser.actual,
+        por: wstats.por.actual,
+        ref: wstats.ref.actual,
+        bj_por,
+        bj_ser,
+        bj_total: bj_por + bj_ser,
+      });
+    }
+    return map;
+  }, [weeks, weeklyMeetings]);
+
   const columnSums = useMemo(() => {
     const sums: Record<string, number> = {};
     ACTIVITY_COLUMNS.forEach((col) => {
-      sums[col.key] = records.reduce((acc, r: any) => acc + (r[col.key] || 0), 0);
+      sums[col.key] = 0;
     });
-    sums["bj"] = (sums["bj_fsa_actual"] || 0) + (sums["bj_ser_actual"] || 0);
+    weeklyRows.forEach((row) => {
+      ACTIVITY_COLUMNS.forEach((col) => {
+        sums[col.key] += row[col.key as keyof WeeklyRow] || 0;
+      });
+    });
     return sums;
-  }, [records]);
+  }, [weeklyRows]);
 
   // Mobile week navigation
   const mobileWeekStart = useMemo(
@@ -598,7 +671,7 @@ const MemberActivity = () => {
             <thead>
               <tr>
                 <th className="text-left">Týden</th>
-                {ALL_DISPLAY_COLUMNS.map((col) => (
+                {ACTIVITY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
@@ -606,23 +679,19 @@ const MemberActivity = () => {
             <tbody>
               {weeks.map((weekStart, index) => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
-                const record = records.find((r) => r.week_start === weekStr);
+                const row = weeklyRows.get(weekStr);
                 return (
                   <tr key={weekStr} className="past">
                     <td className="text-left whitespace-nowrap font-medium">Týden {index + 1}</td>
-                    {ALL_DISPLAY_COLUMNS.map((col) => {
-                      const val =
-                        col.key === "bj"
-                          ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
-                          : (record as any)?.[col.key] || 0;
-                      return <td key={col.key}>{val}</td>;
-                    })}
+                    {ACTIVITY_COLUMNS.map((col) => (
+                      <td key={col.key}>{row?.[col.key as keyof WeeklyRow] ?? 0}</td>
+                    ))}
                   </tr>
                 );
               })}
               <tr className="summary">
                 <td className="text-left">Celkem</td>
-                {ALL_DISPLAY_COLUMNS.map((col) => (
+                {ACTIVITY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
