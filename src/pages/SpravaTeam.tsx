@@ -165,6 +165,7 @@ function HierarchyGroup({
   depth,
   readOnly = false,
   bjMap,
+  progressMap,
 }: {
   parent: Profile;
   children: Profile[];
@@ -173,6 +174,7 @@ function HierarchyGroup({
   depth: number;
   readOnly?: boolean;
   bjMap?: Map<string, { value: number; isTeam: boolean }>;
+  progressMap?: Map<string, number>;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
   const hasChildren = children.length > 0;
@@ -200,6 +202,7 @@ function HierarchyGroup({
             depth={0}
             readOnly={readOnly}
             bjInfo={bjMap?.get(parent.id)}
+            progress={progressMap?.get(parent.id)}
           />
         </div>
       </div>
@@ -217,6 +220,7 @@ function HierarchyGroup({
                 depth={depth + 1}
                 readOnly={readOnly}
                 bjMap={bjMap}
+                progressMap={progressMap}
               />
             );
           })}
