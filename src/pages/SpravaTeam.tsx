@@ -712,22 +712,19 @@ const SpravaTeam = () => {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {rootMembers.map((member) => {
-                  const children = childrenMap.get(member.id) || [];
-                  return (
-                    <HierarchyGroup
-                      key={member.id}
-                      parent={member}
-                      children={children}
-                      childrenMap={childrenMap}
-                      onEdit={setDetailMember}
-                      depth={0}
-                      readOnly={isReadOnly}
-                      bjMap={bjMap}
-                      progressMap={progressMap}
-                    />
-                  );
-                })}
+                {profile && (
+                  <HierarchyGroup
+                    key={profile.id}
+                    parent={profile as unknown as Profile}
+                    children={rootMembers}
+                    childrenMap={childrenMapWithSelf}
+                    onEdit={handleMemberClick}
+                    depth={0}
+                    readOnly={isReadOnly}
+                    bjMap={bjMap}
+                    progressMap={progressMap}
+                  />
+                )}
               </div>
             )}
           </div>
