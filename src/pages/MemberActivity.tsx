@@ -671,7 +671,7 @@ const MemberActivity = () => {
             <thead>
               <tr>
                 <th className="text-left">Týden</th>
-                {ALL_DISPLAY_COLUMNS.map((col) => (
+                {ACTIVITY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
               </tr>
@@ -679,23 +679,19 @@ const MemberActivity = () => {
             <tbody>
               {weeks.map((weekStart, index) => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
-                const record = records.find((r) => r.week_start === weekStr);
+                const row = weeklyRows.get(weekStr);
                 return (
                   <tr key={weekStr} className="past">
                     <td className="text-left whitespace-nowrap font-medium">Týden {index + 1}</td>
-                    {ALL_DISPLAY_COLUMNS.map((col) => {
-                      const val =
-                        col.key === "bj"
-                          ? ((record as any)?.bj_fsa_actual || 0) + ((record as any)?.bj_ser_actual || 0)
-                          : (record as any)?.[col.key] || 0;
-                      return <td key={col.key}>{val}</td>;
-                    })}
+                    {ACTIVITY_COLUMNS.map((col) => (
+                      <td key={col.key}>{row?.[col.key as keyof WeeklyRow] ?? 0}</td>
+                    ))}
                   </tr>
                 );
               })}
               <tr className="summary">
                 <td className="text-left">Celkem</td>
-                {ALL_DISPLAY_COLUMNS.map((col) => (
+                {ACTIVITY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
               </tr>
