@@ -451,6 +451,17 @@ const SpravaTeam = () => {
       .sort((a, b) => (ROLE_ORDER[a.role] ?? 99) - (ROLE_ORDER[b.role] ?? 99));
   }, [members, profile?.id]);
 
+  // Children map including self → root members so the current user can be rendered as the top node
+  const childrenMapWithSelf = useMemo(() => {
+    const map = new Map(childrenMap);
+    if (profile) map.set(profile.id, rootMembers);
+    return map;
+  }, [childrenMap, rootMembers, profile?.id]);
+
+  const handleMemberClick = useCallback((m: Profile) => {
+    setDetailMember(m);
+  }, []);
+
   const enrichedRequests: PromotionRequest[] = pendingRequests
     .filter((req) => profileMap.has(req.user_id))
     .map((req) => ({
