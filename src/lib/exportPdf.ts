@@ -328,36 +328,23 @@ export async function exportDashboardPdf(
     });
   }
 
-  // ── Týdenní rozpis (osobní) — mirrors the on-screen table in MemberActivity ──
-  // Show only weeks fully inside the period so that totals match the cards above.
-  const { data: weekRecords = [] } = await supabase
-    .from("activity_records")
-    .select("week_start, fsa_actual, ser_actual, poh_actual, por_actual, ref_actual, bj_fsa_actual, bj_ser_actual, bj")
-    .eq("user_id", userId)
-    .gte("week_start", periodFrom)
-    .lte("week_start", periodTo);
-
-  type WeekRow = {
-    week_start: string;
-    fsa_actual: number | null;
-    ser_actual: number | null;
-    poh_actual: number | null;
-    por_actual: number | null;
-    ref_actual: number | null;
-    bj_fsa_actual: number | null;
-    bj_ser_actual: number | null;
-    bj: number | null;
-  };
-  const weekRows = ((weekRecords || []) as WeekRow[])
-    .filter((r) => {
-      // Only weeks whose entire Mon–Sun window falls inside the production period
-      const ws = new Date(r.week_start + "T00:00:00");
+  // ── Týdenní rozpis (osobní) — single source of truth: client_meetings + computeMeetingStats.
+  // Same definition of "actual" as the cards above (outcome_recorded = true AND not cancelled),
+  // so totals match the cards exactly.
+  const weekRanges: { start: Date; end: Date }[] = [];
+  {
+    let ws = startOfWeek(new Date(periodFrom + "T00:00:00"), { weekStartsOn: 1 });
+    const periodEndDate = new Date(periodTo + "T00:00:00");
+    while (ws <= periodEndDate) {
       const we = endOfWeek(ws, { weekStartsOn: 1 });
-      return format(ws, "yyyy-MM-dd") >= periodFrom && format(we, "yyyy-MM-dd") <= periodTo;
-    })
-    .sort((a, b) => a.week_start.localeCompare(b.week_start));
+      if (format(ws, "yyyy-MM-dd") >= periodFrom && format(we, "yyyy-MM-dd") <= periodTo) {
+        weekRanges.push({ start: new Date(ws), end: new Date(we) });
+      }
+      ws = new Date(ws.getTime() + 7 * 86400000);
+    }
+  }
 
-  if (weekRows.length > 0) {
+  if (weekRanges.length > 0) {
     const lastY = (doc as any).lastAutoTable?.finalY || 60;
     let weekStartY = lastY + 10;
     if (weekStartY > doc.internal.pageSize.getHeight() - 50) {
@@ -372,35 +359,47 @@ export async function exportDashboardPdf(
     const weekHead = [
       "Týden",
       "Analýzy",
-      "Poradka",
       "Pohovory",
+      "Servisy",
       "Poradenství",
       "Doporučení",
-      "BJ FSA",
-      "BJ SER",
+      "BJ z Poradenství",
+      "BJ Servisy",
       "BJ celkem",
     ];
-    const sums = { fsa: 0, ser: 0, poh: 0, por: 0, ref: 0, bjFsa: 0, bjSer: 0, bj: 0 };
-    const weekBody: any[] = weekRows.map((r, i) => {
-      const fsa = r.fsa_actual || 0;
-      const ser = r.ser_actual || 0;
-      const poh = r.poh_actual || 0;
-      const por = r.por_actual || 0;
-      const ref = r.ref_actual || 0;
-      const bjFsa = Number(r.bj_fsa_actual) || 0;
-      const bjSer = Number(r.bj_ser_actual) || 0;
-      const bj = Number(r.bj) || 0;
+    const sums = { fsa: 0, poh: 0, ser: 0, por: 0, ref: 0, bjPor: 0, bjSer: 0, bj: 0 };
+    const weekBody: any[] = weekRanges.map((wr, i) => {
+      const wsStr = format(wr.start, "yyyy-MM-dd");
+      const weStr = format(wr.end, "yyyy-MM-dd");
+      const inWeek = (ownMeetings as MeetingRow[]).filter((m) => {
+        const d = m.date as string;
+        return d >= wsStr && d <= weStr;
+      });
+      const wstats = computeMeetingStats(inWeek as any, todayStr);
+      const confirmed = inWeek.filter((m) => !m.cancelled && m.outcome_recorded === true);
+      const bjPor = confirmed
+        .filter((m) => m.meeting_type === "POR")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      const bjSer = confirmed
+        .filter((m) => m.meeting_type === "SER")
+        .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
+      const fsa = wstats.fsa.actual;
+      const poh = wstats.poh.actual;
+      const ser = wstats.ser.actual;
+      const por = wstats.por.actual;
+      const ref = wstats.ref.actual;
+      const bj = bjPor + bjSer;
       sums.fsa += fsa;
-      sums.ser += ser;
       sums.poh += poh;
+      sums.ser += ser;
       sums.por += por;
       sums.ref += ref;
-      sums.bjFsa += bjFsa;
+      sums.bjPor += bjPor;
       sums.bjSer += bjSer;
       sums.bj += bj;
-      return [`Týden ${i + 1}`, fsa, ser, poh, por, ref, bjFsa, bjSer, bj];
+      return [`Týden ${i + 1}`, fsa, poh, ser, por, ref, bjPor, bjSer, bj];
     });
-    weekBody.push(["Celkem", sums.fsa, sums.ser, sums.poh, sums.por, sums.ref, sums.bjFsa, sums.bjSer, sums.bj]);
+    weekBody.push(["Celkem", sums.fsa, sums.poh, sums.ser, sums.por, sums.ref, sums.bjPor, sums.bjSer, sums.bj]);
 
     autoTable(doc, {
       startY: weekStartY + 4,
