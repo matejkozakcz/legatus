@@ -7,6 +7,7 @@ import { startOfWeek, formatISO, format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { X, Loader2, ArrowRight, TrendingUp, TrendingDown, CheckCircle2, XCircle, Pencil, Calendar, GraduationCap, Plus, Trash2, Check } from "lucide-react";
 import { getProductionPeriodMonth, getProductionPeriodForMonth } from "@/lib/productionPeriod";
+import { computeMeetingStats } from "@/lib/meetingStats";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
