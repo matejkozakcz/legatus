@@ -71,17 +71,26 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
   const weekStart = getWeekStart();
 
-  const { data: record, isLoading } = useQuery({
-    queryKey: ["member_week_stats", member.id, weekStart],
+  // Pull all client_meetings for the current week and compute stats client-side
+  // via computeMeetingStats — same source of truth as MemberActivity / Dashboard,
+  // so cards match the rest of the app (outcome_recorded = true & not cancelled).
+  const { data: weekMeetings = [], isLoading } = useQuery({
+    queryKey: ["member_week_meetings", member.id, weekStart],
     queryFn: async () => {
+      const weekEnd = format(
+        new Date(new Date(weekStart).getTime() + 6 * 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd",
+      );
       const { data, error } = await supabase
-        .from("activity_records")
-        .select("fsa_actual, fsa_planned, poh_actual, poh_planned, por_actual, por_planned, ref_actual, ref_planned")
+        .from("client_meetings")
+        .select(
+          "meeting_type, cancelled, date, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+        )
         .eq("user_id", member.id)
-        .eq("week_start", weekStart)
-        .maybeSingle();
+        .gte("date", weekStart)
+        .lte("date", weekEnd);
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
