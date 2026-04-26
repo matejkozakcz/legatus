@@ -523,6 +523,81 @@ const SpravaTeam = () => {
     return map;
   }, [members, periodMeetingBj, childrenMap, profile]);
 
+  // ── Progress (same logic as OrgChart) ──
+  // All-time cumulative BJ from activity_records + client_meetings
+  const { data: allBjData = [] } = useQuery({
+    queryKey: ["team_all_activity_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_records")
+        .select("user_id, bj");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: members.length > 0,
+  });
+
+  const { data: allMeetingBj = [] } = useQuery({
+    queryKey: ["team_all_meeting_bj"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("user_id, podepsane_bj")
+        .eq("cancelled", false);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: members.length > 0,
+  });
+
+  // Recursive structure count (entire subtree below each user)
+  const structureCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    function countBelow(nodeId: string): number {
+      const kids = childrenMap.get(nodeId) || [];
+      let total = kids.length;
+      kids.forEach((k) => { total += countBelow(k.id); });
+      counts.set(nodeId, total);
+      return total;
+    }
+    members.forEach((m) => { if (!counts.has(m.id)) countBelow(m.id); });
+    return counts;
+  }, [members, childrenMap]);
+
+  const cumulativeBjMap = useMemo(() => {
+    const map = new Map<string, number>();
+    allBjData.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.bj) || 0));
+    });
+    allMeetingBj.forEach((r: any) => {
+      map.set(r.user_id, (map.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+    });
+    return map;
+  }, [allBjData, allMeetingBj]);
+
+  // Same thresholds as OrgChart
+  const progressMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const allUsers: Profile[] = [...members];
+    if (profile) allUsers.push(profile as unknown as Profile);
+    allUsers.forEach((p) => {
+      let pct: number | undefined;
+      if (p.role === "ziskatel") {
+        const bjPct = Math.min((cumulativeBjMap.get(p.id) || 0) / 1000, 1) * 75;
+        const peoplePct = Math.min((structureCountMap.get(p.id) || 0) / 2, 1) * 25;
+        pct = Math.round((bjPct + peoplePct) * 10) / 10;
+      } else if (p.role === "garant") {
+        pct = ((structureCountMap.get(p.id) || 0) / 5) * 100;
+      } else if (p.role === "budouci_vedouci") {
+        pct = ((structureCountMap.get(p.id) || 0) / 10) * 100;
+      } else if (p.role === "vedouci") {
+        pct = 100;
+      }
+      if (pct != null) map.set(p.id, pct);
+    });
+    return map;
+  }, [members, profile, cumulativeBjMap, structureCountMap]);
+
 
   if (isMobile) {
     return (
