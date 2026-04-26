@@ -859,28 +859,26 @@ const SpravaTeam = () => {
           <div className="legatus-card p-8 text-center">
             <p className="font-body animate-pulse" style={{ color: "var(--text-muted)" }}>Načítání členů...</p>
           </div>
-        ) : members.length === 0 ? (
-          <div className="legatus-card p-8 text-center">
-            <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
-          </div>
         ) : (
           <div className="space-y-1">
-            {rootMembers.map((member) => {
-              const children = childrenMap.get(member.id) || [];
-              return (
-                <HierarchyGroup
-                  key={member.id}
-                  parent={member}
-                  children={children}
-                  childrenMap={childrenMap}
-                  onEdit={setDetailMember}
-                  depth={0}
-                  readOnly={isReadOnly}
-                  bjMap={bjMap}
-                  progressMap={progressMap}
-                />
-              );
-            })}
+            {profile && (
+              <HierarchyGroup
+                key={profile.id}
+                parent={profile as unknown as Profile}
+                children={rootMembers}
+                childrenMap={childrenMapWithSelf}
+                onEdit={handleMemberClick}
+                depth={0}
+                readOnly={isReadOnly}
+                bjMap={bjMap}
+                progressMap={progressMap}
+              />
+            )}
+            {members.length === 0 && (
+              <div className="legatus-card p-6 text-center" style={{ marginTop: 12 }}>
+                <p className="font-body" style={{ color: "var(--text-muted)" }}>Zatím nemáte žádné členy v týmu.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
