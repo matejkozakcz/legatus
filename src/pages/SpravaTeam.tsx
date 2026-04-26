@@ -713,6 +713,7 @@ const SpravaTeam = () => {
                       depth={0}
                       readOnly={isReadOnly}
                       bjMap={bjMap}
+                      progressMap={progressMap}
                     />
                   );
                 })}
