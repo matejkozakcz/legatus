@@ -490,6 +490,8 @@ export function MeetingFormModal({
               onClear={handleCaseClear}
               allowCreateCase={!!createCaseFn}
               onCreateClick={handleCreateClick}
+              pendingName={pendingClientName}
+              onPendingNameChange={setPendingClientName}
             />
           </div>
         )}
