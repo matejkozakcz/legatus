@@ -2,7 +2,72 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
+import { X, Loader2, Trash2, ChevronDown, AlertTriangle } from "lucide-react";
+
+// ─── Duplicate-case detection helpers ────────────────────────────────────────
+
+/** Normalize a case name for comparison: lowercase, strip diacritics, collapse whitespace. */
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Levenshtein distance (small inputs — case names). */
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const m = a.length, n = b.length;
+  const prev = new Array(n + 1);
+  const curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    for (let j = 0; j <= n; j++) prev[j] = curr[j];
+  }
+  return prev[n];
+}
+
+/** Word-set similarity — handles reordered words like "Novák Jan" vs "Jan Novák". */
+function wordSetEqual(a: string, b: string): boolean {
+  const wa = a.split(" ").filter(Boolean).sort().join(" ");
+  const wb = b.split(" ").filter(Boolean).sort().join(" ");
+  return wa === wb;
+}
+
+/** Returns cases that are exact or fuzzy duplicates of `query`. */
+export function findDuplicateCases<T extends { nazev_pripadu: string }>(
+  query: string,
+  cases: T[]
+): { exact: T[]; similar: T[] } {
+  const q = normalizeName(query);
+  if (!q) return { exact: [], similar: [] };
+  const exact: T[] = [];
+  const similar: T[] = [];
+  for (const c of cases) {
+    const n = normalizeName(c.nazev_pripadu);
+    if (!n) continue;
+    if (n === q || wordSetEqual(n, q)) {
+      exact.push(c);
+      continue;
+    }
+    // Fuzzy: ≥ 4 chars, distance ≤ 2 OR distance / max(len) ≤ 0.2
+    if (q.length >= 4 && n.length >= 4) {
+      const d = levenshtein(q, n);
+      const ratio = d / Math.max(q.length, n.length);
+      if (d <= 2 || ratio <= 0.2) similar.push(c);
+    }
+  }
+  return { exact, similar };
+}
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
@@ -144,6 +209,14 @@ function CaseCombobox({
 
   const selectedName = cases.find((c) => c.id === selectedId)?.nazev_pripadu ?? "";
 
+  // Detect duplicates against the full case list (not just filtered) using normalized + fuzzy match
+  const trimmedQuery = query.trim();
+  const { exact: exactDupes, similar: similarDupes } = useMemo(
+    () => findDuplicateCases(trimmedQuery, cases),
+    [trimmedQuery, cases]
+  );
+  const hasDuplicateWarning = trimmedQuery.length > 0 && (exactDupes.length > 0 || similarDupes.length > 0);
+
   return (
     <div style={{ position: "relative" }}>
       <label className="block text-xs font-medium text-muted-foreground mb-1">Klient *</label>
@@ -162,7 +235,7 @@ function CaseCombobox({
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
           background: "hsl(var(--card))", border: "1px solid hsl(var(--border))",
           borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-          maxHeight: 220, overflowY: "auto",
+          maxHeight: 260, overflowY: "auto",
         }}>
           {filteredCases.length === 0 && !allowCreateCase && (
             <div style={{ padding: "10px 14px", fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
@@ -188,6 +261,37 @@ function CaseCombobox({
               {c.nazev_pripadu}
             </button>
           ))}
+
+          {/* Duplicate warning — shown when query closely matches an existing case */}
+          {hasDuplicateWarning && allowCreateCase && (
+            <div
+              style={{
+                padding: "8px 14px",
+                background: "rgba(252, 124, 113, 0.08)",
+                borderTop: filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
+                borderBottom: "1px solid hsl(var(--border))",
+                fontSize: 12,
+                color: "#fc7c71",
+                display: "flex",
+                gap: 6,
+                alignItems: "flex-start",
+              }}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                  {exactDupes.length > 0 ? "Případ s tímto názvem už existuje" : "Podobný případ již existuje"}
+                </div>
+                <div style={{ color: "hsl(var(--muted-foreground))" }}>
+                  {(exactDupes.length > 0 ? exactDupes : similarDupes)
+                    .slice(0, 3)
+                    .map((c) => c.nazev_pripadu)
+                    .join(", ")}
+                </div>
+              </div>
+            </div>
+          )}
+
           {allowCreateCase && query.trim().length > 0 && (
             <button
               type="button"
@@ -198,12 +302,14 @@ function CaseCombobox({
               style={{
                 display: "block", width: "100%", textAlign: "left",
                 padding: "9px 14px", fontSize: 13, border: "none",
-                borderTop: filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
+                borderTop: !hasDuplicateWarning && filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
                 background: "transparent",
-                color: "#00abbd", fontWeight: 600, cursor: "pointer",
+                color: hasDuplicateWarning ? "hsl(var(--muted-foreground))" : "#00abbd",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
-              + Vytvořit „{query.trim()}"
+              + Vytvořit „{query.trim()}"{hasDuplicateWarning ? " i tak" : ""}
             </button>
           )}
         </div>
