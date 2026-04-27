@@ -80,12 +80,27 @@ export function usePushSubscription(): UsePushSubscriptionResult {
     if (!vapidKey) return { ok: false, error: "VAPID klíč není nakonfigurován (vygeneruj v Adminu)" };
 
     const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
+    const existingSub = await reg.pushManager.getSubscription();
+    if (existingSub) {
+      try {
+        await existingSub.unsubscribe();
+      } catch (e) {
+        console.warn("Failed to unsubscribe stale subscription:", e);
+      }
+    }
+
+    let sub: PushSubscription;
+    try {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
       });
+    } catch (error) {
+      console.error("Push subscribe failed:", error);
+      return {
+        ok: false,
+        error: (error as Error)?.message || "Nepodařilo se aktivovat notifikace",
+      };
     }
 
     const json = sub.toJSON() as {
