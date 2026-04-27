@@ -234,10 +234,15 @@ function CaseCombobox({
         type="text"
         autoComplete="off"
         placeholder={selectedId ? selectedName || "Vyber případ…" : "Hledat nebo vytvořit případ…"}
-        value={dropdownOpen ? query : selectedName}
-        onFocus={() => { setDropdownOpen(true); setQuery(""); }}
+        value={displayValue}
+        onFocus={() => { setDropdownOpen(true); setQuery(displayValue); }}
         onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
-        onChange={(e) => { setQuery(e.target.value); onClear(); }}
+        onChange={(e) => {
+          const v = e.target.value;
+          setQuery(v);
+          if (selectedId) onClear();
+          onPendingNameChange?.(v);
+        }}
         className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
       {dropdownOpen && (
