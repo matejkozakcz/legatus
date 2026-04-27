@@ -186,6 +186,8 @@ function CaseCombobox({
   onClear,
   allowCreateCase,
   onCreateClick,
+  onPendingNameChange,
+  pendingName,
 }: {
   cases: Case[];
   selectedId: string;
@@ -193,10 +195,17 @@ function CaseCombobox({
   onClear: () => void;
   allowCreateCase?: boolean;
   onCreateClick?: (name: string) => void;
+  onPendingNameChange?: (name: string) => void;
+  pendingName?: string;
 }) {
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [query, setQuery] = useState(pendingName ?? "");
+  const [debouncedQuery, setDebouncedQuery] = useState(pendingName ?? "");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Keep local query in sync if parent resets pendingName (e.g. after case creation)
+  useEffect(() => {
+    if (!dropdownOpen) setQuery(pendingName ?? "");
+  }, [pendingName, dropdownOpen]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 300);
@@ -208,6 +217,7 @@ function CaseCombobox({
   );
 
   const selectedName = cases.find((c) => c.id === selectedId)?.nazev_pripadu ?? "";
+  const displayValue = dropdownOpen ? query : (selectedName || pendingName || "");
 
   // Detect duplicates against the full case list (not just filtered) using normalized + fuzzy match
   const trimmedQuery = query.trim();
