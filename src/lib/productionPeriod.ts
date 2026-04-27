@@ -92,15 +92,22 @@ function getPeriodMonth(date: Date): { year: number; month: number } {
   const y = date.getFullYear();
   const m = date.getMonth();
 
+  // Normalize to calendar-day comparison (strip time-of-day).
+  // Without this, 27.4. 14:00 would be considered "after" the period
+  // end of 27.4. 00:00 and the user would jump to the next period
+  // a full day too early — meetings dated 27.4. would disappear from
+  // the current period's list.
+  const dayOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
   const currentEnd = periodEndForMonth(y, m);
 
-  if (date <= currentEnd) {
+  if (dayOnly <= currentEnd) {
     // Could be in this period or the previous one
     const prevMonth = m === 0 ? 11 : m - 1;
     const prevYear = m === 0 ? y - 1 : y;
     const prevEnd = periodEndForMonth(prevYear, prevMonth);
 
-    if (date > prevEnd) {
+    if (dayOnly > prevEnd) {
       return { year: y, month: m };
     } else {
       // Shouldn't normally happen for "today", but handle gracefully

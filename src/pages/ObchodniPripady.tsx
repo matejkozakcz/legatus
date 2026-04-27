@@ -1700,17 +1700,34 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       key={m.id}
                       className="legatus-card cursor-pointer hover:shadow-md transition-shadow"
                       style={{ padding: "10px 14px" }}
-                      onClick={() => {
+                      onClick={async () => {
                         setShowUnrecordedModal(false);
-                        // Find the full meeting object from existing data or navigate
+                        // Try local cache first
                         const fullMeeting = meetings?.find((am: any) => am.id === m.id);
                         if (fullMeeting) {
                           setDetailMeeting(fullMeeting);
-                        } else {
-                          // Navigate to the date
-                          setSelectedDate(parseISO(m.date));
-                          setActiveTab("schuzky");
+                          return;
                         }
+                        // Fallback: load from DB so the detail always opens,
+                        // even when the meeting falls outside the currently
+                        // loaded production-period range.
+                        try {
+                          const { data, error } = await supabase
+                            .from("client_meetings")
+                            .select("*")
+                            .eq("id", m.id)
+                            .single();
+                          if (error) throw error;
+                          if (data) {
+                            setDetailMeeting(data as unknown as Meeting);
+                            return;
+                          }
+                        } catch (e) {
+                          console.error("Failed to load meeting detail:", e);
+                        }
+                        // Last resort: navigate to the meeting's date
+                        setSelectedDate(parseISO(m.date));
+                        setActiveTab("schuzky");
                       }}
                     >
                       <div className="flex items-center gap-3">
