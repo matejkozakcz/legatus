@@ -2,7 +2,72 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Trash2, ChevronDown } from "lucide-react";
+import { X, Loader2, Trash2, ChevronDown, AlertTriangle } from "lucide-react";
+
+// ─── Duplicate-case detection helpers ────────────────────────────────────────
+
+/** Normalize a case name for comparison: lowercase, strip diacritics, collapse whitespace. */
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Levenshtein distance (small inputs — case names). */
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const m = a.length, n = b.length;
+  const prev = new Array(n + 1);
+  const curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    for (let j = 0; j <= n; j++) prev[j] = curr[j];
+  }
+  return prev[n];
+}
+
+/** Word-set similarity — handles reordered words like "Novák Jan" vs "Jan Novák". */
+function wordSetEqual(a: string, b: string): boolean {
+  const wa = a.split(" ").filter(Boolean).sort().join(" ");
+  const wb = b.split(" ").filter(Boolean).sort().join(" ");
+  return wa === wb;
+}
+
+/** Returns cases that are exact or fuzzy duplicates of `query`. */
+export function findDuplicateCases<T extends { nazev_pripadu: string }>(
+  query: string,
+  cases: T[]
+): { exact: T[]; similar: T[] } {
+  const q = normalizeName(query);
+  if (!q) return { exact: [], similar: [] };
+  const exact: T[] = [];
+  const similar: T[] = [];
+  for (const c of cases) {
+    const n = normalizeName(c.nazev_pripadu);
+    if (!n) continue;
+    if (n === q || wordSetEqual(n, q)) {
+      exact.push(c);
+      continue;
+    }
+    // Fuzzy: ≥ 4 chars, distance ≤ 2 OR distance / max(len) ≤ 0.2
+    if (q.length >= 4 && n.length >= 4) {
+      const d = levenshtein(q, n);
+      const ratio = d / Math.max(q.length, n.length);
+      if (d <= 2 || ratio <= 0.2) similar.push(c);
+    }
+  }
+  return { exact, similar };
+}
 
 // ─── Types (shared) ──────────────────────────────────────────────────────────
 
