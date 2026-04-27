@@ -209,6 +209,14 @@ function CaseCombobox({
 
   const selectedName = cases.find((c) => c.id === selectedId)?.nazev_pripadu ?? "";
 
+  // Detect duplicates against the full case list (not just filtered) using normalized + fuzzy match
+  const trimmedQuery = query.trim();
+  const { exact: exactDupes, similar: similarDupes } = useMemo(
+    () => findDuplicateCases(trimmedQuery, cases),
+    [trimmedQuery, cases]
+  );
+  const hasDuplicateWarning = trimmedQuery.length > 0 && (exactDupes.length > 0 || similarDupes.length > 0);
+
   return (
     <div style={{ position: "relative" }}>
       <label className="block text-xs font-medium text-muted-foreground mb-1">Klient *</label>
@@ -227,7 +235,7 @@ function CaseCombobox({
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
           background: "hsl(var(--card))", border: "1px solid hsl(var(--border))",
           borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-          maxHeight: 220, overflowY: "auto",
+          maxHeight: 260, overflowY: "auto",
         }}>
           {filteredCases.length === 0 && !allowCreateCase && (
             <div style={{ padding: "10px 14px", fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
@@ -253,6 +261,37 @@ function CaseCombobox({
               {c.nazev_pripadu}
             </button>
           ))}
+
+          {/* Duplicate warning — shown when query closely matches an existing case */}
+          {hasDuplicateWarning && allowCreateCase && (
+            <div
+              style={{
+                padding: "8px 14px",
+                background: "rgba(252, 124, 113, 0.08)",
+                borderTop: filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
+                borderBottom: "1px solid hsl(var(--border))",
+                fontSize: 12,
+                color: "#fc7c71",
+                display: "flex",
+                gap: 6,
+                alignItems: "flex-start",
+              }}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                  {exactDupes.length > 0 ? "Případ s tímto názvem už existuje" : "Podobný případ již existuje"}
+                </div>
+                <div style={{ color: "hsl(var(--muted-foreground))" }}>
+                  {(exactDupes.length > 0 ? exactDupes : similarDupes)
+                    .slice(0, 3)
+                    .map((c) => c.nazev_pripadu)
+                    .join(", ")}
+                </div>
+              </div>
+            </div>
+          )}
+
           {allowCreateCase && query.trim().length > 0 && (
             <button
               type="button"
@@ -263,12 +302,14 @@ function CaseCombobox({
               style={{
                 display: "block", width: "100%", textAlign: "left",
                 padding: "9px 14px", fontSize: 13, border: "none",
-                borderTop: filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
+                borderTop: !hasDuplicateWarning && filteredCases.length > 0 ? "1px solid hsl(var(--border))" : "none",
                 background: "transparent",
-                color: "#00abbd", fontWeight: 600, cursor: "pointer",
+                color: hasDuplicateWarning ? "hsl(var(--muted-foreground))" : "#00abbd",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
-              + Vytvořit „{query.trim()}"
+              + Vytvořit „{query.trim()}"{hasDuplicateWarning ? " i tak" : ""}
             </button>
           )}
         </div>
