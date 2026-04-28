@@ -234,7 +234,10 @@ function OnlineUsersCard() {
   useEffect(() => {
     if (!profile?.id) return;
 
-    const channel = supabase.channel("admin_presence", {
+    // Use a distinct channel name for the observer so it doesn't collide with
+    // the global usePresenceTracker channel (Supabase forbids adding listeners
+    // after subscribe(), and the tracker subscribes first).
+    const channel = supabase.channel(`admin_presence_observer_${profile.id}_${Date.now()}`, {
       config: { presence: { key: profile.id } },
     });
 
