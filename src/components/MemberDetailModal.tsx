@@ -300,7 +300,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const stats = [
     { label: "Analýzy", actual: meetingStats.fsa.actual, planned: meetingStats.fsa.planned },
     { label: "Pohovory", actual: meetingStats.poh.actual, planned: meetingStats.poh.planned },
-    { label: "Servisy", actual: meetingStats.ser.actual, planned: meetingStats.ser.planned },
+    { label: "Nábory", actual: meetingStats.nab.actual, planned: meetingStats.nab.planned },
     { label: "Poradenství", actual: meetingStats.por.actual, planned: meetingStats.por.planned },
     { label: "Doporučení", actual: meetingStats.ref.actual, planned: meetingStats.ref.planned },
   ];

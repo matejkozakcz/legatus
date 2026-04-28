@@ -53,22 +53,22 @@ const MONTH_NAMES = [
 const ACTIVITY_COLUMNS = [
   { key: "fsa", header: "Analýzy" },
   { key: "poh", header: "Pohovory" },
-  { key: "ser", header: "Servisy" },
+  { key: "nab", header: "Nábory" },
   { key: "por", header: "Poradenství" },
   { key: "ref", header: "Doporučení" },
   { key: "bj_por", header: "BJ z Poradenství" },
-  { key: "bj_ser", header: "BJ Servisy" },
+  { key: "bj_nab", header: "BJ Nábory" },
   { key: "bj_total", header: "BJ celkem" },
 ] as const;
 
 type WeeklyRow = {
   fsa: number;
   poh: number;
-  ser: number;
+  nab: number;
   por: number;
   ref: number;
   bj_por: number;
-  bj_ser: number;
+  bj_nab: number;
   bj_total: number;
 };
 
@@ -198,7 +198,7 @@ const MemberActivity = () => {
     data: periodStats = {
       fsa: { actual: 0, planned: 0 },
       poh: { actual: 0, planned: 0 },
-      ser: { actual: 0, planned: 0 },
+      nab: { actual: 0, planned: 0 },
       por: { actual: 0, planned: 0 },
       ref: { actual: 0, planned: 0 },
     },
@@ -208,7 +208,7 @@ const MemberActivity = () => {
       const empty = {
         fsa: { actual: 0, planned: 0 },
         poh: { actual: 0, planned: 0 },
-        ser: { actual: 0, planned: 0 },
+        nab: { actual: 0, planned: 0 },
         por: { actual: 0, planned: 0 },
         ref: { actual: 0, planned: 0 },
       };
@@ -287,18 +287,18 @@ const MemberActivity = () => {
       const bj_por = confirmed
         .filter((m) => m.meeting_type === "POR")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
-      const bj_ser = confirmed
-        .filter((m) => m.meeting_type === "SER")
+      const bj_nab = confirmed
+        .filter((m) => m.meeting_type === "NAB")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
       map.set(wsStr, {
         fsa: wstats.fsa.actual,
         poh: wstats.poh.actual,
-        ser: wstats.ser.actual,
+        nab: wstats.nab.actual,
         por: wstats.por.actual,
         ref: wstats.ref.actual,
         bj_por,
-        bj_ser,
-        bj_total: bj_por + bj_ser,
+        bj_nab,
+        bj_total: bj_por + bj_nab,
       });
     }
     return map;
@@ -535,7 +535,7 @@ const MemberActivity = () => {
             {[
               { label: "Analýzy", actual: stats.fsa.actual, planned: stats.fsa.planned },
               { label: "Pohovory", actual: stats.poh.actual, planned: stats.poh.planned },
-              { label: "Poradka", actual: stats.ser.actual, planned: stats.ser.planned },
+              { label: "Nábory", actual: stats.nab.actual, planned: stats.nab.planned },
               { label: "Doporučení", actual: stats.ref.actual, planned: 0 },
             ].map(({ label, actual, planned }) => (
               <div key={label}>

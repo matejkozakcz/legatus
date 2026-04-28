@@ -229,10 +229,10 @@ export const MojeAktivityContent = () => {
   // Stats for the period — single source of truth (computeMeetingStats),
   // identical to PDF export, Dashboard and MemberActivity. Computed directly
   // from client_meetings so the cards always agree across the app.
-  const { data: stats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
+  const { data: stats = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, nab: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } } } = useQuery({
     queryKey: ["my_period_stats", profile?.id, format(monthStart, "yyyy-MM-dd")],
     queryFn: async () => {
-      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, ser: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
+      const empty = { fsa: { actual: 0, planned: 0 }, poh: { actual: 0, planned: 0 }, nab: { actual: 0, planned: 0 }, por: { actual: 0, planned: 0 }, ref: { actual: 0, planned: 0 } };
       if (!profile?.id) return empty;
       const todayStr = format(new Date(), "yyyy-MM-dd");
       const { data } = await supabase
@@ -618,9 +618,9 @@ export const MojeAktivityContent = () => {
             plannedLabel="naplánovaných"
           />
           <StatCard
-            label="Poradka"
-            actual={stats.ser.actual}
-            planned={stats.ser.planned}
+            label="Nábory"
+            actual={stats.nab.actual}
+            planned={stats.nab.planned}
             actualLabel="proběhlých"
             plannedLabel="naplánovaných"
           />

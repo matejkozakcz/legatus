@@ -99,11 +99,11 @@ function computePersonStats(
     role,
     planFsa: stats.fsa.planned,
     planPoh: stats.poh.planned,
-    planSer: stats.ser.planned,
+    planSer: stats.nab.planned,
     planPor: stats.por.planned,
     fsa: stats.fsa.actual,
     poh: stats.poh.actual,
-    ser: stats.ser.actual,
+    ser: stats.nab.actual,
     por: stats.por.actual,
     ref: stats.ref.actual,
     bj,
@@ -111,7 +111,7 @@ function computePersonStats(
     bjSer,
     newFsa: newlyBooked.filter((m) => m.meeting_type === "FSA").length,
     newPoh: newlyBooked.filter((m) => m.meeting_type === "POH").length,
-    newSer: newlyBooked.filter((m) => m.meeting_type === "SER").length,
+    newSer: newlyBooked.filter((m) => m.meeting_type === "NAB").length,
     newPor: newlyBooked.filter((m) => m.meeting_type === "POR").length,
     infoCount: infoRows.length,
     infoNovi: sumNovi(infoRows),
@@ -381,11 +381,11 @@ export async function exportDashboardPdf(
         .filter((m) => m.meeting_type === "POR")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
       const bjSer = confirmed
-        .filter((m) => m.meeting_type === "SER")
+        .filter((m) => m.meeting_type === "NAB")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
       const fsa = wstats.fsa.actual;
       const poh = wstats.poh.actual;
-      const ser = wstats.ser.actual;
+      const ser = wstats.nab.actual;
       const por = wstats.por.actual;
       const ref = wstats.ref.actual;
       const bj = bjPor + bjSer;

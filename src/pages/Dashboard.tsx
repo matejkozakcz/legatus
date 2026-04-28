@@ -222,7 +222,7 @@ function computeNewlyArranged(meetings: any[], weekStartStr: string, weekEndStr:
 
   return {
     fsa: inWeek.filter((m: any) => m.meeting_type === "FSA").length,
-    ser: inWeek.filter((m: any) => m.meeting_type === "SER").length,
+    nab: inWeek.filter((m: any) => m.meeting_type === "NAB").length,
     poh: inWeek.filter((m: any) => m.meeting_type === "POH").length,
   };
 }
@@ -592,7 +592,7 @@ const Dashboard = () => {
     return {
       fsa: active.filter((m: any) => m.meeting_type === "FSA").length,
       poh: active.filter((m: any) => m.meeting_type === "POH").length,
-      ser: active.filter((m: any) => m.meeting_type === "SER").length,
+      nab: active.filter((m: any) => m.meeting_type === "NAB").length,
       por: active.filter((m: any) => m.meeting_type === "POR").length,
     };
   }, [newlyBookedMeetings]);
@@ -1377,7 +1377,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
-                  ...(activeRole !== "novacek" ? [{ label: "Servisy", value: mobileNewlyArranged.ser }] : []),
+                  ...(activeRole !== "novacek" ? [{ label: "Nábory", value: mobileNewlyArranged.nab }] : []),
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
@@ -1476,7 +1476,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", value: mobileNewlyArranged.fsa },
                   { label: "Pohovory", value: mobileNewlyArranged.poh },
-                  ...(activeRole !== "novacek" ? [{ label: "Servisy", value: mobileNewlyArranged.ser }] : []),
+                  ...(activeRole !== "novacek" ? [{ label: "Nábory", value: mobileNewlyArranged.nab }] : []),
                 ].map((item) => (
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div
@@ -1511,7 +1511,7 @@ const Dashboard = () => {
                 {[
                   { label: "Analýzy", actual: mobileStats.fsa.actual, planned: mobileStats.fsa.planned },
                   { label: "Pohovory", actual: mobileStats.poh.actual, planned: mobileStats.poh.planned },
-                  ...(activeRole !== "novacek" ? [{ label: "Servisy", actual: mobileStats.ser.actual, planned: mobileStats.ser.planned }] : []),
+                  ...(activeRole !== "novacek" ? [{ label: "Nábory", actual: mobileStats.nab.actual, planned: mobileStats.nab.planned }] : []),
                   { label: "Poradenství", actual: mobileStats.por.actual, planned: mobileStats.por.planned },
                   { label: "Doporučení", actual: mobileStats.ref.actual },
                 ].map((item) => (
