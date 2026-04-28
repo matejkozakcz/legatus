@@ -10,12 +10,14 @@ import { Moon, Sun, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PushOptInBanner } from "@/components/PushOptInBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const [settingsOpen, setSettingsOpen] = useState(false);
+  usePresenceTracker();
 
   if (isMobile) {
     return (
