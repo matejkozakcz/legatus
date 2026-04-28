@@ -826,6 +826,45 @@ export type Database = {
           },
         ]
       }
+      push_delivery_log: {
+        Row: {
+          created_at: string
+          errors: Json
+          expired_removed: number
+          failed: number
+          general_error: string | null
+          id: string
+          notification_id: string | null
+          recipient_id: string
+          sent: number
+          subscription_count: number
+        }
+        Insert: {
+          created_at?: string
+          errors?: Json
+          expired_removed?: number
+          failed?: number
+          general_error?: string | null
+          id?: string
+          notification_id?: string | null
+          recipient_id: string
+          sent?: number
+          subscription_count?: number
+        }
+        Update: {
+          created_at?: string
+          errors?: Json
+          expired_removed?: number
+          failed?: number
+          general_error?: string | null
+          id?: string
+          notification_id?: string | null
+          recipient_id?: string
+          sent?: number
+          subscription_count?: number
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string

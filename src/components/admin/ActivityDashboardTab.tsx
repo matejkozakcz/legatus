@@ -26,6 +26,10 @@ import {
   History,
   Zap,
   AlertCircle,
+  CheckCircle2,
+  XCircle,
+  BellOff,
+  HelpCircle,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -65,6 +69,29 @@ const ROLE_LABELS: Record<string, string> = {
   ziskatel: "Získatel",
   novacek: "Nováček",
 };
+
+/** Summarize push-error array into short human text (e.g. "VAPID key invalid (2)") */
+function summarizeErrors(errors: any): string | undefined {
+  if (!Array.isArray(errors) || errors.length === 0) return undefined;
+  const counts = new Map<string, number>();
+  for (const e of errors) {
+    let label = "Neznámá chyba";
+    const msg: string = (e?.message || e?.body || "").toString();
+    const status: number | undefined = e?.status;
+    if (/VAPID/i.test(msg)) label = "Neplatný VAPID klíč";
+    else if (status === 410 || status === 404) label = "Odběr exspirován";
+    else if (status === 401 || status === 403) label = "Neautorizováno";
+    else if (status === 413) label = "Payload příliš velký";
+    else if (status === 429) label = "Rate limit";
+    else if (status && status >= 500) label = `Server push (${status})`;
+    else if (status) label = `HTTP ${status}`;
+    else if (msg) label = msg.slice(0, 60);
+    counts.set(label, (counts.get(label) || 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([l, c]) => (c > 1 ? `${l} (${c}×)` : l))
+    .join(", ");
+}
 
 // ─── Main Tab ─────────────────────────────────────────────────────────────────
 
@@ -527,6 +554,16 @@ function TopUsersCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Recent Events Feed ──────────────────────────────────────────────────────
 
+interface DeliveryInfo {
+  status: "delivered" | "partial" | "failed" | "no_subs" | "no_log" | "fatal";
+  sent: number;
+  failed: number;
+  subs: number;
+  expired: number;
+  errorSummary?: string;
+  hasActiveSub: boolean;
+}
+
 interface FeedEvent {
   ts: string;
   type: "meeting" | "notification" | "promotion" | "bj_audit" | "promo_request";
@@ -534,6 +571,7 @@ interface FeedEvent {
   detail: string;
   userName?: string;
   icon: typeof Activity;
+  delivery?: DeliveryInfo;
 }
 
 function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
@@ -548,6 +586,8 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
         { data: promos },
         { data: audits },
         { data: profiles },
+        { data: deliveryLogs },
+        { data: pushSubs },
       ] = await Promise.all([
         supabase
           .from("client_meetings")
@@ -570,12 +610,30 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
           .order("created_at", { ascending: false })
           .limit(50),
         supabase.from("profiles").select("id, full_name, role, avatar_url"),
+        supabase
+          .from("push_delivery_log")
+          .select("notification_id, recipient_id, sent, failed, expired_removed, subscription_count, errors, general_error, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase.from("push_subscriptions").select("user_id"),
       ]);
 
       const profMap = new Map<string, Profile>();
       (profiles || []).forEach((p: any) => profMap.set(p.id, p));
       const name = (id?: string | null) =>
         (id && profMap.get(id)?.full_name) || "—";
+
+      // Map: notification_id -> latest delivery log
+      const deliveryMap = new Map<string, any>();
+      (deliveryLogs || []).forEach((d: any) => {
+        if (d.notification_id && !deliveryMap.has(d.notification_id)) {
+          deliveryMap.set(d.notification_id, d);
+        }
+      });
+
+      // Set of users with at least one active push subscription
+      const usersWithSubs = new Set<string>();
+      (pushSubs || []).forEach((s: any) => usersWithSubs.add(s.user_id));
 
       const events: FeedEvent[] = [];
 
@@ -591,6 +649,69 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
       });
 
       (notifs || []).forEach((n: any) => {
+        const log = deliveryMap.get(n.id);
+        const hasActiveSub = usersWithSubs.has(n.recipient_id);
+        let delivery: DeliveryInfo;
+        if (!log) {
+          // No log row — either too old (before logging was enabled) or push trigger never fired
+          delivery = {
+            status: hasActiveSub ? "no_log" : "no_subs",
+            sent: 0,
+            failed: 0,
+            subs: 0,
+            expired: 0,
+            hasActiveSub,
+          };
+        } else if (log.general_error) {
+          delivery = {
+            status: "fatal",
+            sent: 0,
+            failed: 0,
+            subs: log.subscription_count || 0,
+            expired: log.expired_removed || 0,
+            errorSummary: log.general_error,
+            hasActiveSub,
+          };
+        } else if (log.subscription_count === 0) {
+          delivery = {
+            status: "no_subs",
+            sent: 0,
+            failed: 0,
+            subs: 0,
+            expired: 0,
+            hasActiveSub,
+          };
+        } else if (log.failed === 0 && log.sent > 0) {
+          delivery = {
+            status: "delivered",
+            sent: log.sent,
+            failed: 0,
+            subs: log.subscription_count,
+            expired: log.expired_removed || 0,
+            hasActiveSub,
+          };
+        } else if (log.sent > 0) {
+          delivery = {
+            status: "partial",
+            sent: log.sent,
+            failed: log.failed,
+            subs: log.subscription_count,
+            expired: log.expired_removed || 0,
+            errorSummary: summarizeErrors(log.errors),
+            hasActiveSub,
+          };
+        } else {
+          delivery = {
+            status: "failed",
+            sent: 0,
+            failed: log.failed || 0,
+            subs: log.subscription_count || 0,
+            expired: log.expired_removed || 0,
+            errorSummary: summarizeErrors(log.errors),
+            hasActiveSub,
+          };
+        }
+
         events.push({
           ts: n.created_at,
           type: "notification",
@@ -598,6 +719,7 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
           detail: `${name(n.sender_id) !== "—" ? `od ${name(n.sender_id)} → ` : ""}${name(n.recipient_id)} · ${n.trigger_event}`,
           userName: name(n.recipient_id),
           icon: Bell,
+          delivery,
         });
       });
 
@@ -670,6 +792,7 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{e.title}</p>
                   <p className="text-xs text-muted-foreground truncate">{e.detail}</p>
+                  {e.delivery && <DeliveryBadge d={e.delivery} />}
                 </div>
                 <span
                   className="text-[10px] text-muted-foreground whitespace-nowrap"
@@ -683,6 +806,85 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Delivery Badge ──────────────────────────────────────────────────────────
+
+function DeliveryBadge({ d }: { d: DeliveryInfo }) {
+  const config: Record<
+    DeliveryInfo["status"],
+    { icon: typeof CheckCircle2; color: string; bg: string; label: string }
+  > = {
+    delivered: {
+      icon: CheckCircle2,
+      color: "text-emerald-700 dark:text-emerald-400",
+      bg: "bg-emerald-100 dark:bg-emerald-900/30",
+      label: `Doručeno (${d.sent}/${d.subs})`,
+    },
+    partial: {
+      icon: AlertCircle,
+      color: "text-amber-700 dark:text-amber-400",
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      label: `Částečně (${d.sent}/${d.subs}) · ${d.failed} chyb`,
+    },
+    failed: {
+      icon: XCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: `Selhalo (${d.failed}/${d.subs})`,
+    },
+    fatal: {
+      icon: XCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: "Push služba selhala",
+    },
+    no_subs: {
+      icon: BellOff,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      label: d.hasActiveSub ? "Žádný odběr v době odeslání" : "Push notifikace nepovoleny",
+    },
+    no_log: {
+      icon: HelpCircle,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      label: "Bez záznamu doručení",
+    },
+  };
+
+  const c = config[d.status];
+  const Icon = c.icon;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.bg} ${c.color}`}
+        title={d.errorSummary}
+      >
+        <Icon className="h-3 w-3" />
+        {c.label}
+      </span>
+      {d.expired > 0 && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+          {d.expired} odběr(y) odebrány
+        </span>
+      )}
+      {!d.hasActiveSub && d.status !== "no_subs" && (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground"
+          title="Příjemce momentálně nemá registrované žádné push odběry"
+        >
+          <BellOff className="h-3 w-3" /> Aktuálně bez push
+        </span>
+      )}
+      {d.errorSummary && (d.status === "failed" || d.status === "partial" || d.status === "fatal") && (
+        <span className="text-[10px] text-destructive font-mono truncate max-w-full">
+          {d.errorSummary}
+        </span>
+      )}
+    </div>
   );
 }
 
