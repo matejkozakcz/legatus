@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff, History, Zap } from "lucide-react";
+import { Bell, Plus, Pencil, Trash2, SendHorizontal, Power, PowerOff, History, Zap, User as UserIcon } from "lucide-react";
 import { PushSetupPanel } from "@/components/admin/PushSetupPanel";
 import { CronPicker } from "@/components/admin/CronPicker";
 import { RunHistorySheet } from "@/components/admin/RunHistorySheet";
@@ -186,12 +188,12 @@ export function NotificationRulesTab() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification_rules"] }),
   });
 
-  // Manual test send — sends notification to current admin using selected rule's template
+  // Manual test send — sends notification to chosen recipient using selected rule's template
   const testSendMutation = useMutation({
-    mutationFn: async (rule: NotificationRule) => {
+    mutationFn: async ({ rule, recipientId }: { rule: NotificationRule; recipientId: string }) => {
       if (!user) throw new Error("Nepřihlášen");
       const { error } = await supabase.from("notifications").insert({
-        recipient_id: user.id,
+        recipient_id: recipientId,
         sender_id: user.id,
         rule_id: rule.id,
         trigger_event: "manual",
@@ -204,8 +206,27 @@ export function NotificationRulesTab() {
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Testovací notifikace odeslána sobě"),
+    onSuccess: (_d, vars) =>
+      toast.success(
+        vars.recipientId === user?.id
+          ? "Testovací notifikace odeslána sobě"
+          : "Testovací notifikace odeslána",
+      ),
     onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
+  });
+
+  // Load active profiles for the recipient picker
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin_profiles_for_test_send"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true)
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; full_name: string; role: string }>;
+    },
   });
 
   // "Run now" — calls the scheduled runner edge fn with ?force=<id> to bypass cron check
@@ -322,14 +343,58 @@ export function NotificationRulesTab() {
                           </Button>
                         </>
                       )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Test odeslání sobě"
-                        onClick={() => testSendMutation.mutate(rule)}
-                      >
-                        <SendHorizontal className="h-4 w-4" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Test odeslání — vyber příjemce"
+                          >
+                            <SendHorizontal className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-0" align="end">
+                          <Command>
+                            <CommandInput placeholder="Hledat uživatele…" />
+                            <CommandList>
+                              <CommandEmpty>Žádné výsledky</CommandEmpty>
+                              <CommandGroup>
+                                {user && (
+                                  <CommandItem
+                                    value="self sám sobě me"
+                                    onSelect={() => {
+                                      testSendMutation.mutate({ rule, recipientId: user.id });
+                                      (document.activeElement as HTMLElement | null)?.blur();
+                                    }}
+                                  >
+                                    <UserIcon className="h-4 w-4 mr-2 opacity-60" />
+                                    <span className="font-medium">Sám sobě</span>
+                                  </CommandItem>
+                                )}
+                              </CommandGroup>
+                              {profiles.length > 0 && (
+                                <CommandGroup heading="Uživatelé">
+                                  {profiles.map((p) => (
+                                    <CommandItem
+                                      key={p.id}
+                                      value={`${p.full_name} ${p.role}`}
+                                      onSelect={() => {
+                                        testSendMutation.mutate({ rule, recipientId: p.id });
+                                        (document.activeElement as HTMLElement | null)?.blur();
+                                      }}
+                                    >
+                                      <span className="truncate">{p.full_name}</span>
+                                      <span className="ml-auto text-[10px] text-muted-foreground uppercase">
+                                        {p.role}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Button
                         size="icon"
                         variant="ghost"
