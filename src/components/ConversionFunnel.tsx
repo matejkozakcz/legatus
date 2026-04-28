@@ -150,7 +150,7 @@ function SourceGroup({
   );
 }
 
-function OriginBar({ fsaPct, porPct, serPct }: { fsaPct: number; porPct: number; serPct: number }) {
+function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number; nabPct: number }) {
   return (
     <div className="flex flex-col gap-2 min-w-[180px] flex-1">
       <span className="font-body text-[11px] text-muted-foreground lowercase">původ</span>
@@ -159,14 +159,14 @@ function OriginBar({ fsaPct, porPct, serPct }: { fsaPct: number; porPct: number;
       <div className="h-2.5 rounded-full overflow-hidden flex bg-muted">
         {fsaPct > 0 && <div style={{ width: `${fsaPct}%`, background: COLORS.fsa }} />}
         {porPct > 0 && <div style={{ width: `${porPct}%`, background: COLORS.por }} />}
-        {serPct > 0 && <div style={{ width: `${serPct}%`, background: COLORS.ser }} />}
+        {nabPct > 0 && <div style={{ width: `${nabPct}%`, background: COLORS.nab }} />}
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-body text-[11px] text-muted-foreground">
         <LegendDot color={COLORS.fsa} label={`FSA ${fsaPct} %`} />
         <LegendDot color={COLORS.por} label={`POR ${porPct} %`} />
-        <LegendDot color={COLORS.ser} label={`SER ${serPct} %`} />
+        <LegendDot color={COLORS.nab} label={`NÁB ${nabPct} %`} />
       </div>
     </div>
   );
