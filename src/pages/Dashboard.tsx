@@ -2071,6 +2071,16 @@ const Dashboard = () => {
           cases={fabCases}
           isEdit={false}
           userRole={profile?.role}
+          allowCreateCase
+          createCaseFn={async (name, note) => {
+            const { data, error } = await supabase.from("cases").insert({
+              user_id: profile!.id, nazev_pripadu: name, poznamka: note || null,
+            }).select().single();
+            if (error) throw error;
+            await queryClient.invalidateQueries({ queryKey: ["cases", profile?.id] });
+            toast.success("Případ vytvořen");
+            return data as unknown as Case;
+          }}
         />
 
         <FollowUpModal
