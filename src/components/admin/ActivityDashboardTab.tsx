@@ -66,6 +66,29 @@ const ROLE_LABELS: Record<string, string> = {
   novacek: "Nováček",
 };
 
+/** Summarize push-error array into short human text (e.g. "VAPID key invalid (2)") */
+function summarizeErrors(errors: any): string | undefined {
+  if (!Array.isArray(errors) || errors.length === 0) return undefined;
+  const counts = new Map<string, number>();
+  for (const e of errors) {
+    let label = "Neznámá chyba";
+    const msg: string = (e?.message || e?.body || "").toString();
+    const status: number | undefined = e?.status;
+    if (/VAPID/i.test(msg)) label = "Neplatný VAPID klíč";
+    else if (status === 410 || status === 404) label = "Odběr exspirován";
+    else if (status === 401 || status === 403) label = "Neautorizováno";
+    else if (status === 413) label = "Payload příliš velký";
+    else if (status === 429) label = "Rate limit";
+    else if (status && status >= 500) label = `Server push (${status})`;
+    else if (status) label = `HTTP ${status}`;
+    else if (msg) label = msg.slice(0, 60);
+    counts.set(label, (counts.get(label) || 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([l, c]) => (c > 1 ? `${l} (${c}×)` : l))
+    .join(", ");
+}
+
 // ─── Main Tab ─────────────────────────────────────────────────────────────────
 
 export function ActivityDashboardTab() {
