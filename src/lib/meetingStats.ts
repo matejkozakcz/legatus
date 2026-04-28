@@ -32,7 +32,7 @@ export interface PlannedActual {
 export interface MeetingStats {
   fsa: PlannedActual;
   poh: PlannedActual;
-  ser: PlannedActual;
+  nab: PlannedActual;
   por: PlannedActual;
   ref: PlannedActual;
 }
@@ -63,7 +63,7 @@ export function computeMeetingStats(meetings: MeetingStatRow[], _todayStr?: stri
   return {
     fsa: { planned: countAll("FSA"), actual: countActual("FSA") },
     poh: { planned: countAll("POH"), actual: countActual("POH") },
-    ser: { planned: countAll("SER"), actual: countActual("SER") },
+    nab: { planned: countAll("NAB"), actual: countActual("NAB") },
     por: { planned: countAll("POR"), actual: countActual("POR") },
     ref: { planned: sumRefs(refsAll), actual: sumRefs(refsActual) },
   };
