@@ -1606,8 +1606,6 @@ const APP_PAGES = [
   { value: "/obchod", label: "Byznys" },
   { value: "/kalendar", label: "Kalendář" },
   { value: "/hledani", label: "Hledání" },
-  { value: "/zapracovani", label: "Zapracování" },
-  { value: "/zapracovani-management", label: "Zapracování (management)" },
   { value: "/admin", label: "Admin Dashboard" },
 ];
 
