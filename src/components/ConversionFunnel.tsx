@@ -270,13 +270,13 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
           pohCount={stats.por.pohFromHere}
         />
         <SourceGroup
-          title="Servisy"
-          color={COLORS.ser}
-          domluvene={stats.ser.planned}
-          probehle={stats.ser.actual}
-          reliability={stats.ser.reliability}
-          pohConversion={stats.ser.pohConversion}
-          pohCount={stats.ser.pohFromHere}
+          title="Nábory"
+          color={COLORS.nab}
+          domluvene={stats.nab.planned}
+          probehle={stats.nab.actual}
+          reliability={stats.nab.reliability}
+          pohConversion={stats.nab.pohConversion}
+          pohCount={stats.nab.pohFromHere}
         />
       </div>
 
