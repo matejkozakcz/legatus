@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .update({
           is_active: true,
           onboarding_completed: false,
-          role: "novacek",
+          role: "ziskatel",
           vedouci_id: null,
           garant_id: null,
           ziskatel_id: null,

@@ -20,9 +20,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const roleLabels: Record<string, string> = {
   vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
   ziskatel: "Získatel",
-  novacek: "Nováček",
 };
 
 interface AddMemberDialogProps {
@@ -172,7 +172,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         body: {
           email: normalizedEmail,
           full_name: fullName.trim(),
-          role: "novacek",
+          role: "ziskatel",
           vedouci_id: vedouciId,
           garant_id: garantId,
           ziskatel_id: ziskatelId,
@@ -244,7 +244,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
         <DialogHeader>
           <DialogTitle className="font-heading">Přidat člena</DialogTitle>
           <DialogDescription className="font-body">
-            Nový člen bude přidán jako Nováček.
+            Nový člen bude přidán jako Získatel.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -273,7 +273,7 @@ export function AddMemberDialog({ open, onOpenChange }: AddMemberDialogProps) {
 
           <div>
             <label className="text-sm font-body font-medium text-foreground mb-1 block">Role</label>
-            <Input value="Nováček" disabled className="bg-muted" />
+            <Input value="Získatel" disabled className="bg-muted" />
           </div>
 
           {profile?.role === "vedouci" || profile?.role === "budouci_vedouci" ? (

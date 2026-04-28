@@ -16,8 +16,6 @@ import ObchodniPripady from "./pages/ObchodniPripady";
 import Kalendar from "./pages/Kalendar";
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
-import Zapracovani from "./pages/Zapracovani";
-import ZapracovaniManagement from "./pages/ZapracovaniManagement";
 import AdminDashboard from "./pages/AdminDashboard";
 import Transakce from "./pages/Transakce";
 import NotFound from "./pages/NotFound";
@@ -111,22 +109,8 @@ const App = () => (
                 </AppLayout>
               }
             />
-            <Route
-              path="/zapracovani"
-              element={
-                <AppLayout>
-                  <Zapracovani />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/zapracovani-management"
-              element={
-                <AppLayout>
-                  <ZapracovaniManagement />
-                </AppLayout>
-              }
-            />
+            <Route path="/zapracovani" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/zapracovani-management" element={<Navigate to="/tym" replace />} />
             <Route
               path="/admin"
               element={

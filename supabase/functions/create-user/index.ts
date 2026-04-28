@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ALLOWED_ROLES = new Set(["novacek"]);
+const ALLOWED_ROLES = new Set(["ziskatel"]);
 const RATE_LIMIT_PER_HOUR = 20;
 
 function jsonResponse(body: unknown, status: number) {

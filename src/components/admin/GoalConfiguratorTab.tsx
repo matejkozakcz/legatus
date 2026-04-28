@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Save, Target, UserCog, Shield } from "lucide-react";
 import { toast } from "sonner";
 
-const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"] as const;
+const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",
@@ -317,36 +317,7 @@ export function GoalConfiguratorTab() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* Onboarding goal for novacek */}
-                {role === "novacek" && goals.onboarding && (
-                  <>
-                    <GoalRow
-                      goalKey="onboarding"
-                      goal={goals.onboarding}
-                      role={role}
-                      onUpdate={(field, val) => updateGoal(role, "onboarding", field, val)}
-                    />
-                    <div className="border-t border-border my-2" />
-                  </>
-                )}
-                {role === "novacek" && !goals.onboarding && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setForm((prev) => ({
-                          ...prev,
-                          novacek: { ...(prev.novacek || {} as RoleGoals), onboarding: { mode: "system" as const, value: 100 } },
-                        }))
-                      }
-                      className="h-7 text-xs w-full"
-                    >
-                      + Přidat cíl zapracování
-                    </Button>
-                    <div className="border-t border-border my-2" />
-                  </>
-                )}
+                {/* Onboarding goal removed — Nováček role deactivated */}
 
                 {BASIC_GOALS.map((goalKey) => {
                   const goal = goals[goalKey];

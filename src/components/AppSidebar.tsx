@@ -73,19 +73,13 @@ export function AppSidebar() {
     { title: "Můj byznys", url: "/obchodni-pripady", icon: Briefcase, badge: unrecordedCount > 0 },
   ];
 
-  if (profile?.role === "novacek") {
-    navItems.push({ title: "Zapracování", url: "/zapracovani", icon: GraduationCap, badge: false });
-  } else if (
+  if (
     isVedouci ||
     profile?.role === "budouci_vedouci" ||
     profile?.role === "garant" ||
     profile?.role === "ziskatel"
   ) {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
-  }
-
-  if (isVedouci || profile?.role === "budouci_vedouci") {
-    navItems.push({ title: "Zapracování", url: "/zapracovani-management", icon: GraduationCap, badge: false });
   }
 
   if (godMode && profile?.is_admin) {

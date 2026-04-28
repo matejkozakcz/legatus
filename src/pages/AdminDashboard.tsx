@@ -78,7 +78,7 @@ interface ProfileRow {
   personal_bj_goal: number | null;
 }
 
-const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"] as const;
+const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",
@@ -1606,8 +1606,6 @@ const APP_PAGES = [
   { value: "/obchod", label: "Byznys" },
   { value: "/kalendar", label: "Kalendář" },
   { value: "/hledani", label: "Hledání" },
-  { value: "/zapracovani", label: "Zapracování" },
-  { value: "/zapracovani-management", label: "Zapracování (management)" },
   { value: "/admin", label: "Admin Dashboard" },
 ];
 

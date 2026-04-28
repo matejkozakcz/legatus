@@ -19,7 +19,6 @@ interface VedouciOption {
 }
 
 const ROLE_OPTIONS: { value: string; label: string }[] = [
-  { value: "novacek", label: "Nováček" },
   { value: "ziskatel", label: "Získatel" },
   { value: "garant", label: "Garant" },
   { value: "budouci_vedouci", label: "Budoucí vedoucí" },
@@ -78,7 +77,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
   // Step 2 fields
   const [historickyVykon, setHistorickyVykon] = useState("");
-  const [selectedRole, setSelectedRole] = useState("novacek");
+  const [selectedRole, setSelectedRole] = useState("ziskatel");
 
   const [saving, setSaving] = useState(false);
 
