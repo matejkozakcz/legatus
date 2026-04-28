@@ -618,9 +618,9 @@ export const MojeAktivityContent = () => {
             plannedLabel="naplánovaných"
           />
           <StatCard
-            label="Poradka"
-            actual={stats.ser.actual}
-            planned={stats.ser.planned}
+            label="Nábory"
+            actual={stats.nab.actual}
+            planned={stats.nab.planned}
             actualLabel="proběhlých"
             plannedLabel="naplánovaných"
           />
