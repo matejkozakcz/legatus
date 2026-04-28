@@ -596,7 +596,6 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
         { data: notifs },
         { data: promos },
         { data: audits },
-        { data: requests },
         { data: profiles },
       ] = await Promise.all([
         supabase
@@ -619,11 +618,6 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
           .select("id, user_id, action, old_bj, new_bj, change_reason, changed_by, created_at")
           .order("created_at", { ascending: false })
           .limit(50),
-        supabase
-          .from("promotion_requests")
-          .select("id, user_id, requested_role, status, requested_at, reviewed_by")
-          .order("requested_at", { ascending: false })
-          .limit: 30 as any,
         supabase.from("profiles").select("id, full_name, role, avatar_url"),
       ]);
 
