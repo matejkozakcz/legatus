@@ -328,7 +328,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
             <div className="hidden sm:block w-px bg-border" />
 
             {/* Origin */}
-            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
+            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} nabPct={stats.nabPct} />
           </div>
 
           {/* Progress bar — flush to bottom */}
