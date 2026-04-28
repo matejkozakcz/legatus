@@ -343,14 +343,58 @@ export function NotificationRulesTab() {
                           </Button>
                         </>
                       )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Test odeslání sobě"
-                        onClick={() => testSendMutation.mutate(rule)}
-                      >
-                        <SendHorizontal className="h-4 w-4" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Test odeslání — vyber příjemce"
+                          >
+                            <SendHorizontal className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-0" align="end">
+                          <Command>
+                            <CommandInput placeholder="Hledat uživatele…" />
+                            <CommandList>
+                              <CommandEmpty>Žádné výsledky</CommandEmpty>
+                              <CommandGroup>
+                                {user && (
+                                  <CommandItem
+                                    value="self sám sobě me"
+                                    onSelect={() => {
+                                      testSendMutation.mutate({ rule, recipientId: user.id });
+                                      (document.activeElement as HTMLElement | null)?.blur();
+                                    }}
+                                  >
+                                    <UserIcon className="h-4 w-4 mr-2 opacity-60" />
+                                    <span className="font-medium">Sám sobě</span>
+                                  </CommandItem>
+                                )}
+                              </CommandGroup>
+                              {profiles.length > 0 && (
+                                <CommandGroup heading="Uživatelé">
+                                  {profiles.map((p) => (
+                                    <CommandItem
+                                      key={p.id}
+                                      value={`${p.full_name} ${p.role}`}
+                                      onSelect={() => {
+                                        testSendMutation.mutate({ rule, recipientId: p.id });
+                                        (document.activeElement as HTMLElement | null)?.blur();
+                                      }}
+                                    >
+                                      <span className="truncate">{p.full_name}</span>
+                                      <span className="ml-auto text-[10px] text-muted-foreground uppercase">
+                                        {p.role}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Button
                         size="icon"
                         variant="ghost"
