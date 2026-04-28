@@ -809,6 +809,85 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
   );
 }
 
+// ─── Delivery Badge ──────────────────────────────────────────────────────────
+
+function DeliveryBadge({ d }: { d: DeliveryInfo }) {
+  const config: Record<
+    DeliveryInfo["status"],
+    { icon: typeof CheckCircle2; color: string; bg: string; label: string }
+  > = {
+    delivered: {
+      icon: CheckCircle2,
+      color: "text-emerald-700 dark:text-emerald-400",
+      bg: "bg-emerald-100 dark:bg-emerald-900/30",
+      label: `Doručeno (${d.sent}/${d.subs})`,
+    },
+    partial: {
+      icon: AlertCircle,
+      color: "text-amber-700 dark:text-amber-400",
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      label: `Částečně (${d.sent}/${d.subs}) · ${d.failed} chyb`,
+    },
+    failed: {
+      icon: XCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: `Selhalo (${d.failed}/${d.subs})`,
+    },
+    fatal: {
+      icon: XCircle,
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      label: "Push služba selhala",
+    },
+    no_subs: {
+      icon: BellOff,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      label: d.hasActiveSub ? "Žádný odběr v době odeslání" : "Push notifikace nepovoleny",
+    },
+    no_log: {
+      icon: HelpCircle,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+      label: "Bez záznamu doručení",
+    },
+  };
+
+  const c = config[d.status];
+  const Icon = c.icon;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.bg} ${c.color}`}
+        title={d.errorSummary}
+      >
+        <Icon className="h-3 w-3" />
+        {c.label}
+      </span>
+      {d.expired > 0 && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+          {d.expired} odběr(y) odebrány
+        </span>
+      )}
+      {!d.hasActiveSub && d.status !== "no_subs" && (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground"
+          title="Příjemce momentálně nemá registrované žádné push odběry"
+        >
+          <BellOff className="h-3 w-3" /> Aktuálně bez push
+        </span>
+      )}
+      {d.errorSummary && (d.status === "failed" || d.status === "partial" || d.status === "fatal") && (
+        <span className="text-[10px] text-destructive font-mono truncate max-w-full">
+          {d.errorSummary}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ─── Notification Run Log ────────────────────────────────────────────────────
 
 function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
