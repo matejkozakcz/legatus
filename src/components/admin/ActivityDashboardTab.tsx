@@ -527,6 +527,16 @@ function TopUsersCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Recent Events Feed ──────────────────────────────────────────────────────
 
+interface DeliveryInfo {
+  status: "delivered" | "partial" | "failed" | "no_subs" | "no_log" | "fatal";
+  sent: number;
+  failed: number;
+  subs: number;
+  expired: number;
+  errorSummary?: string;
+  hasActiveSub: boolean;
+}
+
 interface FeedEvent {
   ts: string;
   type: "meeting" | "notification" | "promotion" | "bj_audit" | "promo_request";
@@ -534,6 +544,7 @@ interface FeedEvent {
   detail: string;
   userName?: string;
   icon: typeof Activity;
+  delivery?: DeliveryInfo;
 }
 
 function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
@@ -548,6 +559,8 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
         { data: promos },
         { data: audits },
         { data: profiles },
+        { data: deliveryLogs },
+        { data: pushSubs },
       ] = await Promise.all([
         supabase
           .from("client_meetings")
@@ -570,12 +583,30 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
           .order("created_at", { ascending: false })
           .limit(50),
         supabase.from("profiles").select("id, full_name, role, avatar_url"),
+        supabase
+          .from("push_delivery_log")
+          .select("notification_id, recipient_id, sent, failed, expired_removed, subscription_count, errors, general_error, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase.from("push_subscriptions").select("user_id"),
       ]);
 
       const profMap = new Map<string, Profile>();
       (profiles || []).forEach((p: any) => profMap.set(p.id, p));
       const name = (id?: string | null) =>
         (id && profMap.get(id)?.full_name) || "—";
+
+      // Map: notification_id -> latest delivery log
+      const deliveryMap = new Map<string, any>();
+      (deliveryLogs || []).forEach((d: any) => {
+        if (d.notification_id && !deliveryMap.has(d.notification_id)) {
+          deliveryMap.set(d.notification_id, d);
+        }
+      });
+
+      // Set of users with at least one active push subscription
+      const usersWithSubs = new Set<string>();
+      (pushSubs || []).forEach((s: any) => usersWithSubs.add(s.user_id));
 
       const events: FeedEvent[] = [];
 
