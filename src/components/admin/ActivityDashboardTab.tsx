@@ -622,6 +622,69 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
       });
 
       (notifs || []).forEach((n: any) => {
+        const log = deliveryMap.get(n.id);
+        const hasActiveSub = usersWithSubs.has(n.recipient_id);
+        let delivery: DeliveryInfo;
+        if (!log) {
+          // No log row — either too old (before logging was enabled) or push trigger never fired
+          delivery = {
+            status: hasActiveSub ? "no_log" : "no_subs",
+            sent: 0,
+            failed: 0,
+            subs: 0,
+            expired: 0,
+            hasActiveSub,
+          };
+        } else if (log.general_error) {
+          delivery = {
+            status: "fatal",
+            sent: 0,
+            failed: 0,
+            subs: log.subscription_count || 0,
+            expired: log.expired_removed || 0,
+            errorSummary: log.general_error,
+            hasActiveSub,
+          };
+        } else if (log.subscription_count === 0) {
+          delivery = {
+            status: "no_subs",
+            sent: 0,
+            failed: 0,
+            subs: 0,
+            expired: 0,
+            hasActiveSub,
+          };
+        } else if (log.failed === 0 && log.sent > 0) {
+          delivery = {
+            status: "delivered",
+            sent: log.sent,
+            failed: 0,
+            subs: log.subscription_count,
+            expired: log.expired_removed || 0,
+            hasActiveSub,
+          };
+        } else if (log.sent > 0) {
+          delivery = {
+            status: "partial",
+            sent: log.sent,
+            failed: log.failed,
+            subs: log.subscription_count,
+            expired: log.expired_removed || 0,
+            errorSummary: summarizeErrors(log.errors),
+            hasActiveSub,
+          };
+        } else {
+          delivery = {
+            status: "failed",
+            sent: 0,
+            failed: log.failed || 0,
+            subs: log.subscription_count || 0,
+            expired: log.expired_removed || 0,
+            errorSummary: summarizeErrors(log.errors),
+            hasActiveSub,
+          };
+        }
+
         events.push({
           ts: n.created_at,
           type: "notification",
@@ -629,6 +692,7 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
           detail: `${name(n.sender_id) !== "—" ? `od ${name(n.sender_id)} → ` : ""}${name(n.recipient_id)} · ${n.trigger_event}`,
           userName: name(n.recipient_id),
           icon: Bell,
+          delivery,
         });
       });
 
