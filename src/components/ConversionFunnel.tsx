@@ -214,7 +214,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
 
     const fsa = calcStats(meetings, "FSA", pohByParent);
     const por = calcStats(meetings, "POR", pohByParent);
-    const ser = calcStats(meetings, "SER", pohByParent);
+    const nab = calcStats(meetings, "NAB", pohByParent);
 
     // POH karta – domluvené = všechny POH v období, proběhlé = potvrzené
     const pohAll = meetings.filter((m) => m.meeting_type === "POH");
@@ -225,10 +225,10 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const pohReliability = pohPlanned > 0 ? Math.round((pohActual / pohPlanned) * 100) : 0;
 
     // Origin breakdown z navázaných POH
-    const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + ser.pohFromHere;
+    const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + nab.pohFromHere;
     const fsaPct = totalLinkedPoh > 0 ? Math.round((fsa.pohFromHere / totalLinkedPoh) * 100) : 0;
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
-    const serPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
+    const nabPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
 
     // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
     const completedMeetings = meetings.filter(
@@ -240,9 +240,9 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const dopTotal = dopFsa + dopPor + dopPoh;
 
     return {
-      fsa, por, ser,
+      fsa, por, nab,
       pohPlanned, pohActual, pohReliability,
-      fsaPct, porPct, serPct,
+      fsaPct, porPct, nabPct,
       dopFsa, dopPor, dopPoh, dopTotal,
     };
   }, [meetings]);
