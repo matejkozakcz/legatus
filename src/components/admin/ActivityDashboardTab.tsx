@@ -788,6 +788,7 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{e.title}</p>
                   <p className="text-xs text-muted-foreground truncate">{e.detail}</p>
+                  {e.delivery && <DeliveryBadge d={e.delivery} />}
                 </div>
                 <span
                   className="text-[10px] text-muted-foreground whitespace-nowrap"
