@@ -39,11 +39,9 @@ const roleBadge: Record<string, string> = {
   budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
   ziskatel: "Získatel",
-  novacek: "Nováček",
 };
 
 const ALL_ROLES = [
-  { value: "novacek", label: "Nováček" },
   { value: "ziskatel", label: "Získatel" },
   { value: "garant", label: "Garant" },
   { value: "budouci_vedouci", label: "Budoucí vedoucí" },
@@ -234,9 +232,9 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
     onSuccess: (_data, newRole) => {
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_profiles"] });
-      const labels: Record<string, string> = { vedouci: "Vedoucího", garant: "Garanta", ziskatel: "Získatele", novacek: "Nováčka" };
+      const labels: Record<string, string> = { vedouci: "Vedoucího", budouci_vedouci: "Budoucího vedoucího", garant: "Garanta", ziskatel: "Získatele" };
       toast.success(`Role změněna na ${labels[newRole] || newRole}.`);
-      if (newRole !== "novacek") fireConfetti();
+      fireConfetti();
       handleClose();
     },
     onError: () => toast.error("Nepodařilo se změnit roli."),
@@ -246,12 +244,8 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
     if (!member || !profile || !["vedouci", "budouci_vedouci"].includes(profile.role)) return [];
     if (member.vedouci_id !== profile.id) return [];
     const actions: { role: string; label: string; variant: "promote" | "demote" }[] = [];
-    if (member.role === "novacek") {
-      actions.push({ role: "ziskatel", label: "Povýšit na Získatele", variant: "promote" });
-    }
     if (member.role === "ziskatel") {
       actions.push({ role: "garant", label: "Povýšit na Garanta", variant: "promote" });
-      actions.push({ role: "novacek", label: "Ponížit na Nováčka", variant: "demote" });
     }
     if (member.role === "garant") {
       actions.push({ role: "budouci_vedouci", label: "Povýšit na Budoucího vedoucího", variant: "promote" });
@@ -390,7 +384,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps) {
                 )}
               </div>
             ) : (
-              <Input value={roleBadge[member?.role || "novacek"]} disabled className="bg-muted" />
+              <Input value={roleBadge[member?.role || "ziskatel"]} disabled className="bg-muted" />
             )}
           </div>
 
