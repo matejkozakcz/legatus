@@ -198,7 +198,7 @@ const MemberActivity = () => {
     data: periodStats = {
       fsa: { actual: 0, planned: 0 },
       poh: { actual: 0, planned: 0 },
-      ser: { actual: 0, planned: 0 },
+      nab: { actual: 0, planned: 0 },
       por: { actual: 0, planned: 0 },
       ref: { actual: 0, planned: 0 },
     },
@@ -208,7 +208,7 @@ const MemberActivity = () => {
       const empty = {
         fsa: { actual: 0, planned: 0 },
         poh: { actual: 0, planned: 0 },
-        ser: { actual: 0, planned: 0 },
+        nab: { actual: 0, planned: 0 },
         por: { actual: 0, planned: 0 },
         ref: { actual: 0, planned: 0 },
       };
