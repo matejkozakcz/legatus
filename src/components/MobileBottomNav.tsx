@@ -77,8 +77,6 @@ export function MobileBottomNav() {
         profile?.role === "garant" ||
         profile?.role === "ziskatel" ? (
           <NavButton icon={Briefcase} label="Byznys" active={location.pathname === "/obchod"} onClick={() => navigate("/obchod")} isDark={isDark} badge={unrecordedCount > 0} />
-        ) : profile?.role === "novacek" ? (
-          <NavButton icon={GraduationCap} label="Zapracování" active={location.pathname === "/zapracovani"} onClick={() => navigate("/zapracovani")} isDark={isDark} />
         ) : godMode ? (
           <NavButton icon={Calendar} label="Schůzky" active={location.pathname === "/kalendar"} onClick={() => navigate("/kalendar")} isDark={isDark} />
         ) : null}
