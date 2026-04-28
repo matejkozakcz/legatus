@@ -18,18 +18,40 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Parse body up-front so error handlers can use it
+  const body: Payload = await req.json().catch(() => ({}));
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(supabaseUrl, serviceKey);
+
+  const logFatal = async (msg: string) => {
+    try {
+      await admin.from("push_delivery_log").insert({
+        notification_id: body.notification_id ?? null,
+        recipient_id:
+          body.recipient_id ?? "00000000-0000-0000-0000-000000000000",
+        sent: 0,
+        failed: 0,
+        expired_removed: 0,
+        subscription_count: 0,
+        errors: [],
+        general_error: msg,
+      });
+    } catch (_) {
+      // ignore
+    }
+  };
+
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY");
     if (!vapidPrivate) {
+      await logFatal("VAPID_PRIVATE_KEY missing");
       return new Response(JSON.stringify({ error: "VAPID_PRIVATE_KEY missing" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const admin = createClient(supabaseUrl, serviceKey);
 
     // Get VAPID public key from app_config
     const { data: cfg } = await admin
@@ -39,6 +61,7 @@ Deno.serve(async (req) => {
       .single();
     const vapidPublic = (cfg?.value ?? "").toString().replace(/^"|"$/g, "");
     if (!vapidPublic) {
+      await logFatal("vapid_public_key not configured");
       return new Response(JSON.stringify({ error: "vapid_public_key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -51,7 +74,6 @@ Deno.serve(async (req) => {
       vapidPrivate,
     );
 
-    const body: Payload = await req.json().catch(() => ({}));
 
     // Resolve notification details
     let title = body.title ?? "Notifikace";
