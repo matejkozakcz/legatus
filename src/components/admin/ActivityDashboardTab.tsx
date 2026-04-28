@@ -218,62 +218,10 @@ function SummaryCards({ refreshTick }: { refreshTick: number }) {
 
 // ─── Online Users (Realtime presence) ─────────────────────────────────────────
 
-interface PresenceState {
-  user_id: string;
-  full_name: string;
-  role: string;
-  avatar_url: string | null;
-  online_at: string;
-  page: string;
-}
+import { useOnlineUsers } from "@/hooks/usePresenceTracker";
 
 function OnlineUsersCard() {
-  const { profile } = useAuth();
-  const [online, setOnline] = useState<PresenceState[]>([]);
-
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    // Use a distinct channel name for the observer so it doesn't collide with
-    // the global usePresenceTracker channel (Supabase forbids adding listeners
-    // after subscribe(), and the tracker subscribes first).
-    const channel = supabase.channel(`admin_presence_observer_${profile.id}_${Date.now()}`, {
-      config: { presence: { key: profile.id } },
-    });
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<PresenceState>();
-        const list: PresenceState[] = [];
-        for (const key of Object.keys(state)) {
-          const metas = state[key];
-          if (metas && metas.length > 0) {
-            // Use most recent meta per user
-            const newest = metas.reduce((a, b) =>
-              new Date(a.online_at) > new Date(b.online_at) ? a : b,
-            );
-            list.push(newest);
-          }
-        }
-        setOnline(list.sort((a, b) => a.full_name.localeCompare(b.full_name)));
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({
-            user_id: profile.id,
-            full_name: profile.full_name,
-            role: profile.role,
-            avatar_url: profile.avatar_url,
-            online_at: new Date().toISOString(),
-            page: window.location.pathname,
-          });
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile?.id, profile?.full_name, profile?.role, profile?.avatar_url]);
+  const online = useOnlineUsers();
 
   return (
     <Card>
