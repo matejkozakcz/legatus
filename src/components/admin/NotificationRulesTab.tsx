@@ -188,12 +188,12 @@ export function NotificationRulesTab() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification_rules"] }),
   });
 
-  // Manual test send — sends notification to current admin using selected rule's template
+  // Manual test send — sends notification to chosen recipient using selected rule's template
   const testSendMutation = useMutation({
-    mutationFn: async (rule: NotificationRule) => {
+    mutationFn: async ({ rule, recipientId }: { rule: NotificationRule; recipientId: string }) => {
       if (!user) throw new Error("Nepřihlášen");
       const { error } = await supabase.from("notifications").insert({
-        recipient_id: user.id,
+        recipient_id: recipientId,
         sender_id: user.id,
         rule_id: rule.id,
         trigger_event: "manual",
@@ -206,8 +206,27 @@ export function NotificationRulesTab() {
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Testovací notifikace odeslána sobě"),
+    onSuccess: (_d, vars) =>
+      toast.success(
+        vars.recipientId === user?.id
+          ? "Testovací notifikace odeslána sobě"
+          : "Testovací notifikace odeslána",
+      ),
     onError: (e: Error) => toast.error(`Chyba: ${e.message}`),
+  });
+
+  // Load active profiles for the recipient picker
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin_profiles_for_test_send"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true)
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; full_name: string; role: string }>;
+    },
   });
 
   // "Run now" — calls the scheduled runner edge fn with ?force=<id> to bypass cron check
