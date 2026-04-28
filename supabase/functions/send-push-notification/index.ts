@@ -201,30 +201,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("send-push-notification error:", msg);
-    // Best-effort: log fatal error so admins can see it in delivery log
-    try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      if (supabaseUrl && serviceKey) {
-        const admin = createClient(supabaseUrl, serviceKey);
-        const body: Payload = await req
-          .clone()
-          .json()
-          .catch(() => ({}));
-        await admin.from("push_delivery_log").insert({
-          notification_id: body.notification_id ?? null,
-          recipient_id: body.recipient_id ?? "00000000-0000-0000-0000-000000000000",
-          sent: 0,
-          failed: 0,
-          expired_removed: 0,
-          subscription_count: 0,
-          errors: [],
-          general_error: msg,
-        });
-      }
-    } catch (_) {
-      // ignore
-    }
+    await logFatal(msg);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
