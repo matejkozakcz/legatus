@@ -150,7 +150,7 @@ function SourceGroup({
   );
 }
 
-function OriginBar({ fsaPct, porPct, serPct }: { fsaPct: number; porPct: number; serPct: number }) {
+function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number; nabPct: number }) {
   return (
     <div className="flex flex-col gap-2 min-w-[180px] flex-1">
       <span className="font-body text-[11px] text-muted-foreground lowercase">původ</span>
@@ -159,14 +159,14 @@ function OriginBar({ fsaPct, porPct, serPct }: { fsaPct: number; porPct: number;
       <div className="h-2.5 rounded-full overflow-hidden flex bg-muted">
         {fsaPct > 0 && <div style={{ width: `${fsaPct}%`, background: COLORS.fsa }} />}
         {porPct > 0 && <div style={{ width: `${porPct}%`, background: COLORS.por }} />}
-        {serPct > 0 && <div style={{ width: `${serPct}%`, background: COLORS.ser }} />}
+        {nabPct > 0 && <div style={{ width: `${nabPct}%`, background: COLORS.nab }} />}
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-body text-[11px] text-muted-foreground">
         <LegendDot color={COLORS.fsa} label={`FSA ${fsaPct} %`} />
         <LegendDot color={COLORS.por} label={`POR ${porPct} %`} />
-        <LegendDot color={COLORS.ser} label={`SER ${serPct} %`} />
+        <LegendDot color={COLORS.nab} label={`NÁB ${nabPct} %`} />
       </div>
     </div>
   );
@@ -214,7 +214,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
 
     const fsa = calcStats(meetings, "FSA", pohByParent);
     const por = calcStats(meetings, "POR", pohByParent);
-    const ser = calcStats(meetings, "SER", pohByParent);
+    const nab = calcStats(meetings, "NAB", pohByParent);
 
     // POH karta – domluvené = všechny POH v období, proběhlé = potvrzené
     const pohAll = meetings.filter((m) => m.meeting_type === "POH");
@@ -225,10 +225,10 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const pohReliability = pohPlanned > 0 ? Math.round((pohActual / pohPlanned) * 100) : 0;
 
     // Origin breakdown z navázaných POH
-    const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + ser.pohFromHere;
+    const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + nab.pohFromHere;
     const fsaPct = totalLinkedPoh > 0 ? Math.round((fsa.pohFromHere / totalLinkedPoh) * 100) : 0;
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
-    const serPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
+    const nabPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
 
     // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
     const completedMeetings = meetings.filter(
@@ -240,9 +240,9 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const dopTotal = dopFsa + dopPor + dopPoh;
 
     return {
-      fsa, por, ser,
+      fsa, por, nab,
       pohPlanned, pohActual, pohReliability,
-      fsaPct, porPct, serPct,
+      fsaPct, porPct, nabPct,
       dopFsa, dopPor, dopPoh, dopTotal,
     };
   }, [meetings]);
@@ -270,13 +270,13 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
           pohCount={stats.por.pohFromHere}
         />
         <SourceGroup
-          title="Servisy"
-          color={COLORS.ser}
-          domluvene={stats.ser.planned}
-          probehle={stats.ser.actual}
-          reliability={stats.ser.reliability}
-          pohConversion={stats.ser.pohConversion}
-          pohCount={stats.ser.pohFromHere}
+          title="Nábory"
+          color={COLORS.nab}
+          domluvene={stats.nab.planned}
+          probehle={stats.nab.actual}
+          reliability={stats.nab.reliability}
+          pohConversion={stats.nab.pohConversion}
+          pohCount={stats.nab.pohFromHere}
         />
       </div>
 
@@ -328,7 +328,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
             <div className="hidden sm:block w-px bg-border" />
 
             {/* Origin */}
-            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} serPct={stats.serPct} />
+            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} nabPct={stats.nabPct} />
           </div>
 
           {/* Progress bar — flush to bottom */}
