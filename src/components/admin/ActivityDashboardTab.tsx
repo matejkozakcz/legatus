@@ -26,6 +26,10 @@ import {
   History,
   Zap,
   AlertCircle,
+  CheckCircle2,
+  XCircle,
+  BellOff,
+  HelpCircle,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
