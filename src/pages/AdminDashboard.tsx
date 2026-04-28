@@ -49,6 +49,7 @@ import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
 import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
 import { TransakceTab } from "@/components/admin/TransakceTab";
 import { NotificationRulesTab } from "@/components/admin/NotificationRulesTab";
+import { ActivityDashboardTab } from "@/components/admin/ActivityDashboardTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ADMIN_TABS = [
+  { key: "activity", label: "Aktivita", icon: Activity },
   { key: "users", label: "Uživatelé", icon: Users },
   { key: "schuzky", label: "Schůzky", icon: CalendarDays },
   { key: "transakce", label: "Transakce", icon: Coins },
@@ -116,6 +118,7 @@ export default function AdminDashboard() {
       <AdminPillTabs tabs={ADMIN_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="mt-4">
+        {activeTab === "activity" && <ActivityDashboardTab />}
         {activeTab === "users" && <UsersTab />}
         {activeTab === "schuzky" && <SchuzkyTab />}
         {activeTab === "transakce" && <TransakceTab />}

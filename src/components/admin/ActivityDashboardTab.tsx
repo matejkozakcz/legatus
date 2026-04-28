@@ -1,0 +1,868 @@
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Activity,
+  Users,
+  Bell,
+  Coins,
+  CalendarDays,
+  TrendingUp,
+  Wifi,
+  RefreshCw,
+  Search,
+  ArrowUpRight,
+  History,
+  Zap,
+  AlertCircle,
+} from "lucide-react";
+import { format, formatDistanceToNow, subDays, startOfDay } from "date-fns";
+import { cs } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as ReTooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  Legend,
+} from "recharts";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmtRel = (d: string | Date) =>
+  formatDistanceToNow(new Date(d), { addSuffix: true, locale: cs });
+
+const fmtAbs = (d: string | Date) =>
+  format(new Date(d), "d. M. yyyy HH:mm:ss", { locale: cs });
+
+interface Profile {
+  id: string;
+  full_name: string;
+  role: string;
+  avatar_url: string | null;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  vedouci: "Vedoucí",
+  budouci_vedouci: "Budoucí vedoucí",
+  garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
+};
+
+// ─── Main Tab ─────────────────────────────────────────────────────────────────
+
+export function ActivityDashboardTab() {
+  const [refreshTick, setRefreshTick] = useState(0);
+  const refresh = () => setRefreshTick((t) => t + 1);
+
+  // Auto-refresh every 20s
+  useEffect(() => {
+    const id = setInterval(refresh, 20000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-heading font-semibold text-foreground">
+            Dashboard aktivity
+          </h2>
+        </div>
+        <Button size="sm" variant="outline" onClick={refresh} className="gap-2">
+          <RefreshCw className="h-3.5 w-3.5" /> Obnovit
+        </Button>
+      </div>
+
+      <SummaryCards refreshTick={refreshTick} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <OnlineUsersCard />
+        <ActiveUsersChart refreshTick={refreshTick} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DailyActivityChart refreshTick={refreshTick} />
+        <RoleDistributionCard refreshTick={refreshTick} />
+      </div>
+
+      <TopUsersCard refreshTick={refreshTick} />
+
+      <RecentEventsFeed refreshTick={refreshTick} />
+
+      <NotificationRunsCard refreshTick={refreshTick} />
+
+      <ErrorLogsCard refreshTick={refreshTick} />
+    </div>
+  );
+}
+
+// ─── Summary Cards ────────────────────────────────────────────────────────────
+
+function SummaryCards({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_activity_summary", refreshTick],
+    queryFn: async () => {
+      const today = startOfDay(new Date()).toISOString();
+      const last7 = subDays(new Date(), 7).toISOString();
+      const last30 = subDays(new Date(), 30).toISOString();
+
+      const [
+        { count: totalUsers },
+        { count: activeUsers },
+        { count: meetingsToday },
+        { count: meetings7d },
+        { count: notifs24h },
+        { count: pushSubs },
+        { count: pendingPromos },
+      ] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true),
+        supabase
+          .from("client_meetings")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", today),
+        supabase
+          .from("client_meetings")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", last7),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", subDays(new Date(), 1).toISOString()),
+        supabase.from("push_subscriptions").select("id", { count: "exact", head: true }),
+        supabase
+          .from("promotion_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+      ]);
+
+      // Distinct active users last 7 days (had meetings or activity)
+      const { data: activeUserRows } = await supabase
+        .from("client_meetings")
+        .select("user_id")
+        .gte("created_at", last7);
+      const distinct7d = new Set((activeUserRows || []).map((r: any) => r.user_id)).size;
+
+      return {
+        totalUsers: totalUsers || 0,
+        activeUsers: activeUsers || 0,
+        meetingsToday: meetingsToday || 0,
+        meetings7d: meetings7d || 0,
+        notifs24h: notifs24h || 0,
+        pushSubs: pushSubs || 0,
+        pendingPromos: pendingPromos || 0,
+        distinct7d,
+      };
+    },
+  });
+
+  const cards = [
+    { label: "Aktivních uživatelů", value: data?.activeUsers, total: data?.totalUsers, icon: Users },
+    { label: "Aktivní (7 dní)", value: data?.distinct7d, icon: TrendingUp },
+    { label: "Schůzky dnes", value: data?.meetingsToday, icon: CalendarDays },
+    { label: "Schůzky (7 dní)", value: data?.meetings7d, icon: CalendarDays },
+    { label: "Notifikace (24h)", value: data?.notifs24h, icon: Bell },
+    { label: "Push odběrů", value: data?.pushSubs, icon: Zap },
+    { label: "Čekající povýšení", value: data?.pendingPromos, icon: ArrowUpRight },
+  ];
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {cards.map((c) => (
+        <Card key={c.label}>
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-body uppercase tracking-wide text-muted-foreground">
+                  {c.label}
+                </p>
+                <p className="mt-1 text-2xl font-heading font-bold text-foreground">
+                  {isLoading ? "…" : c.value ?? 0}
+                  {c.total != null && (
+                    <span className="text-sm font-medium text-muted-foreground ml-1">
+                      / {c.total}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <c.icon className="h-4 w-4 text-primary opacity-70" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ─── Online Users (Realtime presence) ─────────────────────────────────────────
+
+interface PresenceState {
+  user_id: string;
+  full_name: string;
+  role: string;
+  avatar_url: string | null;
+  online_at: string;
+  page: string;
+}
+
+function OnlineUsersCard() {
+  const { profile } = useAuth();
+  const [online, setOnline] = useState<PresenceState[]>([]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase.channel("admin_presence", {
+      config: { presence: { key: profile.id } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<PresenceState>();
+        const list: PresenceState[] = [];
+        for (const key of Object.keys(state)) {
+          const metas = state[key];
+          if (metas && metas.length > 0) {
+            // Use most recent meta per user
+            const newest = metas.reduce((a, b) =>
+              new Date(a.online_at) > new Date(b.online_at) ? a : b,
+            );
+            list.push(newest);
+          }
+        }
+        setOnline(list.sort((a, b) => a.full_name.localeCompare(b.full_name)));
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({
+            user_id: profile.id,
+            full_name: profile.full_name,
+            role: profile.role,
+            avatar_url: profile.avatar_url,
+            online_at: new Date().toISOString(),
+            page: window.location.pathname,
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, profile?.full_name, profile?.role, profile?.avatar_url]);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          Aktuálně online ({online.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {online.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            <Wifi className="h-4 w-4 inline mr-1 opacity-50" />
+            Zatím nikdo online (data se objeví, jakmile někdo načte aplikaci)
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-80 overflow-auto">
+            {online.map((u) => (
+              <div
+                key={u.user_id}
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/40 transition"
+              >
+                {u.avatar_url ? (
+                  <img
+                    src={u.avatar_url}
+                    alt={u.full_name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
+                    {u.full_name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {u.full_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {ROLE_LABELS[u.role] || u.role} · {u.page}
+                  </p>
+                </div>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  {fmtRel(u.online_at)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Active Users Chart (last 14 days) ────────────────────────────────────────
+
+function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_activity_chart_users", refreshTick],
+    queryFn: async () => {
+      const since = subDays(new Date(), 14).toISOString();
+      const { data: meetings } = await supabase
+        .from("client_meetings")
+        .select("user_id, created_at")
+        .gte("created_at", since);
+
+      const byDay = new Map<string, Set<string>>();
+      for (let i = 13; i >= 0; i--) {
+        const d = format(subDays(new Date(), i), "yyyy-MM-dd");
+        byDay.set(d, new Set());
+      }
+      (meetings || []).forEach((m: any) => {
+        const d = format(new Date(m.created_at), "yyyy-MM-dd");
+        if (byDay.has(d)) byDay.get(d)!.add(m.user_id);
+      });
+      return Array.from(byDay.entries()).map(([date, users]) => ({
+        date: format(new Date(date), "d.M."),
+        active: users.size,
+      }));
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Aktivní uživatelé (14 dní)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={data || []}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <ReTooltip />
+              <Line
+                type="monotone"
+                dataKey="active"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                name="Aktivní"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Daily Activity Chart (events per day) ────────────────────────────────────
+
+function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_activity_chart_events", refreshTick],
+    queryFn: async () => {
+      const since = subDays(new Date(), 14).toISOString();
+      const [{ data: meetings }, { data: notifs }] = await Promise.all([
+        supabase.from("client_meetings").select("created_at").gte("created_at", since),
+        supabase.from("notifications").select("created_at").gte("created_at", since),
+      ]);
+
+      const map = new Map<string, { date: string; meetings: number; notifications: number }>();
+      for (let i = 13; i >= 0; i--) {
+        const d = format(subDays(new Date(), i), "yyyy-MM-dd");
+        map.set(d, { date: format(new Date(d), "d.M."), meetings: 0, notifications: 0 });
+      }
+      (meetings || []).forEach((m: any) => {
+        const d = format(new Date(m.created_at), "yyyy-MM-dd");
+        if (map.has(d)) map.get(d)!.meetings++;
+      });
+      (notifs || []).forEach((n: any) => {
+        const d = format(new Date(n.created_at), "yyyy-MM-dd");
+        if (map.has(d)) map.get(d)!.notifications++;
+      });
+      return Array.from(map.values());
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Schůzky & notifikace (14 dní)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data || []}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <ReTooltip />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="meetings" fill="hsl(var(--primary))" name="Schůzky" />
+              <Bar dataKey="notifications" fill="#00abbd" name="Notifikace" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Role Distribution ───────────────────────────────────────────────────────
+
+function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_role_distribution", refreshTick],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role, is_active")
+        .eq("is_active", true);
+      const counts = new Map<string, number>();
+      (data || []).forEach((p: any) => {
+        counts.set(p.role, (counts.get(p.role) || 0) + 1);
+      });
+      return ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"].map((r) => ({
+        role: ROLE_LABELS[r] || r,
+        count: counts.get(r) || 0,
+      }));
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Distribuce rolí</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data || []} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+              <YAxis dataKey="role" type="category" tick={{ fontSize: 11 }} width={110} />
+              <ReTooltip />
+              <Bar dataKey="count" fill="hsl(var(--primary))" name="Počet" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Top Users (most active in last 30 days) ─────────────────────────────────
+
+function TopUsersCard({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_top_users", refreshTick],
+    queryFn: async () => {
+      const since = subDays(new Date(), 30).toISOString();
+      const [{ data: meetings }, { data: profiles }] = await Promise.all([
+        supabase
+          .from("client_meetings")
+          .select("user_id, podepsane_bj, cancelled, created_at")
+          .gte("created_at", since),
+        supabase.from("profiles").select("id, full_name, role, avatar_url"),
+      ]);
+
+      const profMap = new Map<string, Profile>();
+      (profiles || []).forEach((p: any) => profMap.set(p.id, p));
+
+      const stats = new Map<string, { meetings: number; bj: number }>();
+      (meetings || []).forEach((m: any) => {
+        if (m.cancelled) return;
+        const cur = stats.get(m.user_id) || { meetings: 0, bj: 0 };
+        cur.meetings++;
+        cur.bj += Number(m.podepsane_bj || 0);
+        stats.set(m.user_id, cur);
+      });
+
+      return Array.from(stats.entries())
+        .map(([uid, s]) => ({
+          profile: profMap.get(uid),
+          meetings: s.meetings,
+          bj: s.bj,
+        }))
+        .filter((x) => x.profile)
+        .sort((a, b) => b.meetings - a.meetings)
+        .slice(0, 10);
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          Nejaktivnější uživatelé (30 dní)
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (data?.length || 0) === 0 ? (
+          <p className="text-muted-foreground text-sm py-4">Žádná data.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Uživatel</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="text-right">Schůzek</TableHead>
+                <TableHead className="text-right">BJ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data!.map((row, i) => (
+                <TableRow key={row.profile!.id}>
+                  <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                  <TableCell className="font-medium">{row.profile!.full_name}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {ROLE_LABELS[row.profile!.role] || row.profile!.role}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{row.meetings}</TableCell>
+                  <TableCell className="text-right font-mono">{row.bj}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Recent Events Feed ──────────────────────────────────────────────────────
+
+interface FeedEvent {
+  ts: string;
+  type: "meeting" | "notification" | "promotion" | "bj_audit" | "promo_request";
+  title: string;
+  detail: string;
+  userName?: string;
+  icon: typeof Activity;
+}
+
+function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
+  const [filter, setFilter] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_event_feed", refreshTick],
+    queryFn: async (): Promise<FeedEvent[]> => {
+      const [
+        { data: meetings },
+        { data: notifs },
+        { data: promos },
+        { data: audits },
+        { data: profiles },
+      ] = await Promise.all([
+        supabase
+          .from("client_meetings")
+          .select("id, user_id, meeting_type, case_name, created_at, podepsane_bj, cancelled")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("notifications")
+          .select("id, recipient_id, sender_id, title, body, trigger_event, created_at")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("promotion_history")
+          .select("id, user_id, event, requested_role, created_at, note")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("bj_audit_log")
+          .select("id, user_id, action, old_bj, new_bj, change_reason, changed_by, created_at")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase.from("profiles").select("id, full_name, role, avatar_url"),
+      ]);
+
+      const profMap = new Map<string, Profile>();
+      (profiles || []).forEach((p: any) => profMap.set(p.id, p));
+      const name = (id?: string | null) =>
+        (id && profMap.get(id)?.full_name) || "—";
+
+      const events: FeedEvent[] = [];
+
+      (meetings || []).forEach((m: any) => {
+        events.push({
+          ts: m.created_at,
+          type: "meeting",
+          title: `${m.cancelled ? "Zrušená " : ""}schůzka ${m.meeting_type}`,
+          detail: `${name(m.user_id)} · ${m.case_name || "bez názvu"} · ${m.podepsane_bj || 0} BJ`,
+          userName: name(m.user_id),
+          icon: CalendarDays,
+        });
+      });
+
+      (notifs || []).forEach((n: any) => {
+        events.push({
+          ts: n.created_at,
+          type: "notification",
+          title: `Notifikace: ${n.title}`,
+          detail: `${name(n.sender_id) !== "—" ? `od ${name(n.sender_id)} → ` : ""}${name(n.recipient_id)} · ${n.trigger_event}`,
+          userName: name(n.recipient_id),
+          icon: Bell,
+        });
+      });
+
+      (promos || []).forEach((p: any) => {
+        events.push({
+          ts: p.created_at,
+          type: "promotion",
+          title: `Povýšení: ${p.event}`,
+          detail: `${name(p.user_id)} → ${ROLE_LABELS[p.requested_role] || p.requested_role}${p.note ? ` · ${p.note}` : ""}`,
+          userName: name(p.user_id),
+          icon: ArrowUpRight,
+        });
+      });
+
+      (audits || []).forEach((a: any) => {
+        events.push({
+          ts: a.created_at,
+          type: "bj_audit",
+          title: `BJ úprava: ${a.action}`,
+          detail: `${name(a.user_id)}: ${a.old_bj ?? "—"} → ${a.new_bj ?? "—"} · ${a.change_reason || ""}`,
+          userName: name(a.user_id),
+          icon: Coins,
+        });
+      });
+
+      return events.sort((a, b) => +new Date(b.ts) - +new Date(a.ts)).slice(0, 100);
+    },
+  });
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    if (!filter.trim()) return data;
+    const q = filter.toLowerCase();
+    return data.filter(
+      (e) =>
+        e.title.toLowerCase().includes(q) ||
+        e.detail.toLowerCase().includes(q) ||
+        (e.userName && e.userName.toLowerCase().includes(q)),
+    );
+  }, [data, filter]);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <History className="h-4 w-4 text-primary" />
+          Nedávné události ({filtered.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filtrovat události…"
+            className="pl-8 h-9 text-sm"
+          />
+        </div>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm py-4">Načítání…</p>
+        ) : (
+          <div className="space-y-1 max-h-[500px] overflow-auto">
+            {filtered.map((e, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/40 transition border-l-2 border-transparent hover:border-primary"
+              >
+                <e.icon className="h-3.5 w-3.5 text-primary mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{e.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{e.detail}</p>
+                </div>
+                <span
+                  className="text-[10px] text-muted-foreground whitespace-nowrap"
+                  title={fmtAbs(e.ts)}
+                >
+                  {fmtRel(e.ts)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Notification Run Log ────────────────────────────────────────────────────
+
+function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_notif_runs", refreshTick],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("notification_run_log")
+        .select("*")
+        .order("run_at", { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Zap className="h-4 w-4 text-primary" />
+          Poslední běhy notifikací
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (data?.length || 0) === 0 ? (
+          <p className="text-muted-foreground text-sm py-4">Zatím žádné běhy.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Kdy</TableHead>
+                <TableHead>Pravidlo</TableHead>
+                <TableHead>Trigger</TableHead>
+                <TableHead className="text-right">Odeslano</TableHead>
+                <TableHead className="text-right">Trvání</TableHead>
+                <TableHead>Stav</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data!.map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-xs whitespace-nowrap" title={fmtAbs(r.run_at)}>
+                    {fmtRel(r.run_at)}
+                  </TableCell>
+                  <TableCell className="text-xs">{r.rule_name || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {r.trigger_event || "—"}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-xs">
+                    {r.inserted_count}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-xs">
+                    {r.duration_ms != null ? `${r.duration_ms} ms` : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {r.error_message ? (
+                      <span className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> Chyba
+                      </span>
+                    ) : r.matched ? (
+                      <span className="text-xs text-emerald-600">OK</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Žádná shoda</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Recent Errors (DB + Edge logs) ──────────────────────────────────────────
+
+function ErrorLogsCard({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_recent_errors", refreshTick],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("notification_run_log")
+        .select("id, run_at, rule_name, error_message")
+        .not("error_message", "is", null)
+        .order("run_at", { ascending: false })
+        .limit(15);
+      return data || [];
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          Nedávné chyby
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Načítání…</p>
+        ) : (data?.length || 0) === 0 ? (
+          <p className="text-emerald-600 text-sm py-2 flex items-center gap-2">
+            ✓ Žádné nedávné chyby v notifikacích
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {data!.map((r: any) => (
+              <div key={r.id} className="border-l-2 border-destructive pl-3 py-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {r.rule_name || "—"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {fmtRel(r.run_at)}
+                  </span>
+                </div>
+                <p className="text-xs text-destructive font-mono mt-0.5 break-all">
+                  {r.error_message}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
