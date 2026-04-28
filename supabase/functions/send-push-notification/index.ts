@@ -89,6 +89,16 @@ Deno.serve(async (req) => {
       .eq("user_id", recipientId);
     if (subsErr) throw subsErr;
     if (!subs || subs.length === 0) {
+      await admin.from("push_delivery_log").insert({
+        notification_id: body.notification_id ?? null,
+        recipient_id: recipientId,
+        sent: 0,
+        failed: 0,
+        expired_removed: 0,
+        subscription_count: 0,
+        errors: [],
+        general_error: "no_subscriptions",
+      });
       return new Response(JSON.stringify({ sent: 0, reason: "no subscriptions" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -147,6 +157,17 @@ Deno.serve(async (req) => {
     if (expired.length > 0) {
       await admin.from("push_subscriptions").delete().in("id", expired);
     }
+
+    await admin.from("push_delivery_log").insert({
+      notification_id: body.notification_id ?? null,
+      recipient_id: recipientId,
+      sent,
+      failed,
+      expired_removed: expired.length,
+      subscription_count: subs.length,
+      errors,
+      general_error: null,
+    });
 
     return new Response(
       JSON.stringify({ sent, failed, expired_removed: expired.length, errors }),
