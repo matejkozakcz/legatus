@@ -45,7 +45,7 @@ const RECIPIENT_ROLES = [
   { key: "all_active", label: "Všichni aktivní uživatelé" },
 ];
 
-const APP_ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"];
+const APP_ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"];
 
 const ACCENT_COLORS = [
   { key: "primary", label: "Coral (hlavní)", hsl: "hsl(var(--primary))" },

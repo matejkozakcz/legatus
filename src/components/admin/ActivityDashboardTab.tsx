@@ -438,7 +438,7 @@ function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
       (data || []).forEach((p: any) => {
         counts.set(p.role, (counts.get(p.role) || 0) + 1);
       });
-      return ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"].map((r) => ({
+      return ["vedouci", "budouci_vedouci", "garant", "ziskatel"].map((r) => ({
         role: ROLE_LABELS[r] || r,
         count: counts.get(r) || 0,
       }));

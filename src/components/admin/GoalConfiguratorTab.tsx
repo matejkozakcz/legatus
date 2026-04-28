@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Save, Target, UserCog, Shield } from "lucide-react";
 import { toast } from "sonner";
 
-const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"] as const;
+const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",

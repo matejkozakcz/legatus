@@ -78,7 +78,7 @@ interface ProfileRow {
   personal_bj_goal: number | null;
 }
 
-const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"] as const;
+const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",
