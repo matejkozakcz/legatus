@@ -160,7 +160,19 @@ Deno.serve(async (req) => {
         failed++;
         const e = err as { statusCode?: number; body?: string; message?: string };
         const status = e?.statusCode;
-        if (status === 404 || status === 410) expired.push(sub.id);
+        const bodyStr = typeof e?.body === "string" ? e.body : "";
+        // Conditions under which the subscription is permanently invalid and should be removed:
+        //  - 404 / 410: gone (FCM, APNs, Mozilla)
+        //  - 403: forbidden — usually wrong VAPID key for this endpoint
+        //  - 400 + VapidPkHashMismatch / InvalidJwt / BadJwtToken: Apple/Mozilla refuses the
+        //    subscription because it was created against a different VAPID public key. Re-trying
+        //    with the same sub will always fail until the user re-subscribes.
+        const isVapidMismatch =
+          status === 400 &&
+          /VapidPkHashMismatch|BadJwtToken|InvalidJwt|VAPID/i.test(bodyStr);
+        if (status === 404 || status === 410 || status === 403 || isVapidMismatch) {
+          expired.push(sub.id);
+        }
         let host = "unknown";
         try {
           host = new URL(sub.endpoint).host;
@@ -170,9 +182,9 @@ Deno.serve(async (req) => {
           endpoint_host: host,
           status,
           message: e?.message,
-          body: typeof e?.body === "string" ? e.body.slice(0, 300) : undefined,
+          body: bodyStr ? bodyStr.slice(0, 300) : undefined,
         });
-        console.warn("push send failed:", status, e?.message, e?.body);
+        console.warn("push send failed:", status, e?.message, bodyStr);
       }
     }
 
