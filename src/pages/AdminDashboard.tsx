@@ -89,7 +89,6 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ADMIN_TABS = [
   { key: "activity", label: "Aktivita", icon: Activity },
-  { key: "users", label: "Uživatelé", icon: Users },
   { key: "schuzky", label: "Schůzky", icon: CalendarDays },
   { key: "transakce", label: "Transakce", icon: Coins },
   { key: "settings", label: "Nastavení", icon: Settings2 },
