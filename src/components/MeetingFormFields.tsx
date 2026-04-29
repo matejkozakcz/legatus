@@ -363,6 +363,7 @@ export function MeetingFormModal({
   isEdit: isEditProp,
   onDelete,
   allowCreateCase,
+  onCaseCreated,
   createCaseFn,
   userRole,
 }: MeetingFormModalProps) {
@@ -433,6 +434,7 @@ export function MeetingFormModal({
       setAutoCreating(true);
       createCaseFn(name, "")
         .then((created) => {
+          onCaseCreated?.(created);
           set({ case_id: created.id, case_name: created.nazev_pripadu });
           setPendingClientName("");
         })
@@ -457,6 +459,7 @@ export function MeetingFormModal({
       setAutoCreating(true);
       try {
         const created = await createCaseFn(pendingClientName, "");
+        onCaseCreated?.(created);
         const updatedForm = { ...form, case_id: created.id, case_name: created.nazev_pripadu };
         onSave(updatedForm);
       } catch {
