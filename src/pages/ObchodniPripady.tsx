@@ -85,6 +85,21 @@ const defaultForm = (caseId?: string): MeetingForm => ({
   case_id: caseId || "",
 });
 
+const createMeetingCase = async (userId: string, name: string, note = "") => {
+  const { data, error } = await supabase
+    .from("cases")
+    .insert({
+      user_id: userId,
+      nazev_pripadu: name.trim(),
+      poznamka: note.trim() || null,
+    } as any)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as unknown as Case;
+};
+
 const meetingToForm = (m: Meeting): MeetingForm => ({
   date: m.date,
   meeting_type: m.meeting_type,
