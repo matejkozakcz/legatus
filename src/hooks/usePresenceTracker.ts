@@ -85,20 +85,48 @@ export function usePresenceTracker() {
         page: location.pathname,
       });
 
+    // Persist last_seen + app version into profiles (so admin sees it later, even when user is offline)
+    const persistLastSeen = async () => {
+      try {
+        const version =
+          (() => {
+            try { return localStorage.getItem("legatus_app_version"); } catch { return null; }
+          })() ?? null;
+        await supabase
+          .from("profiles")
+          .update({
+            last_seen_at: new Date().toISOString(),
+            last_known_version: version,
+          })
+          .eq("id", profile.id);
+      } catch (err) {
+        console.warn("[presence] persistLastSeen failed:", err);
+      }
+    };
+
     // Track shortly after mount (channel may still be joining)
-    const initTimer = setTimeout(track, 500);
+    const initTimer = setTimeout(() => {
+      track();
+      persistLastSeen();
+    }, 500);
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible") track();
+      if (document.visibilityState === "visible") {
+        track();
+        persistLastSeen();
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onVisibility);
 
     const hb = setInterval(track, 30000);
+    // Less frequent DB write (every 2 min) to avoid spamming the DB
+    const dbHb = setInterval(persistLastSeen, 2 * 60 * 1000);
 
     return () => {
       clearTimeout(initTimer);
       clearInterval(hb);
+      clearInterval(dbHb);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onVisibility);
       refCount--;
