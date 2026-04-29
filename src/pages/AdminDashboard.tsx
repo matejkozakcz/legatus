@@ -89,7 +89,6 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ADMIN_TABS = [
   { key: "activity", label: "Aktivita", icon: Activity },
-  { key: "users", label: "Uživatelé", icon: Users },
   { key: "schuzky", label: "Schůzky", icon: CalendarDays },
   { key: "transakce", label: "Transakce", icon: Coins },
   { key: "settings", label: "Nastavení", icon: Settings2 },
@@ -102,7 +101,7 @@ const ADMIN_TABS = [
 
 export default function AdminDashboard() {
   const { godMode, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("activity");
 
   if (!godMode || !isAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -119,7 +118,6 @@ export default function AdminDashboard() {
 
       <div className="mt-4">
         {activeTab === "activity" && <ActivityDashboardTab />}
-        {activeTab === "users" && <UsersTab />}
         {activeTab === "schuzky" && <SchuzkyTab />}
         {activeTab === "transakce" && <TransakceTab />}
         {activeTab === "settings" && <SettingsTab />}
