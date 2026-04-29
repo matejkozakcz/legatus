@@ -85,6 +85,21 @@ const defaultForm = (caseId?: string): MeetingForm => ({
   case_id: caseId || "",
 });
 
+const createMeetingCase = async (userId: string, name: string, note = "") => {
+  const { data, error } = await supabase
+    .from("cases")
+    .insert({
+      user_id: userId,
+      nazev_pripadu: name.trim(),
+      poznamka: note.trim() || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as unknown as Case;
+};
+
 const meetingToForm = (m: Meeting): MeetingForm => ({
   date: m.date,
   meeting_type: m.meeting_type,
@@ -1625,6 +1640,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         saving={saveMeetingMutation.isPending}
         cases={cases}
         isEdit={!!editMeeting}
+        allowCreateCase
+        onCaseCreated={(c) => {
+          queryClient.setQueryData<Case[]>(["cases", profile?.id], (prev = []) => [c, ...prev]);
+          toast.success("Případ vytvořen");
+        }}
+        createCaseFn={(name, note) => createMeetingCase(profile!.id, name, note)}
         userRole={profile?.role}
         onDelete={
           editMeeting
