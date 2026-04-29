@@ -147,11 +147,11 @@ export function GoalsSection({
           />
         )}
 
-        {/* Monthly gauges — dole */}
+        {/* Monthly gauges — dole, stejná velikost jako promotion (compact) */}
         {hasMonthly && (
           <div>
             {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
-            <GaugeRow items={monthlyGoals} dark={dark} compact={compact} stacked={stacked} />
+            <GaugeRow items={monthlyGoals} dark={dark} compact stacked={stacked} />
           </div>
         )}
       </div>
