@@ -131,6 +131,8 @@ export function ActivityDashboardTab() {
         <RoleDistributionCard refreshTick={refreshTick} />
       </div>
 
+      <UserStatusCard refreshTick={refreshTick} />
+
       <TopUsersCard refreshTick={refreshTick} />
 
       <RecentEventsFeed refreshTick={refreshTick} />
@@ -463,6 +465,166 @@ function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
               <Bar dataKey="count" fill="hsl(var(--primary))" name="Počet" />
             </BarChart>
           </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── User Status (last seen + app version) ──────────────────────────────────
+
+function UserStatusCard({ refreshTick }: { refreshTick: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_user_status", refreshTick],
+    queryFn: async () => {
+      const [{ data: profiles }, { data: cfg }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, role, avatar_url, last_seen_at, last_known_version, is_active")
+          .eq("is_active", true),
+        supabase
+          .from("app_config")
+          .select("value")
+          .eq("key", "app_version")
+          .maybeSingle(),
+      ]);
+      const currentVersion = (cfg?.value ?? "").toString().replace(/^"|"$/g, "");
+      return {
+        currentVersion,
+        rows: (profiles || []).sort((a: any, b: any) => {
+          // Never seen → bottom; otherwise newest first
+          if (!a.last_seen_at && !b.last_seen_at) return a.full_name.localeCompare(b.full_name);
+          if (!a.last_seen_at) return 1;
+          if (!b.last_seen_at) return -1;
+          return +new Date(b.last_seen_at) - +new Date(a.last_seen_at);
+        }),
+      };
+    },
+  });
+
+  const [filter, setFilter] = useState("");
+  const [onlyStale, setOnlyStale] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const q = filter.trim().toLowerCase();
+    return data.rows.filter((r: any) => {
+      if (q && !r.full_name.toLowerCase().includes(q)) return false;
+      if (onlyStale) {
+        const isCurrent =
+          !!r.last_known_version &&
+          !!data.currentVersion &&
+          r.last_known_version === data.currentVersion;
+        if (isCurrent) return false;
+      }
+      return true;
+    });
+  }, [data, filter, onlyStale]);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wifi className="h-4 w-4 text-primary" />
+          Stav uživatelů — poslední přihlášení & verze
+          {data?.currentVersion && (
+            <span className="ml-2 text-[10px] font-mono font-normal text-muted-foreground">
+              aktuální: {data.currentVersion}
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filtrovat uživatele…"
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          <Button
+            size="sm"
+            variant={onlyStale ? "default" : "outline"}
+            onClick={() => setOnlyStale((s) => !s)}
+            className="gap-2"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            {onlyStale ? "Jen zastaralé" : "Vše"}
+          </Button>
+        </div>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm py-4">Načítání…</p>
+        ) : (
+          <div className="max-h-[420px] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Uživatel</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Naposledy aktivní</TableHead>
+                  <TableHead className="text-center">Aktuální verze</TableHead>
+                  <TableHead>Verze klienta</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r: any) => {
+                  const isCurrent =
+                    !!r.last_known_version &&
+                    !!data?.currentVersion &&
+                    r.last_known_version === data.currentVersion;
+                  const neverSeen = !r.last_seen_at;
+                  const staleSeen =
+                    !!r.last_seen_at &&
+                    Date.now() - +new Date(r.last_seen_at) > 7 * 24 * 3600 * 1000;
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.full_name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {ROLE_LABELS[r.role] || r.role}
+                      </TableCell>
+                      <TableCell
+                        className={`text-xs ${neverSeen ? "text-muted-foreground italic" : staleSeen ? "text-amber-600 dark:text-amber-400" : ""}`}
+                        title={r.last_seen_at ? fmtAbs(r.last_seen_at) : "Ještě se nikdy nepřihlásil"}
+                      >
+                        {neverSeen ? "Nikdy" : fmtRel(r.last_seen_at)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {!r.last_known_version ? (
+                          <HelpCircle
+                            className="h-4 w-4 text-muted-foreground inline"
+                            aria-label="Neznámá"
+                          />
+                        ) : isCurrent ? (
+                          <CheckCircle2
+                            className="h-4 w-4 text-emerald-600 inline"
+                            aria-label="Aktuální"
+                          />
+                        ) : (
+                          <XCircle
+                            className="h-4 w-4 text-amber-600 inline"
+                            aria-label="Zastaralá"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">
+                        {r.last_known_version || "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
+                      Žádní uživatelé.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

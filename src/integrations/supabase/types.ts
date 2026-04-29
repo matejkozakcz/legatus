@@ -667,6 +667,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_admin: boolean
+          last_known_version: string | null
+          last_seen_at: string | null
           monthly_bj_goal: number | null
           onboarding_completed: boolean | null
           osobni_id: string | null
@@ -684,6 +686,8 @@ export type Database = {
           id: string
           is_active?: boolean | null
           is_admin?: boolean
+          last_known_version?: string | null
+          last_seen_at?: string | null
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
@@ -701,6 +705,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_admin?: boolean
+          last_known_version?: string | null
+          last_seen_at?: string | null
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
           osobni_id?: string | null
