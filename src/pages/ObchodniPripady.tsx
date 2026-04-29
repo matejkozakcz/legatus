@@ -1640,6 +1640,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         saving={saveMeetingMutation.isPending}
         cases={cases}
         isEdit={!!editMeeting}
+        allowCreateCase
+        onCaseCreated={(c) => {
+          queryClient.setQueryData<Case[]>(["cases", profile?.id], (prev = []) => [c, ...prev]);
+          toast.success("Případ vytvořen");
+        }}
+        createCaseFn={(name, note) => createMeetingCase(profile!.id, name, note)}
         userRole={profile?.role}
         onDelete={
           editMeeting
