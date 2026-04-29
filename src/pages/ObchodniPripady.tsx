@@ -92,7 +92,7 @@ const createMeetingCase = async (userId: string, name: string, note = "") => {
       user_id: userId,
       nazev_pripadu: name.trim(),
       poznamka: note.trim() || null,
-    } as any)
+    })
     .select()
     .single();
 
