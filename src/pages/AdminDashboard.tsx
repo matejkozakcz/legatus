@@ -101,7 +101,7 @@ const ADMIN_TABS = [
 
 export default function AdminDashboard() {
   const { godMode, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("activity");
 
   if (!godMode || !isAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -118,7 +118,6 @@ export default function AdminDashboard() {
 
       <div className="mt-4">
         {activeTab === "activity" && <ActivityDashboardTab />}
-        {activeTab === "users" && <UsersTab />}
         {activeTab === "schuzky" && <SchuzkyTab />}
         {activeTab === "transakce" && <TransakceTab />}
         {activeTab === "settings" && <SettingsTab />}
