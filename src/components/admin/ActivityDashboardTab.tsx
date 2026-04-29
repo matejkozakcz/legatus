@@ -46,6 +46,7 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { UserDetailModal } from "./UserDetailModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
