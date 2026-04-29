@@ -1,5 +1,5 @@
-const CACHE_NAME = "legatus-v2";
-const STATIC_ASSETS = ["/", "/dashboard", "/icon-192.png", "/icon-512.png"];
+const CACHE_NAME = "legatus-v3";
+const STATIC_ASSETS = ["/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -17,12 +17,33 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first strategy
+// Listen for explicit skipWaiting message from the page
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// Navigation requests (HTML): always network, never cache — avoids stale app shell after deploy.
+// Other GETs: network-first with cache fallback.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/~oauth")) return;
   if (url.hostname.includes("supabase.co")) return;
+
+  const isNavigation =
+    event.request.mode === "navigate" ||
+    event.request.destination === "document";
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" }).catch(() =>
+        caches.match(event.request).then((r) => r || caches.match("/"))
+      )
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
