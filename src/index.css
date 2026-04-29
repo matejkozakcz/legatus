@@ -783,3 +783,10 @@
   border: 2px solid hsl(var(--coral));
   box-shadow: 0 0 8px 2px hsl(var(--coral) / 0.5);
 }
+
+
+/* Goals swipe panels — hide scrollbar */
+.goals-swipe-container::-webkit-scrollbar {
+  display: none;
+}
+

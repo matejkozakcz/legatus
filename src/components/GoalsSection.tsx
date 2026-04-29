@@ -33,6 +33,11 @@ export interface GoalsSectionProps {
   compact?: boolean;
   /** Zobrazit gauges pod sebou (sloupec) místo vedle sebe. */
   stacked?: boolean;
+  /**
+   * Desktop layout: promotion gauges nahoře (vedle sebe, compact), monthly dole.
+   * Odpovídá novému designu pro Získatel/Garant/BV na desktopu.
+   */
+  promotionFirst?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -105,6 +110,7 @@ export function GoalsSection({
   hideMonthlyTitle = false,
   compact = false,
   stacked = false,
+  promotionFirst = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
   const hasPromotion = promotionGoals.length > 0;
@@ -117,6 +123,42 @@ export function GoalsSection({
   // vedle nadpisu „Cíle". Mobile (dark) si ho stále zobrazuje uvnitř.
   const showInternalEdit = !!onEditGoals && dark;
 
+  // ── promotionFirst layout (desktop: povýšení nahoře, měsíční dole) ──────────
+  if (promotionFirst) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%" }}>
+        {/* Promotion gauges — nahoře, vždy vedle sebe, compact */}
+        {hasPromotion && (
+          <div>
+            <SectionTitle dark={dark}>
+              {promotionTargetRole ? `Postup k povýšení na ${promotionTargetRole}` : "Postup k povýšení"}
+            </SectionTitle>
+            <GaugeRow items={promotionGoals} dark={dark} compact />
+          </div>
+        )}
+
+        {hasMonthly && hasPromotion && (
+          <div
+            style={{
+              height: 1,
+              background: dark ? "rgba(255,255,255,0.15)" : "var(--border)",
+              margin: "0 8px",
+            }}
+          />
+        )}
+
+        {/* Monthly gauges — dole */}
+        {hasMonthly && (
+          <div>
+            {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
+            <GaugeRow items={monthlyGoals} dark={dark} compact={compact} stacked={stacked} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Výchozí layout (monthly první, promotion druhé) ──────────────────────────
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 18, width: "100%" }}>
       {showInternalEdit && (

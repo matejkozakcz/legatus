@@ -988,6 +988,8 @@ const Dashboard = () => {
   }, [onboardingTasks]);
 
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  const [goalsSwipePage, setGoalsSwipePage] = useState(0);
+  const goalsSwipeRef = useRef<HTMLDivElement>(null);
 
   // Helper: map goal key to current value (scope + count_type aware for people goals)
   const getGoalScope = (key: GoalKey): string => {
@@ -1333,11 +1335,96 @@ const Dashboard = () => {
                 const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
                 const monthName = new Date(selectedYear, selectedMonth, 1).toLocaleDateString("cs-CZ", { month: "long" });
                 const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                const hasPromoGoals = promotionGoals.length > 0;
+
+                // Pokud existují cíle povýšení → dvě panely (měsíční + povýšení) s horizontálním swipem
+                if (hasPromoGoals) {
+                  return (
+                    <div style={{ position: "relative", width: "100%" }}>
+                      {/* Scroll container — snap na celé šířky */}
+                      <div
+                        ref={goalsSwipeRef}
+                        style={{
+                          display: "flex",
+                          overflowX: "auto",
+                          scrollSnapType: "x mandatory",
+                          WebkitOverflowScrolling: "touch",
+                          scrollbarWidth: "none",
+                          msOverflowStyle: "none",
+                          gap: 0,
+                          width: "100%",
+                        }}
+                        className="goals-swipe-container"
+                        onScroll={(e) => {
+                          const el = e.currentTarget;
+                          const page = Math.round(el.scrollLeft / el.offsetWidth);
+                          setGoalsSwipePage(page);
+                        }}
+                      >
+                        {/* Panel 1 — měsíční cíle */}
+                        <div
+                          style={{
+                            flex: "0 0 100%",
+                            scrollSnapAlign: "start",
+                            width: "100%",
+                          }}
+                        >
+                          <GoalsSection
+                            monthlyGoals={monthlyGoals}
+                            promotionGoals={[]}
+                            dark
+                            compact
+                            monthlyTitle={`Cíle pro ${capitalizedMonth} ${selectedYear}`}
+                          />
+                        </div>
+                        {/* Panel 2 — cíle pro povýšení */}
+                        <div
+                          style={{
+                            flex: "0 0 100%",
+                            scrollSnapAlign: "start",
+                            width: "100%",
+                          }}
+                        >
+                          <GoalsSection
+                            monthlyGoals={[]}
+                            promotionGoals={promotionGoals}
+                            promotionTargetRole={promotionTargetRole}
+                            dark
+                            compact
+                          />
+                        </div>
+                      </div>
+                      {/* Dot indicators */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: 6,
+                          marginTop: 10,
+                        }}
+                      >
+                        {[0, 1].map((i) => (
+                          <div
+                            key={i}
+                            style={{
+                              width: i === goalsSwipePage ? 18 : 6,
+                              height: 6,
+                              borderRadius: 3,
+                              background: i === goalsSwipePage ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+                              transition: "width 0.25s ease, background 0.25s ease",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Vedoucí — jen měsíční cíle, bez swipe
                 return (
                   <GoalsSection
                     monthlyGoals={monthlyGoals}
-                    promotionGoals={promotionGoals}
-                    promotionTargetRole={promotionTargetRole}
+                    promotionGoals={[]}
                     dark
                     compact
                     monthlyTitle={`Cíle pro ${capitalizedMonth} ${selectedYear}`}
@@ -1745,13 +1832,19 @@ const Dashboard = () => {
 
     // Vedoucí, BV, Získatel, Garant — sjednocený layout
     const { monthlyGoals, promotionGoals, promotionTargetRole } = buildGoalItems();
+    const monthName = new Date(selectedYear, selectedMonth, 1).toLocaleDateString("cs-CZ", { month: "long" });
+    const capitalizedMonthDesktop = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    // Vedoucí nemá cíl povýšení → použij původní stacked layout
+    // Ostatní role → promotion gauges nahoře (compact, side by side), monthly dole
+    const hasPromotion = promotionGoals.length > 0;
     return (
       <GoalsSection
         monthlyGoals={monthlyGoals}
         promotionGoals={promotionGoals}
         promotionTargetRole={promotionTargetRole}
-        hideMonthlyTitle
-        stacked
+        monthlyTitle={`Cíle pro ${capitalizedMonthDesktop} ${selectedYear}`}
+        promotionFirst={hasPromotion}
+        stacked={!hasPromotion}
       />
     );
   };
