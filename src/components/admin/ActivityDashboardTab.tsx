@@ -131,6 +131,8 @@ export function ActivityDashboardTab() {
         <RoleDistributionCard refreshTick={refreshTick} />
       </div>
 
+      <UserStatusCard refreshTick={refreshTick} />
+
       <TopUsersCard refreshTick={refreshTick} />
 
       <RecentEventsFeed refreshTick={refreshTick} />
