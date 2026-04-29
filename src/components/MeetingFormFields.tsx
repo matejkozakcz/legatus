@@ -383,17 +383,24 @@ export function MeetingFormModal({
   });
 
   const prevOpenRef = useRef(false);
+  const lastInitialDateRef = useRef<string>(initial.date);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
+      // Modal just opened — fully reset from initial
       const initForm = { ...initial };
       setForm(initForm);
       setShowDeleteConfirm(false);
       setMoreOpen(false);
       setAutoCreating(false);
       setPendingClientName("");
+      lastInitialDateRef.current = initial.date;
+    } else if (open && initial.date !== lastInitialDateRef.current) {
+      // Initial date changed while modal is open (e.g. user changed displayed day before opening) — sync date
+      setForm((f) => ({ ...f, date: initial.date }));
+      lastInitialDateRef.current = initial.date;
     }
     prevOpenRef.current = open;
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, initial.date]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-reset SER to FSA if novacek
   useEffect(() => {
