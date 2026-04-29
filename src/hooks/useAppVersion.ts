@@ -83,7 +83,7 @@ export function useAppVersion() {
         localStorage.setItem(VERSION_KEY, newVersion);
       } catch {}
 
-      // Cache Storage API
+      // Cache Storage API — must run BEFORE unregistering SW
       if ("caches" in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
@@ -97,8 +97,19 @@ export function useAppVersion() {
     } catch (err) {
       console.warn("[update] cleanup error:", err);
     }
-    // Force reload from server
-    window.location.reload();
+
+    // Force fresh load bypassing HTTP/disk cache.
+    // In PWA standalone mode (iOS/Android), location.reload() often serves
+    // the cached index.html from disk cache. Adding a cache-busting query
+    // parameter forces the browser to fetch a fresh document from the server.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", String(Date.now()));
+      // Drop hash to avoid re-triggering invite/recovery redirects
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
   };
 
   return { serverVersion, localVersion, isStale, performUpdate };
