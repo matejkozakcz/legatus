@@ -127,6 +127,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </WorkspaceViewProvider>
         </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>
