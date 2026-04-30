@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
+import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
 
 interface OrgUnit {
   id: string;
@@ -58,6 +59,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number |
 export function WorkspacesTab() {
   const [showInvitesAnchor, setShowInvitesAnchor] = useState(false);
   const [detailWs, setDetailWs] = useState<OrgUnit | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: workspaces, isLoading } = useQuery({
     queryKey: ["org_units"],
@@ -123,7 +125,7 @@ export function WorkspacesTab() {
   }, [workspaces, pendingInvites]);
 
   const handleCreate = () => {
-    toast.info("Vytváření workspace bude doplněno v další iteraci");
+    setCreateOpen(true);
   };
 
   const handleDetail = (ws: OrgUnit) => {
@@ -295,6 +297,7 @@ export function WorkspacesTab() {
           onClose={() => setDetailWs(null)}
         />
       )}
+      <CreateWorkspaceModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }
