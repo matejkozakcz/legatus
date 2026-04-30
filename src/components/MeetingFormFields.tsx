@@ -476,7 +476,7 @@ export function MeetingFormModal({
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 pb-8" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative w-full max-w-sm bg-card rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
+        className="relative w-full max-w-sm legatus-modal-glass rounded-2xl p-6 animate-in fade-in zoom-in-95 duration-150 mx-4 overflow-y-auto"
         style={{
           maxHeight: "calc(100dvh - 64px)",
           paddingBottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 12px))",
