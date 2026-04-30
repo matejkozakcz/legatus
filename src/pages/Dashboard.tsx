@@ -228,7 +228,7 @@ function computeNewlyArranged(meetings: any[], weekStartStr: string, weekEndStr:
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { profile, user } = useAuth();
+  const { effectiveProfile: profile, user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isMobile = useIsMobile();
