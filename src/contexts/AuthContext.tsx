@@ -99,17 +99,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("owner_id")
       .eq("id", wsId)
       .maybeSingle();
-    if (!ws?.owner_id) {
-      setViewAsProfile(null);
-      return;
+
+    // 1) Try the workspace owner
+    if (ws?.owner_id) {
+      const { data: op } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", ws.owner_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (op) {
+        setViewAsProfile(op as unknown as Profile);
+        return;
+      }
     }
-    const { data: op } = await supabase
+
+    // 2) Fallback — workspace has no owner (or owner inactive).
+    // Pick the highest-ranked active member of the workspace so the
+    // admin can still "view as" and see the workspace's data tree.
+    const ROLE_ORDER = ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"];
+    const { data: members } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", ws.owner_id)
-      .eq("is_active", true)
-      .maybeSingle();
-    setViewAsProfile((op as unknown as Profile) ?? null);
+      .eq("org_unit_id", wsId)
+      .eq("is_active", true);
+
+    if (members && members.length > 0) {
+      const sorted = [...members].sort(
+        (a: any, b: any) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role)
+      );
+      setViewAsProfile(sorted[0] as unknown as Profile);
+      return;
+    }
+
+    // 3) Empty workspace — synthesize a stub profile bound to org_unit_id
+    // so pages filter to this workspace (and show empty state) instead
+    // of falling back to the admin's own data.
+    setViewAsProfile({
+      id: `__workspace_stub__${wsId}`,
+      full_name: "(prázdný workspace)",
+      role: "vedouci",
+      vedouci_id: null,
+      garant_id: null,
+      ziskatel_id: null,
+      avatar_url: null,
+      is_active: true,
+      is_admin: false,
+      monthly_bj_goal: 0,
+      onboarding_completed: true,
+      ziskatel_name: null,
+      // @ts-expect-error org_unit_id not in Profile type but used by pages
+      org_unit_id: wsId,
+    } as unknown as Profile);
   }, [isAdmin]);
 
   useEffect(() => {
