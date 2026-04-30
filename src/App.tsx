@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
 import Join from "./pages/Join";
+import JoinWorkspace from "./pages/JoinWorkspace";
 import Dashboard from "./pages/Dashboard";
 
 import SpravaTeam from "./pages/SpravaTeam";
@@ -39,6 +40,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/join/ws/:token" element={<JoinWorkspace />} />
             <Route path="/join/:token" element={<Join />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route

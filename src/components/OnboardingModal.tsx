@@ -38,6 +38,11 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [step, setStep] = useState(1);
   const [prefilled, setPrefilled] = useState(false);
 
+  // Workspace context (set when user joined via workspace invite link)
+  const [orgUnitId, setOrgUnitId] = useState<string | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string>("");
+  const [workspaceHasOwner, setWorkspaceHasOwner] = useState<boolean>(true);
+
   // Step 1 fields
   const [jmeno, setJmeno] = useState("");
   const [prijmeni, setPrijmeni] = useState("");
@@ -54,10 +59,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     if (!open || !user || prefilled) return;
     supabase
       .from("profiles")
-      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id")
+      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
       .eq("id", user.id)
       .single()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!data) return;
         setPrefilled(true);
         const parts = (data.full_name || "").split(" ");
@@ -74,6 +79,18 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         if (data.avatar_url) setAvatarUrl(data.avatar_url);
         if (data.role && data.role !== "novacek") setSelectedRole(data.role);
         if (data.osobni_id) setPartnersId(data.osobni_id);
+        if (data.org_unit_id) {
+          setOrgUnitId(data.org_unit_id);
+          const { data: ws } = await supabase
+            .from("org_units")
+            .select("name, owner_id")
+            .eq("id", data.org_unit_id)
+            .maybeSingle();
+          if (ws) {
+            setWorkspaceName(ws.name);
+            setWorkspaceHasOwner(!!ws.owner_id);
+          }
+        }
       });
   }, [open, user, prefilled]);
 
@@ -93,19 +110,38 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     bv_to_vedouci: { min_structure: 10, min_direct: 6 },
   });
 
-  // Fetch vedouci list
+  // Fetch vedouci list (scoped to workspace if user is in one)
   useEffect(() => {
     if (!open) return;
-    supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("role", "vedouci")
-      .eq("is_active", true)
-      .then(({ data }) => {
-        if (data) {
-          setVedouciOptions(data.map((p) => ({ id: p.id, label: p.full_name })));
-        }
-      });
+    (async () => {
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true);
+
+      if (orgUnitId) {
+        // Inside a workspace: allow picking any active leader-ish member
+        // already in the workspace. If the workspace has no owner yet,
+        // we also allow picking "myself" (handled visually elsewhere) by
+        // simply showing existing members. The current user can also pick
+        // themselves implicitly by selecting role=vedouci on step 2.
+        query = query
+          .eq("org_unit_id", orgUnitId)
+          .in("role", ["vedouci", "budouci_vedouci", "garant"]);
+      } else {
+        query = query.eq("role", "vedouci");
+      }
+
+      const { data } = await query;
+      if (data) {
+        setVedouciOptions(
+          data
+            .filter((p) => p.id !== user?.id)
+            .map((p) => ({ id: p.id, label: p.full_name }))
+        );
+      }
+    })();
+
     supabase
       .from("app_config")
       .select("value")
@@ -116,7 +152,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           setPromoRules((prev) => ({ ...prev, ...(data.value as unknown as typeof prev) }));
         }
       });
-  }, [open]);
+  }, [open, orgUnitId, user?.id]);
 
   // Fetch members under selected vedouci for ziskatel picker
   useEffect(() => {
@@ -173,16 +209,20 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     }
   };
 
+  // In a workspace without an owner, the first vedouci doesn't need to pick a leader.
+  const isFirstLeaderOfWorkspace =
+    !!orgUnitId && !workspaceHasOwner && selectedRole === "vedouci";
+
   const handleStep1Next = () => {
     if (!jmeno.trim() || !prijmeni.trim()) {
       toast.error("Vyplňte jméno a příjmení.");
       return;
     }
-    if (!vedouciId) {
+    if (!isFirstLeaderOfWorkspace && !vedouciId) {
       toast.error("Vyberte svého vedoucího.");
       return;
     }
-    if (!ziskatelNotInSystem && !ziskatelId) {
+    if (!isFirstLeaderOfWorkspace && !ziskatelNotInSystem && !ziskatelId) {
       toast.error("Vyberte získatele nebo zaškrtněte, že není v systému.");
       return;
     }
@@ -198,14 +238,17 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setSaving(true);
     try {
       const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
-      const finalZiskatelId = ziskatelNotInSystem ? vedouciId : ziskatelId;
+      const effectiveVedouciId = isFirstLeaderOfWorkspace ? null : vedouciId || null;
+      const finalZiskatelId = isFirstLeaderOfWorkspace
+        ? null
+        : (ziskatelNotInSystem ? effectiveVedouciId : ziskatelId);
 
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: fullName,
-          vedouci_id: vedouciId,
-          garant_id: vedouciId,
+          vedouci_id: effectiveVedouciId,
+          garant_id: effectiveVedouciId,
           ziskatel_id: finalZiskatelId,
           ziskatel_name: ziskatelNotInSystem ? ziskatelName.trim() || null : null,
           avatar_url: avatarUrl,
@@ -216,6 +259,16 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // If this user just became the first leader of an owner-less workspace,
+      // promote them to workspace owner.
+      if (isFirstLeaderOfWorkspace && orgUnitId) {
+        await supabase
+          .from("org_units")
+          .update({ owner_id: user.id })
+          .eq("id", orgUnitId)
+          .is("owner_id", null);
+      }
 
       // Save historical BJ as December 2025 activity record
       const bjValue = parseFloat(historickyVykon);

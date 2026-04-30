@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/command";
 import { X, Plus, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
 
 interface OrgUnit {
   id: string;
@@ -499,6 +500,12 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
                   </Select>
                 </div>
               </div>
+            </section>
+
+            {/* Invite link */}
+            <section className="space-y-3">
+              <h3 className="font-heading font-semibold text-foreground">Pozvánkový odkaz</h3>
+              <WorkspaceInviteLinkCard orgUnitId={orgUnit.id} canRotate variant="admin" />
             </section>
 
             {/* Members */}

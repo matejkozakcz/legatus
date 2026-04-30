@@ -13,6 +13,7 @@ import { getCurrentProductionPeriod } from "@/lib/productionPeriod";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
+import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 import { sendNotification } from "@/lib/notifications";
@@ -780,6 +781,16 @@ const SpravaTeam = () => {
           </button>
         )}
       </div>
+
+      {/* Workspace invite link — viditelné pro vedoucí/BV/garant */}
+      {profile && (profile as any).org_unit_id &&
+        ["vedouci", "budouci_vedouci", "garant"].includes(profile.role) && (
+          <WorkspaceInviteLinkCard
+            orgUnitId={(profile as any).org_unit_id}
+            canRotate={profile.role === "vedouci"}
+            variant="team"
+          />
+        )}
 
       {/* Čekající povýšení */}
       {(profile?.role === "vedouci" || profile?.role === "budouci_vedouci") && enrichedRequests.length > 0 && (
