@@ -145,11 +145,9 @@ export function WorkspacesTab() {
   };
 
   const handleEnter = (ws: OrgUnit) => {
-    try {
-      localStorage.setItem("legatus_active_workspace", ws.id);
-    } catch {}
-    toast.success(`Přepnuto na workspace „${ws.name}"`);
-    window.location.href = "/dashboard";
+    enterWorkspace(ws.id);
+    toast.success(`Vstoupil/a jsi do workspace „${ws.name}"`);
+    navigate("/dashboard");
   };
 
   return (
