@@ -15,7 +15,7 @@ interface SettingsModalProps {
   initialTab?: number;
 }
 
-const TABS = ["Profil", "Oznámení", "Kalendář", "gOWL"] as const;
+const TABS = ["Profil", "Oznámení"] as const;
 
 const PROVIDER_LABELS: Record<string, string> = { google: "Google", apple: "Apple" };
 
