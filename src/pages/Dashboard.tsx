@@ -120,15 +120,14 @@ function MobileStatCard({
 // ─── Info/Postinfo cards with 3 metrics ──────────────────────────────────────
 
 function InfoPostMobileCard({
-  label, count, novi, staracci,
-}: { label: string; count: number; novi: number; staracci: number }) {
+  label, novi, staracci,
+}: { label: string; novi: number; staracci: number }) {
   return (
     <div className="mobile-stat-card">
       <div className="mobile-stat-label">{label}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
         {[
-          { v: count, l: "Schůzek" },
-          { v: novi, l: "Noví" },
+          { v: novi, l: "Nováčci" },
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} style={{ textAlign: "center" }}>
