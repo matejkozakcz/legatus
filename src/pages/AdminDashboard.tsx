@@ -123,6 +123,7 @@ export default function AdminDashboard() {
         {activeTab === "activity" && <ActivityDashboardTab />}
         {activeTab === "schuzky" && <SchuzkyTab />}
         {activeTab === "transakce" && <TransakceTab />}
+        {activeTab === "workspaces" && <WorkspacesTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "permissions" && <PermissionsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
