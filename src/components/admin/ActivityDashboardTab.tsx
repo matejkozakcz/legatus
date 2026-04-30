@@ -100,10 +100,28 @@ export function ActivityDashboardTab() {
   const [refreshTick, setRefreshTick] = useState(0);
   const refresh = () => setRefreshTick((t) => t + 1);
 
-  // Auto-refresh every 20s
+  // Realtime: refresh only when profiles or client_meetings actually change.
+  // Debounced to avoid burst-refreshes during bulk writes.
   useEffect(() => {
-    const id = setInterval(refresh, 20000);
-    return () => clearInterval(id);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+        timer = null;
+      }, 1500);
+    };
+
+    const channel = supabase
+      .channel("admin-activity-watch")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "client_meetings" }, scheduleRefresh)
+      .subscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
