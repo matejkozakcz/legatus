@@ -749,15 +749,15 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
           className="flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95"
           style={{
             width: 36, height: 36,
-            background: "rgba(255,255,255,0.9)",
+            background: isDark ? "rgba(20,40,44,0.85)" : "rgba(255,255,255,0.9)",
             backdropFilter: "blur(8px)",
-            border: "1px solid #E1E9EB",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #E1E9EB",
+            boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.10)",
             cursor: "pointer",
           }}
           title="Oddálit"
         >
-          <ZoomOut className="h-4 w-4" style={{ color: "#00555f" }} />
+          <ZoomOut className="h-4 w-4" style={{ color: isDark ? "#4dd8e8" : "#00555f" }} />
         </button>
       </div>
     </div>
