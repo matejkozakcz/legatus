@@ -726,6 +726,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          invite_token: string
           is_active: boolean
           name: string
           owner_id: string | null
@@ -734,6 +735,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          invite_token?: string
           is_active?: boolean
           name: string
           owner_id?: string | null
@@ -742,6 +744,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          invite_token?: string
           is_active?: boolean
           name?: string
           owner_id?: string | null
@@ -1164,6 +1167,14 @@ export type Database = {
         }[]
       }
       get_user_role: { Args: { _user_id: string }; Returns: string }
+      get_workspace_members_for_onboarding: {
+        Args: { _token: string }
+        Returns: {
+          full_name: string
+          id: string
+          role: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_in_vedouci_subtree: {
         Args: { _target_id: string; _vedouci_id: string }
