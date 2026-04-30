@@ -18,6 +18,8 @@ import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
+import { useWorkspaceView } from "@/contexts/WorkspaceViewContext";
+import { useNavigate } from "react-router-dom";
 
 interface OrgUnit {
   id: string;
