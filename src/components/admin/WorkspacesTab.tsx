@@ -288,6 +288,13 @@ export function WorkspacesTab() {
           </div>
         </Card>
       )}
+      {detailWs && (
+        <WorkspaceDetailModal
+          orgUnit={detailWs}
+          open={!!detailWs}
+          onClose={() => setDetailWs(null)}
+        />
+      )}
     </div>
   );
 }
