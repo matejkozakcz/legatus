@@ -355,17 +355,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
       <div className="border-t border-border" />
 
-      {/* OAuth */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground mb-3">Propojené účty</p>
-        <div className="space-y-1">
-          {renderProviderRow("google")}
-          {renderProviderRow("apple")}
-        </div>
-      </div>
-
-      <div className="border-t border-border" />
-
       {/* Password */}
       <button
         type="button"
