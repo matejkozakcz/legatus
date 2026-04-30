@@ -13,6 +13,7 @@ import { getCurrentProductionPeriod } from "@/lib/productionPeriod";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { EditMemberDialog } from "@/components/EditMemberDialog";
 import { MemberDetailModal } from "@/components/MemberDetailModal";
+import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
 
 import { checkPromotions as runCheckPromotions, logPromotionHistory } from "@/lib/checkPromotions";
 import { sendNotification } from "@/lib/notifications";
