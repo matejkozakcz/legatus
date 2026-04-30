@@ -63,6 +63,8 @@ const progressBarColor: Record<string, string> = {
 };
 
 function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean } }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
