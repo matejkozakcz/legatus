@@ -125,15 +125,14 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
-  // Show only weeks that lie ENTIRELY within the production period
-  // (week start >= periodStart AND week end <= periodEnd) — so that the
-  // "Celkem" row in the table sums to the same numbers as the cards above.
+  // Show every Mon–Sun week that OVERLAPS the production period, so that the
+  // weekly breakdown matches the cards above (the cards include any meeting
+  // whose date is within periodStart..periodEnd, regardless of week boundary).
   const weeks = useMemo(() => {
     const result: Date[] = [];
     let ws = startOfWeek(periodStart, { weekStartsOn: 1 });
     while (ws <= periodEnd) {
-      const we = endOfWeek(ws, { weekStartsOn: 1 });
-      if (ws >= periodStart && we <= periodEnd) result.push(ws);
+      result.push(ws);
       ws = addWeeks(ws, 1);
     }
     return result;
