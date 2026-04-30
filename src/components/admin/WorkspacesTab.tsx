@@ -270,26 +270,9 @@ export function WorkspacesTab() {
         </div>
       )}
 
-      {/* Invites section anchor (placeholder for future detail listing) */}
+      {/* Invites section */}
       <div id="workspace-invites-section" />
-      {showInvitesAnchor && (pendingInvites?.length ?? 0) > 0 && (
-        <Card className="p-4">
-          <h3 className="font-heading font-semibold text-foreground mb-3">Čekající pozvánky</h3>
-          <div className="space-y-2">
-            {pendingInvites!.map((inv: any) => (
-              <div key={inv.id} className="flex items-center justify-between text-sm border-b border-border last:border-0 pb-2 last:pb-0">
-                <div>
-                  <div className="font-medium text-foreground">{inv.full_name ?? inv.email ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{inv.email}</div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  vyprší {format(new Date(inv.expires_at), "d. M. yyyy", { locale: cs })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      <InvitesSection />
       {detailWs && (
         <WorkspaceDetailModal
           orgUnit={detailWs}
