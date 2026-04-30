@@ -379,9 +379,9 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
 
             {/* Breakdown */}
             <div className="flex flex-col gap-1.5 justify-center flex-1 min-w-0 sm:px-2">
-              <BreakdownRow color={COLORS.fsa} label="FSA" value={stats.dopFsa} />
-              <BreakdownRow color={COLORS.por} label="POR" value={stats.dopPor} />
-              <BreakdownRow color={COLORS.poh} label="POH" value={stats.dopPoh} />
+              <BreakdownRow color={COLORS.fsa} label="FSA" value={stats.dopFsa} pct={stats.dopTotal > 0 ? Math.round((stats.dopFsa / stats.dopTotal) * 100) : 0} />
+              <BreakdownRow color={COLORS.por} label="POR" value={stats.dopPor} pct={stats.dopTotal > 0 ? Math.round((stats.dopPor / stats.dopTotal) * 100) : 0} />
+              <BreakdownRow color={COLORS.poh} label="POH" value={stats.dopPoh} pct={stats.dopTotal > 0 ? Math.round((stats.dopPoh / stats.dopTotal) * 100) : 0} />
             </div>
           </div>
 
