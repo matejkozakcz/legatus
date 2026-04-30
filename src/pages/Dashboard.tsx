@@ -141,17 +141,16 @@ function InfoPostMobileCard({
 }
 
 function InfoPostDesktopCard({
-  label, count, novi, staracci,
-}: { label: string; count: number; novi: number; staracci: number }) {
+  label, novi, staracci,
+}: { label: string; novi: number; staracci: number }) {
   return (
     <div className="stat-card flex flex-col gap-3 overflow-hidden">
       <p className="font-body text-center truncate" style={{ color: "#EF8C6F", fontSize: 13, fontWeight: 500 }}>
         {label}
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {[
-          { v: count, l: "Schůzek" },
-          { v: novi, l: "Noví" },
+          { v: novi, l: "Nováčci" },
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} className="text-center">
