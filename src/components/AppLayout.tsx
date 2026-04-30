@@ -10,6 +10,7 @@ import { Moon, Sun, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PushOptInBanner } from "@/components/PushOptInBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { WorkspaceViewBanner } from "@/components/WorkspaceViewBanner";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -106,6 +107,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
             }}
           >
+            <WorkspaceViewBanner />
             {children}
           </main>
           <MobileBottomNav />
@@ -132,6 +134,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <NotificationBell />
             </div>
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
+              <WorkspaceViewBanner />
               {children}
             </main>
           </div>

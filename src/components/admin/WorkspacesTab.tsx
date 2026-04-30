@@ -18,6 +18,8 @@ import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
+import { useWorkspaceView } from "@/contexts/WorkspaceViewContext";
+import { useNavigate } from "react-router-dom";
 
 interface OrgUnit {
   id: string;
@@ -65,6 +67,8 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number |
 }
 
 export function WorkspacesTab() {
+  const navigate = useNavigate();
+  const { enterWorkspace } = useWorkspaceView();
   const [showInvitesAnchor, setShowInvitesAnchor] = useState(false);
   const [detailWs, setDetailWs] = useState<OrgUnit | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -141,11 +145,9 @@ export function WorkspacesTab() {
   };
 
   const handleEnter = (ws: OrgUnit) => {
-    try {
-      localStorage.setItem("legatus_active_workspace", ws.id);
-    } catch {}
-    toast.success(`Přepnuto na workspace „${ws.name}"`);
-    window.location.href = "/dashboard";
+    enterWorkspace(ws.id);
+    toast.success(`Vstoupil/a jsi do workspace „${ws.name}"`);
+    navigate("/dashboard");
   };
 
   return (

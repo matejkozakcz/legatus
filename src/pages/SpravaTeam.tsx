@@ -232,7 +232,7 @@ function HierarchyGroup({
 }
 
 const SpravaTeam = () => {
-  const { profile, isAdmin, godMode } = useAuth();
+  const { effectiveProfile: profile, isAdmin, godMode } = useAuth();
   const isGodMode = isAdmin && godMode;
   const isReadOnly = (profile?.role === "garant" || profile?.role === "ziskatel") && !isGodMode;
   const queryClient = useQueryClient();
