@@ -125,15 +125,14 @@ const MemberActivity = () => {
     enabled: !!userId,
   });
 
-  // Show only weeks that lie ENTIRELY within the production period
-  // (week start >= periodStart AND week end <= periodEnd) — so that the
-  // "Celkem" row in the table sums to the same numbers as the cards above.
+  // Show every Mon–Sun week that OVERLAPS the production period, so that the
+  // weekly breakdown matches the cards above (the cards include any meeting
+  // whose date is within periodStart..periodEnd, regardless of week boundary).
   const weeks = useMemo(() => {
     const result: Date[] = [];
     let ws = startOfWeek(periodStart, { weekStartsOn: 1 });
     while (ws <= periodEnd) {
-      const we = endOfWeek(ws, { weekStartsOn: 1 });
-      if (ws >= periodStart && we <= periodEnd) result.push(ws);
+      result.push(ws);
       ws = addWeeks(ws, 1);
     }
     return result;
@@ -271,16 +270,22 @@ const MemberActivity = () => {
   });
 
   // Aggregate per Mon–Sun week, keyed by week_start (yyyy-MM-dd).
+  // Clamp each week to the production period so the Celkem row matches
+  // the cards above (which only count meetings inside the period).
   const weeklyRows = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
+    const periodStartStr = format(periodStart, "yyyy-MM-dd");
+    const periodEndStr = format(periodEnd, "yyyy-MM-dd");
     const map = new Map<string, WeeklyRow>();
     for (const ws of weeks) {
       const wsStr = format(ws, "yyyy-MM-dd");
       const we = endOfWeek(ws, { weekStartsOn: 1 });
       const weStr = format(we, "yyyy-MM-dd");
+      const fromStr = wsStr < periodStartStr ? periodStartStr : wsStr;
+      const toStr = weStr > periodEndStr ? periodEndStr : weStr;
       const inWeek = (weeklyMeetings as any[]).filter((m) => {
         const d = m.date as string;
-        return d >= wsStr && d <= weStr;
+        return d >= fromStr && d <= toStr;
       });
       const wstats = computeMeetingStats(inWeek as any, todayStr);
       const confirmed = inWeek.filter((m) => !m.cancelled && m.outcome_recorded === true);
@@ -302,7 +307,7 @@ const MemberActivity = () => {
       });
     }
     return map;
-  }, [weeks, weeklyMeetings]);
+  }, [weeks, weeklyMeetings, periodStart, periodEnd]);
 
   const columnSums = useMemo(() => {
     const sums: Record<string, number> = {};
