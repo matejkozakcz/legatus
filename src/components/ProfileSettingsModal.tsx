@@ -40,6 +40,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
   const [jmeno, setJmeno] = useState("");
   const [prijmeni, setPrijmeni] = useState("");
+  const [partnersId, setPartnersId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
