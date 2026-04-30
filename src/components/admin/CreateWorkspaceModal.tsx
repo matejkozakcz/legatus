@@ -134,7 +134,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
               <SelectTrigger>
                 <SelectValue placeholder="Vyber vedoucího" />
               </SelectTrigger>
-              <SelectContent position="popper" sideOffset={4} className="z-[100] max-h-[260px]">
+              <SelectContent position="popper" sideOffset={4} className="max-h-[260px]">
                 {(vedouci ?? []).length === 0 ? (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     Žádní vedoucí
