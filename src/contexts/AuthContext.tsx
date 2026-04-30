@@ -148,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       monthly_bj_goal: 0,
       onboarding_completed: true,
       ziskatel_name: null,
-      // @ts-expect-error org_unit_id not in Profile type but used by pages
       org_unit_id: wsId,
     } as unknown as Profile);
   }, [isAdmin]);
