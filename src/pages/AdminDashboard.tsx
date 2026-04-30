@@ -41,6 +41,7 @@ import {
   RefreshCw,
   Coins,
   CalendarDays,
+  Building2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -50,6 +51,7 @@ import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
 import { TransakceTab } from "@/components/admin/TransakceTab";
 import { NotificationRulesTab } from "@/components/admin/NotificationRulesTab";
 import { ActivityDashboardTab } from "@/components/admin/ActivityDashboardTab";
+import { WorkspacesTab } from "@/components/admin/WorkspacesTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,6 +93,7 @@ const ADMIN_TABS = [
   { key: "activity", label: "Aktivita", icon: Activity },
   { key: "schuzky", label: "Schůzky", icon: CalendarDays },
   { key: "transakce", label: "Transakce", icon: Coins },
+  { key: "workspaces", label: "Workspaces", icon: Building2 },
   { key: "settings", label: "Nastavení", icon: Settings2 },
   { key: "permissions", label: "Oprávnění", icon: Lock },
   { key: "notifications", label: "Notifikace", icon: Bell },
@@ -120,6 +123,7 @@ export default function AdminDashboard() {
         {activeTab === "activity" && <ActivityDashboardTab />}
         {activeTab === "schuzky" && <SchuzkyTab />}
         {activeTab === "transakce" && <TransakceTab />}
+        {activeTab === "workspaces" && <WorkspacesTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "permissions" && <PermissionsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
