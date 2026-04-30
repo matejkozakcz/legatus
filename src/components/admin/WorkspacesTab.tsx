@@ -127,7 +127,7 @@ export function WorkspacesTab() {
   };
 
   const handleDetail = (ws: OrgUnit) => {
-    toast.info(`Detail workspace „${ws.name}" bude doplněn`);
+    setDetailWs(ws);
   };
 
   const handleEnter = (ws: OrgUnit) => {
