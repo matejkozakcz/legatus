@@ -210,6 +210,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           ziskatel_name: ziskatelNotInSystem ? ziskatelName.trim() || null : null,
           avatar_url: avatarUrl,
           role: selectedRole,
+          osobni_id: partnersId.trim() || null,
           onboarding_completed: true,
         })
         .eq("id", user.id);
