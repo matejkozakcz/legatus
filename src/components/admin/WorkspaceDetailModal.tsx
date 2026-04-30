@@ -502,6 +502,12 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
               </div>
             </section>
 
+            {/* Invite link */}
+            <section className="space-y-3">
+              <h3 className="font-heading font-semibold text-foreground">Pozvánkový odkaz</h3>
+              <WorkspaceInviteLinkCard orgUnitId={orgUnit.id} canRotate variant="admin" />
+            </section>
+
             {/* Members */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
