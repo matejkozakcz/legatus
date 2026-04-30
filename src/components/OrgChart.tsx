@@ -3,6 +3,7 @@ import { Plus, Minus, ZoomIn, ZoomOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
   id: string;
@@ -51,7 +52,7 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
   novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
 
-const LINE_COLOR = "#c8d8dc";
+const LINE_COLOR = "var(--orgchart-line, #c8d8dc)";
 
 const progressBarColor: Record<string, string> = {
   vedouci: "#45AABD",
@@ -62,6 +63,8 @@ const progressBarColor: Record<string, string> = {
 };
 
 function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean } }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const initials = node.full_name
     .split(" ")
     .map((n) => n[0])
@@ -82,10 +85,16 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: {
       style={{
         width: 160,
         minHeight: 105,
-        background: isFocused ? "#e0f4f7" : "#F6F8F9",
-        border: isFocused ? "2px solid #00abbd" : "1px solid #E1E9EB",
+        background: isFocused
+          ? (isDark ? "rgba(0,171,189,0.18)" : "#e0f4f7")
+          : (isDark ? "rgba(255,255,255,0.05)" : "#F6F8F9"),
+        border: isFocused
+          ? "2px solid #00abbd"
+          : (isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #E1E9EB"),
         borderRadius: 12,
-        boxShadow: isFocused ? "0 0 0 3px rgba(0,171,189,0.2), 0 2px 8px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.08)",
+        boxShadow: isFocused
+          ? (isDark ? "0 0 0 3px rgba(0,171,189,0.25), 0 2px 8px rgba(0,0,0,0.4)" : "0 0 0 3px rgba(0,171,189,0.2), 0 2px 8px rgba(0,0,0,0.08)")
+          : (isDark ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.08)"),
         paddingTop: 10,
         paddingBottom: 14,
         opacity: isClickable || isFocused ? 1 : 0.7,
@@ -128,7 +137,7 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: {
           </div>
         )}
       </div>
-      <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}>
+      <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: isDark ? "#e6f1f3" : "#0A2126", marginTop: 8, paddingInline: 8 }}>
         {node.full_name}
       </p>
       {bjInfo != null && (
@@ -170,6 +179,8 @@ function VerticalLine({ height = 24 }: { height?: number }) {
 }
 
 function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: number; onClick: () => void }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const Icon = expanded ? Minus : Plus;
   return (
     <button
@@ -177,13 +188,15 @@ function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: 
       className="flex items-center justify-center rounded-full transition-all hover:scale-110"
       style={{
         width: 36, height: 36,
-        background: expanded ? "#d1e8ec" : "#E1E9EB",
-        border: "1px solid #c8d8dc",
+        background: isDark
+          ? (expanded ? "rgba(0,171,189,0.25)" : "rgba(255,255,255,0.08)")
+          : (expanded ? "#d1e8ec" : "#E1E9EB"),
+        border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #c8d8dc",
         cursor: "pointer",
       }}
       title={expanded ? "Sbalit" : `Zobrazit ${count} podřízených`}
     >
-      <Icon className="h-4 w-4" style={{ color: "#00555f" }} />
+      <Icon className="h-4 w-4" style={{ color: isDark ? "#4dd8e8" : "#00555f" }} />
     </button>
   );
 }
@@ -363,6 +376,8 @@ function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string
 
 export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole, periodStart, periodEnd }: OrgChartProps) {
   const { profile } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
@@ -672,7 +687,14 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
   }
 
   return (
-    <div className="relative" style={{ width: "100%", height: "100%" }}>
+    <div
+      className="relative"
+      style={{
+        width: "100%",
+        height: "100%",
+        ["--orgchart-line" as any]: isDark ? "rgba(255,255,255,0.18)" : "#c8d8dc",
+      }}
+    >
       <div
         ref={containerRef}
         className="overflow-auto"
@@ -712,30 +734,30 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
           className="flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95"
           style={{
             width: 36, height: 36,
-            background: "rgba(255,255,255,0.9)",
+            background: isDark ? "rgba(20,40,44,0.85)" : "rgba(255,255,255,0.9)",
             backdropFilter: "blur(8px)",
-            border: "1px solid #E1E9EB",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #E1E9EB",
+            boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.10)",
             cursor: "pointer",
           }}
           title="Přiblížit"
         >
-          <ZoomIn className="h-4 w-4" style={{ color: "#00555f" }} />
+          <ZoomIn className="h-4 w-4" style={{ color: isDark ? "#4dd8e8" : "#00555f" }} />
         </button>
         <button
           onClick={zoomOut}
           className="flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95"
           style={{
             width: 36, height: 36,
-            background: "rgba(255,255,255,0.9)",
+            background: isDark ? "rgba(20,40,44,0.85)" : "rgba(255,255,255,0.9)",
             backdropFilter: "blur(8px)",
-            border: "1px solid #E1E9EB",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #E1E9EB",
+            boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.10)",
             cursor: "pointer",
           }}
           title="Oddálit"
         >
-          <ZoomOut className="h-4 w-4" style={{ color: "#00555f" }} />
+          <ZoomOut className="h-4 w-4" style={{ color: isDark ? "#4dd8e8" : "#00555f" }} />
         </button>
       </div>
     </div>
