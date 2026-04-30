@@ -217,7 +217,10 @@ export function AppSidebar() {
           </div>
         </SidebarContent>
 
-        <SidebarFooter className="bg-sidebar border-t border-white/10 p-4">
+        <SidebarFooter
+          className={`p-4 ${isLight ? "" : "bg-sidebar border-t border-white/10"}`}
+          style={isLight ? { borderTop: "0.5px solid rgba(0, 85, 95, 0.1)" } : undefined}
+        >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className={`relative flex-shrink-0 ${godMode ? "god-mode-avatar" : ""}`}>
@@ -226,18 +229,31 @@ export function AppSidebar() {
                 ) : (
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(255,255,255,0.12)" }}
+                    style={{ background: isLight ? "rgba(0,85,95,0.1)" : "rgba(255,255,255,0.12)" }}
                   >
-                    <span className="text-[13px] font-heading font-semibold text-white">{initials}</span>
+                    <span
+                      className="text-[13px] font-heading font-semibold"
+                      style={{ color: isLight ? "#00555f" : "#ffffff" }}
+                    >
+                      {initials}
+                    </span>
                   </div>
                 )}
                 {godMode && <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-heading font-semibold text-white truncate">{profile?.full_name}</p>
+                  <p
+                    className="text-[13px] font-heading font-semibold truncate"
+                    style={{ color: isLight ? "#0a3540" : "#ffffff" }}
+                  >
+                    {profile?.full_name}
+                  </p>
                   {profile?.role && (
-                    <span className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}>
+                    <span
+                      className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}
+                      style={isLight ? { color: "rgba(10, 53, 64, 0.45)" } : undefined}
+                    >
                       {roleBadgeConfig[profile.role]?.label}
                     </span>
                   )}
