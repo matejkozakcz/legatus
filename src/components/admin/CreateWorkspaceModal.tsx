@@ -33,6 +33,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
   const [ownerId, setOwnerId] = useState<string>("");
   const [parentUnitId, setParentUnitId] = useState<string>("__global__");
   const [email, setEmail] = useState("");
+  const [membershipMode, setMembershipMode] = useState<"auto" | "manual">("auto");
 
   useEffect(() => {
     if (open) {
@@ -40,6 +41,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
       setOwnerId("");
       setParentUnitId("__global__");
       setEmail("");
+      setMembershipMode("auto");
     }
   }, [open]);
 
