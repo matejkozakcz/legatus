@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
 import Join from "./pages/Join";
 import JoinWorkspace from "./pages/JoinWorkspace";
+import JoinDispatcher from "./pages/JoinDispatcher";
 import Dashboard from "./pages/Dashboard";
 
 import SpravaTeam from "./pages/SpravaTeam";
@@ -41,7 +42,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
             <Route path="/join/ws/:token" element={<JoinWorkspace />} />
-            <Route path="/join/:token" element={<Join />} />
+            <Route path="/join/:token" element={<JoinDispatcher />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"

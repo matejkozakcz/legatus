@@ -43,7 +43,7 @@ export default function JoinWorkspace() {
       const { data, error } = await supabase
         .from("org_units")
         .select("id, name, owner_id")
-        .eq("invite_token", token)
+        .eq("invite_token", token.trim().toUpperCase())
         .maybeSingle();
 
       if (cancelled) return;

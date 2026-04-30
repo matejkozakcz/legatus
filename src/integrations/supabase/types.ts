@@ -1157,6 +1157,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_workspace_invite_code: { Args: never; Returns: string }
       get_effective_promotion_rules: {
         Args: { _org_unit_id: string }
         Returns: {
