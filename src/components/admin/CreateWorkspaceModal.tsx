@@ -212,6 +212,38 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
             <p className="text-[11px] text-muted-foreground mt-1">
               Vytvoří invite link pro nového vedoucího.
             </p>
+          <div>
+            <Label className="text-xs">Členové workspace</Label>
+            <div className="mt-1 flex flex-col gap-2 rounded-md border border-white/10 p-2">
+              <label className="flex items-start gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  className="mt-0.5"
+                  checked={membershipMode === "auto"}
+                  onChange={() => setMembershipMode("auto")}
+                />
+                <span>
+                  <span className="font-medium">Automaticky celá struktura ownera</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Všichni aktivní podřízení (přes vedoucí/garant/získatel) budou přidáni.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  className="mt-0.5"
+                  checked={membershipMode === "manual"}
+                  onChange={() => setMembershipMode("manual")}
+                />
+                <span>
+                  <span className="font-medium">Jen owner — členy přidám ručně</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Workspace zůstane prázdný, owner si členy přiřadí v detailu.
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
