@@ -3,6 +3,7 @@ import { Plus, Minus, ZoomIn, ZoomOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface ProfileNode {
   id: string;
@@ -51,7 +52,8 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
   novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
 
-const LINE_COLOR = "#c8d8dc";
+const LINE_COLOR_LIGHT = "#c8d8dc";
+const LINE_COLOR_DARK = "rgba(255,255,255,0.18)";
 
 const progressBarColor: Record<string, string> = {
   vedouci: "#45AABD",
