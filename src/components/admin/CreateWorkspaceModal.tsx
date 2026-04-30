@@ -157,7 +157,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent position="popper" sideOffset={4} className="z-[100] max-h-[260px]">
+              <SelectContent position="popper" sideOffset={4} className="max-h-[260px]">
                 <SelectItem value="__global__">Globální (žádný)</SelectItem>
                 {(orgUnits ?? []).map((u) => (
                   <SelectItem key={u.id} value={u.id}>
