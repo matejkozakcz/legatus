@@ -219,47 +219,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
 
 
-  const renderProviderRow = (provider: "google" | "apple") => {
-    const linked = isProviderLinked(provider);
-    const isLinking = linkingProvider === provider;
-    const isUnlinking = unlinkingProvider === provider;
-    const Icon = provider === "google" ? GoogleIcon : AppleIcon;
-    return (
-      <div key={provider} className="flex items-center justify-between py-2.5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted">
-            <Icon />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">{PROVIDER_LABELS[provider]}</p>
-            <p className={`text-xs ${linked ? "text-secondary" : "text-muted-foreground"}`}>
-              {linked ? "Připojeno" : "Nepřipojeno"}
-            </p>
-          </div>
-        </div>
-        {linked ? (
-          <button
-            onClick={() => handleUnlinkProvider(provider)}
-            disabled={isUnlinking || identities.length <= 1}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-destructive transition-colors disabled:opacity-40"
-          >
-            {isUnlinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink2 className="h-3.5 w-3.5" />}
-            Odpojit
-          </button>
-        ) : (
-          <button
-            onClick={() => handleLinkProvider(provider)}
-            disabled={!!linkingProvider}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-secondary transition-colors disabled:opacity-40"
-          >
-            {isLinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-            Připojit
-          </button>
-        )}
-      </div>
-    );
-  };
-
   const selectClass =
     "h-9 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground";
   const inputClass =
