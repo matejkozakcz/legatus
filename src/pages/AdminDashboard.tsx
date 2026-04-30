@@ -93,6 +93,7 @@ const ADMIN_TABS = [
   { key: "activity", label: "Aktivita", icon: Activity },
   { key: "schuzky", label: "Schůzky", icon: CalendarDays },
   { key: "transakce", label: "Transakce", icon: Coins },
+  { key: "workspaces", label: "Workspaces", icon: Building2 },
   { key: "settings", label: "Nastavení", icon: Settings2 },
   { key: "permissions", label: "Oprávnění", icon: Lock },
   { key: "notifications", label: "Notifikace", icon: Bell },
