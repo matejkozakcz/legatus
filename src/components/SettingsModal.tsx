@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, CalendarX, Puzzle, LogOut, Bell } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
-import type { UserIdentity } from "@supabase/supabase-js";
+import { useAppVersion } from "@/hooks/useAppVersion";
+
 
 interface SettingsModalProps {
   open: boolean;
@@ -15,36 +16,7 @@ interface SettingsModalProps {
   initialTab?: number;
 }
 
-const TABS = ["Profil", "Oznámení", "Kalendář", "gOWL"] as const;
-
-const PROVIDER_LABELS: Record<string, string> = { google: "Google", apple: "Apple" };
-
-const GoogleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18">
-    <path
-      d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"
-      fill="#4285F4"
-    />
-    <path
-      d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"
-      fill="#34A853"
-    />
-    <path
-      d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"
-      fill="#FBBC05"
-    />
-    <path
-      d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"
-      fill="#EA4335"
-    />
-  </svg>
-);
-
-const AppleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-    <path d="M13.545 8.82c-.022-2.26 1.845-3.345 1.929-3.396-1.05-1.536-2.685-1.746-3.266-1.77-1.39-.141-2.714.819-3.42.819-.705 0-1.796-.798-2.951-.777-1.518.022-2.917.883-3.698 2.243-1.577 2.736-.404 6.79 1.133 9.012.751 1.087 1.648 2.307 2.826 2.264 1.133-.046 1.562-.733 2.932-.733 1.37 0 1.755.733 2.953.71 1.22-.022 1.996-1.108 2.742-2.197.864-1.26 1.22-2.48 1.242-2.544-.027-.012-2.383-.915-2.408-3.63h.006Zm-2.26-6.672c.624-.757 1.045-1.808.93-2.856-.9.037-1.99.6-2.636 1.356-.58.67-1.087 1.74-.951 2.767 1.004.078 2.028-.51 2.657-1.267Z" />
-  </svg>
-);
+const TABS = ["Profil", "Oznámení"] as const;
 
 // (Notifications system removed — placeholder tab below.)
 
@@ -66,18 +38,10 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [identities, setIdentities] = useState<UserIdentity[]>([]);
-  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
-  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
   const pushState = usePushSubscription();
-
-  // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
-
-  const fetchIdentities = useCallback(async () => {
-    const { data } = await supabase.auth.getUserIdentities();
-    if (data?.identities) setIdentities(data.identities);
-  }, []);
+  const { isStale, performUpdate, serverVersion, localVersion } = useAppVersion();
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (open && profile) {
@@ -90,10 +54,8 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       setConfirmPassword("");
       setPasswordError("");
       setActiveTab(initialTab);
-      fetchIdentities();
-      
     }
-  }, [open, profile, fetchIdentities, initialTab]);
+  }, [open, profile, initialTab]);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -118,41 +80,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       .join("")
       .toUpperCase()
       .slice(0, 2) || "?";
-  const isProviderLinked = (provider: string) => identities.some((i) => i.provider === provider);
-
-  const handleLinkProvider = async (provider: "google" | "apple") => {
-    setLinkingProvider(provider);
-    try {
-      const { error } = await supabase.auth.linkIdentity({
-        provider,
-        options: { redirectTo: window.location.origin + "/dashboard" },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      toast.error(err.message || `Nepodařilo se připojit ${PROVIDER_LABELS[provider]}`);
-      setLinkingProvider(null);
-    }
-  };
-
-  const handleUnlinkProvider = async (provider: string) => {
-    if (identities.length <= 1) {
-      toast.error("Nelze odebrat poslední přihlašovací metodu.");
-      return;
-    }
-    const identity = identities.find((i) => i.provider === provider);
-    if (!identity) return;
-    setUnlinkingProvider(provider);
-    try {
-      const { error } = await supabase.auth.unlinkIdentity(identity);
-      if (error) throw error;
-      await fetchIdentities();
-      toast.success(`${PROVIDER_LABELS[provider] || provider} odpojen`);
-    } catch (err: any) {
-      toast.error(err.message || `Nepodařilo se odpojit ${PROVIDER_LABELS[provider] || provider}`);
-    } finally {
-      setUnlinkingProvider(null);
-    }
-  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -218,47 +145,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   };
 
 
-
-  const renderProviderRow = (provider: "google" | "apple") => {
-    const linked = isProviderLinked(provider);
-    const isLinking = linkingProvider === provider;
-    const isUnlinking = unlinkingProvider === provider;
-    const Icon = provider === "google" ? GoogleIcon : AppleIcon;
-    return (
-      <div key={provider} className="flex items-center justify-between py-2.5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted">
-            <Icon />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">{PROVIDER_LABELS[provider]}</p>
-            <p className={`text-xs ${linked ? "text-secondary" : "text-muted-foreground"}`}>
-              {linked ? "Připojeno" : "Nepřipojeno"}
-            </p>
-          </div>
-        </div>
-        {linked ? (
-          <button
-            onClick={() => handleUnlinkProvider(provider)}
-            disabled={isUnlinking || identities.length <= 1}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-destructive transition-colors disabled:opacity-40"
-          >
-            {isUnlinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink2 className="h-3.5 w-3.5" />}
-            Odpojit
-          </button>
-        ) : (
-          <button
-            onClick={() => handleLinkProvider(provider)}
-            disabled={!!linkingProvider}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-secondary transition-colors disabled:opacity-40"
-          >
-            {isLinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-            Připojit
-          </button>
-        )}
-      </div>
-    );
-  };
 
   const selectClass =
     "h-9 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground";
@@ -355,17 +241,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
       <div className="border-t border-border" />
 
-      {/* OAuth */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground mb-3">Propojené účty</p>
-        <div className="space-y-1">
-          {renderProviderRow("google")}
-          {renderProviderRow("apple")}
-        </div>
-      </div>
-
-      <div className="border-t border-border" />
-
       {/* Password */}
       <button
         type="button"
@@ -412,6 +287,34 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
           {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
         </div>
       )}
+
+      {/* App update */}
+      <div className="border-t border-border" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">Aktualizovat aplikaci</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {isStale
+                ? `Dostupná novější verze (${serverVersion})`
+                : `Verze ${localVersion ?? serverVersion ?? "—"} je aktuální`}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            setUpdating(true);
+            try { await performUpdate(); } catch { setUpdating(false); }
+          }}
+          disabled={updating}
+          className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          {isStale ? "Aktualizovat" : "Zkontrolovat"}
+        </button>
+      </div>
 
       {/* God mode */}
       {isAdmin && (
@@ -518,22 +421,9 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     );
   };
 
-  const renderPlaceholder = (icon: React.ReactNode, text: string) => (
-    <div className="flex flex-col items-center justify-center py-16 opacity-50">
-      {icon}
-      <p className="text-sm text-muted-foreground mt-4 text-center">{text}</p>
-    </div>
-  );
-
   const tabContent = [
     renderProfil,
     renderNotifikace,
-    () =>
-      renderPlaceholder(
-        <CalendarX className="h-10 w-10 text-muted-foreground" />,
-        "Propojení s externím kalendářem bude dostupné brzy.",
-      ),
-    () => renderPlaceholder(<Puzzle className="h-10 w-10 text-muted-foreground" />, "Připravujeme propojení s gOWL."),
   ];
 
   return (
@@ -560,21 +450,16 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
         {/* Tabs */}
         <div className="flex gap-1 px-6 pt-4 pb-0 border-b border-border overflow-x-auto">
-          {TABS.map((tab, i) => {
-            const isDisabled = i >= 2;
-            return (
-              <button
-                key={tab}
-                onClick={() => !isDisabled && setActiveTab(i)}
-                disabled={isDisabled}
-                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px
-                  ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}
-                  ${isDisabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-              >
-                {tab}
-              </button>
-            );
-          })}
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px cursor-pointer
+                ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
         {/* Content */}

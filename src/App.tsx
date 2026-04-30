@@ -13,7 +13,7 @@ import SpravaTeam from "./pages/SpravaTeam";
 import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
 import ObchodniPripady from "./pages/ObchodniPripady";
-import Kalendar from "./pages/Kalendar";
+
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -88,16 +88,6 @@ const App = () => (
               element={
                 <AppLayout>
                   <MobileObchod />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/kalendar"
-              element={
-                <AppLayout>
-                  <GodModeRoute>
-                    <Kalendar />
-                  </GodModeRoute>
                 </AppLayout>
               }
             />
