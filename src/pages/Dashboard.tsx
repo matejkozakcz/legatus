@@ -76,7 +76,7 @@ function MobileStatCard({
               fontFamily: "Poppins, sans-serif",
               fontWeight: 800,
               fontSize: 36,
-              color: "#00555f",
+              color: "var(--deep-hex, #00555f)",
               lineHeight: 1,
             }}
           >
@@ -131,7 +131,7 @@ function InfoPostMobileCard({
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 24, color: "#00555f", lineHeight: 1 }}>{m.v}</div>
+            <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 24, color: "var(--deep-hex, #00555f)", lineHeight: 1 }}>{m.v}</div>
             <div style={{ fontSize: 9, color: "var(--text-muted, #8aadb3)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>{m.l}</div>
           </div>
         ))}
@@ -154,7 +154,7 @@ function InfoPostDesktopCard({
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} className="text-center">
-            <div className="font-heading font-bold leading-none" style={{ color: "#00555f", fontSize: 28 }}>{m.v}</div>
+            <div className="font-heading font-bold leading-none" style={{ color: "var(--deep-hex, #00555f)", fontSize: 28 }}>{m.v}</div>
             <div className="font-body text-[10px] mt-1.5 uppercase tracking-wide font-semibold" style={{ color: "var(--text-muted, #8aadb3)" }}>{m.l}</div>
           </div>
         ))}
@@ -1470,7 +1470,7 @@ const Dashboard = () => {
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 800,
                         fontSize: 28,
-                        color: "#00555f",
+                        color: "var(--deep-hex, #00555f)",
                         lineHeight: 1,
                       }}
                     >
@@ -1503,7 +1503,7 @@ const Dashboard = () => {
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "center" }}>
-                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "var(--deep-hex, #00555f)", lineHeight: 1 }}>
                         {item.actual}
                       </span>
                       {item.planned != null && (
@@ -1567,7 +1567,7 @@ const Dashboard = () => {
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 800,
                         fontSize: 28,
-                        color: "#00555f",
+                        color: "var(--deep-hex, #00555f)",
                         lineHeight: 1,
                       }}
                     >
@@ -1601,7 +1601,7 @@ const Dashboard = () => {
                   <div key={item.label} style={{ textAlign: "center" }}>
                     <div className="mobile-stat-label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label}</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 4, justifyContent: "center" }}>
-                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                      <span style={{ fontFamily: "Poppins, sans-serif", fontWeight: 800, fontSize: 28, color: "var(--deep-hex, #00555f)", lineHeight: 1 }}>
                         {item.actual}
                       </span>
                       {item.planned != null && (
