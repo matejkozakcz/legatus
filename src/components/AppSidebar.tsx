@@ -94,15 +94,24 @@ export function AppSidebar() {
       .toUpperCase()
       .slice(0, 2) || "?";
 
+  const isLight = theme !== "dark";
+
   return (
     <>
-      <Sidebar collapsible="icon" className="border-r-0" style={{ width: collapsed ? undefined : "220px" }}>
-        <SidebarContent className="bg-sidebar" style={{ padding: "20px 12px" }}>
+      <Sidebar
+        collapsible="icon"
+        className={`border-r-0 ${isLight ? "sidebar-glass" : ""}`}
+        style={{ width: collapsed ? undefined : "220px" }}
+      >
+        <SidebarContent className={isLight ? "" : "bg-sidebar"} style={{ padding: "20px 12px" }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
             <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
             {!collapsed && (
-              <span className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] text-white truncate">
+              <span
+                className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] truncate"
+                style={{ color: isLight ? "#00555f" : "#ffffff" }}
+              >
                 LEGATUS
               </span>
             )}
@@ -125,13 +134,29 @@ export function AppSidebar() {
                 }}
                 className="relative"
               >
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
+                  style={{ color: isLight ? "rgba(10,53,64,0.45)" : "rgba(255,255,255,0.4)" }}
+                />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Hledat…"
-                  className="w-full h-9 pl-9 pr-3 rounded-xl text-xs font-body text-white placeholder:text-white/40 bg-white/10 border border-white/10 focus:outline-none focus:border-white/25 transition-colors"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl text-xs font-body focus:outline-none transition-colors"
+                  style={
+                    isLight
+                      ? {
+                          background: "rgba(255, 255, 255, 0.4)",
+                          border: "0.5px solid rgba(255, 255, 255, 0.6)",
+                          color: "#0a3540",
+                        }
+                      : {
+                          background: "rgba(255,255,255,0.1)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "#ffffff",
+                        }
+                  }
                 />
               </form>
             )}
