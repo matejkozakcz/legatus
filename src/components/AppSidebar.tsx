@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import legatusLogoWhite from "@/assets/legatus-logo-white.png";
+import legatusLogoLight from "@/assets/legatus-logo-light.png";
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
@@ -106,7 +107,7 @@ export function AppSidebar() {
         <SidebarContent style={{ padding: "20px 12px" }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
-            <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
+            <img src={isLight ? legatusLogoLight : legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
             {!collapsed && (
               <span
                 className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] truncate"
