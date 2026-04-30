@@ -36,9 +36,11 @@ export function useAppVersion() {
       .maybeSingle()
       .then(({ data }) => applyValue(data?.value));
 
-    // Realtime subscription
+    // Realtime subscription (unique channel per hook instance to avoid
+    // "cannot add postgres_changes callbacks after subscribe()" when multiple
+    // components mount this hook simultaneously).
     const channel = supabase
-      .channel("app_version_changes")
+      .channel(`app_version_changes_${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "app_config", filter: `key=eq.${CONFIG_KEY}` },
