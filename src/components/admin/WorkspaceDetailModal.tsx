@@ -505,9 +505,9 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-heading font-semibold text-foreground">
-                  Vedoucí a garanti{" "}
+                  Členové workspace{" "}
                   <span className="text-muted-foreground font-normal text-sm">
-                    · {members?.length ?? 0} členů
+                    · {members?.length ?? 0}
                   </span>
                 </h3>
                 <Popover open={addPickerOpen} onOpenChange={setAddPickerOpen}>
