@@ -107,7 +107,7 @@ export function AppSidebar() {
         <SidebarContent style={{ padding: "20px 12px" }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
-            <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
+            <img src={isLight ? legatusLogoLight : legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
             {!collapsed && (
               <span
                 className="font-heading font-semibold text-[22px] leading-tight tracking-[0.2em] truncate"
