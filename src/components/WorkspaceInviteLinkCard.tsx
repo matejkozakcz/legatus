@@ -42,7 +42,7 @@ export function WorkspaceInviteLinkCard({ orgUnitId, canRotate = false, variant 
   });
 
   const link = unit?.invite_token
-    ? `${window.location.origin}/join/ws/${unit.invite_token}`
+    ? `${window.location.origin}/join/${unit.invite_token}`
     : "";
 
   const copy = async () => {
