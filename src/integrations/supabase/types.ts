@@ -354,6 +354,70 @@ export type Database = {
           },
         ]
       }
+      invites: {
+        Row: {
+          created_at: string
+          email: string | null
+          expires_at: string
+          full_name: string | null
+          garant_id: string | null
+          id: string
+          invited_by: string
+          org_unit_id: string
+          role: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          full_name?: string | null
+          garant_id?: string | null
+          id?: string
+          invited_by: string
+          org_unit_id: string
+          role?: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          full_name?: string | null
+          garant_id?: string | null
+          id?: string
+          invited_by?: string
+          org_unit_id?: string
+          role?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_garant_id_fkey"
+            columns: ["garant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_bj_adjustments: {
         Row: {
           bj: number
@@ -658,6 +722,48 @@ export type Database = {
         }
         Relationships: []
       }
+      org_units: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          owner_id: string | null
+          parent_unit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          owner_id?: string | null
+          parent_unit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          owner_id?: string | null
+          parent_unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_units_parent_unit_id_fkey"
+            columns: ["parent_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -671,6 +777,7 @@ export type Database = {
           last_seen_at: string | null
           monthly_bj_goal: number | null
           onboarding_completed: boolean | null
+          org_unit_id: string | null
           osobni_id: string | null
           personal_bj_goal: number | null
           role: string
@@ -690,6 +797,7 @@ export type Database = {
           last_seen_at?: string | null
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
+          org_unit_id?: string | null
           osobni_id?: string | null
           personal_bj_goal?: number | null
           role?: string
@@ -709,6 +817,7 @@ export type Database = {
           last_seen_at?: string | null
           monthly_bj_goal?: number | null
           onboarding_completed?: boolean | null
+          org_unit_id?: string | null
           osobni_id?: string | null
           personal_bj_goal?: number | null
           role?: string
@@ -722,6 +831,13 @@ export type Database = {
             columns: ["garant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
           {
@@ -828,6 +944,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_rules: {
+        Row: {
+          created_at: string
+          id: string
+          min_bj: number | null
+          min_direct: number | null
+          min_structure: number | null
+          org_unit_id: string | null
+          transition: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          min_bj?: number | null
+          min_direct?: number | null
+          min_structure?: number | null
+          org_unit_id?: string | null
+          transition: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          min_bj?: number | null
+          min_direct?: number | null
+          min_structure?: number | null
+          org_unit_id?: string | null
+          transition?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_rules_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
         ]
@@ -997,12 +1154,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_effective_promotion_rules: {
+        Args: { _org_unit_id: string }
+        Returns: {
+          min_bj: number
+          min_direct: number
+          min_structure: number
+          transition: string
+        }[]
+      }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_in_vedouci_subtree: {
         Args: { _target_id: string; _vedouci_id: string }
         Returns: boolean
       }
+      my_org_unit_id: { Args: never; Returns: string }
       sync_activity_from_meetings: {
         Args: { p_user_id: string; p_week_start: string }
         Returns: undefined

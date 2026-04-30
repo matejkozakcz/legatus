@@ -259,25 +259,40 @@ async function checkPromotionsInner(
 
   // Notification system removed — eligibility events are tracked only via promotion_requests.
 
-  // Load promotion rules from app_config (with hardcoded fallbacks)
-  let rules = {
-    ziskatel_to_garant: { min_bj: 1000, min_structure: 2 },
-    garant_to_bv: { min_structure: 5, min_direct: 3 },
-    bv_to_vedouci: { min_structure: 10, min_direct: 6 },
-  };
+  // Load promotion rules from workspace (org_unit) with global fallback via DB function
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("org_unit_id")
+    .eq("id", profile.id)
+    .single();
 
-  try {
-    const { data: configRow } = await supabase
-      .from("app_config")
-      .select("value")
-      .eq("key", "promotion_rules")
-      .single();
-    if (configRow?.value) {
-      rules = { ...rules, ...(configRow.value as unknown as typeof rules) };
-    }
-  } catch {
-    // fallback to defaults
-  }
+  const orgUnitId = (profileRow as any)?.org_unit_id ?? null;
+
+  const { data: rulesRows } = await supabase
+    .rpc("get_effective_promotion_rules", { _org_unit_id: orgUnitId });
+
+  const rulesArr = (rulesRows ?? []) as Array<{
+    transition: string;
+    min_bj: number | null;
+    min_structure: number | null;
+    min_direct: number | null;
+  }>;
+  const findRule = (transition: string) => rulesArr.find((r) => r.transition === transition);
+
+  const rules = {
+    ziskatel_to_garant: {
+      min_bj: findRule("ziskatel_to_garant")?.min_bj ?? 1000,
+      min_structure: findRule("ziskatel_to_garant")?.min_structure ?? 2,
+    },
+    garant_to_bv: {
+      min_structure: findRule("garant_to_bv")?.min_structure ?? 5,
+      min_direct: findRule("garant_to_bv")?.min_direct ?? 3,
+    },
+    bv_to_vedouci: {
+      min_structure: findRule("bv_to_vedouci")?.min_structure ?? 10,
+      min_direct: findRule("bv_to_vedouci")?.min_direct ?? 6,
+    },
+  };
 
   // Sestavení mapy potomků dle ziskatel_id
   const childMap = new Map<string, string[]>();
