@@ -74,13 +74,12 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
   const createWs = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error("Zadej název workspace");
-      if (!ownerId) throw new Error("Vyber ownera");
 
       const { data: newUnit, error: ouErr } = await supabase
         .from("org_units")
         .insert({
           name: name.trim(),
-          owner_id: ownerId,
+          owner_id: ownerId || null,
           parent_unit_id: parentUnitId === "__global__" ? null : parentUnitId,
         })
         .select()
@@ -88,10 +87,11 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
       if (ouErr) throw ouErr;
       if (!newUnit) throw new Error("Workspace nebyl vytvořen");
 
-      // Collect IDs to assign to this workspace
-      const idsToAssign = new Set<string>([ownerId]);
+      // Collect IDs to assign to this workspace (only if owner was picked)
+      const idsToAssign = new Set<string>();
+      if (ownerId) idsToAssign.add(ownerId);
 
-      if (membershipMode === "auto") {
+      if (ownerId && membershipMode === "auto") {
         // Recursively walk the org structure under owner via vedouci_id / garant_id / ziskatel_id
         let frontier: string[] = [ownerId];
         const visited = new Set<string>([ownerId]);
