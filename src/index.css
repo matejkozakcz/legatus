@@ -783,7 +783,7 @@
 
 /* Modály — solid neprůhledné pozadí v dark mode */
 .dark .bg-card {
-  background: hsl(188, 20%, 15%) !important;
+  background: hsl(188, 22%, 14%) !important;
 }
 .dark .rounded-2xl.bg-card,
 .dark .rounded-2xl.shadow-2xl {
