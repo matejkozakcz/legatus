@@ -73,6 +73,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         }
         if (data.avatar_url) setAvatarUrl(data.avatar_url);
         if (data.role && data.role !== "novacek") setSelectedRole(data.role);
+        if (data.osobni_id) setPartnersId(data.osobni_id);
       });
   }, [open, user, prefilled]);
 
