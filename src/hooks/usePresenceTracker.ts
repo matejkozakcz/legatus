@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+export type DeviceKind = "mobile" | "desktop";
+
 export interface PresenceState {
   user_id: string;
   full_name: string;
@@ -11,15 +13,25 @@ export interface PresenceState {
   avatar_url: string | null;
   online_at: string;
   page: string;
+  device: DeviceKind;
+}
+
+/** Aggregated per-user presence (across all open tabs/devices). */
+export interface AggregatedPresence {
+  user_id: string;
+  full_name: string;
+  role: string;
+  avatar_url: string | null;
+  online_at: string;
+  page: string;
+  devices: DeviceKind[]; // unique kinds, e.g. ["mobile"], ["desktop"], or both
 }
 
 // ─── Module-level singleton store ─────────────────────────────────────────────
-// Ensures only ONE Supabase Realtime channel exists for `admin_presence`,
-// even across StrictMode double-mounts and multiple consumer components.
 
 let channel: RealtimeChannel | null = null;
 let refCount = 0;
-let onlineList: PresenceState[] = [];
+let onlineList: AggregatedPresence[] = [];
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((l) => l());
@@ -33,27 +45,57 @@ function getSnapshot() {
   return onlineList;
 }
 
-function ensureChannel(profileId: string) {
+function detectDevice(): DeviceKind {
+  if (typeof navigator === "undefined") return "desktop";
+  const ua = navigator.userAgent || "";
+  // Standard mobile detection — covers iOS, Android, Windows Phone, etc.
+  return /Mobi|Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua) ? "mobile" : "desktop";
+}
+
+// Unique key per tab so multiple devices/tabs of the same user are visible.
+const TAB_KEY = `${Math.random().toString(36).slice(2)}-${Date.now()}`;
+
+function ensureChannel() {
   if (channel) return channel;
   channel = supabase.channel("admin_presence", {
-    config: { presence: { key: profileId } },
+    config: { presence: { key: TAB_KEY } },
   });
 
   channel
     .on("presence", { event: "sync" }, () => {
       if (!channel) return;
       const state = channel.presenceState<PresenceState>();
-      const list: PresenceState[] = [];
+      // Aggregate by user_id across all presence keys
+      const byUser = new Map<string, AggregatedPresence>();
       for (const key of Object.keys(state)) {
         const metas = state[key];
-        if (metas && metas.length > 0) {
-          const newest = metas.reduce((a, b) =>
-            new Date(a.online_at) > new Date(b.online_at) ? a : b,
-          );
-          list.push(newest);
+        for (const m of metas || []) {
+          if (!m?.user_id) continue;
+          const existing = byUser.get(m.user_id);
+          if (!existing) {
+            byUser.set(m.user_id, {
+              user_id: m.user_id,
+              full_name: m.full_name,
+              role: m.role,
+              avatar_url: m.avatar_url,
+              online_at: m.online_at,
+              page: m.page,
+              devices: [m.device || "desktop"],
+            });
+          } else {
+            // Newest meta wins for page/online_at
+            if (new Date(m.online_at) > new Date(existing.online_at)) {
+              existing.online_at = m.online_at;
+              existing.page = m.page;
+            }
+            const d = m.device || "desktop";
+            if (!existing.devices.includes(d)) existing.devices.push(d);
+          }
         }
       }
-      onlineList = list.sort((a, b) => a.full_name.localeCompare(b.full_name));
+      onlineList = Array.from(byUser.values()).sort((a, b) =>
+        a.full_name.localeCompare(b.full_name),
+      );
       emit();
     })
     .subscribe();
@@ -72,8 +114,9 @@ export function usePresenceTracker() {
   useEffect(() => {
     if (!profile?.id) return;
 
-    const ch = ensureChannel(profile.id);
+    const ch = ensureChannel();
     refCount++;
+    const device = detectDevice();
 
     const track = () =>
       ch.track({
@@ -83,9 +126,9 @@ export function usePresenceTracker() {
         avatar_url: profile.avatar_url,
         online_at: new Date().toISOString(),
         page: location.pathname,
-      });
+        device,
+      } satisfies PresenceState);
 
-    // Persist last_seen + app version into profiles (so admin sees it later, even when user is offline)
     const persistLastSeen = async () => {
       try {
         const version =
@@ -104,7 +147,6 @@ export function usePresenceTracker() {
       }
     };
 
-    // Track shortly after mount (channel may still be joining)
     const initTimer = setTimeout(() => {
       track();
       persistLastSeen();
@@ -120,7 +162,6 @@ export function usePresenceTracker() {
     window.addEventListener("focus", onVisibility);
 
     const hb = setInterval(track, 30000);
-    // Less frequent DB write (every 2 min) to avoid spamming the DB
     const dbHb = setInterval(persistLastSeen, 2 * 60 * 1000);
 
     return () => {
@@ -141,6 +182,6 @@ export function usePresenceTracker() {
 }
 
 /** Read the current presence list (subscribes to updates). */
-export function useOnlineUsers(): PresenceState[] {
+export function useOnlineUsers(): AggregatedPresence[] {
   return useSyncExternalStore(subscribeStore, getSnapshot, getSnapshot);
 }
