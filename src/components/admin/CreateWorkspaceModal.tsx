@@ -134,17 +134,18 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
               <SelectTrigger>
                 <SelectValue placeholder="Vyber vedoucího" />
               </SelectTrigger>
-              <SelectContent>
-                {(vedouci ?? []).map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.full_name}
-                    {v.org_unit_id ? " · již ve workspace" : ""}
-                  </SelectItem>
-                ))}
-                {(vedouci?.length ?? 0) === 0 && (
+              <SelectContent position="popper" sideOffset={4} className="z-[100] max-h-[260px]">
+                {(vedouci ?? []).length === 0 ? (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     Žádní vedoucí
                   </div>
+                ) : (
+                  vedouci!.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.full_name}
+                      {v.org_unit_id ? " · již ve workspace" : ""}
+                    </SelectItem>
+                  ))
                 )}
               </SelectContent>
             </Select>
@@ -156,7 +157,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" sideOffset={4} className="z-[100] max-h-[260px]">
                 <SelectItem value="__global__">Globální (žádný)</SelectItem>
                 {(orgUnits ?? []).map((u) => (
                   <SelectItem key={u.id} value={u.id}>
