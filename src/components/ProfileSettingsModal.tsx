@@ -378,6 +378,20 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
           </div>
         </div>
 
+        {/* Partners ID */}
+        <div className="mb-5">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
+            Partners ID
+          </label>
+          <input
+            type="text"
+            value={partnersId}
+            onChange={(e) => setPartnersId(e.target.value)}
+            placeholder="Např. P12345"
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
         {/* Divider */}
         <div className="border-t border-border mb-5" />
 
