@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshCw } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
