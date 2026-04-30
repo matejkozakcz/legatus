@@ -65,12 +65,24 @@ const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   vedouci: "#00555f",
   budouci_vedouci: "#22c55e",
   garant: "#7c5cff",
+  ziskatel: "#00abbd",
+  novacek: "#94a3b8",
+};
+
+const ROLE_ORDER: Record<string, number> = {
+  vedouci: 0,
+  budouci_vedouci: 1,
+  garant: 2,
+  ziskatel: 3,
+  novacek: 4,
 };
 
 interface RuleFields {
@@ -114,7 +126,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
     enabled: open,
   });
 
-  // ── Members of this workspace ──
+  // ── Members of this workspace (all roles) ──
   const { data: members } = useQuery({
     queryKey: ["org_unit_members", orgUnit.id],
     queryFn: async () => {
@@ -122,10 +134,15 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
         .from("profiles")
         .select("id, full_name, role, is_active")
         .eq("org_unit_id", orgUnit.id)
-        .in("role", ["vedouci", "garant", "budouci_vedouci"])
         .eq("is_active", true)
-        .order("role");
-      return data ?? [];
+        .order("full_name");
+      const rows = data ?? [];
+      return rows.sort((a: any, b: any) => {
+        const ra = ROLE_ORDER[a.role] ?? 99;
+        const rb = ROLE_ORDER[b.role] ?? 99;
+        if (ra !== rb) return ra - rb;
+        return (a.full_name ?? "").localeCompare(b.full_name ?? "", "cs");
+      });
     },
     enabled: open,
   });
@@ -488,9 +505,9 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-heading font-semibold text-foreground">
-                  Vedoucí a garanti{" "}
+                  Členové workspace{" "}
                   <span className="text-muted-foreground font-normal text-sm">
-                    · {members?.length ?? 0} členů
+                    · {members?.length ?? 0}
                   </span>
                 </h3>
                 <Popover open={addPickerOpen} onOpenChange={setAddPickerOpen}>
