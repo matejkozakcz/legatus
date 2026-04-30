@@ -466,22 +466,9 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     );
   };
 
-  const renderPlaceholder = (icon: React.ReactNode, text: string) => (
-    <div className="flex flex-col items-center justify-center py-16 opacity-50">
-      {icon}
-      <p className="text-sm text-muted-foreground mt-4 text-center">{text}</p>
-    </div>
-  );
-
   const tabContent = [
     renderProfil,
     renderNotifikace,
-    () =>
-      renderPlaceholder(
-        <CalendarX className="h-10 w-10 text-muted-foreground" />,
-        "Propojení s externím kalendářem bude dostupné brzy.",
-      ),
-    () => renderPlaceholder(<Puzzle className="h-10 w-10 text-muted-foreground" />, "Připravujeme propojení s gOWL."),
   ];
 
   return (
