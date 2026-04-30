@@ -70,6 +70,13 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       setConfirmPassword("");
       setPasswordError("");
       fetchIdentities();
+      // Fetch Partners ID separately (not in AuthContext profile interface)
+      supabase
+        .from("profiles")
+        .select("osobni_id")
+        .eq("id", profile.id)
+        .single()
+        .then(({ data }) => setPartnersId(data?.osobni_id || ""));
     }
   }, [open, profile, fetchIdentities]);
 
