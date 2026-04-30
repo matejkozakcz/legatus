@@ -20,13 +20,15 @@ interface Profile {
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  /** The admin's REAL profile. Use only when you specifically need the logged-in user. */
-  realProfile: Profile | null;
-  /** Effective profile for rendering — equals realProfile, or the workspace
-   *  owner's profile when an admin is in "view as workspace" mode. Most
-   *  pages should read this. */
+  /** The logged-in user's real profile. */
   profile: Profile | null;
-  /** True when the rendered profile is a workspace owner the admin is viewing. */
+  /** Same as `profile`, except when an admin is in "view as workspace" mode —
+   *  then this returns the workspace owner's profile so pages render that
+   *  workspace's data tree. Use this for read-mostly pages (Dashboard, Tým,
+   *  Obchodní případy). Use `profile` for anything tied to the actual user
+   *  (settings, identity, write paths). */
+  effectiveProfile: Profile | null;
+  /** True when `effectiveProfile` differs from `profile`. */
   isViewingAsWorkspace: boolean;
   loading: boolean;
   needsOnboarding: boolean;
