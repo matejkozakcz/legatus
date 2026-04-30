@@ -68,6 +68,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [profile, isAdmin, godMode]);
 
+  // ── "View as workspace" support ────────────────────────────────
+  // When an admin enters a workspace from /admin, we transparently swap
+  // the active `profile` with the workspace owner's profile. All pages
+  // that read off `profile` (Dashboard, Tým, Obchodní případy) then
+  // render that workspace's data automatically. The real `user` and
+  // `isAdmin` flag remain untouched.
+  const loadViewAsProfile = useCallback(async () => {
+    if (!isAdmin) {
+      setViewAsProfile(null);
+      return;
+    }
+    let wsId: string | null = null;
+    try { wsId = localStorage.getItem("legatus_active_workspace"); } catch {}
+    if (!wsId) {
+      setViewAsProfile(null);
+      return;
+    }
+    const { data: ws } = await supabase
+      .from("org_units")
+      .select("owner_id")
+      .eq("id", wsId)
+      .maybeSingle();
+    if (!ws?.owner_id) {
+      setViewAsProfile(null);
+      return;
+    }
+    const { data: op } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", ws.owner_id)
+      .eq("is_active", true)
+      .maybeSingle();
+    setViewAsProfile((op as unknown as Profile) ?? null);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    loadViewAsProfile();
+    // Re-load when localStorage changes from another tab
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "legatus_active_workspace") loadViewAsProfile();
+    };
+    // Custom event we dispatch ourselves on enter/exit (same tab)
+    const onCustom = () => loadViewAsProfile();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("legatus:workspace-view-changed", onCustom);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("legatus:workspace-view-changed", onCustom);
+    };
+  }, [loadViewAsProfile]);
+
   const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
     // First try active profile
     const { data, error } = await supabase
