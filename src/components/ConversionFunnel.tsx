@@ -150,16 +150,18 @@ function SourceGroup({
   );
 }
 
-function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number; nabPct: number }) {
+function OriginBar({ fsaPct, porPct, nabPct, samPct }: { fsaPct: number; porPct: number; nabPct: number; samPct: number }) {
+  const samColor = "#94a3b8"; // neutral slate
   return (
     <div className="flex flex-col gap-2 min-w-[180px] flex-1">
-      <span className="font-body text-[11px] text-muted-foreground lowercase">původ</span>
+      <span className="font-body text-[11px] text-muted-foreground lowercase">původ pohovorů</span>
 
       {/* Stacked bar */}
       <div className="h-2.5 rounded-full overflow-hidden flex bg-muted">
         {fsaPct > 0 && <div style={{ width: `${fsaPct}%`, background: COLORS.fsa }} />}
         {porPct > 0 && <div style={{ width: `${porPct}%`, background: COLORS.por }} />}
         {nabPct > 0 && <div style={{ width: `${nabPct}%`, background: COLORS.nab }} />}
+        {samPct > 0 && <div style={{ width: `${samPct}%`, background: samColor }} />}
       </div>
 
       {/* Legend */}
@@ -167,6 +169,7 @@ function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number;
         <LegendDot color={COLORS.fsa} label={`FSA ${fsaPct} %`} />
         <LegendDot color={COLORS.por} label={`POR ${porPct} %`} />
         <LegendDot color={COLORS.nab} label={`NÁB ${nabPct} %`} />
+        <LegendDot color={samColor} label={`samostatně ${samPct} %`} />
       </div>
     </div>
   );
