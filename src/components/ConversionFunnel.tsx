@@ -231,7 +231,8 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + nab.pohFromHere;
     const fsaPct = totalLinkedPoh > 0 ? Math.round((fsa.pohFromHere / totalLinkedPoh) * 100) : 0;
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
-    const nabPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
+    const nabPct = totalLinkedPoh > 0 ? Math.round((nab.pohFromHere / totalLinkedPoh) * 100) : 0;
+    const samPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct - nabPct) : 0;
 
     // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
     const completedMeetings = meetings.filter(
@@ -245,7 +246,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     return {
       fsa, por, nab,
       pohPlanned, pohActual, pohReliability,
-      fsaPct, porPct, nabPct,
+      fsaPct, porPct, nabPct, samPct,
       dopFsa, dopPor, dopPoh, dopTotal,
     };
   }, [meetings]);
