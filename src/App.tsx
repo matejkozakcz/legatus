@@ -40,6 +40,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/join/ws/:token" element={<JoinWorkspace />} />
             <Route path="/join/:token" element={<Join />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
