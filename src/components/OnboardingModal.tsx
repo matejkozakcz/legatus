@@ -59,10 +59,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     if (!open || !user || prefilled) return;
     supabase
       .from("profiles")
-      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id")
+      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
       .eq("id", user.id)
       .single()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!data) return;
         setPrefilled(true);
         const parts = (data.full_name || "").split(" ");
@@ -79,6 +79,18 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         if (data.avatar_url) setAvatarUrl(data.avatar_url);
         if (data.role && data.role !== "novacek") setSelectedRole(data.role);
         if (data.osobni_id) setPartnersId(data.osobni_id);
+        if (data.org_unit_id) {
+          setOrgUnitId(data.org_unit_id);
+          const { data: ws } = await supabase
+            .from("org_units")
+            .select("name, owner_id")
+            .eq("id", data.org_unit_id)
+            .maybeSingle();
+          if (ws) {
+            setWorkspaceName(ws.name);
+            setWorkspaceHasOwner(!!ws.owner_id);
+          }
+        }
       });
   }, [open, user, prefilled]);
 
