@@ -110,19 +110,38 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     bv_to_vedouci: { min_structure: 10, min_direct: 6 },
   });
 
-  // Fetch vedouci list
+  // Fetch vedouci list (scoped to workspace if user is in one)
   useEffect(() => {
     if (!open) return;
-    supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("role", "vedouci")
-      .eq("is_active", true)
-      .then(({ data }) => {
-        if (data) {
-          setVedouciOptions(data.map((p) => ({ id: p.id, label: p.full_name })));
-        }
-      });
+    (async () => {
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("is_active", true);
+
+      if (orgUnitId) {
+        // Inside a workspace: allow picking any active leader-ish member
+        // already in the workspace. If the workspace has no owner yet,
+        // we also allow picking "myself" (handled visually elsewhere) by
+        // simply showing existing members. The current user can also pick
+        // themselves implicitly by selecting role=vedouci on step 2.
+        query = query
+          .eq("org_unit_id", orgUnitId)
+          .in("role", ["vedouci", "budouci_vedouci", "garant"]);
+      } else {
+        query = query.eq("role", "vedouci");
+      }
+
+      const { data } = await query;
+      if (data) {
+        setVedouciOptions(
+          data
+            .filter((p) => p.id !== user?.id)
+            .map((p) => ({ id: p.id, label: p.full_name }))
+        );
+      }
+    })();
+
     supabase
       .from("app_config")
       .select("value")
@@ -133,7 +152,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           setPromoRules((prev) => ({ ...prev, ...(data.value as unknown as typeof prev) }));
         }
       });
-  }, [open]);
+  }, [open, orgUnitId, user?.id]);
 
   // Fetch members under selected vedouci for ziskatel picker
   useEffect(() => {
