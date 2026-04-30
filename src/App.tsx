@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
+import Join from "./pages/Join";
 import Dashboard from "./pages/Dashboard";
 
 import SpravaTeam from "./pages/SpravaTeam";
