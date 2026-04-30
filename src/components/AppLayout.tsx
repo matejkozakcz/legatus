@@ -10,6 +10,7 @@ import { Moon, Sun, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PushOptInBanner } from "@/components/PushOptInBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { WorkspaceViewBanner } from "@/components/WorkspaceViewBanner";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
