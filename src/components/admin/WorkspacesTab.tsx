@@ -57,6 +57,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number |
 
 export function WorkspacesTab() {
   const [showInvitesAnchor, setShowInvitesAnchor] = useState(false);
+  const [detailWs, setDetailWs] = useState<OrgUnit | null>(null);
 
   const { data: workspaces, isLoading } = useQuery({
     queryKey: ["org_units"],
