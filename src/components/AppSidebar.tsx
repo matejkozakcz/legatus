@@ -100,10 +100,10 @@ export function AppSidebar() {
     <>
       <Sidebar
         collapsible="icon"
-        className={`border-r-0 ${isLight ? "sidebar-glass" : ""}`}
+        className="border-r-0 sidebar-glass"
         style={{ width: collapsed ? undefined : "220px" }}
       >
-        <SidebarContent className={isLight ? "" : "bg-sidebar"} style={{ padding: "20px 12px" }}>
+        <SidebarContent style={{ padding: "20px 12px" }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
             <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
@@ -218,8 +218,12 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter
-          className={`p-4 ${isLight ? "" : "bg-sidebar border-t border-white/10"}`}
-          style={isLight ? { borderTop: "0.5px solid rgba(0, 85, 95, 0.1)" } : undefined}
+          className="p-4"
+          style={{
+            borderTop: isLight
+              ? "0.5px solid rgba(0, 85, 95, 0.1)"
+              : "0.5px solid rgba(255, 255, 255, 0.08)",
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -229,11 +233,11 @@ export function AppSidebar() {
                 ) : (
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center"
-                    style={{ background: isLight ? "rgba(0,85,95,0.1)" : "rgba(255,255,255,0.12)" }}
+                    style={{ background: isLight ? "rgba(0,85,95,0.1)" : "rgba(255, 255, 255, 0.1)" }}
                   >
                     <span
                       className="text-[13px] font-heading font-semibold"
-                      style={{ color: isLight ? "#00555f" : "#ffffff" }}
+                      style={{ color: isLight ? "#00555f" : "rgba(255, 255, 255, 0.85)" }}
                     >
                       {initials}
                     </span>
@@ -245,14 +249,14 @@ export function AppSidebar() {
                 <div className="flex-1 min-w-0">
                   <p
                     className="text-[13px] font-heading font-semibold truncate"
-                    style={{ color: isLight ? "#0a3540" : "#ffffff" }}
+                    style={{ color: isLight ? "#0a3540" : "rgba(255, 255, 255, 0.85)" }}
                   >
                     {profile?.full_name}
                   </p>
                   {profile?.role && (
                     <span
                       className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}
-                      style={isLight ? { color: "rgba(10, 53, 64, 0.45)" } : undefined}
+                      style={{ color: isLight ? "rgba(10, 53, 64, 0.45)" : "rgba(255, 255, 255, 0.35)" }}
                     >
                       {roleBadgeConfig[profile.role]?.label}
                     </span>
