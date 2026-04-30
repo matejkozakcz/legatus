@@ -65,12 +65,24 @@ const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
   budouci_vedouci: "Budoucí vedoucí",
   garant: "Garant",
+  ziskatel: "Získatel",
+  novacek: "Nováček",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   vedouci: "#00555f",
   budouci_vedouci: "#22c55e",
   garant: "#7c5cff",
+  ziskatel: "#00abbd",
+  novacek: "#94a3b8",
+};
+
+const ROLE_ORDER: Record<string, number> = {
+  vedouci: 0,
+  budouci_vedouci: 1,
+  garant: 2,
+  ziskatel: 3,
+  novacek: 4,
 };
 
 interface RuleFields {
