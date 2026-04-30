@@ -125,7 +125,7 @@ export function WorkspacesTab() {
   }, [workspaces, pendingInvites]);
 
   const handleCreate = () => {
-    toast.info("Vytváření workspace bude doplněno v další iteraci");
+    setCreateOpen(true);
   };
 
   const handleDetail = (ws: OrgUnit) => {
