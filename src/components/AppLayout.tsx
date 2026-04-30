@@ -134,6 +134,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <NotificationBell />
             </div>
             <main className="flex-1 p-6 lg:p-8 overflow-auto">
+              <WorkspaceViewBanner />
               {children}
             </main>
           </div>
