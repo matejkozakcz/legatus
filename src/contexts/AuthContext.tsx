@@ -298,8 +298,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         session,
         user,
-        realProfile: profile,
-        profile: effectiveProfile,
+        profile,
+        effectiveProfile,
         isViewingAsWorkspace,
         loading,
         needsOnboarding,
