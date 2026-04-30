@@ -138,32 +138,32 @@ export function ActivityDashboardTab() {
         </Button>
       </div>
 
-      <SummaryCards refreshTick={refreshTick} />
+      <SummaryCards />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <OnlineUsersCard />
-        <ActiveUsersChart refreshTick={refreshTick} />
+        <ActiveUsersChart />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <DailyActivityChart refreshTick={refreshTick} />
-        <RoleDistributionCard refreshTick={refreshTick} />
+        <DailyActivityChart />
+        <RoleDistributionCard />
       </div>
 
-      <UnifiedUsersTable refreshTick={refreshTick} />
+      <UnifiedUsersTable />
 
-      <RecentEventsFeed refreshTick={refreshTick} />
+      <RecentEventsFeed />
 
-      <NotificationRunsCard refreshTick={refreshTick} />
+      <NotificationRunsCard />
 
-      <ErrorLogsCard refreshTick={refreshTick} />
+      <ErrorLogsCard />
     </div>
   );
 }
 
 // ─── Summary Cards ────────────────────────────────────────────────────────────
 
-function SummaryCards({ refreshTick }: { refreshTick: number }) {
+function SummaryCards({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_activity_summary"],
     queryFn: async () => {
@@ -331,7 +331,7 @@ function OnlineUsersCard() {
 
 // ─── Active Users Chart (last 14 days) ────────────────────────────────────────
 
-function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
+function ActiveUsersChart({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_activity_chart_users"],
     queryFn: async () => {
@@ -390,7 +390,7 @@ function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
 
 // ─── Daily Activity Chart (events per day) ────────────────────────────────────
 
-function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
+function DailyActivityChart({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_activity_chart_events"],
     queryFn: async () => {
@@ -445,7 +445,7 @@ function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
 
 // ─── Role Distribution ───────────────────────────────────────────────────────
 
-function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
+function RoleDistributionCard({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_role_distribution"],
     queryFn: async () => {
@@ -490,7 +490,7 @@ function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Unified Users Table (slučuje Stav + Top users + Správa) ────────────────
 
-function UnifiedUsersTable({ refreshTick }: { refreshTick: number }) {
+function UnifiedUsersTable({}) {
   const [filter, setFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -722,7 +722,7 @@ interface FeedEvent {
   delivery?: DeliveryInfo;
 }
 
-function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
+function RecentEventsFeed({}) {
   const [filter, setFilter] = useState("");
 
   const { data, isLoading } = useQuery({
@@ -1038,7 +1038,7 @@ function DeliveryBadge({ d }: { d: DeliveryInfo }) {
 
 // ─── Notification Run Log ────────────────────────────────────────────────────
 
-function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
+function NotificationRunsCard({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_notif_runs"],
     queryFn: async () => {
@@ -1115,7 +1115,7 @@ function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Recent Errors (DB + Edge logs) ──────────────────────────────────────────
 
-function ErrorLogsCard({ refreshTick }: { refreshTick: number }) {
+function ErrorLogsCard({}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin_recent_errors"],
     queryFn: async () => {
