@@ -38,6 +38,7 @@ const App = () => (
       <BrowserRouter>
         <ThemeProvider>
         <AuthProvider>
+          <WorkspaceViewProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
