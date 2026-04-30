@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ import {
   XCircle,
   BellOff,
   HelpCircle,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -97,17 +99,34 @@ function summarizeErrors(errors: any): string | undefined {
 // ─── Main Tab ─────────────────────────────────────────────────────────────────
 
 export function ActivityDashboardTab() {
-  const [refreshTick, setRefreshTick] = useState(0);
-  const refresh = () => setRefreshTick((t) => t + 1);
+  const queryClient = useQueryClient();
 
-  // Realtime: refresh only when profiles or client_meetings actually change.
+  // Stable list of admin query-key prefixes used in this tab.
+  // Background-invalidating these keeps existing data on screen while
+  // refetching, so the UI updates without a full-page flicker.
+  const ADMIN_KEYS = [
+    "admin_activity_summary",
+    "admin_activity_chart_users",
+    "admin_activity_chart_events",
+    "admin_role_distribution",
+    "admin_unified_users",
+    "admin_event_feed",
+    "admin_notif_runs",
+    "admin_recent_errors",
+  ] as const;
+
+  const refresh = () => {
+    ADMIN_KEYS.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+  };
+
+  // Realtime: invalidate only when profiles or client_meetings actually change.
   // Debounced to avoid burst-refreshes during bulk writes.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        setRefreshTick((t) => t + 1);
+        refresh();
         timer = null;
       }, 1500);
     };
@@ -122,7 +141,9 @@ export function ActivityDashboardTab() {
       if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   return (
     <div className="space-y-6">
@@ -138,34 +159,34 @@ export function ActivityDashboardTab() {
         </Button>
       </div>
 
-      <SummaryCards refreshTick={refreshTick} />
+      <SummaryCards />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <OnlineUsersCard />
-        <ActiveUsersChart refreshTick={refreshTick} />
+        <ActiveUsersChart />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <DailyActivityChart refreshTick={refreshTick} />
-        <RoleDistributionCard refreshTick={refreshTick} />
+        <DailyActivityChart />
+        <RoleDistributionCard />
       </div>
 
-      <UnifiedUsersTable refreshTick={refreshTick} />
+      <UnifiedUsersTable />
 
-      <RecentEventsFeed refreshTick={refreshTick} />
+      <RecentEventsFeed />
 
-      <NotificationRunsCard refreshTick={refreshTick} />
+      <NotificationRunsCard />
 
-      <ErrorLogsCard refreshTick={refreshTick} />
+      <ErrorLogsCard />
     </div>
   );
 }
 
 // ─── Summary Cards ────────────────────────────────────────────────────────────
 
-function SummaryCards({ refreshTick }: { refreshTick: number }) {
+function SummaryCards({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_summary", refreshTick],
+    queryKey: ["admin_activity_summary"],
     queryFn: async () => {
       const today = startOfDay(new Date()).toISOString();
       const last7 = subDays(new Date(), 7).toISOString();
@@ -317,6 +338,14 @@ function OnlineUsersCard() {
                     {ROLE_LABELS[u.role] || u.role} · {u.page}
                   </p>
                 </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  {u.devices.includes("desktop") && (
+                    <Monitor className="h-3.5 w-3.5" aria-label="Počítač" />
+                  )}
+                  {u.devices.includes("mobile") && (
+                    <Smartphone className="h-3.5 w-3.5" aria-label="Telefon" />
+                  )}
+                </div>
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                   {fmtRel(u.online_at)}
                 </span>
@@ -331,9 +360,9 @@ function OnlineUsersCard() {
 
 // ─── Active Users Chart (last 14 days) ────────────────────────────────────────
 
-function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
+function ActiveUsersChart({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_chart_users", refreshTick],
+    queryKey: ["admin_activity_chart_users"],
     queryFn: async () => {
       const since = subDays(new Date(), 14).toISOString();
       const { data: meetings } = await supabase
@@ -390,9 +419,9 @@ function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
 
 // ─── Daily Activity Chart (events per day) ────────────────────────────────────
 
-function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
+function DailyActivityChart({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_chart_events", refreshTick],
+    queryKey: ["admin_activity_chart_events"],
     queryFn: async () => {
       const since = subDays(new Date(), 14).toISOString();
       const [{ data: meetings }, { data: notifs }] = await Promise.all([
@@ -445,9 +474,9 @@ function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
 
 // ─── Role Distribution ───────────────────────────────────────────────────────
 
-function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
+function RoleDistributionCard({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_role_distribution", refreshTick],
+    queryKey: ["admin_role_distribution"],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
@@ -490,13 +519,13 @@ function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Unified Users Table (slučuje Stav + Top users + Správa) ────────────────
 
-function UnifiedUsersTable({ refreshTick }: { refreshTick: number }) {
+function UnifiedUsersTable({}) {
   const [filter, setFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_unified_users", refreshTick],
+    queryKey: ["admin_unified_users"],
     queryFn: async () => {
       const since30 = subDays(new Date(), 30).toISOString();
       const [{ data: profiles }, { data: cfg }, { data: meetings }, { data: leaders }, { data: garants }] =
@@ -722,11 +751,11 @@ interface FeedEvent {
   delivery?: DeliveryInfo;
 }
 
-function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
+function RecentEventsFeed({}) {
   const [filter, setFilter] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_event_feed", refreshTick],
+    queryKey: ["admin_event_feed"],
     queryFn: async (): Promise<FeedEvent[]> => {
       const [
         { data: meetings },
@@ -1038,9 +1067,9 @@ function DeliveryBadge({ d }: { d: DeliveryInfo }) {
 
 // ─── Notification Run Log ────────────────────────────────────────────────────
 
-function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
+function NotificationRunsCard({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_notif_runs", refreshTick],
+    queryKey: ["admin_notif_runs"],
     queryFn: async () => {
       const { data } = await supabase
         .from("notification_run_log")
@@ -1115,9 +1144,9 @@ function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
 
 // ─── Recent Errors (DB + Edge logs) ──────────────────────────────────────────
 
-function ErrorLogsCard({ refreshTick }: { refreshTick: number }) {
+function ErrorLogsCard({}) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_recent_errors", refreshTick],
+    queryKey: ["admin_recent_errors"],
     queryFn: async () => {
       const { data } = await supabase
         .from("notification_run_log")
