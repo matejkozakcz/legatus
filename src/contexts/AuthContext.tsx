@@ -287,8 +287,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const needsOnboarding = !!profile && profile.onboarding_completed === false;
   const needsReactivation = !!session && !profile && !!deactivatedProfile;
 
+  // Effective profile: workspace owner when admin is "viewing as", else real.
+  const effectiveProfile: Profile | null = viewAsProfile ?? profile;
+  const isViewingAsWorkspace = !!viewAsProfile;
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, needsOnboarding, needsReactivation, deactivatedProfile, isAdmin, godMode, toggleGodMode, signIn, signOut, refetchProfile, reactivateProfile }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        realProfile: profile,
+        profile: effectiveProfile,
+        isViewingAsWorkspace,
+        loading,
+        needsOnboarding,
+        needsReactivation,
+        deactivatedProfile,
+        isAdmin,
+        godMode,
+        toggleGodMode,
+        signIn,
+        signOut,
+        refetchProfile,
+        reactivateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
