@@ -179,6 +179,8 @@ function VerticalLine({ height = 24 }: { height?: number }) {
 }
 
 function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: number; onClick: () => void }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const Icon = expanded ? Minus : Plus;
   return (
     <button
@@ -186,13 +188,15 @@ function ToggleButton({ expanded, count, onClick }: { expanded: boolean; count: 
       className="flex items-center justify-center rounded-full transition-all hover:scale-110"
       style={{
         width: 36, height: 36,
-        background: expanded ? "#d1e8ec" : "#E1E9EB",
-        border: "1px solid #c8d8dc",
+        background: isDark
+          ? (expanded ? "rgba(0,171,189,0.25)" : "rgba(255,255,255,0.08)")
+          : (expanded ? "#d1e8ec" : "#E1E9EB"),
+        border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #c8d8dc",
         cursor: "pointer",
       }}
       title={expanded ? "Sbalit" : `Zobrazit ${count} podřízených`}
     >
-      <Icon className="h-4 w-4" style={{ color: "#00555f" }} />
+      <Icon className="h-4 w-4" style={{ color: isDark ? "#4dd8e8" : "#00555f" }} />
     </button>
   );
 }
