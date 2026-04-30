@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import type { UserIdentity } from "@supabase/supabase-js";
 
 interface SettingsModalProps {
