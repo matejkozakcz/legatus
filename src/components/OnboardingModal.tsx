@@ -397,6 +397,26 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               </div>
             </div>
 
+            {/* Partners ID */}
+            <div>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                Partners ID
+              </label>
+              <input
+                type="text"
+                value={partnersId}
+                onChange={(e) => setPartnersId(e.target.value)}
+                placeholder="Např. P12345 (nepovinné)"
+                className="w-full font-body"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+              />
+              <p className="font-body mt-1" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                Vyplň, jakmile ti bude přiděleno. Aktivuje tě jako Získatele.
+              </p>
+            </div>
+
             {/* Vedouci picker */}
             <div>
               <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
