@@ -297,6 +297,7 @@ export function WorkspacesTab() {
           onClose={() => setDetailWs(null)}
         />
       )}
+      <CreateWorkspaceModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }
