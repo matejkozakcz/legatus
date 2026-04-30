@@ -209,9 +209,18 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     }
   };
 
-  // In a workspace without an owner, the first vedouci doesn't need to pick a leader.
+  // First leader of an empty workspace: nobody to pick as Vedoucí.
+  // Trigger when user joined a workspace without owner AND there are
+  // no other leader-ish members yet to choose from.
   const isFirstLeaderOfWorkspace =
-    !!orgUnitId && !workspaceHasOwner && selectedRole === "vedouci";
+    !!orgUnitId && !workspaceHasOwner && vedouciOptions.length === 0;
+
+  // Auto-set role to vedouci if first leader (they have no other option).
+  useEffect(() => {
+    if (isFirstLeaderOfWorkspace && selectedRole !== "vedouci") {
+      setSelectedRole("vedouci");
+    }
+  }, [isFirstLeaderOfWorkspace, selectedRole]);
 
   const handleStep1Next = () => {
     if (!jmeno.trim() || !prijmeni.trim()) {
@@ -471,65 +480,82 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               </p>
             </div>
 
-            {/* Vedouci picker */}
-            <div>
-              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                Vedoucí
-              </label>
-              <PersonPicker
-                value={vedouciId}
-                onChange={(id) => {
-                  setVedouciId(id);
-                  setZiskatelId("");
+            {isFirstLeaderOfWorkspace ? (
+              <div
+                className="rounded-xl p-3 text-xs font-body"
+                style={{
+                  background: "rgba(0,171,189,0.08)",
+                  border: "1px solid rgba(0,171,189,0.25)",
+                  color: "var(--text-primary)",
                 }}
-                options={vedouciOptions}
-                placeholder="Vyberte vedoucího..."
-                required
-              />
-            </div>
+              >
+                Jsi první v workspace <strong>{workspaceName}</strong> — automaticky se
+                staneš jeho <strong>Vedoucím</strong>. Další členy přidáš později přes
+                pozvánkový odkaz.
+              </div>
+            ) : (
+              <>
+                {/* Vedouci picker */}
+                <div>
+                  <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                    Vedoucí
+                  </label>
+                  <PersonPicker
+                    value={vedouciId}
+                    onChange={(id) => {
+                      setVedouciId(id);
+                      setZiskatelId("");
+                    }}
+                    options={vedouciOptions}
+                    placeholder="Vyberte vedoucího..."
+                    required
+                  />
+                </div>
 
-            {/* Ziskatel picker */}
-            <div>
-              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                Získatel
-              </label>
-              {!ziskatelNotInSystem ? (
-                <PersonPicker
-                  value={ziskatelId}
-                  onChange={setZiskatelId}
-                  options={memberOptions}
-                  placeholder={vedouciId ? "Vyberte získatele..." : "Nejdřív vyberte vedoucího"}
-                  required={!ziskatelNotInSystem}
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={ziskatelName}
-                  onChange={(e) => setZiskatelName(e.target.value)}
-                  placeholder="Jméno získatele"
-                  className="w-full font-body"
-                  style={inputStyle}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                />
-              )}
-              <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={ziskatelNotInSystem}
-                  onChange={(e) => {
-                    setZiskatelNotInSystem(e.target.checked);
-                    if (e.target.checked) setZiskatelId("");
-                    else setZiskatelName("");
-                  }}
-                  className="rounded"
-                  style={{ accentColor: "#00abbd" }}
-                />
-                <span className="font-body text-xs" style={{ color: "#5a8a91" }}>
-                  Získatel není v systému
-                </span>
-              </label>
-            </div>
+                {/* Ziskatel picker */}
+                <div>
+                  <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                    Získatel
+                  </label>
+                  {!ziskatelNotInSystem ? (
+                    <PersonPicker
+                      value={ziskatelId}
+                      onChange={setZiskatelId}
+                      options={memberOptions}
+                      placeholder={vedouciId ? "Vyberte získatele..." : "Nejdřív vyberte vedoucího"}
+                      required={!ziskatelNotInSystem}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={ziskatelName}
+                      onChange={(e) => setZiskatelName(e.target.value)}
+                      placeholder="Jméno získatele"
+                      className="w-full font-body"
+                      style={inputStyle}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                    />
+                  )}
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ziskatelNotInSystem}
+                      onChange={(e) => {
+                        setZiskatelNotInSystem(e.target.checked);
+                        if (e.target.checked) setZiskatelId("");
+                        else setZiskatelName("");
+                      }}
+                      className="rounded"
+                      style={{ accentColor: "#00abbd" }}
+                    />
+                    <span className="font-body text-xs" style={{ color: "#5a8a91" }}>
+                      Získatel není v systému
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
 
             <button
               type="button"
