@@ -38,6 +38,11 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [step, setStep] = useState(1);
   const [prefilled, setPrefilled] = useState(false);
 
+  // Workspace context (set when user joined via workspace invite link)
+  const [orgUnitId, setOrgUnitId] = useState<string | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string>("");
+  const [workspaceHasOwner, setWorkspaceHasOwner] = useState<boolean>(true);
+
   // Step 1 fields
   const [jmeno, setJmeno] = useState("");
   const [prijmeni, setPrijmeni] = useState("");
