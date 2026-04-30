@@ -1522,13 +1522,11 @@ const Dashboard = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               <InfoPostMobileCard
                 label="Info schůzky"
-                count={teamInfoPostCounts.info}
                 novi={teamInfoPostCounts.noviInfo}
                 staracci={teamInfoPostCounts.staracciInfo}
               />
               <InfoPostMobileCard
                 label="Postinfo"
-                count={teamInfoPostCounts.postinfo}
                 novi={teamInfoPostCounts.noviPost}
                 staracci={teamInfoPostCounts.staracciPost}
               />
