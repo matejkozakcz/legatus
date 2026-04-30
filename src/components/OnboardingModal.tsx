@@ -209,9 +209,18 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     }
   };
 
-  // In a workspace without an owner, the first vedouci doesn't need to pick a leader.
+  // First leader of an empty workspace: nobody to pick as Vedoucí.
+  // Trigger when user joined a workspace without owner AND there are
+  // no other leader-ish members yet to choose from.
   const isFirstLeaderOfWorkspace =
-    !!orgUnitId && !workspaceHasOwner && selectedRole === "vedouci";
+    !!orgUnitId && !workspaceHasOwner && vedouciOptions.length === 0;
+
+  // Auto-set role to vedouci if first leader (they have no other option).
+  useEffect(() => {
+    if (isFirstLeaderOfWorkspace && selectedRole !== "vedouci") {
+      setSelectedRole("vedouci");
+    }
+  }, [isFirstLeaderOfWorkspace, selectedRole]);
 
   const handleStep1Next = () => {
     if (!jmeno.trim() || !prijmeni.trim()) {
