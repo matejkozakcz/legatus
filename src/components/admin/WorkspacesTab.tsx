@@ -8,6 +8,7 @@ import { Plus, Building2, Users, Mail, AlertCircle, ArrowRight } from "lucide-re
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
+import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
 
 interface OrgUnit {
   id: string;
