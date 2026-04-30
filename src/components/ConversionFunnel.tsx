@@ -187,7 +187,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function BreakdownRow({ color, label, value }: { color: string; label: string; value: number }) {
+function BreakdownRow({ color, label, value, pct }: { color: string; label: string; value: number; pct?: number }) {
   return (
     <div className="flex items-center justify-between font-body text-[12px]" style={{ color: "var(--text-primary)" }}>
       <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -197,7 +197,14 @@ function BreakdownRow({ color, label, value }: { color: string; label: string; v
         />
         {label}
       </span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
+      <span className="flex items-center gap-2">
+        <span style={{ fontWeight: 600 }}>{value}</span>
+        {typeof pct === "number" && (
+          <span className="text-muted-foreground text-[11px] tabular-nums" style={{ minWidth: 36, textAlign: "right" }}>
+            {pct} %
+          </span>
+        )}
+      </span>
     </div>
   );
 }
