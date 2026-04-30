@@ -59,11 +59,12 @@ export function WorkspaceInviteLinkCard({ orgUnitId, canRotate = false, variant 
 
   const rotate = useMutation({
     mutationFn: async () => {
-      // generate a new token client-side
-      const bytes = new Uint8Array(24);
+      // Generate a fresh 6-char workspace code (uppercase alphanumeric, no 0/O/1/I).
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const bytes = new Uint8Array(6);
       crypto.getRandomValues(bytes);
       const newToken = Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
+        .map((b) => alphabet[b % alphabet.length])
         .join("");
       const { error } = await supabase
         .from("org_units")
