@@ -92,16 +92,6 @@ const App = () => (
               }
             />
             <Route
-              path="/kalendar"
-              element={
-                <AppLayout>
-                  <GodModeRoute>
-                    <Kalendar />
-                  </GodModeRoute>
-                </AppLayout>
-              }
-            />
-            <Route
               path="/hledani"
               element={
                 <AppLayout>
