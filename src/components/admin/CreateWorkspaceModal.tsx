@@ -212,6 +212,8 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
             <p className="text-[11px] text-muted-foreground mt-1">
               Vytvoří invite link pro nového vedoucího.
             </p>
+          </div>
+
           <div>
             <Label className="text-xs">Členové workspace</Label>
             <div className="mt-1 flex flex-col gap-2 rounded-md border border-white/10 p-2">
