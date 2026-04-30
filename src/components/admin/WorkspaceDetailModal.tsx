@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/command";
 import { X, Plus, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
 
 interface OrgUnit {
   id: string;
