@@ -58,13 +58,13 @@
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 187 100% 19%;
-    --sidebar-foreground: 0 0% 100%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 187 100% 19%;
     --sidebar-primary: 5 96% 71%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 187 80% 25%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 187 60% 25%;
+    --sidebar-accent: 187 30% 95%;
+    --sidebar-accent-foreground: 187 100% 19%;
+    --sidebar-border: 187 20% 88%;
     --sidebar-ring: 186 100% 37%;
 
     /* Status */
