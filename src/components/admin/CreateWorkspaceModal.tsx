@@ -88,10 +88,41 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
       if (ouErr) throw ouErr;
       if (!newUnit) throw new Error("Workspace nebyl vytvořen");
 
+      // Collect IDs to assign to this workspace
+      const idsToAssign = new Set<string>([ownerId]);
+
+      if (membershipMode === "auto") {
+        // Recursively walk the org structure under owner via vedouci_id / garant_id / ziskatel_id
+        let frontier: string[] = [ownerId];
+        const visited = new Set<string>([ownerId]);
+        // Safety cap to avoid runaway loops
+        for (let depth = 0; depth < 20 && frontier.length > 0; depth++) {
+          const { data: children, error: childErr } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("is_active", true)
+            .or(
+              frontier
+                .map((id) => `vedouci_id.eq.${id},garant_id.eq.${id},ziskatel_id.eq.${id}`)
+                .join(",")
+            );
+          if (childErr) throw childErr;
+          const next: string[] = [];
+          for (const row of children ?? []) {
+            if (!visited.has(row.id)) {
+              visited.add(row.id);
+              idsToAssign.add(row.id);
+              next.push(row.id);
+            }
+          }
+          frontier = next;
+        }
+      }
+
       const { error: profErr } = await supabase
         .from("profiles")
         .update({ org_unit_id: newUnit.id })
-        .eq("id", ownerId);
+        .in("id", Array.from(idsToAssign));
       if (profErr) throw profErr;
 
       if (email.trim() && user?.id) {
