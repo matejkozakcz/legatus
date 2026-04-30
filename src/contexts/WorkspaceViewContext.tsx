@@ -103,6 +103,7 @@ export function WorkspaceViewProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, id);
     } catch {}
+    window.dispatchEvent(new CustomEvent("legatus:workspace-view-changed"));
   }, []);
 
   const exitWorkspace = useCallback(() => {
@@ -110,6 +111,7 @@ export function WorkspaceViewProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
+    window.dispatchEvent(new CustomEvent("legatus:workspace-view-changed"));
   }, []);
 
   const isViewingAsWorkspace = !!(isAdmin && workspaceId && info);
