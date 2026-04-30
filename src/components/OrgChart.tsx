@@ -52,8 +52,7 @@ const statusDotColor: Record<string, { bg: string; glow: string }> = {
   novacek: { bg: "#F39E0A", glow: "rgba(243, 158, 10, 0.25)" },
 };
 
-const LINE_COLOR_LIGHT = "#c8d8dc";
-const LINE_COLOR_DARK = "rgba(255,255,255,0.18)";
+const LINE_COLOR = "var(--orgchart-line, #c8d8dc)";
 
 const progressBarColor: Record<string, string> = {
   vedouci: "#45AABD",
