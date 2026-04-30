@@ -47,6 +47,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [ziskatelName, setZiskatelName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [partnersId, setPartnersId] = useState("");
 
   // Pre-fill from existing profile data (reactivation with keepData=true)
   useEffect(() => {
