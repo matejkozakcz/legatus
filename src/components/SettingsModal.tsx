@@ -38,19 +38,10 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [identities, setIdentities] = useState<UserIdentity[]>([]);
-  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
-  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
   const pushState = usePushSubscription();
   const { isStale, performUpdate, serverVersion, localVersion } = useAppVersion();
   const [updating, setUpdating] = useState(false);
-  // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
-
-  const fetchIdentities = useCallback(async () => {
-    const { data } = await supabase.auth.getUserIdentities();
-    if (data?.identities) setIdentities(data.identities);
-  }, []);
 
   useEffect(() => {
     if (open && profile) {
@@ -63,10 +54,8 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       setConfirmPassword("");
       setPasswordError("");
       setActiveTab(initialTab);
-      fetchIdentities();
-      
     }
-  }, [open, profile, fetchIdentities, initialTab]);
+  }, [open, profile, initialTab]);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -91,41 +80,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       .join("")
       .toUpperCase()
       .slice(0, 2) || "?";
-  const isProviderLinked = (provider: string) => identities.some((i) => i.provider === provider);
-
-  const handleLinkProvider = async (provider: "google" | "apple") => {
-    setLinkingProvider(provider);
-    try {
-      const { error } = await supabase.auth.linkIdentity({
-        provider,
-        options: { redirectTo: window.location.origin + "/dashboard" },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      toast.error(err.message || `Nepodařilo se připojit ${PROVIDER_LABELS[provider]}`);
-      setLinkingProvider(null);
-    }
-  };
-
-  const handleUnlinkProvider = async (provider: string) => {
-    if (identities.length <= 1) {
-      toast.error("Nelze odebrat poslední přihlašovací metodu.");
-      return;
-    }
-    const identity = identities.find((i) => i.provider === provider);
-    if (!identity) return;
-    setUnlinkingProvider(provider);
-    try {
-      const { error } = await supabase.auth.unlinkIdentity(identity);
-      if (error) throw error;
-      await fetchIdentities();
-      toast.success(`${PROVIDER_LABELS[provider] || provider} odpojen`);
-    } catch (err: any) {
-      toast.error(err.message || `Nepodařilo se odpojit ${PROVIDER_LABELS[provider] || provider}`);
-    } finally {
-      setUnlinkingProvider(null);
-    }
-  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
