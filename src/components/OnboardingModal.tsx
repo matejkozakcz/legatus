@@ -209,16 +209,20 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     }
   };
 
+  // In a workspace without an owner, the first vedouci doesn't need to pick a leader.
+  const isFirstLeaderOfWorkspace =
+    !!orgUnitId && !workspaceHasOwner && selectedRole === "vedouci";
+
   const handleStep1Next = () => {
     if (!jmeno.trim() || !prijmeni.trim()) {
       toast.error("Vyplňte jméno a příjmení.");
       return;
     }
-    if (!vedouciId) {
+    if (!isFirstLeaderOfWorkspace && !vedouciId) {
       toast.error("Vyberte svého vedoucího.");
       return;
     }
-    if (!ziskatelNotInSystem && !ziskatelId) {
+    if (!isFirstLeaderOfWorkspace && !ziskatelNotInSystem && !ziskatelId) {
       toast.error("Vyberte získatele nebo zaškrtněte, že není v systému.");
       return;
     }
@@ -234,14 +238,17 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setSaving(true);
     try {
       const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
-      const finalZiskatelId = ziskatelNotInSystem ? vedouciId : ziskatelId;
+      const effectiveVedouciId = isFirstLeaderOfWorkspace ? null : vedouciId || null;
+      const finalZiskatelId = isFirstLeaderOfWorkspace
+        ? null
+        : (ziskatelNotInSystem ? effectiveVedouciId : ziskatelId);
 
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: fullName,
-          vedouci_id: vedouciId,
-          garant_id: vedouciId,
+          vedouci_id: effectiveVedouciId,
+          garant_id: effectiveVedouciId,
           ziskatel_id: finalZiskatelId,
           ziskatel_name: ziskatelNotInSystem ? ziskatelName.trim() || null : null,
           avatar_url: avatarUrl,
@@ -252,6 +259,16 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // If this user just became the first leader of an owner-less workspace,
+      // promote them to workspace owner.
+      if (isFirstLeaderOfWorkspace && orgUnitId) {
+        await supabase
+          .from("org_units")
+          .update({ owner_id: user.id })
+          .eq("id", orgUnitId)
+          .is("owner_id", null);
+      }
 
       // Save historical BJ as December 2025 activity record
       const bjValue = parseFloat(historickyVykon);
