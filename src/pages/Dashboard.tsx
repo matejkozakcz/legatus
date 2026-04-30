@@ -2113,29 +2113,27 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
-        {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4" style={{ gap: 8 }}>
-            <InfoPostDesktopCard
-              label="Info"
-              count={teamInfoPostCounts.info}
-              novi={teamInfoPostCounts.noviInfo}
-              staracci={teamInfoPostCounts.staracciInfo}
-            />
-            <InfoPostDesktopCard
-              label="Postinfo"
-              count={teamInfoPostCounts.postinfo}
-              novi={teamInfoPostCounts.noviPost}
-              staracci={teamInfoPostCounts.staracciPost}
-            />
-          </div>
-        )}
-
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (
           <section className="space-y-6 mt-8">
             <ConversionFunnel meetings={conversionMeetings as any} />
           </section>
+        )}
+
+        {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
+        {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4" style={{ gap: 8 }}>
+            <InfoPostDesktopCard
+              label="Info"
+              novi={teamInfoPostCounts.noviInfo}
+              staracci={teamInfoPostCounts.staracciInfo}
+            />
+            <InfoPostDesktopCard
+              label="Postinfo"
+              novi={teamInfoPostCounts.noviPost}
+              staracci={teamInfoPostCounts.staracciPost}
+            />
+          </div>
         )}
 
 
