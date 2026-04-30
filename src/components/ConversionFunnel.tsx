@@ -150,16 +150,18 @@ function SourceGroup({
   );
 }
 
-function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number; nabPct: number }) {
+function OriginBar({ fsaPct, porPct, nabPct, samPct }: { fsaPct: number; porPct: number; nabPct: number; samPct: number }) {
+  const samColor = "#94a3b8"; // neutral slate
   return (
     <div className="flex flex-col gap-2 min-w-[180px] flex-1">
-      <span className="font-body text-[11px] text-muted-foreground lowercase">původ</span>
+      <span className="font-body text-[11px] text-muted-foreground lowercase">původ pohovorů</span>
 
       {/* Stacked bar */}
       <div className="h-2.5 rounded-full overflow-hidden flex bg-muted">
         {fsaPct > 0 && <div style={{ width: `${fsaPct}%`, background: COLORS.fsa }} />}
         {porPct > 0 && <div style={{ width: `${porPct}%`, background: COLORS.por }} />}
         {nabPct > 0 && <div style={{ width: `${nabPct}%`, background: COLORS.nab }} />}
+        {samPct > 0 && <div style={{ width: `${samPct}%`, background: samColor }} />}
       </div>
 
       {/* Legend */}
@@ -167,6 +169,7 @@ function OriginBar({ fsaPct, porPct, nabPct }: { fsaPct: number; porPct: number;
         <LegendDot color={COLORS.fsa} label={`FSA ${fsaPct} %`} />
         <LegendDot color={COLORS.por} label={`POR ${porPct} %`} />
         <LegendDot color={COLORS.nab} label={`NÁB ${nabPct} %`} />
+        <LegendDot color={samColor} label={`samostatně ${samPct} %`} />
       </div>
     </div>
   );
@@ -184,7 +187,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function BreakdownRow({ color, label, value }: { color: string; label: string; value: number }) {
+function BreakdownRow({ color, label, value, pct }: { color: string; label: string; value: number; pct?: number }) {
   return (
     <div className="flex items-center justify-between font-body text-[12px]" style={{ color: "var(--text-primary)" }}>
       <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -194,7 +197,14 @@ function BreakdownRow({ color, label, value }: { color: string; label: string; v
         />
         {label}
       </span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
+      <span className="flex items-center gap-2">
+        <span style={{ fontWeight: 600 }}>{value}</span>
+        {typeof pct === "number" && (
+          <span className="text-muted-foreground text-[11px] tabular-nums" style={{ minWidth: 36, textAlign: "right" }}>
+            {pct} %
+          </span>
+        )}
+      </span>
     </div>
   );
 }
@@ -228,7 +238,8 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     const totalLinkedPoh = fsa.pohFromHere + por.pohFromHere + nab.pohFromHere;
     const fsaPct = totalLinkedPoh > 0 ? Math.round((fsa.pohFromHere / totalLinkedPoh) * 100) : 0;
     const porPct = totalLinkedPoh > 0 ? Math.round((por.pohFromHere / totalLinkedPoh) * 100) : 0;
-    const nabPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct) : 0;
+    const nabPct = totalLinkedPoh > 0 ? Math.round((nab.pohFromHere / totalLinkedPoh) * 100) : 0;
+    const samPct = totalLinkedPoh > 0 ? Math.max(0, 100 - fsaPct - porPct - nabPct) : 0;
 
     // Doporučení – sčítáme pouze z proběhlých schůzek (outcome_recorded a necancelled)
     const completedMeetings = meetings.filter(
@@ -242,7 +253,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
     return {
       fsa, por, nab,
       pohPlanned, pohActual, pohReliability,
-      fsaPct, porPct, nabPct,
+      fsaPct, porPct, nabPct, samPct,
       dopFsa, dopPor, dopPoh, dopTotal,
     };
   }, [meetings]);
@@ -328,7 +339,7 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
             <div className="hidden sm:block w-px bg-border" />
 
             {/* Origin */}
-            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} nabPct={stats.nabPct} />
+            <OriginBar fsaPct={stats.fsaPct} porPct={stats.porPct} nabPct={stats.nabPct} samPct={stats.samPct} />
           </div>
 
           {/* Progress bar — flush to bottom */}
@@ -368,9 +379,9 @@ export function ConversionFunnel({ meetings }: ConversionFunnelProps) {
 
             {/* Breakdown */}
             <div className="flex flex-col gap-1.5 justify-center flex-1 min-w-0 sm:px-2">
-              <BreakdownRow color={COLORS.fsa} label="FSA" value={stats.dopFsa} />
-              <BreakdownRow color={COLORS.por} label="POR" value={stats.dopPor} />
-              <BreakdownRow color={COLORS.poh} label="POH" value={stats.dopPoh} />
+              <BreakdownRow color={COLORS.fsa} label="FSA" value={stats.dopFsa} pct={stats.dopTotal > 0 ? Math.round((stats.dopFsa / stats.dopTotal) * 100) : 0} />
+              <BreakdownRow color={COLORS.por} label="POR" value={stats.dopPor} pct={stats.dopTotal > 0 ? Math.round((stats.dopPor / stats.dopTotal) * 100) : 0} />
+              <BreakdownRow color={COLORS.poh} label="POH" value={stats.dopPoh} pct={stats.dopTotal > 0 ? Math.round((stats.dopPoh / stats.dopTotal) * 100) : 0} />
             </div>
           </div>
 

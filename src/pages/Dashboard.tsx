@@ -120,15 +120,14 @@ function MobileStatCard({
 // ─── Info/Postinfo cards with 3 metrics ──────────────────────────────────────
 
 function InfoPostMobileCard({
-  label, count, novi, staracci,
-}: { label: string; count: number; novi: number; staracci: number }) {
+  label, novi, staracci,
+}: { label: string; novi: number; staracci: number }) {
   return (
     <div className="mobile-stat-card">
       <div className="mobile-stat-label">{label}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
         {[
-          { v: count, l: "Schůzek" },
-          { v: novi, l: "Noví" },
+          { v: novi, l: "Nováčci" },
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} style={{ textAlign: "center" }}>
@@ -142,17 +141,16 @@ function InfoPostMobileCard({
 }
 
 function InfoPostDesktopCard({
-  label, count, novi, staracci,
-}: { label: string; count: number; novi: number; staracci: number }) {
+  label, novi, staracci,
+}: { label: string; novi: number; staracci: number }) {
   return (
     <div className="stat-card flex flex-col gap-3 overflow-hidden">
       <p className="font-body text-center truncate" style={{ color: "#EF8C6F", fontSize: 13, fontWeight: 500 }}>
         {label}
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {[
-          { v: count, l: "Schůzek" },
-          { v: novi, l: "Noví" },
+          { v: novi, l: "Nováčci" },
           { v: staracci, l: "Staráčci" },
         ].map((m, i) => (
           <div key={i} className="text-center">
@@ -1524,13 +1522,11 @@ const Dashboard = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               <InfoPostMobileCard
                 label="Info schůzky"
-                count={teamInfoPostCounts.info}
                 novi={teamInfoPostCounts.noviInfo}
                 staracci={teamInfoPostCounts.staracciInfo}
               />
               <InfoPostMobileCard
                 label="Postinfo"
-                count={teamInfoPostCounts.postinfo}
                 novi={teamInfoPostCounts.noviPost}
                 staracci={teamInfoPostCounts.staracciPost}
               />
@@ -2117,29 +2113,27 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
-        {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4" style={{ gap: 8 }}>
-            <InfoPostDesktopCard
-              label="Info"
-              count={teamInfoPostCounts.info}
-              novi={teamInfoPostCounts.noviInfo}
-              staracci={teamInfoPostCounts.staracciInfo}
-            />
-            <InfoPostDesktopCard
-              label="Postinfo"
-              count={teamInfoPostCounts.postinfo}
-              novi={teamInfoPostCounts.noviPost}
-              staracci={teamInfoPostCounts.staracciPost}
-            />
-          </div>
-        )}
-
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (
           <section className="space-y-6 mt-8">
             <ConversionFunnel meetings={conversionMeetings as any} />
           </section>
+        )}
+
+        {/* Vedouci/BV only: Info & Postinfo team stats for current production period */}
+        {(activeRole === "vedouci" || activeRole === "budouci_vedouci") && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4" style={{ gap: 8 }}>
+            <InfoPostDesktopCard
+              label="Info"
+              novi={teamInfoPostCounts.noviInfo}
+              staracci={teamInfoPostCounts.staracciInfo}
+            />
+            <InfoPostDesktopCard
+              label="Postinfo"
+              novi={teamInfoPostCounts.noviPost}
+              staracci={teamInfoPostCounts.staracciPost}
+            />
+          </div>
         )}
 
 
