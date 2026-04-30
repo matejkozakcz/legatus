@@ -30,6 +30,8 @@ import {
   XCircle,
   BellOff,
   HelpCircle,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
