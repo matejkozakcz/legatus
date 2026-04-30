@@ -232,8 +232,9 @@ function HierarchyGroup({
 }
 
 const SpravaTeam = () => {
-  const { effectiveProfile: profile, isAdmin, godMode } = useAuth();
-  const isGodMode = isAdmin && godMode;
+  const { effectiveProfile: profile, isAdmin, godMode, isViewingAsWorkspace } = useAuth();
+  // While "viewing as workspace", behave as the workspace owner — never god mode.
+  const isGodMode = isAdmin && godMode && !isViewingAsWorkspace;
   const isReadOnly = (profile?.role === "garant" || profile?.role === "ziskatel") && !isGodMode;
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -375,16 +376,23 @@ const SpravaTeam = () => {
 
   // Fetch all visible profiles, then filter to ziskatel subtree client-side
   const { data: allVisible = [], isLoading } = useQuery({
-    queryKey: ["team_members", profile?.id, profile?.role, isGodMode],
+    queryKey: ["team_members", profile?.id, profile?.role, isGodMode, (profile as any)?.org_unit_id],
     queryFn: async () => {
       if (!profile?.id || !profile?.role) return [];
       if (!["vedouci", "budouci_vedouci", "garant", "ziskatel"].includes(profile.role) && !isGodMode) return [];
 
-      const query = supabase
+      let query = supabase
         .from("profiles")
         .select("*")
         .eq("is_active", true)
         .neq("id", profile.id);
+
+      // When viewing as a workspace, restrict the dataset to that workspace
+      // so the BFS tree can't escape into the admin's own structure.
+      const wsId = (profile as any)?.org_unit_id as string | null | undefined;
+      if (isViewingAsWorkspace && wsId) {
+        query = query.eq("org_unit_id", wsId);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
