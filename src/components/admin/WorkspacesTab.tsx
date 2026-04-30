@@ -1,11 +1,19 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Users, Mail, AlertCircle, ArrowRight } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Building2, Users, Mail, AlertCircle, ArrowRight, Copy, RotateCcw, Trash2 } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
 import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
