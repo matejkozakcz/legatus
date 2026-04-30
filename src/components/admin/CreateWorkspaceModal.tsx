@@ -167,26 +167,30 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
           </div>
 
           <div>
-            <Label className="text-xs">Owner (vedoucí) *</Label>
-            <Select value={ownerId} onValueChange={setOwnerId}>
+            <Label className="text-xs">Owner (vedoucí)</Label>
+            <Select
+              value={ownerId === "" ? "__none__" : ownerId}
+              onValueChange={(v) => setOwnerId(v === "__none__" ? "" : v)}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Vyber vedoucího" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" sideOffset={4} className="max-h-[260px]">
-                {(vedouci ?? []).length === 0 ? (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    Žádní vedoucí
-                  </div>
-                ) : (
-                  vedouci!.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.full_name}
-                      {v.org_unit_id ? " · již ve workspace" : ""}
-                    </SelectItem>
-                  ))
-                )}
+                <SelectItem value="__none__">
+                  Zatím nikdo — naonboarduje se přes pozvánkový odkaz
+                </SelectItem>
+                {(vedouci ?? []).map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.full_name}
+                    {v.org_unit_id ? " · již ve workspace" : ""}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Pokud necháš prázdné, workspace získá ownera, jakmile se první vedoucí
+              zaregistruje přes pozvánkový odkaz workspace.
+            </p>
           </div>
 
           <div>
@@ -207,7 +211,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
           </div>
 
           <div>
-            <Label className="text-xs">Pozvat e-mailem (volitelné)</Label>
+            <Label className="text-xs">Poslat pozvánkový odkaz na e-mail (volitelné)</Label>
             <Input
               type="email"
               value={email}
@@ -215,43 +219,45 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
               placeholder="email@example.com"
             />
             <p className="text-[11px] text-muted-foreground mt-1">
-              Vytvoří invite link pro nového vedoucího.
+              Trvalý pozvánkový odkaz workspace najdeš ihned po vytvoření v jeho detailu.
             </p>
           </div>
 
-          <div>
-            <Label className="text-xs">Členové workspace</Label>
-            <div className="mt-1 flex flex-col gap-2 rounded-md border border-white/10 p-2">
-              <label className="flex items-start gap-2 cursor-pointer text-xs">
-                <input
-                  type="radio"
-                  className="mt-0.5"
-                  checked={membershipMode === "auto"}
-                  onChange={() => setMembershipMode("auto")}
-                />
-                <span>
-                  <span className="font-medium">Automaticky celá struktura ownera</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    Všichni aktivní podřízení (přes vedoucí/garant/získatel) budou přidáni.
+          {ownerId && (
+            <div>
+              <Label className="text-xs">Členové workspace</Label>
+              <div className="mt-1 flex flex-col gap-2 rounded-md border border-white/10 p-2">
+                <label className="flex items-start gap-2 cursor-pointer text-xs">
+                  <input
+                    type="radio"
+                    className="mt-0.5"
+                    checked={membershipMode === "auto"}
+                    onChange={() => setMembershipMode("auto")}
+                  />
+                  <span>
+                    <span className="font-medium">Automaticky celá struktura ownera</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      Všichni aktivní podřízení (přes vedoucí/garant/získatel) budou přidáni.
+                    </span>
                   </span>
-                </span>
-              </label>
-              <label className="flex items-start gap-2 cursor-pointer text-xs">
-                <input
-                  type="radio"
-                  className="mt-0.5"
-                  checked={membershipMode === "manual"}
-                  onChange={() => setMembershipMode("manual")}
-                />
-                <span>
-                  <span className="font-medium">Jen owner — členy přidám ručně</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    Workspace zůstane prázdný, owner si členy přiřadí v detailu.
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer text-xs">
+                  <input
+                    type="radio"
+                    className="mt-0.5"
+                    checked={membershipMode === "manual"}
+                    onChange={() => setMembershipMode("manual")}
+                  />
+                  <span>
+                    <span className="font-medium">Jen owner — členy přidám ručně</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      Workspace zůstane prázdný, owner si členy přiřadí v detailu.
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -260,7 +266,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
           </Button>
           <Button
             onClick={() => createWs.mutate()}
-            disabled={createWs.isPending || !name.trim() || !ownerId}
+            disabled={createWs.isPending || !name.trim()}
             className="bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
           >
             {createWs.isPending ? "Vytváření…" : "Vytvořit workspace"}
