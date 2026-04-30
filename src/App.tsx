@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import SetPassword from "./pages/SetPassword";
+import Join from "./pages/Join";
 import Dashboard from "./pages/Dashboard";
 
 import SpravaTeam from "./pages/SpravaTeam";
@@ -38,6 +39,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/join/:token" element={<Join />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"
