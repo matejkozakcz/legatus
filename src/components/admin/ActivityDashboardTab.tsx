@@ -165,7 +165,7 @@ export function ActivityDashboardTab() {
 
 function SummaryCards({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_summary", refreshTick],
+    queryKey: ["admin_activity_summary"],
     queryFn: async () => {
       const today = startOfDay(new Date()).toISOString();
       const last7 = subDays(new Date(), 7).toISOString();
@@ -333,7 +333,7 @@ function OnlineUsersCard() {
 
 function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_chart_users", refreshTick],
+    queryKey: ["admin_activity_chart_users"],
     queryFn: async () => {
       const since = subDays(new Date(), 14).toISOString();
       const { data: meetings } = await supabase
@@ -392,7 +392,7 @@ function ActiveUsersChart({ refreshTick }: { refreshTick: number }) {
 
 function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_activity_chart_events", refreshTick],
+    queryKey: ["admin_activity_chart_events"],
     queryFn: async () => {
       const since = subDays(new Date(), 14).toISOString();
       const [{ data: meetings }, { data: notifs }] = await Promise.all([
@@ -447,7 +447,7 @@ function DailyActivityChart({ refreshTick }: { refreshTick: number }) {
 
 function RoleDistributionCard({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_role_distribution", refreshTick],
+    queryKey: ["admin_role_distribution"],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
@@ -496,7 +496,7 @@ function UnifiedUsersTable({ refreshTick }: { refreshTick: number }) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_unified_users", refreshTick],
+    queryKey: ["admin_unified_users"],
     queryFn: async () => {
       const since30 = subDays(new Date(), 30).toISOString();
       const [{ data: profiles }, { data: cfg }, { data: meetings }, { data: leaders }, { data: garants }] =
@@ -726,7 +726,7 @@ function RecentEventsFeed({ refreshTick }: { refreshTick: number }) {
   const [filter, setFilter] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_event_feed", refreshTick],
+    queryKey: ["admin_event_feed"],
     queryFn: async (): Promise<FeedEvent[]> => {
       const [
         { data: meetings },
@@ -1040,7 +1040,7 @@ function DeliveryBadge({ d }: { d: DeliveryInfo }) {
 
 function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_notif_runs", refreshTick],
+    queryKey: ["admin_notif_runs"],
     queryFn: async () => {
       const { data } = await supabase
         .from("notification_run_log")
@@ -1117,7 +1117,7 @@ function NotificationRunsCard({ refreshTick }: { refreshTick: number }) {
 
 function ErrorLogsCard({ refreshTick }: { refreshTick: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["admin_recent_errors", refreshTick],
+    queryKey: ["admin_recent_errors"],
     queryFn: async () => {
       const { data } = await supabase
         .from("notification_run_log")
