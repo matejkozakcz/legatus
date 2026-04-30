@@ -42,7 +42,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/set-password" element={<SetPassword />} />
             <Route path="/join/ws/:token" element={<JoinWorkspace />} />
-            <Route path="/join/:token" element={<Join />} />
+            <Route path="/join/:token" element={<JoinDispatcher />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"
