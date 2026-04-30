@@ -119,12 +119,17 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
         }
       }
 
-      const { error: profErr } = await supabase
-        .from("profiles")
-        .update({ org_unit_id: newUnit.id })
-        .in("id", Array.from(idsToAssign));
-      if (profErr) throw profErr;
+      if (idsToAssign.size > 0) {
+        const { error: profErr } = await supabase
+          .from("profiles")
+          .update({ org_unit_id: newUnit.id })
+          .in("id", Array.from(idsToAssign));
+        if (profErr) throw profErr;
+      }
 
+      // Optional: send the workspace's permanent invite link by e-mail.
+      // We re-use the `invites` table to record the e-mail send; the actual
+      // onboarding still goes through the workspace invite_token link.
       if (email.trim() && user?.id) {
         const { error: invErr } = await supabase.from("invites").insert({
           org_unit_id: newUnit.id,
