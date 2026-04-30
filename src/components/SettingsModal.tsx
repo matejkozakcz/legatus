@@ -72,7 +72,8 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
   const pushState = usePushSubscription();
-
+  const { isStale, performUpdate, serverVersion, localVersion } = useAppVersion();
+  const [updating, setUpdating] = useState(false);
   // (Notifikace tab je nyní jen placeholder — celý notifikační systém byl odebrán.)
 
   const fetchIdentities = useCallback(async () => {
