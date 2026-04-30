@@ -687,7 +687,14 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
   }
 
   return (
-    <div className="relative" style={{ width: "100%", height: "100%" }}>
+    <div
+      className="relative"
+      style={{
+        width: "100%",
+        height: "100%",
+        ["--orgchart-line" as any]: isDark ? "rgba(255,255,255,0.18)" : "#c8d8dc",
+      }}
+    >
       <div
         ref={containerRef}
         className="overflow-auto"
