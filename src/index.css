@@ -328,6 +328,27 @@
 
 /* ===== Button Variants ===== */
 @layer components {
+  /* ===== Modal frosted glass ===== */
+  .legatus-modal-glass {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(32px) saturate(1.8);
+    -webkit-backdrop-filter: blur(32px) saturate(1.8);
+    border: 0.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 40px rgba(0, 85, 95, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  }
+  .dark .legatus-modal-glass {
+    background: rgba(12, 34, 38, 0.78);
+    backdrop-filter: blur(32px) saturate(1.6);
+    -webkit-backdrop-filter: blur(32px) saturate(1.6);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .dark .legatus-modal-glass input,
+  .dark .legatus-modal-glass textarea,
+  .dark .legatus-modal-glass select {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
   .btn {
     @apply font-body font-semibold cursor-pointer border-none;
     transition: all 0.15s ease;
