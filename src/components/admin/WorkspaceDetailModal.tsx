@@ -126,7 +126,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
     enabled: open,
   });
 
-  // ── Members of this workspace ──
+  // ── Members of this workspace (all roles) ──
   const { data: members } = useQuery({
     queryKey: ["org_unit_members", orgUnit.id],
     queryFn: async () => {
@@ -134,10 +134,15 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
         .from("profiles")
         .select("id, full_name, role, is_active")
         .eq("org_unit_id", orgUnit.id)
-        .in("role", ["vedouci", "garant", "budouci_vedouci"])
         .eq("is_active", true)
-        .order("role");
-      return data ?? [];
+        .order("full_name");
+      const rows = data ?? [];
+      return rows.sort((a: any, b: any) => {
+        const ra = ROLE_ORDER[a.role] ?? 99;
+        const rb = ROLE_ORDER[b.role] ?? 99;
+        if (ra !== rb) return ra - rb;
+        return (a.full_name ?? "").localeCompare(b.full_name ?? "", "cs");
+      });
     },
     enabled: open,
   });
