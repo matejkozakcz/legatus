@@ -100,10 +100,10 @@ export function AppSidebar() {
     <>
       <Sidebar
         collapsible="icon"
-        className={`border-r-0 ${isLight ? "sidebar-glass" : ""}`}
+        className="border-r-0 sidebar-glass"
         style={{ width: collapsed ? undefined : "220px" }}
       >
-        <SidebarContent className={isLight ? "" : "bg-sidebar"} style={{ padding: "20px 12px" }}>
+        <SidebarContent style={{ padding: "20px 12px" }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
             <img src={legatusLogoWhite} alt="Legatus" className="h-12 w-12 object-contain flex-shrink-0" />
