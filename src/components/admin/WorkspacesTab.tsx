@@ -8,6 +8,7 @@ import { Plus, Building2, Users, Mail, AlertCircle, ArrowRight } from "lucide-re
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
+import { WorkspaceDetailModal } from "@/components/admin/WorkspaceDetailModal";
 
 interface OrgUnit {
   id: string;
@@ -56,6 +57,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number |
 
 export function WorkspacesTab() {
   const [showInvitesAnchor, setShowInvitesAnchor] = useState(false);
+  const [detailWs, setDetailWs] = useState<OrgUnit | null>(null);
 
   const { data: workspaces, isLoading } = useQuery({
     queryKey: ["org_units"],
@@ -125,7 +127,7 @@ export function WorkspacesTab() {
   };
 
   const handleDetail = (ws: OrgUnit) => {
-    toast.info(`Detail workspace „${ws.name}" bude doplněn`);
+    setDetailWs(ws);
   };
 
   const handleEnter = (ws: OrgUnit) => {
@@ -285,6 +287,13 @@ export function WorkspacesTab() {
             ))}
           </div>
         </Card>
+      )}
+      {detailWs && (
+        <WorkspaceDetailModal
+          orgUnit={detailWs}
+          open={!!detailWs}
+          onClose={() => setDetailWs(null)}
+        />
       )}
     </div>
   );
