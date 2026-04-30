@@ -33,6 +33,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
   const [ownerId, setOwnerId] = useState<string>("");
   const [parentUnitId, setParentUnitId] = useState<string>("__global__");
   const [email, setEmail] = useState("");
+  const [membershipMode, setMembershipMode] = useState<"auto" | "manual">("auto");
 
   useEffect(() => {
     if (open) {
@@ -40,6 +41,7 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
       setOwnerId("");
       setParentUnitId("__global__");
       setEmail("");
+      setMembershipMode("auto");
     }
   }, [open]);
 
@@ -86,10 +88,41 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
       if (ouErr) throw ouErr;
       if (!newUnit) throw new Error("Workspace nebyl vytvořen");
 
+      // Collect IDs to assign to this workspace
+      const idsToAssign = new Set<string>([ownerId]);
+
+      if (membershipMode === "auto") {
+        // Recursively walk the org structure under owner via vedouci_id / garant_id / ziskatel_id
+        let frontier: string[] = [ownerId];
+        const visited = new Set<string>([ownerId]);
+        // Safety cap to avoid runaway loops
+        for (let depth = 0; depth < 20 && frontier.length > 0; depth++) {
+          const { data: children, error: childErr } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("is_active", true)
+            .or(
+              frontier
+                .map((id) => `vedouci_id.eq.${id},garant_id.eq.${id},ziskatel_id.eq.${id}`)
+                .join(",")
+            );
+          if (childErr) throw childErr;
+          const next: string[] = [];
+          for (const row of children ?? []) {
+            if (!visited.has(row.id)) {
+              visited.add(row.id);
+              idsToAssign.add(row.id);
+              next.push(row.id);
+            }
+          }
+          frontier = next;
+        }
+      }
+
       const { error: profErr } = await supabase
         .from("profiles")
         .update({ org_unit_id: newUnit.id })
-        .eq("id", ownerId);
+        .in("id", Array.from(idsToAssign));
       if (profErr) throw profErr;
 
       if (email.trim() && user?.id) {
@@ -179,6 +212,40 @@ export function CreateWorkspaceModal({ open, onClose }: Props) {
             <p className="text-[11px] text-muted-foreground mt-1">
               Vytvoří invite link pro nového vedoucího.
             </p>
+          </div>
+
+          <div>
+            <Label className="text-xs">Členové workspace</Label>
+            <div className="mt-1 flex flex-col gap-2 rounded-md border border-white/10 p-2">
+              <label className="flex items-start gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  className="mt-0.5"
+                  checked={membershipMode === "auto"}
+                  onChange={() => setMembershipMode("auto")}
+                />
+                <span>
+                  <span className="font-medium">Automaticky celá struktura ownera</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Všichni aktivní podřízení (přes vedoucí/garant/získatel) budou přidáni.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  className="mt-0.5"
+                  checked={membershipMode === "manual"}
+                  onChange={() => setMembershipMode("manual")}
+                />
+                <span>
+                  <span className="font-medium">Jen owner — členy přidám ručně</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    Workspace zůstane prázdný, owner si členy přiřadí v detailu.
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
