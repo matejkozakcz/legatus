@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshCw } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -292,28 +292,29 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       <div className="border-t border-border" />
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Aktualizovat aplikaci</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {isStale
-                ? `Dostupná novější verze (${serverVersion})`
-                : `Verze ${localVersion ?? serverVersion ?? "—"} je aktuální`}
-            </p>
-          </div>
+          {isStale ? (
+            <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "#10b981" }} />
+          )}
+          <p className="text-sm font-medium text-foreground">
+            {isStale ? "Je k dispozici nová verze" : "Verze je aktuální"}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={async () => {
-            setUpdating(true);
-            try { await performUpdate(); } catch { setUpdating(false); }
-          }}
-          disabled={updating}
-          className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-        >
-          {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          {isStale ? "Aktualizovat" : "Zkontrolovat"}
-        </button>
+        {isStale && (
+          <button
+            type="button"
+            onClick={async () => {
+              setUpdating(true);
+              try { await performUpdate(); } catch { setUpdating(false); }
+            }}
+            disabled={updating}
+            className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Aktualizovat
+          </button>
+        )}
       </div>
 
       {/* God mode */}
