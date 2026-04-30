@@ -40,6 +40,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
   const [jmeno, setJmeno] = useState("");
   const [prijmeni, setPrijmeni] = useState("");
+  const [partnersId, setPartnersId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,6 +70,13 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       setConfirmPassword("");
       setPasswordError("");
       fetchIdentities();
+      // Fetch Partners ID separately (not in AuthContext profile interface)
+      supabase
+        .from("profiles")
+        .select("osobni_id")
+        .eq("id", profile.id)
+        .single()
+        .then(({ data }) => setPartnersId(data?.osobni_id || ""));
     }
   }, [open, profile, fetchIdentities]);
 
@@ -196,7 +204,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, osobni_id: partnersId.trim() || null })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -368,6 +376,20 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               required
             />
           </div>
+        </div>
+
+        {/* Partners ID */}
+        <div className="mb-5">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
+            Partners ID
+          </label>
+          <input
+            type="text"
+            value={partnersId}
+            onChange={(e) => setPartnersId(e.target.value)}
+            placeholder="Např. P12345"
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
         {/* Divider */}
