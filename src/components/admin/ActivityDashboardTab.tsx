@@ -338,6 +338,14 @@ function OnlineUsersCard() {
                     {ROLE_LABELS[u.role] || u.role} · {u.page}
                   </p>
                 </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  {u.devices.includes("desktop") && (
+                    <Monitor className="h-3.5 w-3.5" aria-label="Počítač" />
+                  )}
+                  {u.devices.includes("mobile") && (
+                    <Smartphone className="h-3.5 w-3.5" aria-label="Telefon" />
+                  )}
+                </div>
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                   {fmtRel(u.online_at)}
                 </span>
