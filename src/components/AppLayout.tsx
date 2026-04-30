@@ -107,6 +107,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
             }}
           >
+            <WorkspaceViewBanner />
             {children}
           </main>
           <MobileBottomNav />
