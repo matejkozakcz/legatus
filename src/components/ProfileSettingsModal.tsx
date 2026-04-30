@@ -204,7 +204,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, osobni_id: partnersId.trim() || null })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
