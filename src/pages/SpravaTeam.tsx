@@ -782,6 +782,16 @@ const SpravaTeam = () => {
         )}
       </div>
 
+      {/* Workspace invite link — viditelné pro vedoucí/BV/garant */}
+      {profile && (profile as any).org_unit_id &&
+        ["vedouci", "budouci_vedouci", "garant"].includes(profile.role) && (
+          <WorkspaceInviteLinkCard
+            orgUnitId={(profile as any).org_unit_id}
+            canRotate={profile.role === "vedouci"}
+            variant="team"
+          />
+        )}
+
       {/* Čekající povýšení */}
       {(profile?.role === "vedouci" || profile?.role === "budouci_vedouci") && enrichedRequests.length > 0 && (
         <section className="space-y-3">
