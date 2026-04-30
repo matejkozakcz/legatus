@@ -137,7 +137,7 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: {
           </div>
         )}
       </div>
-      <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: "#0A2126", marginTop: 8, paddingInline: 8 }}>
+      <p className="font-heading font-semibold text-center leading-tight" style={{ fontSize: 13, color: isDark ? "#e6f1f3" : "#0A2126", marginTop: 8, paddingInline: 8 }}>
         {node.full_name}
       </p>
       {bjInfo != null && (
