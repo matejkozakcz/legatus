@@ -292,3 +292,152 @@ export function WorkspacesTab() {
     </div>
   );
 }
+
+// ─── Invites section ──────────────────────────────────────────────────────────
+
+function InvitesSection() {
+  const qc = useQueryClient();
+
+  const { data: invites, isLoading } = useQuery({
+    queryKey: ["invites_list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invites")
+        .select(`
+          id, email, full_name, expires_at, created_at, used_at, token, org_unit_id,
+          workspace:org_units!invites_org_unit_id_fkey(name),
+          inviter:profiles!invites_invited_by_fkey(full_name)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const copyLink = (token: string) => {
+    const url = `${window.location.origin}/join/${token}`;
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Link zkopírován"),
+      () => toast.error("Nepodařilo se zkopírovat")
+    );
+  };
+
+  const resend = useMutation({
+    mutationFn: async (id: string) => {
+      const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from("invites")
+        .update({ expires_at: newExpiry })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Platnost prodloužena");
+      qc.invalidateQueries({ queryKey: ["invites_list"] });
+      qc.invalidateQueries({ queryKey: ["invites", "pending"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Chyba"),
+  });
+
+  const cancelInvite = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("invites").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pozvánka zrušena");
+      qc.invalidateQueries({ queryKey: ["invites_list"] });
+      qc.invalidateQueries({ queryKey: ["invites", "pending"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Chyba"),
+  });
+
+  const isExpired = (iso: string) => new Date(iso).getTime() < Date.now();
+
+  return (
+    <Card className="p-4">
+      <h3 className="font-heading font-semibold text-foreground mb-3">Pozvánky</h3>
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Načítání…</div>
+      ) : (invites?.length ?? 0) === 0 ? (
+        <p className="text-sm text-muted-foreground italic">Žádné pozvánky</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Jméno</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>Workspace</TableHead>
+                <TableHead>Odesláno</TableHead>
+                <TableHead>Vyprší za</TableHead>
+                <TableHead className="text-right">Akce</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {invites!.map((inv: any) => {
+                const used = !!inv.used_at;
+                const expired = !used && isExpired(inv.expires_at);
+                return (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">{inv.full_name ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{inv.email ?? "—"}</TableCell>
+                    <TableCell>{inv.workspace?.name ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {format(new Date(inv.created_at), "d. M. yyyy", { locale: cs })}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {used ? (
+                        <Badge variant="outline" className="border-green-500/40 text-green-700 dark:text-green-400">
+                          použito
+                        </Badge>
+                      ) : expired ? (
+                        <Badge variant="outline" className="border-muted text-muted-foreground">
+                          vypršelo
+                        </Badge>
+                      ) : (
+                        formatDistanceToNow(new Date(inv.expires_at), { locale: cs, addSuffix: false })
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyLink(inv.token)}
+                          disabled={used}
+                          title="Kopírovat link"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resend.mutate(inv.id)}
+                          disabled={used || resend.isPending}
+                          title="Prodloužit platnost"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => cancelInvite.mutate(inv.id)}
+                          disabled={cancelInvite.isPending}
+                          title="Zrušit"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+}
