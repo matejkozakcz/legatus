@@ -156,12 +156,28 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
 
-  /* Sidebar stays deep teal in dark mode */
-  --sidebar-background: 187 100% 19%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-accent: 187 80% 25%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 187 60% 25%;
+  /* Sidebar — frosted glass over dark background */
+  --sidebar-background: 188 30% 8%;
+  --sidebar-foreground: 186 25% 88%;
+  --sidebar-accent: 187 20% 15%;
+  --sidebar-accent-foreground: 186 25% 88%;
+  --sidebar-border: 186 18% 17%;
+}
+
+/* ===== Dark-mode sidebar — frosted glass ===== */
+.dark .sidebar-glass {
+  background: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+.dark .sidebar-glass [data-sidebar="content"],
+.dark .sidebar-glass [data-sidebar="footer"] {
+  background: transparent !important;
+}
+.dark .nav-item.active svg {
+  color: #4dd8e8;
+  opacity: 1;
 }
 
 /* ===== Light-mode (default) sidebar — frosted glass ===== */
