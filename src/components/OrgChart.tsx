@@ -85,10 +85,16 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: {
       style={{
         width: 160,
         minHeight: 105,
-        background: isFocused ? "#e0f4f7" : "#F6F8F9",
-        border: isFocused ? "2px solid #00abbd" : "1px solid #E1E9EB",
+        background: isFocused
+          ? (isDark ? "rgba(0,171,189,0.18)" : "#e0f4f7")
+          : (isDark ? "rgba(255,255,255,0.05)" : "#F6F8F9"),
+        border: isFocused
+          ? "2px solid #00abbd"
+          : (isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #E1E9EB"),
         borderRadius: 12,
-        boxShadow: isFocused ? "0 0 0 3px rgba(0,171,189,0.2), 0 2px 8px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.08)",
+        boxShadow: isFocused
+          ? (isDark ? "0 0 0 3px rgba(0,171,189,0.25), 0 2px 8px rgba(0,0,0,0.4)" : "0 0 0 3px rgba(0,171,189,0.2), 0 2px 8px rgba(0,0,0,0.08)")
+          : (isDark ? "0 2px 8px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.08)"),
         paddingTop: 10,
         paddingBottom: 14,
         opacity: isClickable || isFocused ? 1 : 0.7,
