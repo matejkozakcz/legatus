@@ -450,21 +450,16 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
 
         {/* Tabs */}
         <div className="flex gap-1 px-6 pt-4 pb-0 border-b border-border overflow-x-auto">
-          {TABS.map((tab, i) => {
-            const isDisabled = i >= 2;
-            return (
-              <button
-                key={tab}
-                onClick={() => !isDisabled && setActiveTab(i)}
-                disabled={isDisabled}
-                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px
-                  ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}
-                  ${isDisabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-              >
-                {tab}
-              </button>
-            );
-          })}
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px cursor-pointer
+                ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
         {/* Content */}
