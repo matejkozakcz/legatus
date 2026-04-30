@@ -97,17 +97,34 @@ function summarizeErrors(errors: any): string | undefined {
 // ─── Main Tab ─────────────────────────────────────────────────────────────────
 
 export function ActivityDashboardTab() {
-  const [refreshTick, setRefreshTick] = useState(0);
-  const refresh = () => setRefreshTick((t) => t + 1);
+  const queryClient = useQueryClient();
 
-  // Realtime: refresh only when profiles or client_meetings actually change.
+  // Stable list of admin query-key prefixes used in this tab.
+  // Background-invalidating these keeps existing data on screen while
+  // refetching, so the UI updates without a full-page flicker.
+  const ADMIN_KEYS = [
+    "admin_activity_summary",
+    "admin_activity_chart_users",
+    "admin_activity_chart_events",
+    "admin_role_distribution",
+    "admin_unified_users",
+    "admin_event_feed",
+    "admin_notif_runs",
+    "admin_recent_errors",
+  ] as const;
+
+  const refresh = () => {
+    ADMIN_KEYS.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+  };
+
+  // Realtime: invalidate only when profiles or client_meetings actually change.
   // Debounced to avoid burst-refreshes during bulk writes.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        setRefreshTick((t) => t + 1);
+        refresh();
         timer = null;
       }, 1500);
     };
@@ -122,7 +139,9 @@ export function ActivityDashboardTab() {
       if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   return (
     <div className="space-y-6">
