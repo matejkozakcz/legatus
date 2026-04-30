@@ -155,7 +155,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
         .from("profiles")
         .select("id, full_name, role")
         .is("org_unit_id", null)
-        .in("role", ["vedouci", "garant", "budouci_vedouci"])
+        .in("role", ["vedouci", "budouci_vedouci", "garant", "ziskatel", "novacek"])
         .eq("is_active", true)
         .order("full_name");
       return data ?? [];
