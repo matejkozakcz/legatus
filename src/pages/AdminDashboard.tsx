@@ -41,6 +41,7 @@ import {
   RefreshCw,
   Coins,
   CalendarDays,
+  Building2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -50,6 +51,7 @@ import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
 import { TransakceTab } from "@/components/admin/TransakceTab";
 import { NotificationRulesTab } from "@/components/admin/NotificationRulesTab";
 import { ActivityDashboardTab } from "@/components/admin/ActivityDashboardTab";
+import { WorkspacesTab } from "@/components/admin/WorkspacesTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
