@@ -354,7 +354,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div
               key={s}
               style={{
