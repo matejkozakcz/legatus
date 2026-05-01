@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
-import { Plus, Minus, ZoomIn, ZoomOut } from "lucide-react";
+import { Plus, Minus, ZoomIn, ZoomOut, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
