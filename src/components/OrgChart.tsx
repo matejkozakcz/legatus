@@ -300,6 +300,7 @@ function ChildrenBranch({
               isClickableFn={isClickableFn}
               progressMap={progressMap}
               bjMap={bjMap}
+              onViewAsFn={onViewAsFn}
             />
           </div>
         ))}
