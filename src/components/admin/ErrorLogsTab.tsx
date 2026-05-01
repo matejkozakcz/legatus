@@ -217,7 +217,7 @@ export function ErrorLogsTab() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </FragmentRow>
                 );
               })
             )}
