@@ -326,8 +326,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const needsOnboarding = !!profile && profile.onboarding_completed === false;
   const needsReactivation = !!session && !profile && !!deactivatedProfile;
 
-  // Effective profile: workspace owner when admin is "viewing as", else real.
-  const effectiveProfile: Profile | null = viewAsProfile ?? profile;
+  // Reset viewingAsUser if real profile changes (e.g. re-login as different user)
+  useEffect(() => {
+    if (!profile) {
+      if (viewingAsUser) setViewingAsUser(null);
+      return;
+    }
+    if (viewingAsUser && viewingAsUser.id === profile.id) {
+      setViewingAsUser(null);
+    }
+  }, [profile, viewingAsUser]);
+
+  // Effective profile precedence: vedoucí "view as user" > admin "view as workspace" > real profile.
+  const effectiveProfile: Profile | null = viewingAsUser ?? viewAsProfile ?? profile;
   const isViewingAsWorkspace = !!viewAsProfile;
 
   return (
@@ -338,6 +349,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         effectiveProfile,
         isViewingAsWorkspace,
+        viewingAsUser,
+        setViewingAsUser,
         loading,
         needsOnboarding,
         needsReactivation,
