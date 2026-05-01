@@ -54,17 +54,21 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [uploading, setUploading] = useState(false);
   const [partnersId, setPartnersId] = useState("");
 
+  // Read-only — full_name comes from signup on /join
+  const [fullName, setFullName] = useState("");
+
   // Pre-fill from existing profile data (reactivation with keepData=true)
   useEffect(() => {
     if (!open || !user || prefilled) return;
     supabase
       .from("profiles")
-      .select("vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
+      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
       .eq("id", user.id)
       .single()
       .then(async ({ data }) => {
         if (!data) return;
         setPrefilled(true);
+        if (data.full_name && data.full_name !== user.email) setFullName(data.full_name);
         if (data.vedouci_id) setVedouciId(data.vedouci_id);
         if (data.ziskatel_id) setZiskatelId(data.ziskatel_id);
         if (data.ziskatel_name) {
@@ -354,7 +358,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
-          {[1, 2].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div
               key={s}
               style={{
