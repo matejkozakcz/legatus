@@ -1256,16 +1256,18 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     widthScale={1.2}
                   />
                 </div>
-                <button
-                  onClick={() => {
-                    setEditMeeting(null);
-                    setPreCaseId("");
-                    setMeetingModalOpen(true);
-                  }}
-                  className="btn btn-primary btn-sm flex items-center gap-1.5"
-                >
-                  <Plus size={14} /> Nová schůzka
-                </button>
+                {!viewingAsUser && (
+                  <button
+                    onClick={() => {
+                      setEditMeeting(null);
+                      setPreCaseId("");
+                      setMeetingModalOpen(true);
+                    }}
+                    className="btn btn-primary btn-sm flex items-center gap-1.5"
+                  >
+                    <Plus size={14} /> Nová schůzka
+                  </button>
+                )}
               </div>
 
               {/* Filtry: typ schůzky + zobrazit zrušené */}
