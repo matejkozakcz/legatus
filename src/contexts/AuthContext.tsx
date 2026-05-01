@@ -274,7 +274,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setDeactivatedProfile(null);
     setGodMode(false);
-    try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
   };
 
   const reactivateProfile = useCallback(async (keepData: boolean) => {
