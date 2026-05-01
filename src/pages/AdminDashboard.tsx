@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
 import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
+import { ErrorLogsTab } from "@/components/admin/ErrorLogsTab";
 import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
 import { TransakceTab } from "@/components/admin/TransakceTab";
 import { NotificationRulesTab } from "@/components/admin/NotificationRulesTab";
