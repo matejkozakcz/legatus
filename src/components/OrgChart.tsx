@@ -320,6 +320,7 @@ function TreeNode({
   isClickableFn,
   progressMap,
   bjMap,
+  onViewAsFn,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -331,6 +332,7 @@ function TreeNode({
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
   bjMap: Map<string, { value: number; isTeam: boolean }>;
+  onViewAsFn?: (node: ProfileNode) => void;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -339,7 +341,15 @@ function TreeNode({
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} bjInfo={bjMap.get(node.id)} />
+      <NodeCard
+        node={node}
+        onClick={() => onSelect(node)}
+        isClickable={isClickable}
+        isFocused={isFocused}
+        progress={progressMap.get(node.id)}
+        bjInfo={bjMap.get(node.id)}
+        onViewAs={onViewAsFn ? () => onViewAsFn(node) : undefined}
+      />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -364,6 +374,7 @@ function TreeNode({
                 isClickableFn={isClickableFn}
                 progressMap={progressMap}
                 bjMap={bjMap}
+                onViewAsFn={onViewAsFn}
               />
             </>
           )}
