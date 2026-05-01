@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { AdminPillTabs } from "@/components/admin/AdminPillTabs";
 import { GoalConfiguratorTab } from "@/components/admin/GoalConfiguratorTab";
+import { ErrorLogsTab } from "@/components/admin/ErrorLogsTab";
 import { SchuzkyTab } from "@/components/admin/SchuzkyTab";
 import { TransakceTab } from "@/components/admin/TransakceTab";
 import { NotificationRulesTab } from "@/components/admin/NotificationRulesTab";
@@ -98,6 +99,7 @@ const ADMIN_TABS = [
   { key: "permissions", label: "Oprávnění", icon: Lock },
   { key: "notifications", label: "Notifikace", icon: Bell },
   { key: "goals", label: "Cíle", icon: Target },
+  { key: "logs", label: "Logy", icon: FileText },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -128,6 +130,7 @@ export default function AdminDashboard() {
         {activeTab === "permissions" && <PermissionsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "goals" && <GoalConfiguratorTab />}
+        {activeTab === "logs" && <ErrorLogsTab />}
       </div>
     </div>
   );
