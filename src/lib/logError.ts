@@ -16,10 +16,10 @@ export async function logError({ action, error, metadata }: LogErrorOptions): Pr
       : JSON.stringify(error);
 
     await supabase.from("error_logs").insert({
-      user_id: user?.id ?? null,
+      user_id: user?.id ?? undefined,
       action,
       error: message,
-      metadata: metadata ?? null,
+      metadata: (metadata ?? null) as never,
       url: window.location.pathname,
     });
   } catch {
