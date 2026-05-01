@@ -130,6 +130,7 @@ export default function AdminDashboard() {
         {activeTab === "permissions" && <PermissionsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "goals" && <GoalConfiguratorTab />}
+        {activeTab === "logs" && <ErrorLogsTab />}
       </div>
     </div>
   );
