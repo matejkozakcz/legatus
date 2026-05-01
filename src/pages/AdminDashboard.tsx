@@ -99,6 +99,7 @@ const ADMIN_TABS = [
   { key: "permissions", label: "Oprávnění", icon: Lock },
   { key: "notifications", label: "Notifikace", icon: Bell },
   { key: "goals", label: "Cíle", icon: Target },
+  { key: "logs", label: "Logy", icon: FileText },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
