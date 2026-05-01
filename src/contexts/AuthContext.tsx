@@ -165,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadViewAsProfile]);
 
   const fetchProfile = useCallback(async (userId: string, retries = 2): Promise<void> => {
-    // First try active profile
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -179,30 +178,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Check for deactivated profile
-    const { data: inactiveData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .eq("is_active", false)
-      .single();
+    // Profil neexistuje (PGRST116 = row not found) → zkus neaktivní
+    if (error?.code === "PGRST116") {
+      const { data: inactiveData, error: inactiveError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .eq("is_active", false)
+        .single();
 
-    if (inactiveData) {
-      // User has a deactivated profile — show reactivation flow
-      setDeactivatedProfile(inactiveData as unknown as Profile);
+      if (inactiveData) {
+        setDeactivatedProfile(inactiveData as unknown as Profile);
+        setProfile(null);
+        return;
+      }
+
+      // Pokud i neaktivní dotaz selhal jinou než PGRST116 chybou → retry/log, neodhlašuj
+      if (inactiveError && inactiveError.code !== "PGRST116") {
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 500));
+          return fetchProfile(userId, retries - 1);
+        }
+        console.error("fetchProfile: failed to load inactive profile after retries", inactiveError);
+        logError({ action: "fetch_profile_failed", error: inactiveError, metadata: { userId, stage: "inactive" } });
+        return;
+      }
+
+      // Profil skutečně neexistuje ani jako neaktivní → odhlásit
+      logError({ action: "fetch_profile_missing", error: "Profile does not exist", metadata: { userId } });
+      await supabase.auth.signOut({ scope: "local" });
       setProfile(null);
+      setDeactivatedProfile(null);
       return;
     }
 
+    // Dočasná chyba (network, 5xx) → retry
     if (retries > 0) {
       await new Promise((r) => setTimeout(r, 500));
       return fetchProfile(userId, retries - 1);
     }
 
-    logError({ action: "fetch_profile_failed", error: "Profile not found after retries", metadata: { userId } });
-    await supabase.auth.signOut({ scope: 'local' });
-    setProfile(null);
-    setDeactivatedProfile(null);
+    // Po vyčerpání retries: NEodhlašuj, jen loguj chybu
+    console.error("fetchProfile: failed to load profile after retries", error);
+    logError({ action: "fetch_profile_failed", error: error ?? "unknown", metadata: { userId } });
   }, []);
 
   const refetchProfile = useCallback(async () => {
