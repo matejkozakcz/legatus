@@ -218,10 +218,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   }, [isFirstLeaderOfWorkspace, selectedRole]);
 
   const handleStep1Next = () => {
-    if (!jmeno.trim() || !prijmeni.trim()) {
-      toast.error("Vyplňte jméno a příjmení.");
-      return;
-    }
     if (!isFirstLeaderOfWorkspace && !vedouciId) {
       toast.error("Vyberte svého vedoucího.");
       return;
@@ -233,15 +229,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setStep(2);
   };
 
-  const handleStep2Next = () => {
-    setStep(3);
-  };
-
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
     try {
-      const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
       const effectiveVedouciId = isFirstLeaderOfWorkspace ? null : vedouciId || null;
       const finalZiskatelId = isFirstLeaderOfWorkspace
         ? null
