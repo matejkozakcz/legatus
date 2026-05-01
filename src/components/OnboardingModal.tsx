@@ -54,17 +54,21 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [uploading, setUploading] = useState(false);
   const [partnersId, setPartnersId] = useState("");
 
+  // Read-only — full_name comes from signup on /join
+  const [fullName, setFullName] = useState("");
+
   // Pre-fill from existing profile data (reactivation with keepData=true)
   useEffect(() => {
     if (!open || !user || prefilled) return;
     supabase
       .from("profiles")
-      .select("vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
+      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
       .eq("id", user.id)
       .single()
       .then(async ({ data }) => {
         if (!data) return;
         setPrefilled(true);
+        if (data.full_name && data.full_name !== user.email) setFullName(data.full_name);
         if (data.vedouci_id) setVedouciId(data.vedouci_id);
         if (data.ziskatel_id) setZiskatelId(data.ziskatel_id);
         if (data.ziskatel_name) {
@@ -229,6 +233,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setStep(2);
   };
 
+  const handleStep2Next = () => {
+    setStep(3);
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
@@ -301,6 +309,17 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
   if (!open) return null;
 
+  const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? "";
+  const bjNumber = parseFloat(historickyVykon);
+  const vedouciLabel = isFirstLeaderOfWorkspace
+    ? "—"
+    : (vedouciOptions.find((v) => v.id === vedouciId)?.label ?? "—");
+  const ziskatelLabel = isFirstLeaderOfWorkspace
+    ? "—"
+    : ziskatelNotInSystem
+    ? (ziskatelName.trim() || "—")
+    : (memberOptions.find((m) => m.id === ziskatelId)?.label ?? "—");
+
   // Shared input style
   const inputStyle = {
     background: isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
@@ -354,7 +373,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
-          {[1, 2].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div
               key={s}
               style={{
@@ -621,6 +640,85 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 onBlur={handleInputBlur}
               />
             </div>
+
+            <button
+              type="button"
+              onClick={handleStep2Next}
+              className="w-full btn btn-primary btn-lg font-heading font-semibold"
+            >
+              Pokračovat
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 3: Summary + confirm ── */}
+        {step === 3 && (
+          <div className="w-full space-y-5">
+            {/* Back button */}
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="flex items-center gap-1 font-body text-sm"
+              style={{ color: "#5a8a91", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Zpět
+            </button>
+
+            {/* Avatar preview */}
+            <div className="flex justify-center">
+              <div
+                className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
+                style={{
+                  background: avatarUrl ? "transparent" : "#00abbd",
+                  border: "3px solid #00abbd",
+                }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-heading font-bold text-white text-xl">
+                    {(fullName.trim().split(" ").map((p) => p[0]).join("").slice(0, 2) || "??").toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Summary rows */}
+            <div
+              className="w-full rounded-xl overflow-hidden"
+              style={{
+                border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e2eaec",
+              }}
+            >
+              {[
+                { label: "Jméno", value: fullName || "—" },
+                { label: "Email", value: user?.email ?? "" },
+                { label: "Pozice", value: selectedRoleLabel },
+                { label: "Vedoucí", value: vedouciLabel },
+                { label: "Získatel", value: ziskatelLabel },
+                { label: "Historický výkon", value: !isNaN(bjNumber) && bjNumber > 0 ? `${bjNumber} BJ` : "—" },
+              ].map((row, i, arr) => (
+                <div
+                  key={row.label}
+                  className="flex justify-between items-center"
+                  style={{
+                    padding: "12px 16px",
+                    borderBottom: i < arr.length - 1
+                      ? isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f0f4f5"
+                      : "none",
+                    background: isDark ? "rgba(255,255,255,0.03)" : "#fafcfc",
+                  }}
+                >
+                  <span className="font-body text-xs" style={{ color: "var(--text-muted)" }}>{row.label}</span>
+                  <span className="font-body text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="font-body text-center text-xs" style={{ color: "var(--text-muted)" }}>
+              Zkontroluj své údaje a potvrď vstup do Legatus.
+            </p>
 
             <button
               type="button"
