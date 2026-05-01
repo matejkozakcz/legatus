@@ -780,13 +780,7 @@ const SpravaTeam = () => {
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
         {!isReadOnly && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode) && (
-          <button
-            onClick={() => setAddOpen(true)}
-            className="btn btn-primary btn-md flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Pozvat člena
-          </button>
+          
         )}
       </div>
 
