@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const VERSION_KEY = "legatus_app_version";
@@ -7,26 +7,46 @@ const CONFIG_KEY = "app_version";
 /**
  * Subscribes to app_config.app_version changes (realtime + initial fetch).
  * Returns `serverVersion` and `localVersion`. Banner shows when they differ.
+ *
+ * In PWA / installed app contexts the realtime websocket often dies while the
+ * app is backgrounded, so we additionally re-fetch the value when the page
+ * becomes visible / regains focus, and expose a manual `refresh()` so screens
+ * like Nastavení can force a check on open.
  */
 export function useAppVersion() {
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [localVersion, setLocalVersion] = useState<string | null>(() => {
     try { return localStorage.getItem(VERSION_KEY); } catch { return null; }
   });
+  const localVersionRef = useRef(localVersion);
+  useEffect(() => { localVersionRef.current = localVersion; }, [localVersion]);
+
+  const applyValue = useCallback((value: unknown) => {
+    if (value === null || value === undefined) return;
+    const v = typeof value === "string" ? value : JSON.stringify(value);
+    setServerVersion(v);
+    // First-time visitors: silently adopt current version, no banner.
+    if (!localVersionRef.current) {
+      try { localStorage.setItem(VERSION_KEY, v); } catch {}
+      setLocalVersion(v);
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", CONFIG_KEY)
+        .maybeSingle();
+      applyValue(data?.value);
+    } catch (e) {
+      console.warn("[app_version] refresh failed:", e);
+    }
+  }, [applyValue]);
 
   useEffect(() => {
     let cancelled = false;
-
-    const applyValue = (value: unknown) => {
-      if (cancelled || value === null || value === undefined) return;
-      const v = typeof value === "string" ? value : JSON.stringify(value);
-      setServerVersion(v);
-      // First-time visitors: silently adopt current version, no banner.
-      if (!localVersion) {
-        try { localStorage.setItem(VERSION_KEY, v); } catch {}
-        setLocalVersion(v);
-      }
-    };
 
     // Initial fetch
     supabase
@@ -34,7 +54,7 @@ export function useAppVersion() {
       .select("value")
       .eq("key", CONFIG_KEY)
       .maybeSingle()
-      .then(({ data }) => applyValue(data?.value));
+      .then(({ data }) => { if (!cancelled) applyValue(data?.value); });
 
     // Realtime subscription (unique channel per hook instance to avoid
     // "cannot add postgres_changes callbacks after subscribe()" when multiple
@@ -51,11 +71,26 @@ export function useAppVersion() {
       )
       .subscribe();
 
+    // Refresh when PWA / tab returns to the foreground — realtime websocket
+    // is unreliable in standalone installs (iOS/Android/desktop PWA).
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const onFocus = () => { void refresh(); };
+    const onOnline = () => { void refresh(); };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+
     return () => {
       cancelled = true;
       supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
     };
-  }, [localVersion]);
+  }, [applyValue, refresh]);
 
   const isStale = !!serverVersion && !!localVersion && serverVersion !== localVersion;
 
@@ -101,18 +136,14 @@ export function useAppVersion() {
     }
 
     // Force fresh load bypassing HTTP/disk cache.
-    // In PWA standalone mode (iOS/Android), location.reload() often serves
-    // the cached index.html from disk cache. Adding a cache-busting query
-    // parameter forces the browser to fetch a fresh document from the server.
     try {
       const url = new URL(window.location.href);
       url.searchParams.set("_v", String(Date.now()));
-      // Drop hash to avoid re-triggering invite/recovery redirects
       window.location.replace(url.toString());
     } catch {
       window.location.reload();
     }
   };
 
-  return { serverVersion, localVersion, isStale, performUpdate };
+  return { serverVersion, localVersion, isStale, performUpdate, refresh };
 }
