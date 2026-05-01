@@ -3,6 +3,7 @@ import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
+import { logError } from "@/lib/logError";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 
 const loginBg = "/login-bg.svg";
