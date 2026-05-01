@@ -43,13 +43,13 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   const [workspaceName, setWorkspaceName] = useState<string>("");
   const [workspaceHasOwner, setWorkspaceHasOwner] = useState<boolean>(true);
 
-  // Step 1 fields
-  const [jmeno, setJmeno] = useState("");
-  const [prijmeni, setPrijmeni] = useState("");
+  // Step 1 fields (hierarchy + role)
   const [vedouciId, setVedouciId] = useState("");
   const [ziskatelId, setZiskatelId] = useState("");
   const [ziskatelNotInSystem, setZiskatelNotInSystem] = useState(false);
   const [ziskatelName, setZiskatelName] = useState("");
+
+  // Step 2 fields (optional)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [partnersId, setPartnersId] = useState("");
@@ -59,17 +59,12 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     if (!open || !user || prefilled) return;
     supabase
       .from("profiles")
-      .select("full_name, vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
+      .select("vedouci_id, ziskatel_id, ziskatel_name, avatar_url, role, osobni_id, org_unit_id")
       .eq("id", user.id)
       .single()
       .then(async ({ data }) => {
         if (!data) return;
         setPrefilled(true);
-        const parts = (data.full_name || "").split(" ");
-        if (parts.length >= 2 && data.full_name !== user.email) {
-          setJmeno(parts[0]);
-          setPrijmeni(parts.slice(1).join(" "));
-        }
         if (data.vedouci_id) setVedouciId(data.vedouci_id);
         if (data.ziskatel_id) setZiskatelId(data.ziskatel_id);
         if (data.ziskatel_name) {
@@ -223,10 +218,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   }, [isFirstLeaderOfWorkspace, selectedRole]);
 
   const handleStep1Next = () => {
-    if (!jmeno.trim() || !prijmeni.trim()) {
-      toast.error("Vyplňte jméno a příjmení.");
-      return;
-    }
     if (!isFirstLeaderOfWorkspace && !vedouciId) {
       toast.error("Vyberte svého vedoucího.");
       return;
@@ -238,15 +229,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setStep(2);
   };
 
-  const handleStep2Next = () => {
-    setStep(3);
-  };
-
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
     try {
-      const fullName = `${jmeno.trim()} ${prijmeni.trim()}`;
       const effectiveVedouciId = isFirstLeaderOfWorkspace ? null : vedouciId || null;
       const finalZiskatelId = isFirstLeaderOfWorkspace
         ? null
@@ -255,7 +241,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       const { error } = await supabase
         .from("profiles")
         .update({
-          full_name: fullName,
           vedouci_id: effectiveVedouciId,
           garant_id: effectiveVedouciId,
           ziskatel_id: finalZiskatelId,
@@ -301,7 +286,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         subjectUserId: user.id,
         senderUserId: user.id,
         variables: {
-          member_name: fullName,
           new_role: selectedRole,
         },
       });
@@ -316,14 +300,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   };
 
   if (!open) return null;
-
-  const fullName = `${jmeno.trim()} ${prijmeni.trim()}`.trim();
-  const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? "";
-  const bjNumber = parseFloat(historickyVykon);
-  const vedouciLabel = vedouciOptions.find((v) => v.id === vedouciId)?.label ?? "—";
-  const ziskatelLabel = ziskatelNotInSystem
-    ? (ziskatelName.trim() || "—")
-    : (memberOptions.find((m) => m.id === ziskatelId)?.label ?? "—");
 
   // Shared input style
   const inputStyle = {
@@ -378,7 +354,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div
               key={s}
               style={{
@@ -392,94 +368,9 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           ))}
         </div>
 
-        {/* ── STEP 1: Basic info ── */}
+        {/* ── STEP 1: Hierarchy + role ── */}
         {step === 1 && (
           <div className="w-full space-y-5">
-            {/* Avatar */}
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="relative w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center transition-colors"
-                style={{
-                  borderColor: avatarUrl ? "#00abbd" : "#e2eaec",
-                  background: avatarUrl ? "transparent" : "#f0f5f6",
-                }}
-              >
-                {uploading ? (
-                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#00abbd" }} />
-                ) : avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center gap-0.5">
-                    <Camera className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
-                    <span className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>Foto</span>
-                  </div>
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-            </div>
-
-            {/* Name fields */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                  Jméno
-                </label>
-                <input
-                  type="text"
-                  value={jmeno}
-                  onChange={(e) => setJmeno(e.target.value)}
-                  placeholder="Jan"
-                  className="w-full font-body"
-                  style={inputStyle}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                  Příjmení
-                </label>
-                <input
-                  type="text"
-                  value={prijmeni}
-                  onChange={(e) => setPrijmeni(e.target.value)}
-                  placeholder="Novák"
-                  className="w-full font-body"
-                  style={inputStyle}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                />
-              </div>
-            </div>
-
-            {/* Partners ID */}
-            <div>
-              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                Partners ID
-              </label>
-              <input
-                type="text"
-                value={partnersId}
-                onChange={(e) => setPartnersId(e.target.value)}
-                placeholder="Např. P12345 (nepovinné)"
-                className="w-full font-body"
-                style={inputStyle}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-              />
-              <p className="font-body mt-1" style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                Vyplň, jakmile ti bude přiděleno. Aktivuje tě jako Získatele.
-              </p>
-            </div>
-
             {isFirstLeaderOfWorkspace ? (
               <div
                 className="rounded-xl p-3 text-xs font-body"
@@ -557,52 +448,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               </>
             )}
 
-            <button
-              type="button"
-              onClick={handleStep1Next}
-              className="w-full btn btn-primary btn-lg font-heading font-semibold"
-            >
-              Pokračovat
-            </button>
-          </div>
-        )}
-
-        {/* ── STEP 2: Historical performance + role ── */}
-        {step === 2 && (
-          <div className="w-full space-y-5">
-            {/* Back button */}
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="flex items-center gap-1 font-body text-sm"
-              style={{ color: "#5a8a91", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Zpět
-            </button>
-
-            {/* Historical BJ */}
-            <div>
-              <label className="block font-body mb-1" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                Historický výkon v BJ
-              </label>
-              <p className="font-body mb-2" style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Celkový počet BJ, které sis doposud vydělal/a. Bude přičten za Prosinec 2025.
-              </p>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={historickyVykon}
-                onChange={(e) => setHistorickyVykon(e.target.value)}
-                placeholder="0"
-                className="w-full font-body"
-                style={inputStyle}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-              />
-            </div>
-
             {/* Role selection */}
             <div>
               <label className="block font-body mb-2" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
@@ -678,7 +523,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
             <button
               type="button"
-              onClick={handleStep2Next}
+              onClick={handleStep1Next}
               className="w-full btn btn-primary btn-lg font-heading font-semibold"
             >
               Pokračovat
@@ -686,13 +531,13 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           </div>
         )}
 
-        {/* ── STEP 3: Summary + confirm ── */}
-        {step === 3 && (
+        {/* ── STEP 2: Optional details (avatar + Partners ID + historical BJ) ── */}
+        {step === 2 && (
           <div className="w-full space-y-5">
             {/* Back button */}
             <button
               type="button"
-              onClick={() => setStep(2)}
+              onClick={() => setStep(1)}
               className="flex items-center gap-1 font-body text-sm"
               style={{ color: "#5a8a91", background: "none", border: "none", padding: 0, cursor: "pointer" }}
             >
@@ -700,60 +545,82 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               Zpět
             </button>
 
-            {/* Avatar preview */}
+            <p className="font-body text-center text-xs" style={{ color: "var(--text-muted)" }}>
+              Doplňující informace — vše je nepovinné, můžeš doplnit později.
+            </p>
+
+            {/* Avatar */}
             <div className="flex justify-center">
-              <div
-                className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center transition-colors"
                 style={{
-                  background: avatarUrl ? "transparent" : "#00abbd",
-                  border: "3px solid #00abbd",
+                  borderColor: avatarUrl ? "#00abbd" : "#e2eaec",
+                  background: avatarUrl ? "transparent" : "#f0f5f6",
                 }}
               >
-                {avatarUrl ? (
+                {uploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#00abbd" }} />
+                ) : avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-heading font-bold text-white text-xl">
-                    {jmeno[0]?.toUpperCase()}{prijmeni[0]?.toUpperCase()}
-                  </span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <Camera className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                    <span className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>Foto</span>
+                  </div>
                 )}
-              </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
             </div>
 
-            {/* Summary rows */}
-            <div
-              className="w-full rounded-xl overflow-hidden"
-              style={{
-                border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e2eaec",
-              }}
-            >
-              {[
-                { label: "Jméno", value: fullName },
-                { label: "Email", value: user?.email ?? "" },
-                { label: "Pozice", value: selectedRoleLabel },
-                { label: "Vedoucí", value: vedouciLabel },
-                { label: "Získatel", value: ziskatelLabel },
-                { label: "Historický výkon", value: !isNaN(bjNumber) && bjNumber > 0 ? `${bjNumber} BJ` : "—" },
-              ].map((row, i, arr) => (
-                <div
-                  key={row.label}
-                  className="flex justify-between items-center"
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: i < arr.length - 1
-                      ? isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f0f4f5"
-                      : "none",
-                    background: isDark ? "rgba(255,255,255,0.03)" : "#fafcfc",
-                  }}
-                >
-                  <span className="font-body text-xs" style={{ color: "var(--text-muted)" }}>{row.label}</span>
-                  <span className="font-body text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{row.value}</span>
-                </div>
-              ))}
+            {/* Partners ID */}
+            <div>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                Partners ID
+              </label>
+              <input
+                type="text"
+                value={partnersId}
+                onChange={(e) => setPartnersId(e.target.value)}
+                placeholder="Např. P12345 (nepovinné)"
+                className="w-full font-body"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+              />
+              <p className="font-body mt-1" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                Vyplň, jakmile ti bude přiděleno. Aktivuje tě jako Získatele.
+              </p>
             </div>
 
-            <p className="font-body text-center text-xs" style={{ color: "var(--text-muted)" }}>
-              Zkontroluj své údaje a potvrď vstup do Legatus.
-            </p>
+            {/* Historical BJ */}
+            <div>
+              <label className="block font-body mb-1" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                Historický výkon v BJ
+              </label>
+              <p className="font-body mb-2" style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                Celkový počet BJ, které sis doposud vydělal/a. Bude přičten za Prosinec 2025.
+              </p>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={historickyVykon}
+                onChange={(e) => setHistorickyVykon(e.target.value)}
+                placeholder="0"
+                className="w-full font-body"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+              />
+            </div>
 
             <button
               type="button"
