@@ -531,7 +531,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
           </div>
         )}
 
-        {/* ── STEP 2: Historical performance + role ── */}
+        {/* ── STEP 2: Optional details (avatar + Partners ID + historical BJ) ── */}
         {step === 2 && (
           <div className="w-full space-y-5">
             {/* Back button */}
@@ -544,6 +544,61 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
               <ChevronLeft className="w-4 h-4" />
               Zpět
             </button>
+
+            <p className="font-body text-center text-xs" style={{ color: "var(--text-muted)" }}>
+              Doplňující informace — vše je nepovinné, můžeš doplnit později.
+            </p>
+
+            {/* Avatar */}
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center transition-colors"
+                style={{
+                  borderColor: avatarUrl ? "#00abbd" : "#e2eaec",
+                  background: avatarUrl ? "transparent" : "#f0f5f6",
+                }}
+              >
+                {uploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#00abbd" }} />
+                ) : avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <Camera className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                    <span className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>Foto</span>
+                  </div>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
+
+            {/* Partners ID */}
+            <div>
+              <label className="block font-body mb-1.5" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                Partners ID
+              </label>
+              <input
+                type="text"
+                value={partnersId}
+                onChange={(e) => setPartnersId(e.target.value)}
+                placeholder="Např. P12345 (nepovinné)"
+                className="w-full font-body"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+              />
+              <p className="font-body mt-1" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                Vyplň, jakmile ti bude přiděleno. Aktivuje tě jako Získatele.
+              </p>
+            </div>
 
             {/* Historical BJ */}
             <div>
@@ -566,158 +621,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
                 onBlur={handleInputBlur}
               />
             </div>
-
-            {/* Role selection */}
-            <div>
-              <label className="block font-body mb-2" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
-                Tvoje aktuální pozice
-              </label>
-              <div className="flex flex-col gap-2">
-                {ROLE_OPTIONS.map((opt) => {
-                  const isSelected = selectedRole === opt.value;
-                  let criteria = "";
-                  if (opt.value === "ziskatel") {
-                    criteria = "Splněná supervize";
-                  } else if (opt.value === "garant") {
-                    criteria = `${promoRules.ziskatel_to_garant.min_bj} BJ · ${promoRules.ziskatel_to_garant.min_structure} ve struktuře`;
-                  } else if (opt.value === "budouci_vedouci") {
-                    criteria = `${promoRules.garant_to_bv.min_structure} ve struktuře · ${promoRules.garant_to_bv.min_direct} přímí`;
-                  } else if (opt.value === "vedouci") {
-                    criteria = `${promoRules.bv_to_vedouci.min_structure} ve struktuře · ${promoRules.bv_to_vedouci.min_direct} přímých`;
-                  }
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setSelectedRole(opt.value)}
-                      className="w-full font-body transition-all"
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        border: isSelected
-                          ? "2px solid #00abbd"
-                          : isDark
-                          ? "2px solid rgba(255,255,255,0.10)"
-                          : "2px solid #e2eaec",
-                        background: isSelected
-                          ? isDark
-                            ? "rgba(0,171,189,0.14)"
-                            : "rgba(0,171,189,0.08)"
-                          : isDark
-                          ? "rgba(255,255,255,0.04)"
-                          : "#f9fbfb",
-                        color: isSelected ? "#00abbd" : "var(--text-primary)",
-                        fontWeight: isSelected ? 700 : 500,
-                        fontSize: 14,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 10,
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ flexShrink: 0 }}>{opt.label}</span>
-                      {criteria && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 500,
-                            color: isSelected ? "#00abbd" : "#7a9ba0",
-                            opacity: isSelected ? 0.9 : 0.85,
-                            textAlign: "right",
-                            lineHeight: 1.25,
-                            whiteSpace: "nowrap",
-                            minWidth: 0,
-                          }}
-                        >
-                          {criteria}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleStep2Next}
-              className="w-full btn btn-primary btn-lg font-heading font-semibold"
-            >
-              Pokračovat
-            </button>
-          </div>
-        )}
-
-        {/* ── STEP 3: Summary + confirm ── */}
-        {step === 3 && (
-          <div className="w-full space-y-5">
-            {/* Back button */}
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="flex items-center gap-1 font-body text-sm"
-              style={{ color: "#5a8a91", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Zpět
-            </button>
-
-            {/* Avatar preview */}
-            <div className="flex justify-center">
-              <div
-                className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
-                style={{
-                  background: avatarUrl ? "transparent" : "#00abbd",
-                  border: "3px solid #00abbd",
-                }}
-              >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-heading font-bold text-white text-xl">
-                    {jmeno[0]?.toUpperCase()}{prijmeni[0]?.toUpperCase()}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Summary rows */}
-            <div
-              className="w-full rounded-xl overflow-hidden"
-              style={{
-                border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #e2eaec",
-              }}
-            >
-              {[
-                { label: "Jméno", value: fullName },
-                { label: "Email", value: user?.email ?? "" },
-                { label: "Pozice", value: selectedRoleLabel },
-                { label: "Vedoucí", value: vedouciLabel },
-                { label: "Získatel", value: ziskatelLabel },
-                { label: "Historický výkon", value: !isNaN(bjNumber) && bjNumber > 0 ? `${bjNumber} BJ` : "—" },
-              ].map((row, i, arr) => (
-                <div
-                  key={row.label}
-                  className="flex justify-between items-center"
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: i < arr.length - 1
-                      ? isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f0f4f5"
-                      : "none",
-                    background: isDark ? "rgba(255,255,255,0.03)" : "#fafcfc",
-                  }}
-                >
-                  <span className="font-body text-xs" style={{ color: "var(--text-muted)" }}>{row.label}</span>
-                  <span className="font-body text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{row.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="font-body text-center text-xs" style={{ color: "var(--text-muted)" }}>
-              Zkontroluj své údaje a potvrď vstup do Legatus.
-            </p>
 
             <button
               type="button"
