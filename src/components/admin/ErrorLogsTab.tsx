@@ -149,9 +149,8 @@ export function ErrorLogsTab() {
                 const expanded = expandedId === log.id;
                 const hasMetadata = log.metadata && Object.keys(log.metadata).length > 0;
                 return (
-                  <>
+                  <FragmentRow key={log.id}>
                     <TableRow
-                      key={log.id}
                       className={`cursor-pointer ${log.resolved ? "opacity-50" : ""}`}
                       onClick={() => setExpandedId(expanded ? null : log.id)}
                     >
