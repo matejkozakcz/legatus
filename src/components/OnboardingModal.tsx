@@ -241,7 +241,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       const { error } = await supabase
         .from("profiles")
         .update({
-          full_name: fullName,
           vedouci_id: effectiveVedouciId,
           garant_id: effectiveVedouciId,
           ziskatel_id: finalZiskatelId,
@@ -287,7 +286,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         subjectUserId: user.id,
         senderUserId: user.id,
         variables: {
-          member_name: fullName,
           new_role: selectedRole,
         },
       });
@@ -302,14 +300,6 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
   };
 
   if (!open) return null;
-
-  const fullName = `${jmeno.trim()} ${prijmeni.trim()}`.trim();
-  const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? "";
-  const bjNumber = parseFloat(historickyVykon);
-  const vedouciLabel = vedouciOptions.find((v) => v.id === vedouciId)?.label ?? "—";
-  const ziskatelLabel = ziskatelNotInSystem
-    ? (ziskatelName.trim() || "—")
-    : (memberOptions.find((m) => m.id === ziskatelId)?.label ?? "—");
 
   // Shared input style
   const inputStyle = {
