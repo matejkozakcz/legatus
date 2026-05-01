@@ -22,7 +22,7 @@ export default function JoinWorkspace() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState<string>("");
 
-  const [mode, setMode] = useState<"signup" | "login">("signup");
+  
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,23 +86,6 @@ export default function JoinWorkspace() {
     e.preventDefault();
     setError("");
     if (!workspace) return;
-
-    if (mode === "login") {
-      if (!email.trim() || !password) return setError("Vyplň e-mail a heslo");
-      setSubmitting(true);
-      try {
-        const { error: loginErr } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (loginErr) throw loginErr;
-        navigate("/dashboard", { replace: true });
-      } catch (err: any) {
-        setError(err.message ?? "Přihlášení se nezdařilo");
-        setSubmitting(false);
-      }
-      return;
-    }
 
     if (!fullName.trim()) return setError("Zadej jméno");
     if (!email.trim()) return setError("Zadej e-mail");
@@ -199,27 +182,23 @@ export default function JoinWorkspace() {
                   {workspace?.name}
                 </h1>
                 <p className="text-sm mt-1" style={{ color: "#5a7378" }}>
-                  {mode === "signup"
-                    ? "Vytvoř si účet a nastav svou roli v dalším kroku."
-                    : "Přihlaš se a budeš přidán/a do workspace."}
+                  Vytvoř si účet a nastav svou roli v dalším kroku.
                 </p>
               </div>
 
-              {mode === "signup" && (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "#00555f" }}>
-                    Celé jméno
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border outline-none"
-                    style={{ borderColor: "#cdd9db", color: "#0c2226" }}
-                    required
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#00555f" }}>
+                  Celé jméno
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border outline-none"
+                  style={{ borderColor: "#cdd9db", color: "#0c2226" }}
+                  required
+                />
+              </div>
 
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: "#00555f" }}>
@@ -247,7 +226,7 @@ export default function JoinWorkspace() {
                     className="w-full h-11 px-3 pr-10 rounded-xl border outline-none"
                     style={{ borderColor: "#cdd9db", color: "#0c2226" }}
                     required
-                    minLength={mode === "signup" ? 8 : undefined}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -260,22 +239,20 @@ export default function JoinWorkspace() {
                 </div>
               </div>
 
-              {mode === "signup" && (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "#00555f" }}>
-                    Potvrzení hesla
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border outline-none"
-                    style={{ borderColor: "#cdd9db", color: "#0c2226" }}
-                    required
-                    minLength={8}
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "#00555f" }}>
+                  Potvrzení hesla
+                </label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border outline-none"
+                  style={{ borderColor: "#cdd9db", color: "#0c2226" }}
+                  required
+                  minLength={8}
+                />
+              </div>
 
               {error && (
                 <p className="text-sm text-center" style={{ color: "#fc7c71" }}>
@@ -289,23 +266,7 @@ export default function JoinWorkspace() {
                 className="w-full h-11 rounded-xl font-heading font-semibold text-white disabled:opacity-60"
                 style={{ backgroundColor: "#fc7c71" }}
               >
-                {submitting
-                  ? mode === "signup" ? "Vytváření účtu…" : "Přihlašování…"
-                  : mode === "signup" ? "Vytvořit účet" : "Přihlásit se"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMode((m) => (m === "signup" ? "login" : "signup"));
-                  setError("");
-                }}
-                className="w-full text-xs underline"
-                style={{ color: "#5a7378" }}
-              >
-                {mode === "signup"
-                  ? "Už máš účet? Přihlaš se a připoj k workspace."
-                  : "Nemáš účet? Vytvořit nový."}
+                {submitting ? "Vytváření účtu…" : "Vytvořit účet"}
               </button>
             </form>
           )}
