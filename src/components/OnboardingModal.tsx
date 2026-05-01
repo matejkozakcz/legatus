@@ -302,6 +302,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       await refetchProfile();
       toast.success("Účet nastaven!");
     } catch (err: any) {
+      logError({ action: "onboarding_submit", error: err, metadata: { userId: user?.id } });
       toast.error(err.message || "Chyba při ukládání.");
     } finally {
       setSaving(false);
