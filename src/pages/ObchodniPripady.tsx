@@ -373,7 +373,7 @@ function CaseAccordion({
 // ─── Hlavní komponenta ────────────────────────────────────────────────────────
 
 export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbedded?: boolean }) {
-  const { effectiveProfile: profile } = useAuth();
+  const { effectiveProfile: profile, viewingAsUser } = useAuth();
   const queryClient = useQueryClient();
   const isMobileHook = useIsMobile();
   const isMobile = mobileEmbedded || isMobileHook;
