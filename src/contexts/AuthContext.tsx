@@ -280,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setDeactivatedProfile(null);
     setGodMode(false);
+    setViewingAsUser(null);
   };
 
   const reactivateProfile = useCallback(async (keepData: boolean) => {
