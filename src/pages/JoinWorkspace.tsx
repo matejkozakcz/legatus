@@ -3,6 +3,7 @@ import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
+import { logError } from "@/lib/logError";
 import legatusLogo from "@/assets/legatus-logo-light.png";
 
 const loginBg = "/login-bg.svg";
@@ -129,6 +130,7 @@ export default function JoinWorkspace() {
 
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
+      logError({ action: "join_workspace", error: err, metadata: { workspaceId: workspace?.id } });
       setError(err.message ?? "Něco se nepovedlo");
       setSubmitting(false);
     }

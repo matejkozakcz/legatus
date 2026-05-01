@@ -8,6 +8,7 @@ import { PersonPicker } from "@/components/PersonPicker";
 import { toast } from "sonner";
 import { sendNotification } from "@/lib/notifications";
 import legatusLogo from "@/assets/legatus-logo-light.png";
+import { logError } from "@/lib/logError";
 
 interface OnboardingModalProps {
   open: boolean;
@@ -301,6 +302,7 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
       await refetchProfile();
       toast.success("Účet nastaven!");
     } catch (err: any) {
+      logError({ action: "onboarding_submit", error: err, metadata: { userId: user?.id } });
       toast.error(err.message || "Chyba při ukládání.");
     } finally {
       setSaving(false);

@@ -328,6 +328,47 @@ export type Database = {
           },
         ]
       }
+      error_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error: string
+          id: string
+          metadata: Json | null
+          resolved: boolean
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error: string
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error?: string
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_attempts: {
         Row: {
           created_at: string
