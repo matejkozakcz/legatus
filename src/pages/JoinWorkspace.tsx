@@ -130,6 +130,7 @@ export default function JoinWorkspace() {
 
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
+      logError({ action: "join_workspace", error: err, metadata: { workspaceId: workspace?.id } });
       setError(err.message ?? "Něco se nepovedlo");
       setSubmitting(false);
     }
