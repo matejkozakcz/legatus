@@ -88,8 +88,9 @@ export function AppSidebar() {
     // "Transakce" je nyní záložka uvnitř Admina
   }
 
+  const displayProfile = viewingAsUser ?? profile;
   const initials =
-    profile?.full_name
+    displayProfile?.full_name
       ?.split(" ")
       .map((n) => n[0])
       .join("")
@@ -97,6 +98,11 @@ export function AppSidebar() {
       .slice(0, 2) || "?";
 
   const isLight = theme !== "dark";
+
+  const handleExitViewAs = () => {
+    setViewingAsUser(null);
+    navigate("/dashboard");
+  };
 
   return (
     <>
