@@ -68,61 +68,87 @@ export function usePushSubscription(): UsePushSubscriptionResult {
 
   const enable = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     if (!user) return { ok: false, error: "Nepřihlášen" };
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       return { ok: false, error: "Prohlížeč push notifikace nepodporuje" };
     }
 
-    const result = await Notification.requestPermission();
-    setPermission(result as PushPermission);
-    if (result !== "granted") return { ok: false, error: "Povolení zamítnuto" };
-
-    const vapidKey = await getVapidPublicKey();
-    if (!vapidKey) return { ok: false, error: "VAPID klíč není nakonfigurován (vygeneruj v Adminu)" };
-
-    const reg = await navigator.serviceWorker.ready;
-    const existingSub = await reg.pushManager.getSubscription();
-    if (existingSub) {
-      try {
-        await existingSub.unsubscribe();
-      } catch (e) {
-        console.warn("Failed to unsubscribe stale subscription:", e);
-      }
-    }
-
-    let sub: PushSubscription;
     try {
-      sub = await reg.pushManager.subscribe({
+      // 1) Permission MUST be requested directly inside the user gesture.
+      // Don't await anything before this call.
+      const result = await Notification.requestPermission();
+      setPermission(result as PushPermission);
+      if (result === "denied") {
+        return {
+          ok: false,
+          error:
+            "Notifikace jsou zakázány v nastavení prohlížeče/telefonu. Povolte je ručně v Nastavení → Notifikace.",
+        };
+      }
+      if (result !== "granted") {
+        return { ok: false, error: "Povolení nebylo uděleno" };
+      }
+
+      const reg = await navigator.serviceWorker.ready;
+
+      // 2) If we already have a subscription, just sync it to DB.
+      const existingSub = await reg.pushManager.getSubscription();
+      if (existingSub) {
+        const json = existingSub.toJSON() as {
+          endpoint: string;
+          keys: { p256dh: string; auth: string };
+        };
+        const { error } = await supabase.from("push_subscriptions").upsert(
+          {
+            user_id: user.id,
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth,
+            user_agent: navigator.userAgent,
+            last_used_at: new Date().toISOString(),
+          },
+          { onConflict: "endpoint" },
+        );
+        if (error) return { ok: false, error: error.message };
+        setIsSubscribed(true);
+        return { ok: true };
+      }
+
+      // 3) Fresh subscription
+      const vapidKey = await getVapidPublicKey();
+      if (!vapidKey) return { ok: false, error: "VAPID klíč není nakonfigurován (vygeneruj v Adminu)" };
+
+      const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
       });
+
+      const json = sub.toJSON() as {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+      };
+
+      const { error } = await supabase.from("push_subscriptions").upsert(
+        {
+          user_id: user.id,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+          user_agent: navigator.userAgent,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: "endpoint" },
+      );
+      if (error) return { ok: false, error: error.message };
+
+      setIsSubscribed(true);
+      return { ok: true };
     } catch (error) {
-      console.error("Push subscribe failed:", error);
+      console.error("registerPushSubscription failed:", error);
       return {
         ok: false,
         error: (error as Error)?.message || "Nepodařilo se aktivovat notifikace",
       };
     }
-
-    const json = sub.toJSON() as {
-      endpoint: string;
-      keys: { p256dh: string; auth: string };
-    };
-
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        user_id: user.id,
-        endpoint: json.endpoint,
-        p256dh: json.keys.p256dh,
-        auth: json.keys.auth,
-        user_agent: navigator.userAgent,
-        last_used_at: new Date().toISOString(),
-      },
-      { onConflict: "endpoint" },
-    );
-    if (error) return { ok: false, error: error.message };
-
-    setIsSubscribed(true);
-    return { ok: true };
   }, [user]);
 
   useEffect(() => {
