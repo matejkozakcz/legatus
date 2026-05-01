@@ -224,6 +224,7 @@ function ChildrenBranch({
   isClickableFn,
   progressMap,
   bjMap,
+  onViewAsFn,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -235,7 +236,7 @@ function ChildrenBranch({
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
   bjMap: Map<string, { value: number; isTeam: boolean }>;
-
+  onViewAsFn?: (node: ProfileNode) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
