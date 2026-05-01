@@ -389,6 +389,17 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     const { permission, isSubscribed, isLoading, enable, disable } = pushState;
     const unsupported = permission === "unsupported";
     const denied = permission === "denied";
+    const granted = permission === "granted";
+
+    const statusLabel = unsupported
+      ? "Nepodporováno"
+      : denied
+      ? "Zakázány"
+      : granted && isSubscribed
+      ? "Povoleny ✓"
+      : granted
+      ? "Povoleny (čeká registrace)"
+      : "Čekají na povolení";
 
     const handleToggle = async () => {
       if (isSubscribed) {
@@ -397,7 +408,19 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         return;
       }
       const res = await enable();
-      if (res.ok) toast.success("Push notifikace povoleny");
+      if (res.ok) toast.success("Notifikace povoleny ✓");
+      else toast.error(res.error || "Nepodařilo se povolit notifikace");
+    };
+
+    const handleRetry = async () => {
+      if (denied) {
+        toast.error(
+          "Notifikace jsou zakázány v nastavení prohlížeče/telefonu. Povolte je ručně v Nastavení → Notifikace.",
+        );
+        return;
+      }
+      const res = await enable();
+      if (res.ok) toast.success("Notifikace povoleny ✓");
       else toast.error(res.error || "Nepodařilo se povolit notifikace");
     };
 
@@ -412,10 +435,13 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">Push notifikace</p>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                  Stav: <span className="font-medium text-foreground">{statusLabel}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
                   {unsupported
                     ? "Tento prohlížeč push notifikace nepodporuje."
                     : denied
-                    ? "Notifikace jsou v prohlížeči zablokované — povol je v nastavení prohlížeče."
+                    ? "Notifikace jsou zakázány v nastavení prohlížeče/telefonu. Povolte je ručně v Nastavení → Notifikace."
                     : isSubscribed
                     ? "Dostáváš notifikace na tomto zařízení."
                     : "Povol, ať tě upozorníme na schůzky, povýšení a důležité události."}
@@ -437,6 +463,17 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
               />
             </button>
           </div>
+
+          {!unsupported && !(granted && isSubscribed) && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={isLoading}
+              className="mt-3 w-full px-3 py-2 rounded-lg text-xs font-semibold border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              Znovu povolit notifikace
+            </button>
+          )}
         </div>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed px-1">
