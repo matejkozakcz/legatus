@@ -12,6 +12,7 @@ import {
   Search,
   Shield,
   GraduationCap,
+  Eye,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -43,7 +44,7 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 };
 
 export function AppSidebar() {
-  const { profile, signOut, godMode } = useAuth();
+  const { profile, signOut, godMode, viewingAsUser, setViewingAsUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -87,8 +88,9 @@ export function AppSidebar() {
     // "Transakce" je nyní záložka uvnitř Admina
   }
 
+  const displayProfile = viewingAsUser ?? profile;
   const initials =
-    profile?.full_name
+    displayProfile?.full_name
       ?.split(" ")
       .map((n) => n[0])
       .join("")
@@ -96,6 +98,11 @@ export function AppSidebar() {
       .slice(0, 2) || "?";
 
   const isLight = theme !== "dark";
+
+  const handleExitViewAs = () => {
+    setViewingAsUser(null);
+    navigate("/dashboard");
+  };
 
   return (
     <>
@@ -218,6 +225,68 @@ export function AppSidebar() {
           </div>
         </SidebarContent>
 
+        {viewingAsUser && (
+          <div
+            className="mx-3 mb-2 rounded-xl p-3"
+            style={{
+              background: isLight ? "rgba(0,171,189,0.10)" : "rgba(0,171,189,0.18)",
+              border: isLight ? "1px solid rgba(0,171,189,0.35)" : "1px solid rgba(0,171,189,0.4)",
+            }}
+          >
+            {!collapsed ? (
+              <>
+                <div
+                  className="flex items-center gap-1.5 text-[10px] font-heading font-semibold uppercase tracking-wider mb-1.5"
+                  style={{ color: isLight ? "#00555f" : "#4dd8e8" }}
+                >
+                  <Eye className="h-3 w-3" />
+                  Prohlížíš jako
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  {viewingAsUser.avatar_url ? (
+                    <img src={viewingAsUser.avatar_url} alt={viewingAsUser.full_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: isLight ? "rgba(0,85,95,0.15)" : "rgba(255,255,255,0.15)" }}
+                    >
+                      <span className="text-[11px] font-heading font-semibold" style={{ color: isLight ? "#00555f" : "#fff" }}>
+                        {viewingAsUser.full_name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-heading font-semibold truncate" style={{ color: isLight ? "#0a3540" : "#fff" }}>
+                      {viewingAsUser.full_name}
+                    </p>
+                    <p className="text-[10px] truncate" style={{ color: isLight ? "rgba(10,53,64,0.6)" : "rgba(255,255,255,0.6)" }}>
+                      {roleBadgeConfig[viewingAsUser.role]?.label || viewingAsUser.role}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleExitViewAs}
+                  className="w-full text-[11px] font-heading font-semibold py-1.5 rounded-lg transition-colors"
+                  style={{
+                    background: isLight ? "#00abbd" : "#00abbd",
+                    color: "#fff",
+                  }}
+                >
+                  Zpět na svůj účet
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleExitViewAs}
+                className="w-full flex items-center justify-center"
+                title={`Prohlížíš jako ${viewingAsUser.full_name} — zpět na svůj účet`}
+              >
+                <Eye className="h-4 w-4" style={{ color: isLight ? "#00555f" : "#4dd8e8" }} />
+              </button>
+            )}
+          </div>
+        )}
+
         <SidebarFooter
           className="p-4"
           style={{
@@ -228,9 +297,9 @@ export function AppSidebar() {
         >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className={`relative flex-shrink-0 ${godMode ? "god-mode-avatar" : ""}`}>
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt={profile.full_name} className="w-9 h-9 rounded-full object-cover" />
+              <div className={`relative flex-shrink-0 ${godMode && !viewingAsUser ? "god-mode-avatar" : ""}`}>
+                {displayProfile?.avatar_url ? (
+                  <img src={displayProfile.avatar_url} alt={displayProfile.full_name} className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center"
@@ -244,7 +313,7 @@ export function AppSidebar() {
                     </span>
                   </div>
                 )}
-                {godMode && <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>}
+                {godMode && !viewingAsUser && <span className="absolute -top-1 -right-1 text-[10px] leading-none">⚡</span>}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
@@ -252,14 +321,14 @@ export function AppSidebar() {
                     className="text-[13px] font-heading font-semibold truncate"
                     style={{ color: isLight ? "#0a3540" : "rgba(255, 255, 255, 0.85)" }}
                   >
-                    {profile?.full_name}
+                    {displayProfile?.full_name}
                   </p>
-                  {profile?.role && (
+                  {displayProfile?.role && (
                     <span
-                      className={`mt-1 ${roleBadgeConfig[profile.role]?.className || ""}`}
+                      className={`mt-1 ${roleBadgeConfig[displayProfile.role]?.className || ""}`}
                       style={{ color: isLight ? "rgba(10, 53, 64, 0.45)" : "rgba(255, 255, 255, 0.35)" }}
                     >
-                      {roleBadgeConfig[profile.role]?.label}
+                      {roleBadgeConfig[displayProfile.role]?.label}
                     </span>
                   )}
                 </div>

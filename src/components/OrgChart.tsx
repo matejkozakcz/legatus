@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
-import { Plus, Minus, ZoomIn, ZoomOut } from "lucide-react";
+import { Plus, Minus, ZoomIn, ZoomOut, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -62,7 +63,7 @@ const progressBarColor: Record<string, string> = {
   novacek: "#F39E0A",
 };
 
-function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean } }) {
+function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo, onViewAs }: { node: ProfileNode; onClick?: () => void; isClickable: boolean; isFocused?: boolean; progress?: number; bjInfo?: { value: number; isTeam: boolean }; onViewAs?: () => void }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const initials = node.full_name
@@ -119,6 +120,17 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo }: {
       >
         {roleLabel}
       </div>
+      {onViewAs && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onViewAs(); }}
+          title="Zobrazit pohled uživatele"
+          className="absolute cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+          style={{ top: 8, right: 8, padding: 0, background: "transparent", border: "none", lineHeight: 0 }}
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      )}
       <div style={{ marginTop: 14 }}>
         {node.avatar_url ? (
           <img
@@ -212,6 +224,7 @@ function ChildrenBranch({
   isClickableFn,
   progressMap,
   bjMap,
+  onViewAsFn,
 }: {
   children: ProfileNode[];
   childrenMap: Map<string, ProfileNode[]>;
@@ -223,7 +236,7 @@ function ChildrenBranch({
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
   bjMap: Map<string, { value: number; isTeam: boolean }>;
-
+  onViewAsFn?: (node: ProfileNode) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const childRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -287,6 +300,7 @@ function ChildrenBranch({
               isClickableFn={isClickableFn}
               progressMap={progressMap}
               bjMap={bjMap}
+              onViewAsFn={onViewAsFn}
             />
           </div>
         ))}
@@ -306,6 +320,7 @@ function TreeNode({
   isClickableFn,
   progressMap,
   bjMap,
+  onViewAsFn,
 }: {
   node: ProfileNode;
   childrenMap: Map<string, ProfileNode[]>;
@@ -317,6 +332,7 @@ function TreeNode({
   isClickableFn: (node: ProfileNode) => boolean;
   progressMap: Map<string, number>;
   bjMap: Map<string, { value: number; isTeam: boolean }>;
+  onViewAsFn?: (node: ProfileNode) => void;
 }) {
   const children = childrenMap.get(node.id) || [];
   const isCollapsed = collapsedIds.has(node.id);
@@ -325,7 +341,15 @@ function TreeNode({
 
   return (
     <div className="flex flex-col items-center">
-      <NodeCard node={node} onClick={() => onSelect(node)} isClickable={isClickable} isFocused={isFocused} progress={progressMap.get(node.id)} bjInfo={bjMap.get(node.id)} />
+      <NodeCard
+        node={node}
+        onClick={() => onSelect(node)}
+        isClickable={isClickable}
+        isFocused={isFocused}
+        progress={progressMap.get(node.id)}
+        bjInfo={bjMap.get(node.id)}
+        onViewAs={onViewAsFn ? () => onViewAsFn(node) : undefined}
+      />
       {children.length > 0 && (
         <>
           <VerticalLine />
@@ -350,6 +374,7 @@ function TreeNode({
                 isClickableFn={isClickableFn}
                 progressMap={progressMap}
                 bjMap={bjMap}
+                onViewAsFn={onViewAsFn}
               />
             </>
           )}
@@ -375,9 +400,10 @@ function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string
 }
 
 export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole, periodStart, periodEnd }: OrgChartProps) {
-  const { profile } = useAuth();
+  const { profile, setViewingAsUser } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const navigate = useNavigate();
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
@@ -591,6 +617,28 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     onPersonClick?.(node.id, node);
   };
 
+  // "Pohled jako" — only vedoucí / budouci_vedouci, never on own card
+  const canViewAs = profile?.role === "vedouci" || profile?.role === "budouci_vedouci";
+  const handleViewAs = useCallback(async (node: ProfileNode) => {
+    if (!profile || node.id === profile.id) return;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", node.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error || !data) return;
+    setViewingAsUser(data as any);
+    navigate("/dashboard");
+  }, [profile, setViewingAsUser, navigate]);
+
+  const onViewAsFn = canViewAs
+    ? (node: ProfileNode) => {
+        if (node.id === profile?.id) return;
+        handleViewAs(node);
+      }
+    : undefined;
+
   const [zoom, setZoom] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -720,6 +768,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
             isClickableFn={isClickableFn}
             progressMap={progressMap}
             bjMap={bjMap}
+            onViewAsFn={onViewAsFn}
           />
         </div>
       </div>
