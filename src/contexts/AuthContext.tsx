@@ -31,6 +31,9 @@ interface AuthContextType {
   effectiveProfile: Profile | null;
   /** True when `effectiveProfile` differs from `profile`. */
   isViewingAsWorkspace: boolean;
+  /** When a vedoucí is using "Pohled jako" on a subordinate, this is that user's profile. */
+  viewingAsUser: Profile | null;
+  setViewingAsUser: (p: Profile | null) => void;
   loading: boolean;
   needsOnboarding: boolean;
   needsReactivation: boolean;
