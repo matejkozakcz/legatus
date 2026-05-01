@@ -45,8 +45,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const GOD_MODE_KEY = "legatus_godmode";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -54,26 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [viewAsProfile, setViewAsProfile] = useState<Profile | null>(null);
   const [deactivatedProfile, setDeactivatedProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [godMode, setGodMode] = useState<boolean>(() => {
-    try { return localStorage.getItem(GOD_MODE_KEY) === "true"; } catch { return false; }
-  });
+  const [godMode, setGodMode] = useState(false);
 
   const isAdmin = profile?.is_admin === true;
 
   const toggleGodMode = useCallback(() => {
     if (!isAdmin) return;
-    setGodMode((prev) => {
-      const next = !prev;
-      try { localStorage.setItem(GOD_MODE_KEY, String(next)); } catch {}
-      return next;
-    });
+    setGodMode((prev) => !prev);
   }, [isAdmin]);
 
   useEffect(() => {
     // Only clear godMode after profile has loaded and user is confirmed non-admin
     if (profile && !isAdmin && godMode) {
       setGodMode(false);
-      try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
     }
   }, [profile, isAdmin, godMode]);
 
@@ -283,7 +274,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setDeactivatedProfile(null);
     setGodMode(false);
-    try { localStorage.removeItem(GOD_MODE_KEY); } catch {}
   };
 
   const reactivateProfile = useCallback(async (keepData: boolean) => {
