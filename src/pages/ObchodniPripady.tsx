@@ -916,18 +916,20 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             }}
           >
             <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => {
-                  setEditMeeting(null);
-                  setPreCaseId("");
-                  setMeetingModalOpen(true);
-                }}
-                className="btn btn-primary btn-md flex items-center justify-center gap-2"
-                style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
-              >
-                <Plus size={18} />
-                Přidat schůzku
-              </button>
+              {!viewingAsUser && (
+                <button
+                  onClick={() => {
+                    setEditMeeting(null);
+                    setPreCaseId("");
+                    setMeetingModalOpen(true);
+                  }}
+                  className="btn btn-primary btn-md flex items-center justify-center gap-2"
+                  style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
+                >
+                  <Plus size={18} />
+                  Přidat schůzku
+                </button>
+              )}
               <button
                 onClick={() => !isSameDay(selectedDate, new Date()) && setSelectedDate(new Date())}
                 disabled={isSameDay(selectedDate, new Date())}
