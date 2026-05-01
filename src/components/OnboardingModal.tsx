@@ -233,6 +233,10 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     setStep(2);
   };
 
+  const handleStep2Next = () => {
+    setStep(3);
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
