@@ -44,7 +44,7 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 };
 
 export function AppSidebar() {
-  const { profile, signOut, godMode } = useAuth();
+  const { profile, signOut, godMode, viewingAsUser, setViewingAsUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
