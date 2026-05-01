@@ -617,6 +617,28 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
     onPersonClick?.(node.id, node);
   };
 
+  // "Pohled jako" — only vedoucí / budouci_vedouci, never on own card
+  const canViewAs = profile?.role === "vedouci" || profile?.role === "budouci_vedouci";
+  const handleViewAs = useCallback(async (node: ProfileNode) => {
+    if (!profile || node.id === profile.id) return;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", node.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error || !data) return;
+    setViewingAsUser(data as any);
+    navigate("/dashboard");
+  }, [profile, setViewingAsUser, navigate]);
+
+  const onViewAsFn = canViewAs
+    ? (node: ProfileNode) => {
+        if (node.id === profile?.id) return;
+        handleViewAs(node);
+      }
+    : undefined;
+
   const [zoom, setZoom] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
