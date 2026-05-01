@@ -779,9 +779,6 @@ const SpravaTeam = () => {
           <Users className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
           <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>SPRÁVA TÝMU</h1>
         </div>
-        {!isReadOnly && (profile?.role === "vedouci" || profile?.role === "budouci_vedouci" || profile?.role === "garant" || isGodMode) && (
-          
-        )}
       </div>
 
       {/* Workspace invite link — viditelné pro vedoucí/BV/garant */}
