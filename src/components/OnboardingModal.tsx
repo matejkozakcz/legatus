@@ -8,6 +8,7 @@ import { PersonPicker } from "@/components/PersonPicker";
 import { toast } from "sonner";
 import { sendNotification } from "@/lib/notifications";
 import legatusLogo from "@/assets/legatus-logo-light.png";
+import { logError } from "@/lib/logError";
 
 interface OnboardingModalProps {
   open: boolean;
