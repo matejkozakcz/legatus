@@ -40,8 +40,17 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const pushState = usePushSubscription();
-  const { isStale, performUpdate, serverVersion, localVersion } = useAppVersion();
+  const { isStale, performUpdate, serverVersion, localVersion, refresh: refreshVersion } = useAppVersion();
   const [updating, setUpdating] = useState(false);
+  const [checkingVersion, setCheckingVersion] = useState(false);
+
+  // Force a version check whenever the modal opens — realtime websocket is
+  // unreliable in installed PWA contexts.
+  useEffect(() => {
+    if (!open) return;
+    setCheckingVersion(true);
+    refreshVersion().finally(() => setCheckingVersion(false));
+  }, [open, refreshVersion]);
 
   useEffect(() => {
     if (open && profile) {
