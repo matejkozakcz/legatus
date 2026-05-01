@@ -309,6 +309,17 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
 
   if (!open) return null;
 
+  const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label ?? "";
+  const bjNumber = parseFloat(historickyVykon);
+  const vedouciLabel = isFirstLeaderOfWorkspace
+    ? "—"
+    : (vedouciOptions.find((v) => v.id === vedouciId)?.label ?? "—");
+  const ziskatelLabel = isFirstLeaderOfWorkspace
+    ? "—"
+    : ziskatelNotInSystem
+    ? (ziskatelName.trim() || "—")
+    : (memberOptions.find((m) => m.id === ziskatelId)?.label ?? "—");
+
   // Shared input style
   const inputStyle = {
     background: isDark ? "rgba(255,255,255,0.06)" : "#ffffff",
