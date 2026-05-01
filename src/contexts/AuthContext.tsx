@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [viewAsProfile, setViewAsProfile] = useState<Profile | null>(null);
+  const [viewingAsUser, setViewingAsUser] = useState<Profile | null>(null);
   const [deactivatedProfile, setDeactivatedProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [godMode, setGodMode] = useState(false);
