@@ -195,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return fetchProfile(userId, retries - 1);
     }
 
+    logError({ action: "fetch_profile_failed", error: "Profile not found after retries", metadata: { userId } });
     await supabase.auth.signOut({ scope: 'local' });
     setProfile(null);
     setDeactivatedProfile(null);
