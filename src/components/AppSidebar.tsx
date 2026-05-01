@@ -12,6 +12,7 @@ import {
   Search,
   Shield,
   GraduationCap,
+  Eye,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
