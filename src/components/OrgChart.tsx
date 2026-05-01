@@ -120,6 +120,17 @@ function NodeCard({ node, onClick, isClickable, isFocused, progress, bjInfo, onV
       >
         {roleLabel}
       </div>
+      {onViewAs && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onViewAs(); }}
+          title="Zobrazit pohled uživatele"
+          className="absolute cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+          style={{ top: 8, right: 8, padding: 0, background: "transparent", border: "none", lineHeight: 0 }}
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      )}
       <div style={{ marginTop: 14 }}>
         {node.avatar_url ? (
           <img
