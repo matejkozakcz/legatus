@@ -768,6 +768,7 @@ export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole
             isClickableFn={isClickableFn}
             progressMap={progressMap}
             bjMap={bjMap}
+            onViewAsFn={onViewAsFn}
           />
         </div>
       </div>
