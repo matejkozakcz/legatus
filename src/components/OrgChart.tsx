@@ -400,9 +400,10 @@ function findAncestorPath(profiles: ProfileNode[], targetId: string): Set<string
 }
 
 export function OrgChart({ currentUserId, focusUserId, onPersonClick, viewerRole, periodStart, periodEnd }: OrgChartProps) {
-  const { profile } = useAuth();
+  const { profile, setViewingAsUser } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const navigate = useNavigate();
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["team_profiles", currentUserId],
