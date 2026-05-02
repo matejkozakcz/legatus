@@ -59,6 +59,25 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
     }
   }, []);
 
+  // ── Calendar connection state ──
+  const [calConnection, setCalConnection] = useState<{ account_email: string; last_sync_at: string | null } | null>(null);
+  const [calLoading, setCalLoading] = useState(false);
+  const [calConnecting, setCalConnecting] = useState(false);
+  const [calBackfilling, setCalBackfilling] = useState(false);
+
+  const fetchCalConnection = useCallback(async () => {
+    if (!user) return;
+    setCalLoading(true);
+    const { data } = await supabase
+      .from("user_calendar_connections" as any)
+      .select("account_email,last_sync_at")
+      .eq("user_id", user.id)
+      .eq("provider", "google")
+      .maybeSingle();
+    setCalConnection(data as any);
+    setCalLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (open && profile) {
       const parts = (profile.full_name || "").split(" ");
@@ -70,6 +89,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       setConfirmPassword("");
       setPasswordError("");
       fetchIdentities();
+      fetchCalConnection();
       // Fetch Partners ID separately (not in AuthContext profile interface)
       supabase
         .from("profiles")
@@ -78,7 +98,26 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
         .single()
         .then(({ data }) => setPartnersId(data?.osobni_id || ""));
     }
-  }, [open, profile, fetchIdentities]);
+  }, [open, profile, fetchIdentities, fetchCalConnection]);
+
+  // Detect OAuth return (?calendar_link=ok|error)
+  useEffect(() => {
+    if (!open) return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("calendar_link");
+    if (status) {
+      if (status === "ok") {
+        toast.success("Google kalendář propojen ✓");
+        fetchCalConnection();
+      } else {
+        toast.error("Nepodařilo se propojit Google kalendář: " + (params.get("calendar_msg") || "neznámá chyba"));
+      }
+      params.delete("calendar_link");
+      params.delete("calendar_msg");
+      const newSearch = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (newSearch ? "?" + newSearch : ""));
+    }
+  }, [open, fetchCalConnection]);
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose();
