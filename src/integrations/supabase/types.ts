@@ -213,6 +213,7 @@ export type Database = {
           doporuceni_pohovor: number
           doporuceni_poradenstvi: number
           duration_minutes: number | null
+          external_event_id: string | null
           has_pohovor: boolean
           has_poradenstvi: boolean
           id: string
@@ -247,6 +248,7 @@ export type Database = {
           doporuceni_pohovor?: number
           doporuceni_poradenstvi?: number
           duration_minutes?: number | null
+          external_event_id?: string | null
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
@@ -281,6 +283,7 @@ export type Database = {
           doporuceni_pohovor?: number
           doporuceni_poradenstvi?: number
           duration_minutes?: number | null
+          external_event_id?: string | null
           has_pohovor?: boolean
           has_poradenstvi?: boolean
           id?: string
@@ -1102,6 +1105,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_calendar_connections: {
+        Row: {
+          access_token: string
+          account_email: string | null
+          calendar_id: string
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          provider: string
+          refresh_token: string
+          scope: string | null
+          token_expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          account_email?: string | null
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          provider?: string
+          refresh_token: string
+          scope?: string | null
+          token_expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          account_email?: string | null
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          provider?: string
+          refresh_token?: string
+          scope?: string | null
+          token_expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       vedouci_goals: {
         Row: {
