@@ -135,6 +135,61 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
   const isProviderLinked = (provider: string) =>
     identities.some((i) => i.provider === provider);
 
+  // ── Calendar handlers ──
+  const handleConnectCalendar = async () => {
+    setCalConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=start&origin=${encodeURIComponent(window.location.origin)}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json();
+      if (!json.url) throw new Error(json.error || "Chyba");
+      window.location.href = json.url;
+    } catch (err: any) {
+      toast.error(err.message || "Nepodařilo se zahájit propojení");
+      setCalConnecting(false);
+    }
+  };
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm("Opravdu chcete odpojit Google kalendář? Existující exportované události zůstanou v Google, ale budoucí změny se nebudou synchronizovat.")) return;
+    setCalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=disconnect`;
+      await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      setCalConnection(null);
+      toast.success("Google kalendář odpojen");
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při odpojování");
+    } finally {
+      setCalLoading(false);
+    }
+  };
+
+  const handleBackfillCalendar = async () => {
+    setCalBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-meeting-to-calendar", {
+        body: { backfill: true },
+      });
+      if (error) throw error;
+      toast.success(`Exportováno ${(data as any)?.success || 0} schůzek do Google kalendáře`);
+      fetchCalConnection();
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při exportu schůzek");
+    } finally {
+      setCalBackfilling(false);
+    }
+  };
+
   const handleLinkProvider = async (provider: "google" | "apple") => {
     setLinkingProvider(provider);
     try {
