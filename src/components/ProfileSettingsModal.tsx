@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, Calendar as CalendarIcon, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,6 +59,25 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
     }
   }, []);
 
+  // ── Calendar connection state ──
+  const [calConnection, setCalConnection] = useState<{ account_email: string; last_sync_at: string | null } | null>(null);
+  const [calLoading, setCalLoading] = useState(false);
+  const [calConnecting, setCalConnecting] = useState(false);
+  const [calBackfilling, setCalBackfilling] = useState(false);
+
+  const fetchCalConnection = useCallback(async () => {
+    if (!user) return;
+    setCalLoading(true);
+    const { data } = await supabase
+      .from("user_calendar_connections" as any)
+      .select("account_email,last_sync_at")
+      .eq("user_id", user.id)
+      .eq("provider", "google")
+      .maybeSingle();
+    setCalConnection(data as any);
+    setCalLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (open && profile) {
       const parts = (profile.full_name || "").split(" ");
@@ -70,6 +89,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       setConfirmPassword("");
       setPasswordError("");
       fetchIdentities();
+      fetchCalConnection();
       // Fetch Partners ID separately (not in AuthContext profile interface)
       supabase
         .from("profiles")
@@ -78,7 +98,26 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
         .single()
         .then(({ data }) => setPartnersId(data?.osobni_id || ""));
     }
-  }, [open, profile, fetchIdentities]);
+  }, [open, profile, fetchIdentities, fetchCalConnection]);
+
+  // Detect OAuth return (?calendar_link=ok|error)
+  useEffect(() => {
+    if (!open) return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("calendar_link");
+    if (status) {
+      if (status === "ok") {
+        toast.success("Google kalendář propojen ✓");
+        fetchCalConnection();
+      } else {
+        toast.error("Nepodařilo se propojit Google kalendář: " + (params.get("calendar_msg") || "neznámá chyba"));
+      }
+      params.delete("calendar_link");
+      params.delete("calendar_msg");
+      const newSearch = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (newSearch ? "?" + newSearch : ""));
+    }
+  }, [open, fetchCalConnection]);
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose();
@@ -95,6 +134,61 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
   const isProviderLinked = (provider: string) =>
     identities.some((i) => i.provider === provider);
+
+  // ── Calendar handlers ──
+  const handleConnectCalendar = async () => {
+    setCalConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=start&origin=${encodeURIComponent(window.location.origin)}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json();
+      if (!json.url) throw new Error(json.error || "Chyba");
+      window.location.href = json.url;
+    } catch (err: any) {
+      toast.error(err.message || "Nepodařilo se zahájit propojení");
+      setCalConnecting(false);
+    }
+  };
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm("Opravdu chcete odpojit Google kalendář? Existující exportované události zůstanou v Google, ale budoucí změny se nebudou synchronizovat.")) return;
+    setCalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=disconnect`;
+      await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      setCalConnection(null);
+      toast.success("Google kalendář odpojen");
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při odpojování");
+    } finally {
+      setCalLoading(false);
+    }
+  };
+
+  const handleBackfillCalendar = async () => {
+    setCalBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-meeting-to-calendar", {
+        body: { backfill: true },
+      });
+      if (error) throw error;
+      toast.success(`Exportováno ${(data as any)?.success || 0} schůzek do Google kalendáře`);
+      fetchCalConnection();
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při exportu schůzek");
+    } finally {
+      setCalBackfilling(false);
+    }
+  };
 
   const handleLinkProvider = async (provider: "google" | "apple") => {
     setLinkingProvider(provider);
@@ -404,6 +498,67 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
             {renderProviderRow("google")}
             {renderProviderRow("apple")}
           </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-border mb-5" />
+
+        {/* SECTION — Calendar sync */}
+        <div className="mb-5">
+          <p className="text-xs font-medium text-muted-foreground mb-3">
+            Propojené kalendáře
+          </p>
+          <div className="flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#f0f5f6" }}>
+                <CalendarIcon className="h-4 w-4" style={{ color: "#00abbd" }} />
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  Google kalendář
+                </p>
+                <p className="text-xs" style={{ color: calConnection ? "#00abbd" : "var(--text-muted)" }}>
+                  {calLoading
+                    ? "Načítání…"
+                    : calConnection
+                      ? `Propojeno (${calConnection.account_email})`
+                      : "Schůzky se automaticky exportují do vašeho kalendáře"}
+                </p>
+              </div>
+            </div>
+            {calConnection ? (
+              <button
+                onClick={handleDisconnectCalendar}
+                disabled={calLoading}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40"
+                style={{ borderColor: "#e2eaec", color: "#e05a50" }}
+              >
+                {calLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink2 className="h-3.5 w-3.5" />}
+                Odpojit
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectCalendar}
+                disabled={calConnecting}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40"
+                style={{ borderColor: "#e2eaec", color: "#00abbd" }}
+              >
+                {calConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                Připojit
+              </button>
+            )}
+          </div>
+          {calConnection && (
+            <button
+              onClick={handleBackfillCalendar}
+              disabled={calBackfilling}
+              className="mt-2 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 w-full justify-center"
+              style={{ borderColor: "#e2eaec", color: "var(--text-primary)" }}
+            >
+              {calBackfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Exportovat všechny budoucí schůzky
+            </button>
+          )}
         </div>
 
         {/* Divider */}

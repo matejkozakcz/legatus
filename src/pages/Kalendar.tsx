@@ -15,6 +15,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { MeetingFormModal, type MeetingForm, type MeetingType, type Case, meetingTypeLabel, defaultMeetingForm } from "@/components/MeetingFormFields";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
+import { syncMeetingToCalendar } from "@/lib/calendarSync";
 
 interface Meeting {
   id: string;
@@ -257,10 +258,12 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
       if (editingMeetingId) {
         const { error } = await supabase.from("client_meetings").update(payload).eq("id", editingMeetingId);
         if (error) throw error;
+        syncMeetingToCalendar(editingMeetingId, "UPDATE");
       } else {
         const { data, error } = await supabase.from("client_meetings").insert(payload).select("id").single();
         if (error) throw error;
         insertedId = (data as any)?.id;
+        if (insertedId) syncMeetingToCalendar(insertedId, "INSERT");
       }
       return { form, skipFollowUp, insertedId };
     },
@@ -1010,6 +1013,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           onCancel={async () => {
             if (detailMeeting) {
               await supabase.from("client_meetings").update({ cancelled: true }).eq("id", detailMeeting.id);
+              syncMeetingToCalendar(detailMeeting.id, "DELETE", (detailMeeting as any).external_event_id);
               queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
               toast.success("Schůzka zrušena");
             }
@@ -1158,6 +1162,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         onCancel={async () => {
           if (detailMeeting) {
             await supabase.from("client_meetings").update({ cancelled: true }).eq("id", detailMeeting.id);
+            syncMeetingToCalendar(detailMeeting.id, "DELETE", (detailMeeting as any).external_event_id);
             queryClient.invalidateQueries({ queryKey: ["calendar_meetings"] });
             toast.success("Schůzka zrušena");
           }
