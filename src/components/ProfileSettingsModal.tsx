@@ -503,6 +503,67 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
         {/* Divider */}
         <div className="border-t border-border mb-5" />
 
+        {/* SECTION — Calendar sync */}
+        <div className="mb-5">
+          <p className="text-xs font-medium text-muted-foreground mb-3">
+            Propojené kalendáře
+          </p>
+          <div className="flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#f0f5f6" }}>
+                <CalendarIcon className="h-4 w-4" style={{ color: "#00abbd" }} />
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  Google kalendář
+                </p>
+                <p className="text-xs" style={{ color: calConnection ? "#00abbd" : "var(--text-muted)" }}>
+                  {calLoading
+                    ? "Načítání…"
+                    : calConnection
+                      ? `Propojeno (${calConnection.account_email})`
+                      : "Schůzky se automaticky exportují do vašeho kalendáře"}
+                </p>
+              </div>
+            </div>
+            {calConnection ? (
+              <button
+                onClick={handleDisconnectCalendar}
+                disabled={calLoading}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40"
+                style={{ borderColor: "#e2eaec", color: "#e05a50" }}
+              >
+                {calLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink2 className="h-3.5 w-3.5" />}
+                Odpojit
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectCalendar}
+                disabled={calConnecting}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40"
+                style={{ borderColor: "#e2eaec", color: "#00abbd" }}
+              >
+                {calConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                Připojit
+              </button>
+            )}
+          </div>
+          {calConnection && (
+            <button
+              onClick={handleBackfillCalendar}
+              disabled={calBackfilling}
+              className="mt-2 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 w-full justify-center"
+              style={{ borderColor: "#e2eaec", color: "var(--text-primary)" }}
+            >
+              {calBackfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Exportovat všechny budoucí schůzky
+            </button>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-border mb-5" />
+
         {/* SECTION 4 — Password */}
         <button
           type="button"
