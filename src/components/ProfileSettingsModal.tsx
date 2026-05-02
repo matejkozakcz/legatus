@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap } from "lucide-react";
+import { X, Camera, ChevronDown, ChevronUp, Loader2, Link2, Unlink2, Zap, Calendar as CalendarIcon, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
