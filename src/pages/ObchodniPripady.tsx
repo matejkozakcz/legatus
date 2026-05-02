@@ -645,16 +645,19 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         parent_meeting_id: form.parent_meeting_id ?? null,
       };
       let insertedId: string | undefined;
+      const { syncMeetingToCalendar } = await import("@/lib/calendarSync");
       if (id) {
         const { error } = await supabase
           .from("client_meetings")
           .update(payload as any)
           .eq("id", id);
         if (error) throw error;
+        syncMeetingToCalendar(id, "UPDATE");
       } else {
         const { data, error } = await supabase.from("client_meetings").insert(payload as any).select("id").single();
         if (error) throw error;
         insertedId = (data as any)?.id;
+        if (insertedId) syncMeetingToCalendar(insertedId, "INSERT");
       }
       return { insertedId };
     },
@@ -693,8 +696,19 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Fetch external_event_id BEFORE deleting so we can clean up calendar
+      const { data: existing } = await supabase
+        .from("client_meetings")
+        .select("external_event_id")
+        .eq("id", id)
+        .maybeSingle();
       const { error } = await supabase.from("client_meetings").delete().eq("id", id);
       if (error) throw error;
+      const extId = (existing as any)?.external_event_id;
+      if (extId) {
+        const { syncMeetingToCalendar } = await import("@/lib/calendarSync");
+        syncMeetingToCalendar(id, "DELETE", extId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });

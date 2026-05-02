@@ -376,7 +376,12 @@ const Dashboard = () => {
       };
       const { data, error } = await supabase.from("client_meetings").insert(payload as any).select("id").single();
       if (error) throw error;
-      return { insertedId: (data as any)?.id as string | undefined };
+      const newId = (data as any)?.id as string | undefined;
+      if (newId) {
+        const { syncMeetingToCalendar } = await import("@/lib/calendarSync");
+        syncMeetingToCalendar(newId, "INSERT");
+      }
+      return { insertedId: newId };
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_meetings"] });
