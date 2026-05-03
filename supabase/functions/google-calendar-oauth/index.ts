@@ -38,15 +38,15 @@ Deno.serve(async (req) => {
         global: { headers: { Authorization: authHeader } },
       });
       const token = authHeader.replace("Bearer ", "");
-      const { data, error } = await supabase.auth.getClaims(token);
-      if (error || !data?.claims) {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data?.user) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const userId = data.claims.sub;
+      const userId = data.user.id;
       const redirectOrigin = url.searchParams.get("origin") || "";
       const redirectUri = `${SUPABASE_URL}/functions/v1/google-calendar-oauth?action=callback`;
 
@@ -156,14 +156,14 @@ Deno.serve(async (req) => {
         global: { headers: { Authorization: authHeader } },
       });
       const token = authHeader.replace("Bearer ", "");
-      const { data, error } = await supabase.auth.getClaims(token);
-      if (error || !data?.claims) {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data?.user) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const userId = data.claims.sub;
+      const userId = data.user.id;
 
       // Get token to revoke
       const { data: conn } = await supabase
