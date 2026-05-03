@@ -127,6 +127,7 @@ export function meetingTypeLabel(t: MeetingType): string {
 
 export const defaultMeetingForm = (date?: string): MeetingForm => ({
   date: date || new Date().toISOString().slice(0, 10),
+  meeting_time: "",
   meeting_type: "FSA",
   cancelled: false,
   potencial_bj: "",
