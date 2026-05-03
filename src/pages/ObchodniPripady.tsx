@@ -614,6 +614,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         user_id: profile!.id,
         case_id: form.case_id || null,
         date: form.date,
+        meeting_time: form.meeting_time || null,
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
