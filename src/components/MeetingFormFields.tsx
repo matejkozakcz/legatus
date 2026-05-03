@@ -75,6 +75,7 @@ export type MeetingType = "FSA" | "POR" | "SER" | "POH" | "NAB" | "INFO" | "POST
 
 export interface MeetingForm {
   date: string;
+  meeting_time: string;
   meeting_type: MeetingType;
   cancelled: boolean;
   potencial_bj: string;
