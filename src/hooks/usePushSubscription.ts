@@ -8,7 +8,7 @@ interface UsePushSubscriptionResult {
   permission: PushPermission;
   isSubscribed: boolean;
   isLoading: boolean;
-  enable: () => Promise<{ ok: boolean; error?: string }>;
+  enable: (preGrantedPermission?: NotificationPermission) => Promise<{ ok: boolean; error?: string }>;
   disable: () => Promise<void>;
 }
 
