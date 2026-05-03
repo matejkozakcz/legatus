@@ -592,7 +592,10 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         toast.success("Push notifikace vypnuty");
         return;
       }
-      const res = await enable();
+      // requestPermission must run synchronously in the click handler (iOS Safari)
+      const perm =
+        "Notification" in window ? await Notification.requestPermission() : ("denied" as NotificationPermission);
+      const res = await enable(perm);
       if (res.ok) toast.success("Notifikace povoleny ✓");
       else toast.error(res.error || "Nepodařilo se povolit notifikace");
     };
@@ -604,7 +607,9 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         );
         return;
       }
-      const res = await enable();
+      const perm =
+        "Notification" in window ? await Notification.requestPermission() : ("denied" as NotificationPermission);
+      const res = await enable(perm);
       if (res.ok) toast.success("Notifikace povoleny ✓");
       else toast.error(res.error || "Nepodařilo se povolit notifikace");
     };
