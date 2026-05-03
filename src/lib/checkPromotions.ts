@@ -305,9 +305,12 @@ async function checkPromotionsInner(
 
   const countStructure = (rootId: string): number => {
     let total = 0;
+    const visited = new Set<string>();
     const queue = [...(childMap.get(rootId) || [])];
     while (queue.length > 0) {
       const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
       total++;
       queue.push(...(childMap.get(id) || []));
     }
