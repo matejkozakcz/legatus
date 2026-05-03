@@ -412,6 +412,58 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         </button>
       </div>
 
+      {/* Calendar sync */}
+      <div className="border-t border-border" />
+      <div>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Propojené kalendáře</p>
+        <div className="flex items-center justify-between py-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+              <CalendarIcon className="h-4 w-4 text-accent" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">Google kalendář</p>
+              <p className="text-xs text-muted-foreground leading-snug">
+                {calLoading
+                  ? "Načítání…"
+                  : calConnection
+                    ? `Propojeno (${calConnection.account_email})`
+                    : "Schůzky se automaticky exportují do vašeho kalendáře"}
+              </p>
+            </div>
+          </div>
+          {calConnection ? (
+            <button
+              onClick={handleDisconnectCalendar}
+              disabled={calLoading}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50 shrink-0"
+            >
+              {calLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink2 className="h-3.5 w-3.5" />}
+              Odpojit
+            </button>
+          ) : (
+            <button
+              onClick={handleConnectCalendar}
+              disabled={calConnecting}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50 shrink-0"
+            >
+              {calConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+              Připojit
+            </button>
+          )}
+        </div>
+        {calConnection && (
+          <button
+            onClick={handleBackfillCalendar}
+            disabled={calBackfilling}
+            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {calBackfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Exportovat všechny budoucí schůzky
+          </button>
+        )}
+      </div>
+
       {/* App update */}
       <div className="border-t border-border" />
       <div className="flex items-center justify-between gap-3">
