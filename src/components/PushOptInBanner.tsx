@@ -41,8 +41,13 @@ export function PushOptInBanner() {
   }
 
   const handleEnable = async () => {
+    // CRITICAL: requestPermission must be the first call in the user gesture
+    // (especially on iOS Safari). No awaits or setState before it.
+    console.log("[push] handleEnable click — requesting permission");
+    const permissionResult = await Notification.requestPermission();
+    console.log("[push] permission:", permissionResult);
     setBusy(true);
-    const res = await enable();
+    const res = await enable(permissionResult);
     setBusy(false);
     if (res.ok) {
       toast.success("Push notifikace povoleny");
