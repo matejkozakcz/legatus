@@ -268,9 +268,8 @@ Deno.serve(async (req) => {
         .select("id,user_id,meeting_type,date,meeting_time,duration_minutes,case_name,location_type,location_detail,poznamka,cancelled,external_event_id")
         .eq("user_id", userId)
         .gte("date", today)
-        .is("external_event_id", null)
         .eq("cancelled", false)
-        .limit(200);
+        .limit(500);
 
       if (bErr) {
         return new Response(JSON.stringify({ error: bErr.message }), {
@@ -282,7 +281,8 @@ Deno.serve(async (req) => {
       let success = 0;
       let failed = 0;
       for (const m of meetings || []) {
-        const r = await syncOne(admin, m as MeetingRow, "INSERT");
+        const op = (m as MeetingRow).external_event_id ? "UPDATE" : "INSERT";
+        const r = await syncOne(admin, m as MeetingRow, op);
         if (r.ok) success++;
         else failed++;
       }
