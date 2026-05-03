@@ -741,6 +741,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const meetingInitialForm: MeetingForm = editMeeting
     ? {
         date: editMeeting.date,
+        meeting_time: (editMeeting as any).meeting_time ? String((editMeeting as any).meeting_time).slice(0, 5) : "",
         meeting_type: editMeeting.meeting_type,
         cancelled: editMeeting.cancelled,
         potencial_bj: editMeeting.potencial_bj != null ? String(editMeeting.potencial_bj) : "",
