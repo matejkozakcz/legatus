@@ -44,9 +44,104 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   const [updating, setUpdating] = useState(false);
   const [checkingVersion, setCheckingVersion] = useState(false);
 
+  // ── Calendar connection state ──
+  const [calConnection, setCalConnection] = useState<{ account_email: string; last_sync_at: string | null } | null>(null);
+  const [calLoading, setCalLoading] = useState(false);
+  const [calConnecting, setCalConnecting] = useState(false);
+  const [calBackfilling, setCalBackfilling] = useState(false);
+
+  const fetchCalConnection = useCallback(async () => {
+    if (!user) return;
+    setCalLoading(true);
+    const { data } = await supabase
+      .from("user_calendar_connections" as any)
+      .select("account_email,last_sync_at")
+      .eq("user_id", user.id)
+      .eq("provider", "google")
+      .maybeSingle();
+    setCalConnection(data as any);
+    setCalLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (open) fetchCalConnection();
+  }, [open, fetchCalConnection]);
+
+  // Detect OAuth return (?calendar_link=ok|error)
+  useEffect(() => {
+    if (!open) return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("calendar_link");
+    if (status) {
+      if (status === "ok") {
+        toast.success("Google kalendář propojen ✓");
+        fetchCalConnection();
+      } else {
+        toast.error("Nepodařilo se propojit Google kalendář: " + (params.get("calendar_msg") || "neznámá chyba"));
+      }
+      params.delete("calendar_link");
+      params.delete("calendar_msg");
+      const newSearch = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (newSearch ? "?" + newSearch : ""));
+    }
+  }, [open, fetchCalConnection]);
+
+  const handleConnectCalendar = async () => {
+    setCalConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=start&origin=${encodeURIComponent(window.location.origin)}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const json = await res.json();
+      if (!json.url) throw new Error(json.error || "Chyba");
+      window.location.href = json.url;
+    } catch (err: any) {
+      toast.error(err.message || "Nepodařilo se zahájit propojení");
+      setCalConnecting(false);
+    }
+  };
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm("Opravdu chcete odpojit Google kalendář? Existující exportované události zůstanou v Google, ale budoucí změny se nebudou synchronizovat.")) return;
+    setCalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nejste přihlášen");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=disconnect`;
+      await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+      setCalConnection(null);
+      toast.success("Google kalendář odpojen");
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při odpojování");
+    } finally {
+      setCalLoading(false);
+    }
+  };
+
+  const handleBackfillCalendar = async () => {
+    setCalBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-meeting-to-calendar", {
+        body: { backfill: true },
+      });
+      if (error) throw error;
+      toast.success(`Exportováno ${(data as any)?.success || 0} schůzek do Google kalendáře`);
+      fetchCalConnection();
+    } catch (err: any) {
+      toast.error(err.message || "Chyba při exportu schůzek");
+    } finally {
+      setCalBackfilling(false);
+    }
+  };
+
   // Force a version check whenever the modal opens — realtime websocket is
   // unreliable in installed PWA contexts.
   useEffect(() => {
+    if (!open) return;
+    setCheckingVersion(true);
+    refreshVersion().finally(() => setCheckingVersion(false));
+  }, [open, refreshVersion]);
     if (!open) return;
     setCheckingVersion(true);
     refreshVersion().finally(() => setCheckingVersion(false));
