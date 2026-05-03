@@ -85,15 +85,15 @@ async function getValidAccessToken(admin: any, userId: string): Promise<{ token:
   return { token: refreshed.access_token, calendarId: conn.calendar_id };
 }
 
+function addDaysISO(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildEventPayload(m: MeetingRow) {
   const typeLabel = MEETING_TYPE_LABELS[m.meeting_type] || m.meeting_type;
   const summary = m.case_name ? `${typeLabel} — ${m.case_name}` : typeLabel;
-
-  const startTime = m.meeting_time || "09:00:00";
-  const startDateTime = `${m.date}T${startTime.length === 5 ? startTime + ":00" : startTime}`;
-  const durationMin = m.duration_minutes || 60;
-  const startDate = new Date(`${startDateTime}+02:00`);
-  const endDate = new Date(startDate.getTime() + durationMin * 60_000);
 
   const descParts: string[] = [];
   if (m.case_name) descParts.push(`Klient: ${m.case_name}`);
@@ -101,13 +101,32 @@ function buildEventPayload(m: MeetingRow) {
   if (m.poznamka) descParts.push(`\nPoznámka:\n${m.poznamka}`);
   descParts.push("\n— Vytvořeno z Legatus");
 
-  return {
+  const base = {
     summary,
     description: descParts.join("\n"),
     location: m.location_detail || undefined,
+    status: m.cancelled ? "cancelled" : "confirmed",
+  };
+
+  // No time set → all-day event
+  if (!m.meeting_time) {
+    return {
+      ...base,
+      start: { date: m.date },
+      end: { date: addDaysISO(m.date, 1) },
+    };
+  }
+
+  const startTime = m.meeting_time;
+  const startDateTime = `${m.date}T${startTime.length === 5 ? startTime + ":00" : startTime}`;
+  const durationMin = m.duration_minutes || 60;
+  const startDate = new Date(`${startDateTime}+02:00`);
+  const endDate = new Date(startDate.getTime() + durationMin * 60_000);
+
+  return {
+    ...base,
     start: { dateTime: startDate.toISOString(), timeZone: "Europe/Prague" },
     end: { dateTime: endDate.toISOString(), timeZone: "Europe/Prague" },
-    status: m.cancelled ? "cancelled" : "confirmed",
   };
 }
 
