@@ -543,15 +543,26 @@ export function MeetingFormModal({
           </div>
         </div>
 
-        {/* 3. Datum */}
-        <div className="mb-4">
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => set({ date: e.target.value })}
-            className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        {/* 3. Datum + čas */}
+        <div className="mb-4 flex gap-2">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set({ date: e.target.value })}
+              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div style={{ width: 110 }}>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Čas</label>
+            <input
+              type="time"
+              value={form.meeting_time}
+              onChange={(e) => set({ meeting_time: e.target.value })}
+              className="w-full min-w-0 h-10 rounded-xl border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
 
         {/* Collapsible: Více možností */}
