@@ -298,14 +298,18 @@ Deno.serve(async (req) => {
 
       let success = 0;
       let failed = 0;
+      const errors: any[] = [];
       for (const m of meetings || []) {
         const op = (m as MeetingRow).external_event_id ? "UPDATE" : "INSERT";
         const r = await syncOne(admin, m as MeetingRow, op);
         if (r.ok) success++;
-        else failed++;
+        else {
+          failed++;
+          if (errors.length < 3) errors.push({ meeting_id: (m as MeetingRow).id, date: (m as MeetingRow).date, ...r });
+        }
       }
 
-      return new Response(JSON.stringify({ ok: true, total: meetings?.length || 0, success, failed }), {
+      return new Response(JSON.stringify({ ok: failed === 0, total: meetings?.length || 0, success, failed, errors }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
