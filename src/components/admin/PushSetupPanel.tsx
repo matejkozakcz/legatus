@@ -90,15 +90,20 @@ export function PushSetupPanel() {
   };
 
   const handleToggleSelf = async () => {
-    setBusy(true);
     if (isSubscribed) {
+      setBusy(true);
       await disable();
       toast.success("Push odhlášeny");
-    } else {
-      const r = await enable();
-      if (r.ok) toast.success("Push povoleny");
-      else toast.error(r.error ?? "Chyba");
+      setBusy(false);
+      return;
     }
+    // requestPermission must run synchronously in the click handler (iOS Safari)
+    const perm =
+      "Notification" in window ? await Notification.requestPermission() : ("denied" as NotificationPermission);
+    setBusy(true);
+    const r = await enable(perm);
+    if (r.ok) toast.success("Push povoleny");
+    else toast.error(r.error ?? "Chyba");
     setBusy(false);
   };
 
