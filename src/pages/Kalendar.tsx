@@ -223,6 +223,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
       const payload = {
         user_id: user.id,
         date: form.date,
+        meeting_time: form.meeting_time || null,
         week_start: format(weekStartDate, "yyyy-MM-dd"),
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
@@ -1035,6 +1036,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
             if (detailMeeting) {
               setMeetingFormInitial({
                 date: detailMeeting.date,
+                meeting_time: (detailMeeting as any).meeting_time ? String((detailMeeting as any).meeting_time).slice(0, 5) : "",
                 meeting_type: detailMeeting.meeting_type,
                 cancelled: detailMeeting.cancelled,
                 potencial_bj: detailMeeting.potencial_bj?.toString() || "",
@@ -1184,6 +1186,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           if (detailMeeting) {
             setMeetingFormInitial({
               date: detailMeeting.date,
+              meeting_time: (detailMeeting as any).meeting_time ? String((detailMeeting as any).meeting_time).slice(0, 5) : "",
               meeting_type: detailMeeting.meeting_type,
               cancelled: detailMeeting.cancelled,
               potencial_bj: detailMeeting.potencial_bj?.toString() || "",

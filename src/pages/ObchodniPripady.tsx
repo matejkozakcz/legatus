@@ -102,6 +102,7 @@ const createMeetingCase = async (userId: string, name: string, note = "") => {
 
 const meetingToForm = (m: Meeting): MeetingForm => ({
   date: m.date,
+  meeting_time: (m as any).meeting_time ? String((m as any).meeting_time).slice(0, 5) : "",
   meeting_type: m.meeting_type,
   cancelled: m.cancelled,
   potencial_bj: m.potencial_bj != null ? String(m.potencial_bj) : "",
@@ -613,6 +614,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         user_id: profile!.id,
         case_id: form.case_id || null,
         date: form.date,
+        meeting_time: form.meeting_time || null,
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
         case_name: form.case_name.trim() || null,
@@ -740,6 +742,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const meetingInitialForm: MeetingForm = editMeeting
     ? {
         date: editMeeting.date,
+        meeting_time: (editMeeting as any).meeting_time ? String((editMeeting as any).meeting_time).slice(0, 5) : "",
         meeting_type: editMeeting.meeting_type,
         cancelled: editMeeting.cancelled,
         potencial_bj: editMeeting.potencial_bj != null ? String(editMeeting.potencial_bj) : "",
