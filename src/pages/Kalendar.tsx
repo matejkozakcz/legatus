@@ -1185,6 +1185,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
           if (detailMeeting) {
             setMeetingFormInitial({
               date: detailMeeting.date,
+              meeting_time: (detailMeeting as any).meeting_time ? String((detailMeeting as any).meeting_time).slice(0, 5) : "",
               meeting_type: detailMeeting.meeting_type,
               cancelled: detailMeeting.cancelled,
               potencial_bj: detailMeeting.potencial_bj?.toString() || "",
