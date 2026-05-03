@@ -66,16 +66,24 @@ export function usePushSubscription(): UsePushSubscriptionResult {
     };
   }, [user?.id]);
 
-  const enable = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+  const enable = useCallback(async (preGrantedPermission?: NotificationPermission): Promise<{ ok: boolean; error?: string }> => {
     if (!user) return { ok: false, error: "Nepřihlášen" };
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       return { ok: false, error: "Prohlížeč push notifikace nepodporuje" };
     }
 
     try {
-      // 1) Permission MUST be requested directly inside the user gesture.
-      // Don't await anything before this call.
-      const result = await Notification.requestPermission();
+      // Permission MUST be requested directly inside the user gesture.
+      // If caller already requested it synchronously in their click handler, reuse that result.
+      let result: NotificationPermission;
+      if (preGrantedPermission) {
+        result = preGrantedPermission;
+        console.log("[push] using pre-granted permission:", result);
+      } else {
+        console.log("[push] requesting notification permission...");
+        result = await Notification.requestPermission();
+        console.log("[push] permission result:", result);
+      }
       setPermission(result as PushPermission);
       if (result === "denied") {
         return {
