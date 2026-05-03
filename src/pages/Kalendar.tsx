@@ -223,6 +223,7 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
       const payload = {
         user_id: user.id,
         date: form.date,
+        meeting_time: form.meeting_time || null,
         week_start: format(weekStartDate, "yyyy-MM-dd"),
         meeting_type: form.meeting_type,
         cancelled: form.cancelled,
