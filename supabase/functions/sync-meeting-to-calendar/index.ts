@@ -130,6 +130,23 @@ function buildEventPayload(m: MeetingRow) {
   };
 }
 
+async function readGoogleError(res: Response) {
+  try {
+    const details = await res.json();
+    const googleError = details?.error;
+    const reason = googleError?.details?.find((d: any) => d?.reason)?.reason || googleError?.errors?.[0]?.reason;
+    const activationUrl = googleError?.details?.find((d: any) => d?.metadata?.activationUrl)?.metadata?.activationUrl;
+    return {
+      details,
+      reason,
+      message: googleError?.message,
+      activationUrl,
+    };
+  } catch {
+    return { details: null, reason: undefined, message: res.statusText, activationUrl: undefined };
+  }
+}
+
 async function syncOne(admin: any, meeting: MeetingRow, op: "INSERT" | "UPDATE" | "DELETE") {
   const tokenInfo = await getValidAccessToken(admin, meeting.user_id);
   if (!tokenInfo) return { skipped: true, reason: "no_connection" };
@@ -162,14 +179,15 @@ async function syncOne(admin: any, meeting: MeetingRow, op: "INSERT" | "UPDATE" 
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const created = await createRes.json();
+      const created = createRes.ok ? await createRes.json() : await readGoogleError(createRes);
       if (createRes.ok && created.id) {
         await admin.from("client_meetings").update({ external_event_id: created.id }).eq("id", meeting.id);
         return { ok: true, action: "recreated" };
       }
       return { error: "recreate_failed", details: created };
     }
-    return { ok: res.ok, action: "updated" };
+    if (!res.ok) return { error: "update_failed", ...(await readGoogleError(res)) };
+    return { ok: true, action: "updated" };
   } else {
     // Create
     const res = await fetch(baseUrl, {
@@ -177,7 +195,7 @@ async function syncOne(admin: any, meeting: MeetingRow, op: "INSERT" | "UPDATE" 
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const created = await res.json();
+    const created = res.ok ? await res.json() : await readGoogleError(res);
     if (res.ok && created.id) {
       await admin.from("client_meetings").update({ external_event_id: created.id }).eq("id", meeting.id);
       return { ok: true, action: "created" };
@@ -280,14 +298,18 @@ Deno.serve(async (req) => {
 
       let success = 0;
       let failed = 0;
+      const errors: any[] = [];
       for (const m of meetings || []) {
         const op = (m as MeetingRow).external_event_id ? "UPDATE" : "INSERT";
         const r = await syncOne(admin, m as MeetingRow, op);
         if (r.ok) success++;
-        else failed++;
+        else {
+          failed++;
+          if (errors.length < 3) errors.push({ meeting_id: (m as MeetingRow).id, date: (m as MeetingRow).date, ...r });
+        }
       }
 
-      return new Response(JSON.stringify({ ok: true, total: meetings?.length || 0, success, failed }), {
+      return new Response(JSON.stringify({ ok: failed === 0, total: meetings?.length || 0, success, failed, errors }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -126,6 +126,17 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         body: { backfill: true },
       });
       if (error) throw error;
+      const result = data as any;
+      if (result?.failed > 0) {
+        const firstError = result?.errors?.[0];
+        const reason = firstError?.reason || firstError?.details?.error?.details?.[0]?.reason;
+        if (reason === "SERVICE_DISABLED" || reason === "accessNotConfigured") {
+          toast.error("Export selhal: v Google Cloud projektu není zapnuté Google Calendar API.");
+          return;
+        }
+        toast.error(`Export selhal u ${result.failed} schůzek.`);
+        return;
+      }
       toast.success(`Exportováno ${(data as any)?.success || 0} schůzek do Google kalendáře`);
       fetchCalConnection();
     } catch (err: any) {
