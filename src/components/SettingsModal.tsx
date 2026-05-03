@@ -142,10 +142,6 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     setCheckingVersion(true);
     refreshVersion().finally(() => setCheckingVersion(false));
   }, [open, refreshVersion]);
-    if (!open) return;
-    setCheckingVersion(true);
-    refreshVersion().finally(() => setCheckingVersion(false));
-  }, [open, refreshVersion]);
 
   useEffect(() => {
     if (open && profile) {
