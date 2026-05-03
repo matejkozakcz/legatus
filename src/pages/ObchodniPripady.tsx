@@ -102,6 +102,7 @@ const createMeetingCase = async (userId: string, name: string, note = "") => {
 
 const meetingToForm = (m: Meeting): MeetingForm => ({
   date: m.date,
+  meeting_time: (m as any).meeting_time ? String((m as any).meeting_time).slice(0, 5) : "",
   meeting_type: m.meeting_type,
   cancelled: m.cancelled,
   potencial_bj: m.potencial_bj != null ? String(m.potencial_bj) : "",
