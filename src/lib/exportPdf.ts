@@ -613,6 +613,105 @@ export async function exportDashboardPdf(
     });
   }
 
+  // ── Call Party — sessions in period ─────────────────────────────────────
+  {
+    const cpUserIds: string[] = [userId];
+    if (showTeam) {
+      let q = supabase.from("profiles").select("id").eq("is_active", true);
+      if (userRole === "vedouci" || userRole === "budouci_vedouci") q = q.eq("vedouci_id", userId);
+      else if (userRole === "garant") q = q.eq("garant_id", userId);
+      else q = q.eq("ziskatel_id", userId);
+      const { data: subs = [] } = await q;
+      for (const s of (subs as any[])) cpUserIds.push(s.id);
+    }
+
+    const { data: sessions = [] } = await supabase
+      .from("call_party_sessions")
+      .select("id, user_id, name, date, goal_called, goal_meetings")
+      .in("user_id", cpUserIds)
+      .gte("date", periodFrom)
+      .lte("date", periodTo)
+      .order("date", { ascending: true });
+
+    if (sessions && sessions.length > 0) {
+      const sessionIds = (sessions as any[]).map((s) => s.id);
+      const { data: entries = [] } = await supabase
+        .from("call_party_entries")
+        .select("session_id, outcome, meeting_type")
+        .in("session_id", sessionIds);
+
+      const { data: profs = [] } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", cpUserIds);
+      const nameMap = new Map<string, string>();
+      for (const p of (profs as any[])) nameMap.set(p.id, p.full_name);
+
+      const lastY = (doc as any).lastAutoTable?.finalY || 60;
+      let cpStartY = lastY + 12;
+      if (cpStartY > doc.internal.pageSize.getHeight() - 50) {
+        doc.addPage();
+        cpStartY = 16;
+      }
+      doc.setFontSize(13);
+      doc.setFont(fontName, "bold");
+      doc.text("Call party", 14, cpStartY);
+
+      const cpHead = [["Datum", "Jméno", "Název", "Volaných", "Nezvedl", "Nedomluv.", "Domluv.", "FSA", "POH", "NÁB"]];
+      const cpBody: any[] = [];
+      const tot = { c: 0, nz: 0, nd: 0, d: 0, f: 0, p: 0, n: 0 };
+      for (const s of sessions as any[]) {
+        const ents = (entries as any[]).filter((e) => e.session_id === s.id);
+        const c = ents.length;
+        const nz = ents.filter((e) => e.outcome === "nezvedl").length;
+        const nd = ents.filter((e) => e.outcome === "nedomluveno").length;
+        const d = ents.filter((e) => e.outcome === "domluveno").length;
+        const f = ents.filter((e) => e.outcome === "domluveno" && e.meeting_type === "FSA").length;
+        const p = ents.filter((e) => e.outcome === "domluveno" && e.meeting_type === "POH").length;
+        const n = ents.filter(
+          (e) => e.outcome === "domluveno" && (e.meeting_type === "NAB" || e.meeting_type === "SER"),
+        ).length;
+        tot.c += c; tot.nz += nz; tot.nd += nd; tot.d += d; tot.f += f; tot.p += p; tot.n += n;
+        cpBody.push([
+          format(new Date(s.date + "T00:00:00"), "d. M. yyyy", { locale: cs }),
+          nameMap.get(s.user_id) || "—",
+          s.name || "—",
+          c, nz, nd, d, f, p, n,
+        ]);
+      }
+      cpBody.push(["", "", "CELKEM", tot.c, tot.nz, tot.nd, tot.d, tot.f, tot.p, tot.n]);
+
+      autoTable(doc, {
+        startY: cpStartY + 4,
+        head: cpHead,
+        body: cpBody,
+        theme: "grid",
+        styles: { font: fontName },
+        headStyles: {
+          fillColor: HEAD_FILL,
+          textColor: 255,
+          fontSize: 8,
+          fontStyle: "bold",
+          halign: "center",
+          font: fontName,
+        },
+        bodyStyles: { fontSize: 8, font: fontName, halign: "center" },
+        columnStyles: {
+          0: { cellWidth: 22, halign: "left" },
+          1: { cellWidth: 35, halign: "left" },
+          2: { halign: "left" },
+        },
+        margin: { left: 14, right: 14 },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.row.index === cpBody.length - 1) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fillColor = TOTALS_FILL;
+          }
+        },
+      });
+    }
+  }
+
   // Footer
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
