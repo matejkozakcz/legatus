@@ -1042,6 +1042,18 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
           </div>
         </div>
       </div>
+
+      {openMeetingId && (
+        <MeetingDetailModal
+          open={!!openMeetingId}
+          onClose={() => setOpenMeetingId(null)}
+          meeting={openMeeting ?? null}
+          onEdit={() => {
+            // Pro editaci pošleme uživatele do Kalendáře / Obchodních případů.
+            toast.info("Editaci schůzky proveď v Kalendáři nebo Obchodních případech.");
+          }}
+        />
+      )}
     </div>
   );
 }
