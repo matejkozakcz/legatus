@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { meetingTypeLabel, findDuplicateCases, type MeetingType } from "@/components/MeetingFormFields";
+import { MeetingDetailModal, type MeetingDetailData } from "@/components/MeetingDetailModal";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 type Outcome = "nezvedl" | "nedomluveno" | "domluveno";
@@ -778,6 +779,21 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
   useBodyScrollLock(true);
   const qc = useQueryClient();
   const [editMode, setEditMode] = useState(false);
+  const [openMeetingId, setOpenMeetingId] = useState<string | null>(null);
+
+  const { data: openMeeting } = useQuery({
+    queryKey: ["call_party_open_meeting", openMeetingId],
+    enabled: !!openMeetingId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("*")
+        .eq("id", openMeetingId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as MeetingDetailData | null;
+    },
+  });
 
   const { data: entries, isLoading } = useQuery({
     queryKey: ["call_party_entries", session.id],
@@ -955,22 +971,39 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
               </div>
             ) : (
               <div className="space-y-1">
-                {(entries || []).map((e) => (
-                  <div key={e.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
-                    <span>{e.client_name}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{outcomeLabel[e.outcome]}</span>
-                      {e.outcome === "domluveno" && e.meeting_type && (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-                          style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
-                        >
-                          {meetingTypeLabel(e.meeting_type as MeetingType)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                ))}
+                {(entries || []).map((e) => {
+                  const clickable = !!e.created_meeting_id;
+                  const Wrapper: any = clickable ? "button" : "div";
+                  return (
+                    <Wrapper
+                      key={e.id}
+                      {...(clickable
+                        ? {
+                            onClick: () => setOpenMeetingId(e.created_meeting_id!),
+                            title: "Otevřít detail schůzky",
+                          }
+                        : {})}
+                      className={`w-full flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0 text-left ${
+                        clickable ? "hover:bg-muted/50 rounded-md px-2 -mx-2 transition" : ""
+                      }`}
+                    >
+                      <span className={clickable ? "underline-offset-2 hover:underline" : ""}>
+                        {e.client_name}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{outcomeLabel[e.outcome]}</span>
+                        {e.outcome === "domluveno" && e.meeting_type && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
+                            style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+                          >
+                            {meetingTypeLabel(e.meeting_type as MeetingType)}
+                          </span>
+                        )}
+                      </span>
+                    </Wrapper>
+                  );
+                })}
                 {(entries || []).length === 0 && (
                   <p className="text-sm text-muted-foreground">Žádné záznamy.</p>
                 )}
@@ -1009,6 +1042,18 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
           </div>
         </div>
       </div>
+
+      {openMeetingId && (
+        <MeetingDetailModal
+          open={!!openMeetingId}
+          onClose={() => setOpenMeetingId(null)}
+          meeting={openMeeting ?? null}
+          onEdit={() => {
+            // Pro editaci pošleme uživatele do Kalendáře / Obchodních případů.
+            toast.info("Editaci schůzky proveď v Kalendáři nebo Obchodních případech.");
+          }}
+        />
+      )}
     </div>
   );
 }
