@@ -283,6 +283,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       setDate(today());
       setGoals({ called: 0, meetings: 0, fsa: 0, ser: 0, poh: 0, nab: 0 });
       setEntries([emptyEntry(), emptyEntry(), emptyEntry()]);
+      setStep(1);
       onSaved();
     },
     onError: (e: Error) => toast.error(e.message || "Uložení selhalo"),
