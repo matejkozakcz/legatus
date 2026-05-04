@@ -222,7 +222,7 @@ export async function exportDashboardPdf(
   // Fetch team members — V/BV viewers always see subordinates of the target user
   const viewerIsTopLeader = ["vedouci", "budouci_vedouci"].includes(viewerRole || "");
   const targetIsLeader = ["vedouci", "budouci_vedouci", "garant"].includes(userRole);
-  const showTeam = targetIsLeader || viewerIsTopLeader;
+  const showTeam = includeTeam && (targetIsLeader || viewerIsTopLeader);
   let teamStats: PersonStats[] = [];
 
   if (showTeam) {
