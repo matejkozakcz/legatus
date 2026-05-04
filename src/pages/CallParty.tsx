@@ -971,22 +971,39 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
               </div>
             ) : (
               <div className="space-y-1">
-                {(entries || []).map((e) => (
-                  <div key={e.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
-                    <span>{e.client_name}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{outcomeLabel[e.outcome]}</span>
-                      {e.outcome === "domluveno" && e.meeting_type && (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-                          style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
-                        >
-                          {meetingTypeLabel(e.meeting_type as MeetingType)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                ))}
+                {(entries || []).map((e) => {
+                  const clickable = !!e.created_meeting_id;
+                  const Wrapper: any = clickable ? "button" : "div";
+                  return (
+                    <Wrapper
+                      key={e.id}
+                      {...(clickable
+                        ? {
+                            onClick: () => setOpenMeetingId(e.created_meeting_id!),
+                            title: "Otevřít detail schůzky",
+                          }
+                        : {})}
+                      className={`w-full flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0 text-left ${
+                        clickable ? "hover:bg-muted/50 rounded-md px-2 -mx-2 transition" : ""
+                      }`}
+                    >
+                      <span className={clickable ? "underline-offset-2 hover:underline" : ""}>
+                        {e.client_name}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{outcomeLabel[e.outcome]}</span>
+                        {e.outcome === "domluveno" && e.meeting_type && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
+                            style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+                          >
+                            {meetingTypeLabel(e.meeting_type as MeetingType)}
+                          </span>
+                        )}
+                      </span>
+                    </Wrapper>
+                  );
+                })}
                 {(entries || []).length === 0 && (
                   <p className="text-sm text-muted-foreground">Žádné záznamy.</p>
                 )}
