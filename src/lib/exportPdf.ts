@@ -177,7 +177,9 @@ export async function exportDashboardPdf(
   selectedYear?: number,
   selectedMonth?: number,
   viewerRole?: string,
+  options?: { includeTeam?: boolean },
 ) {
+  const includeTeam = options?.includeTeam ?? true;
   const now = new Date();
   const todayStr = format(now, "yyyy-MM-dd");
 
