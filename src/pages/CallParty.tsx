@@ -779,6 +779,21 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
   useBodyScrollLock(true);
   const qc = useQueryClient();
   const [editMode, setEditMode] = useState(false);
+  const [openMeetingId, setOpenMeetingId] = useState<string | null>(null);
+
+  const { data: openMeeting } = useQuery({
+    queryKey: ["call_party_open_meeting", openMeetingId],
+    enabled: !!openMeetingId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_meetings")
+        .select("*")
+        .eq("id", openMeetingId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as MeetingDetailData | null;
+    },
+  });
 
   const { data: entries, isLoading } = useQuery({
     queryKey: ["call_party_entries", session.id],
