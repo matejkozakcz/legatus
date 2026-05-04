@@ -29,6 +29,10 @@ interface EntryDraft {
   meeting_type: CPMeetingType | null;
   /** Pokud uživatel ručně přiřadil řádek k existujícímu případu, ukládáme ID. */
   linked_case_id?: string | null;
+  /** Naplánování — vyplňuje se v kroku 2 */
+  meeting_date?: string | null;
+  meeting_time?: string | null;
+  location_detail?: string | null;
 }
 
 interface SessionRow {
@@ -59,6 +63,9 @@ const emptyEntry = (): EntryDraft => ({
   outcome: "nezvedl",
   meeting_type: null,
   linked_case_id: null,
+  meeting_date: null,
+  meeting_time: null,
+  location_detail: null,
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
