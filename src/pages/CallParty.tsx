@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { meetingTypeLabel, findDuplicateCases, type MeetingType } from "@/components/MeetingFormFields";
+import { MeetingDetailModal, type MeetingDetailData } from "@/components/MeetingDetailModal";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 type Outcome = "nezvedl" | "nedomluveno" | "domluveno";
