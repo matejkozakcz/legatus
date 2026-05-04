@@ -120,6 +120,21 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   });
   const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry(), emptyEntry(), emptyEntry()]);
 
+  // Načti vlastní obchodní případy pro detekci duplicit (jednou na otevření stránky)
+  const { data: existingCases = [] } = useQuery({
+    queryKey: ["my_cases_for_duplicate_check", profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cases")
+        .select("id, nazev_pripadu, status")
+        .eq("user_id", profile!.id);
+      if (error) throw error;
+      return data as { id: string; nazev_pripadu: string; status: string }[];
+    },
+    enabled: !!profile,
+    staleTime: 60_000,
+  });
+
   const counts = useMemo(() => {
     const filled = entries.filter((e) => e.client_name.trim());
     const called = filled.length;
