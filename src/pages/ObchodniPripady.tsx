@@ -80,6 +80,23 @@ interface Meeting {
   outcome_recorded: boolean;
 }
 
+interface CallEntry {
+  id: string;
+  client_name: string;
+  outcome: "nezvedl" | "nedomluveno" | "domluveno";
+  meeting_type: string | null;
+  created_case_id: string | null;
+  session_id: string;
+  session_date: string;
+  session_name: string;
+}
+
+const callOutcomeLabel: Record<CallEntry["outcome"], string> = {
+  nezvedl: "Nezvedl",
+  nedomluveno: "Nedomluveno",
+  domluveno: "Domluveno",
+};
+
 const defaultForm = (caseId?: string): MeetingForm => ({
   ...defaultMeetingForm(),
   case_id: caseId || "",
