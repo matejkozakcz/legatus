@@ -520,6 +520,53 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     return map;
   }, [meetings]);
 
+  // ── Fetch call party entries linked to user's cases ──
+  const { data: callEntries = [] } = useQuery<CallEntry[]>({
+    queryKey: ["call_party_entries_by_case", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      // 1) sessions for this user
+      const { data: sessions, error: sErr } = await supabase
+        .from("call_party_sessions")
+        .select("id, name, date")
+        .eq("user_id", profile.id);
+      if (sErr) throw sErr;
+      if (!sessions || sessions.length === 0) return [];
+      const sessionMap = new Map(sessions.map((s) => [s.id, s]));
+      // 2) all entries within those sessions that have a created_case_id
+      const { data: entries, error: eErr } = await supabase
+        .from("call_party_entries")
+        .select("id, client_name, outcome, meeting_type, created_case_id, session_id")
+        .in("session_id", sessions.map((s) => s.id))
+        .not("created_case_id", "is", null);
+      if (eErr) throw eErr;
+      return (entries || []).map((e) => {
+        const s = sessionMap.get(e.session_id)!;
+        return {
+          id: e.id,
+          client_name: e.client_name,
+          outcome: e.outcome as CallEntry["outcome"],
+          meeting_type: e.meeting_type,
+          created_case_id: e.created_case_id,
+          session_id: e.session_id,
+          session_date: s.date,
+          session_name: s.name,
+        };
+      });
+    },
+    enabled: !!profile?.id,
+  });
+
+  const callsByCase = useMemo(() => {
+    const map: Record<string, CallEntry[]> = {};
+    for (const c of callEntries) {
+      if (!c.created_case_id) continue;
+      if (!map[c.created_case_id]) map[c.created_case_id] = [];
+      map[c.created_case_id].push(c);
+    }
+    return map;
+  }, [callEntries]);
+
   // Date range for selected period (Schůzky tab) — Den / Týden / Měsíc
   // Mobile vždy zobrazuje pouze vybraný den (denní picker), desktop respektuje viewMode.
   const dateRange = useMemo(() => {
