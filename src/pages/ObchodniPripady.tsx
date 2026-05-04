@@ -1656,6 +1656,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               key={c.id}
               c={c}
               meetings={meetingsByCase[c.id] || []}
+              calls={callsByCase[c.id] || []}
               onAddActivity={() => openAddMeeting(c.id)}
               onEditCase={() => openEditCase(c)}
               onClickMeeting={(m) => setDetailMeeting(m)}
