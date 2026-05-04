@@ -315,7 +315,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
         {/* Summary */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-          <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "#00555f" }}>
+          <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
             Shrnutí Call party
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
@@ -330,7 +330,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
         {/* Schedule meetings */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-          <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "#00555f" }}>
+          <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "var(--deep-hex, #00555f)" }}>
             Naplánuj domluvené schůzky
           </h2>
           <p className="text-xs text-muted-foreground mb-4">
@@ -403,7 +403,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
       {/* Goals */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "#00555f" }}>
+        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
           Cíle
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -419,7 +419,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       {/* Entries */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading text-sm font-semibold" style={{ color: "#00555f" }}>
+          <h2 className="font-heading text-sm font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
             Záznamy hovorů
           </h2>
           <button
@@ -461,7 +461,7 @@ function SummaryStat({ label, actual, goal }: { label: string; actual: number; g
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "#00555f" }}>
+      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "var(--deep-hex, #00555f)" }}>
         {actual}{goal > 0 ? ` / ${goal}` : ""}
       </div>
     </div>
@@ -480,12 +480,12 @@ function ScheduleRow({
   return (
     <div className="rounded-xl border border-border p-3 space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="font-heading font-semibold text-sm" style={{ color: "#00555f" }}>
+        <div className="font-heading font-semibold text-sm" style={{ color: "var(--deep-hex, #00555f)" }}>
           {entry.client_name}
         </div>
         <span
           className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-          style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+          style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
         >
           {meetingTypeLabel(entry.meeting_type as MeetingType)}
         </span>
@@ -729,7 +729,7 @@ function HistoryList({ onOpen }: { onOpen: (s: SessionRow) => void }) {
           className="w-full text-left rounded-2xl border border-border bg-card p-4 hover:border-ring transition flex items-center justify-between"
         >
           <div>
-            <div className="font-heading font-semibold" style={{ color: "#00555f" }}>
+            <div className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
               {s.name}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -765,7 +765,7 @@ function SessionSummaryBadges({ sessionId, goals }: { sessionId: string; goals: 
       </span>
       <span
         className="px-2 py-1 rounded-lg"
-        style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+        style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
       >
         Domluveno: <strong>{domluveno}</strong>
         {goals.goal_meetings > 0 ? `/${goals.goal_meetings}` : ""}
@@ -905,7 +905,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
       >
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div>
-            <h2 className="font-heading text-lg font-semibold" style={{ color: "#00555f" }}>
+            <h2 className="font-heading text-lg font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
               {session.name}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -995,7 +995,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
                         {e.outcome === "domluveno" && e.meeting_type && (
                           <span
                             className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-                            style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+                            style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
                           >
                             {meetingTypeLabel(e.meeting_type as MeetingType)}
                           </span>
@@ -1062,7 +1062,7 @@ function GoalReadout({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="font-heading font-semibold" style={{ color: "#00555f" }}>{value || "—"}</span>
+      <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>{value || "—"}</span>
     </div>
   );
 }
