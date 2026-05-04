@@ -13,6 +13,7 @@ import {
   Shield,
   GraduationCap,
   Eye,
+  PhoneCall,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
