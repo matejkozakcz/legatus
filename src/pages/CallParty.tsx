@@ -196,12 +196,17 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           let created_case_id: string | null = null;
           let created_meeting_id: string | null = null;
 
-          if (e.outcome === "domluveno" && e.meeting_type) {
-            // Reuse existing case if exact duplicate found, jinak založ nový
+          // Vyhodnoť, na který case má řádek napojení (pro každý outcome).
+          // 1) explicitní volba uživatele má přednost
+          // 2) jinak exact duplicate
+          // 3) jinak (jen pro "domluveno") založ nový case
+          if (e.linked_case_id) {
+            created_case_id = e.linked_case_id;
+          } else {
             const dup = findDuplicateCases(e.client_name.trim(), existingCases);
             if (dup.exact.length > 0) {
               created_case_id = dup.exact[0].id;
-            } else {
+            } else if (e.outcome === "domluveno" && e.meeting_type) {
               const { data: caseRow, error: caseErr } = await supabase
                 .from("cases")
                 .insert({
@@ -214,7 +219,9 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
               if (caseErr) throw caseErr;
               created_case_id = caseRow.id;
             }
+          }
 
+          if (e.outcome === "domluveno" && e.meeting_type && created_case_id) {
             const { data: meetingRow, error: mErr } = await supabase
               .from("client_meetings")
               .insert({
