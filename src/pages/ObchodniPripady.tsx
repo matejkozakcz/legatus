@@ -252,6 +252,7 @@ function CaseModal({
 function CaseAccordion({
   c,
   meetings,
+  calls = [],
   onAddActivity,
   onEditCase,
   onClickMeeting,
@@ -259,6 +260,7 @@ function CaseAccordion({
 }: {
   c: Case;
   meetings: Meeting[];
+  calls?: CallEntry[];
   onAddActivity: () => void;
   onEditCase: () => void;
   onClickMeeting: (m: Meeting) => void;
@@ -266,9 +268,11 @@ function CaseAccordion({
 }) {
   const [expanded, setExpanded] = useState(false);
   const sorted = [...meetings].sort((a, b) => b.date.localeCompare(a.date));
+  const sortedCalls = [...calls].sort((a, b) => b.session_date.localeCompare(a.session_date));
   const activeMeetings = meetings.filter((m) => !m.cancelled);
   const sumRefs = activeMeetings.reduce((s, m) => s + totalRefs(m), 0);
   const sumBj = activeMeetings.reduce((s, m) => s + (m.podepsane_bj || 0), 0);
+  const callsCount = calls.length;
 
   return (
     <div className="legatus-card overflow-hidden" style={{ padding: 0 }}>
