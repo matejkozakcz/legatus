@@ -359,6 +359,7 @@ const MemberActivity = () => {
         selectedYear,
         selectedMonth,
         viewerProfile?.role,
+        { includeTeam: !!viewerProfile?.is_admin },
       );
     } catch (e) {
       console.error("PDF export failed", e);
