@@ -302,6 +302,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
               onChange={(p) => updateEntry(i, p)}
               onRemove={() => removeEntry(i)}
               canRemove={entries.length > 1}
+              existingCases={existingCases}
             />
           ))}
         </div>
@@ -362,57 +363,91 @@ function EntryRow({
   onChange,
   onRemove,
   canRemove,
+  existingCases = [],
 }: {
   entry: EntryDraft;
   onChange: (patch: Partial<EntryDraft>) => void;
   onRemove: () => void;
   canRemove: boolean;
+  existingCases?: { id: string; nazev_pripadu: string; status: string }[];
 }) {
+  // Debounced duplicate check — počkej 400ms po posledním stisku klávesy,
+  // aby se nespouštěla detekce při každém znaku.
+  const [debouncedName, setDebouncedName] = useState(entry.client_name);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedName(entry.client_name), 400);
+    return () => clearTimeout(t);
+  }, [entry.client_name]);
+
+  const duplicates = useMemo(() => {
+    if (!debouncedName.trim() || existingCases.length === 0) return { exact: [], similar: [] };
+    return findDuplicateCases(debouncedName, existingCases);
+  }, [debouncedName, existingCases]);
+
+  const hasExact = duplicates.exact.length > 0;
+  const hasSimilar = duplicates.similar.length > 0;
+  const showWarning = hasExact || hasSimilar;
+
   return (
-    <div className="grid grid-cols-12 gap-2 items-center">
-      <Input
-        className="col-span-5 h-9"
-        placeholder="Jméno klienta"
-        value={entry.client_name}
-        onChange={(e) => onChange({ client_name: e.target.value })}
-      />
-      <select
-        className="col-span-3 h-9 rounded-md border border-input bg-background px-2 text-sm"
-        value={entry.outcome}
-        onChange={(e) => {
-          const outcome = e.target.value as Outcome;
-          onChange({ outcome, meeting_type: outcome === "domluveno" ? entry.meeting_type ?? "FSA" : null });
-        }}
-      >
-        {(Object.keys(outcomeLabel) as Outcome[]).map((o) => (
-          <option key={o} value={o}>
-            {outcomeLabel[o]}
-          </option>
-        ))}
-      </select>
-      {entry.outcome === "domluveno" ? (
+    <div>
+      <div className="grid grid-cols-12 gap-2 items-center">
+        <Input
+          className={`col-span-5 h-9 ${showWarning ? "border-amber-500" : ""}`}
+          placeholder="Jméno klienta"
+          value={entry.client_name}
+          onChange={(e) => onChange({ client_name: e.target.value })}
+        />
         <select
           className="col-span-3 h-9 rounded-md border border-input bg-background px-2 text-sm"
-          value={entry.meeting_type ?? "FSA"}
-          onChange={(e) => onChange({ meeting_type: e.target.value as CPMeetingType })}
+          value={entry.outcome}
+          onChange={(e) => {
+            const outcome = e.target.value as Outcome;
+            onChange({ outcome, meeting_type: outcome === "domluveno" ? entry.meeting_type ?? "FSA" : null });
+          }}
         >
-          {CP_MEETING_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {meetingTypeLabel(t as MeetingType)}
+          {(Object.keys(outcomeLabel) as Outcome[]).map((o) => (
+            <option key={o} value={o}>
+              {outcomeLabel[o]}
             </option>
           ))}
         </select>
-      ) : (
-        <div className="col-span-3" />
+        {entry.outcome === "domluveno" ? (
+          <select
+            className="col-span-3 h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={entry.meeting_type ?? "FSA"}
+            onChange={(e) => onChange({ meeting_type: e.target.value as CPMeetingType })}
+          >
+            {CP_MEETING_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {meetingTypeLabel(t as MeetingType)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="col-span-3" />
+        )}
+        <button
+          onClick={onRemove}
+          disabled={!canRemove}
+          className="col-span-1 h-9 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:text-destructive disabled:opacity-40"
+          title="Smazat"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+      {showWarning && (
+        <div
+          className="mt-1 ml-1 flex items-start gap-1.5 text-xs"
+          style={{ color: hasExact ? "#b45309" : "#92400e" }}
+        >
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+          <span>
+            {hasExact
+              ? `Tento klient už máš jako obchodní případ: „${duplicates.exact[0].nazev_pripadu}"`
+              : `Podobný případ existuje: „${duplicates.similar[0].nazev_pripadu}". Zkontroluj duplicitu.`}
+          </span>
+        </div>
       )}
-      <button
-        onClick={onRemove}
-        disabled={!canRemove}
-        className="col-span-1 h-9 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:text-destructive disabled:opacity-40"
-        title="Smazat"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
     </div>
   );
 }
