@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,10 @@ interface EntryDraft {
   meeting_type: CPMeetingType | null;
   /** Pokud uživatel ručně přiřadil řádek k existujícímu případu, ukládáme ID. */
   linked_case_id?: string | null;
+  /** Naplánování — vyplňuje se v kroku 2 */
+  meeting_date?: string | null;
+  meeting_time?: string | null;
+  location_detail?: string | null;
 }
 
 interface SessionRow {
@@ -59,6 +63,9 @@ const emptyEntry = (): EntryDraft => ({
   outcome: "nezvedl",
   meeting_type: null,
   linked_case_id: null,
+  meeting_date: null,
+  meeting_time: null,
+  location_detail: null,
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -111,6 +118,7 @@ export default function CallParty() {
 function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   const { profile } = useAuth();
   const qc = useQueryClient();
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today());
   const [goals, setGoals] = useState({
@@ -222,12 +230,21 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           }
 
           if (e.outcome === "domluveno" && e.meeting_type && created_case_id) {
+            const meetingDate = e.meeting_date || date;
+            const mWeekStart = (() => {
+              const d = parseISO(meetingDate);
+              const day = d.getUTCDay() || 7;
+              d.setUTCDate(d.getUTCDate() - (day - 1));
+              return d.toISOString().slice(0, 10);
+            })();
             const { data: meetingRow, error: mErr } = await supabase
               .from("client_meetings")
               .insert({
                 user_id: profile.id,
-                date,
-                week_start,
+                date: meetingDate,
+                week_start: mWeekStart,
+                meeting_time: e.meeting_time || null,
+                location_detail: e.location_detail?.trim() || null,
                 meeting_type: e.meeting_type,
                 case_id: created_case_id,
                 case_name: e.client_name.trim(),
@@ -266,13 +283,111 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       setDate(today());
       setGoals({ called: 0, meetings: 0, fsa: 0, ser: 0, poh: 0, nab: 0 });
       setEntries([emptyEntry(), emptyEntry(), emptyEntry()]);
+      setStep(1);
       onSaved();
     },
     onError: (e: Error) => toast.error(e.message || "Uložení selhalo"),
   });
 
+  const scheduledEntries = entries.filter(
+    (e) => e.client_name.trim() && e.outcome === "domluveno" && e.meeting_type
+  );
+  const validCount = entries.filter((e) => e.client_name.trim()).length;
+
+  const handleNext = () => {
+    if (validCount === 0) {
+      toast.error("Přidej alespoň jeden záznam");
+      return;
+    }
+    setStep(2);
+  };
+
+  if (step === 2) {
+    return (
+      <div className="space-y-6">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
+          <span>Krok 1</span>
+          <span>›</span>
+          <span style={{ color: "#00abbd" }}>Krok 2 — Naplánovat schůzky</span>
+        </div>
+
+        {/* Summary */}
+        <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
+          <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "#00555f" }}>
+            Shrnutí Call party
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+            <SummaryStat label="Zavoláno" actual={counts.called} goal={goals.called} />
+            <SummaryStat label="Domluveno" actual={counts.meetings} goal={goals.meetings} />
+            <SummaryStat label="Analýza" actual={counts.fsa} goal={goals.fsa} />
+            <SummaryStat label="Servis" actual={counts.ser} goal={goals.ser} />
+            <SummaryStat label="Pohovor" actual={counts.poh} goal={goals.poh} />
+            <SummaryStat label="Nábor" actual={counts.nab} goal={goals.nab} />
+          </div>
+        </div>
+
+        {/* Schedule meetings */}
+        <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
+          <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "#00555f" }}>
+            Naplánuj domluvené schůzky
+          </h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Doplň datum (povinné), čas a místo (volitelné). Bez data se použije datum Call party.
+          </p>
+          {scheduledEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Žádné domluvené schůzky k naplánování.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {scheduledEntries.map((e) => {
+                const realIdx = entries.indexOf(e);
+                return (
+                  <ScheduleRow
+                    key={realIdx}
+                    entry={e}
+                    fallbackDate={date}
+                    onChange={(p) => updateEntry(realIdx, p)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => setStep(1)} className="flex items-center gap-1.5">
+            <ArrowLeft className="h-4 w-4" /> Zpět k hovorům
+          </Button>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            className="font-heading font-semibold"
+            style={{ background: "#fc7c71", color: "#fff" }}
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4" /> Uložit Call party
+              </span>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
+        <span style={{ color: "#00abbd" }}>Krok 1 — Záznam hovorů</span>
+        <span>›</span>
+        <span>Krok 2</span>
+      </div>
+
       {/* Header */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
@@ -329,13 +444,85 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
       <div className="flex justify-end">
         <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
+          onClick={handleNext}
           className="font-heading font-semibold"
           style={{ background: "#fc7c71", color: "#fff" }}
         >
-          {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Uložit Call party"}
+          Mám dovoláno →
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function SummaryStat({ label, actual, goal }: { label: string; actual: number; goal: number }) {
+  const reached = goal > 0 && actual >= goal;
+  return (
+    <div className="rounded-xl border border-border p-3">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "#00555f" }}>
+        {actual}{goal > 0 ? ` / ${goal}` : ""}
+      </div>
+    </div>
+  );
+}
+
+function ScheduleRow({
+  entry,
+  fallbackDate,
+  onChange,
+}: {
+  entry: EntryDraft;
+  fallbackDate: string;
+  onChange: (patch: Partial<EntryDraft>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="font-heading font-semibold text-sm" style={{ color: "#00555f" }}>
+          {entry.client_name}
+        </div>
+        <span
+          className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
+          style={{ background: "rgba(0,171,189,0.12)", color: "#00555f" }}
+        >
+          {meetingTypeLabel(entry.meeting_type as MeetingType)}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+            Datum *
+          </label>
+          <Input
+            type="date"
+            value={entry.meeting_date || fallbackDate}
+            onChange={(e) => onChange({ meeting_date: e.target.value })}
+            className="h-9"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+            Čas
+          </label>
+          <Input
+            type="time"
+            value={entry.meeting_time || ""}
+            onChange={(e) => onChange({ meeting_time: e.target.value || null })}
+            className="h-9"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+            Místo
+          </label>
+          <Input
+            placeholder="Kavárna, Online, Adresa…"
+            value={entry.location_detail || ""}
+            onChange={(e) => onChange({ location_detail: e.target.value || null })}
+            className="h-9"
+          />
+        </div>
       </div>
     </div>
   );
