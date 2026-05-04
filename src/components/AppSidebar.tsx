@@ -13,6 +13,7 @@ import {
   Shield,
   GraduationCap,
   Eye,
+  PhoneCall,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -82,6 +83,8 @@ export function AppSidebar() {
   ) {
     navItems.push({ title: "Správa týmu", url: "/tym", icon: Users, badge: isVedouci && pendingPromotionCount > 0 });
   }
+
+  navItems.push({ title: "Call party", url: "/call-party", icon: PhoneCall, badge: false });
 
   if (godMode && profile?.is_admin) {
     navItems.push({ title: "Admin", url: "/admin", icon: Shield, badge: false });
