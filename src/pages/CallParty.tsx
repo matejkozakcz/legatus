@@ -461,7 +461,7 @@ function SummaryStat({ label, actual, goal }: { label: string; actual: number; g
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "#00555f" }}>
+      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "var(--deep-hex, #00555f)" }}>
         {actual}{goal > 0 ? ` / ${goal}` : ""}
       </div>
     </div>
