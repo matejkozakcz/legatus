@@ -454,9 +454,26 @@ function EntryRow({
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      {showWarning && (
+      {entry.linked_case_id && (
+        <div className="mt-1 ml-1 flex items-center gap-2 text-xs" style={{ color: "#00abbd" }}>
+          <span
+            className="px-2 py-0.5 rounded-md font-heading font-semibold"
+            style={{ background: "rgba(0,171,189,0.12)" }}
+          >
+            Přiřazeno k případu: „{existingCases.find((c) => c.id === entry.linked_case_id)?.nazev_pripadu ?? "—"}"
+          </span>
+          <button
+            onClick={() => onChange({ linked_case_id: null })}
+            className="text-muted-foreground hover:text-destructive"
+            title="Zrušit přiřazení"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {showWarning && !entry.linked_case_id && (
         <div
-          className="mt-1 ml-1 flex items-start gap-1.5 text-xs"
+          className="mt-1 ml-1 flex items-start gap-2 text-xs flex-wrap"
           style={{ color: hasExact ? "#b45309" : "#92400e" }}
         >
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
@@ -465,6 +482,16 @@ function EntryRow({
               ? `Tento klient už máš jako obchodní případ: „${duplicates.exact[0].nazev_pripadu}"`
               : `Podobný případ existuje: „${duplicates.similar[0].nazev_pripadu}". Zkontroluj duplicitu.`}
           </span>
+          {[...duplicates.exact, ...duplicates.similar].slice(0, 3).map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onChange({ linked_case_id: c.id })}
+              className="px-2 py-0.5 rounded-md font-heading font-semibold border transition hover:bg-muted"
+              style={{ borderColor: "#00abbd", color: "#00abbd" }}
+            >
+              Přiřadit k „{c.nazev_pripadu}"
+            </button>
+          ))}
         </div>
       )}
     </div>
