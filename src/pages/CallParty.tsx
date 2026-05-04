@@ -118,6 +118,7 @@ export default function CallParty() {
 function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   const { profile } = useAuth();
   const qc = useQueryClient();
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today());
   const [goals, setGoals] = useState({
