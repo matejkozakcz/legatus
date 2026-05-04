@@ -166,6 +166,98 @@ export type Database = {
         }
         Relationships: []
       }
+      call_party_entries: {
+        Row: {
+          client_name: string
+          created_at: string
+          created_case_id: string | null
+          created_meeting_id: string | null
+          id: string
+          meeting_type: string | null
+          outcome: string
+          session_id: string
+          sort_order: number
+        }
+        Insert: {
+          client_name?: string
+          created_at?: string
+          created_case_id?: string | null
+          created_meeting_id?: string | null
+          id?: string
+          meeting_type?: string | null
+          outcome?: string
+          session_id: string
+          sort_order?: number
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          created_case_id?: string | null
+          created_meeting_id?: string | null
+          id?: string
+          meeting_type?: string | null
+          outcome?: string
+          session_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_party_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "call_party_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_party_sessions: {
+        Row: {
+          created_at: string
+          date: string
+          goal_called: number
+          goal_fsa: number
+          goal_meetings: number
+          goal_nab: number
+          goal_poh: number
+          goal_ser: number
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          goal_called?: number
+          goal_fsa?: number
+          goal_meetings?: number
+          goal_nab?: number
+          goal_poh?: number
+          goal_ser?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          goal_called?: number
+          goal_fsa?: number
+          goal_meetings?: number
+          goal_nab?: number
+          goal_poh?: number
+          goal_ser?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cases: {
         Row: {
           created_at: string
