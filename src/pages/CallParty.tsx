@@ -1,15 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
+import { meetingTypeLabel, findDuplicateCases, type MeetingType } from "@/components/MeetingFormFields";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 type Outcome = "nezvedl" | "nedomluveno" | "domluveno";
