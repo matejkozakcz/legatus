@@ -1049,8 +1049,36 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
           onClose={() => setOpenMeetingId(null)}
           meeting={openMeeting ?? null}
           onEdit={() => {
-            // Pro editaci pošleme uživatele do Kalendáře / Obchodních případů.
             toast.info("Editaci schůzky proveď v Kalendáři nebo Obchodních případech.");
+          }}
+          onSaveOutcome={async (meetingId, data) => {
+            const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
+            toast.success("Výsledek uložen");
+            qc.invalidateQueries({ queryKey: ["call_party_open_meeting", meetingId] });
+            qc.invalidateQueries({ queryKey: ["meetings"] });
+            qc.invalidateQueries({ queryKey: ["calendar_meetings"] });
+            qc.invalidateQueries({ queryKey: ["activity"] });
+            setOpenMeetingId(null);
+          }}
+          onCancel={async () => {
+            if (!openMeetingId) return;
+            const { error } = await supabase
+              .from("client_meetings")
+              .update({ cancelled: true })
+              .eq("id", openMeetingId);
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
+            toast.success("Schůzka zrušena");
+            qc.invalidateQueries({ queryKey: ["call_party_open_meeting", openMeetingId] });
+            qc.invalidateQueries({ queryKey: ["meetings"] });
+            qc.invalidateQueries({ queryKey: ["calendar_meetings"] });
+            setOpenMeetingId(null);
           }}
         />
       )}
