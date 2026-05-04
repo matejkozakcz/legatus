@@ -230,12 +230,21 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           }
 
           if (e.outcome === "domluveno" && e.meeting_type && created_case_id) {
+            const meetingDate = e.meeting_date || date;
+            const mWeekStart = (() => {
+              const d = parseISO(meetingDate);
+              const day = d.getUTCDay() || 7;
+              d.setUTCDate(d.getUTCDate() - (day - 1));
+              return d.toISOString().slice(0, 10);
+            })();
             const { data: meetingRow, error: mErr } = await supabase
               .from("client_meetings")
               .insert({
                 user_id: profile.id,
-                date,
-                week_start,
+                date: meetingDate,
+                week_start: mWeekStart,
+                meeting_time: e.meeting_time || null,
+                location_detail: e.location_detail?.trim() || null,
                 meeting_type: e.meeting_type,
                 case_id: created_case_id,
                 case_name: e.client_name.trim(),
