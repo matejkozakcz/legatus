@@ -248,6 +248,9 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       toast.success("Call party uložena");
       qc.invalidateQueries({ queryKey: ["call_party_sessions"] });
       qc.invalidateQueries({ queryKey: ["activity"] });
+      qc.invalidateQueries({ queryKey: ["my_cases_for_duplicate_check"] });
+      qc.invalidateQueries({ queryKey: ["cases"] });
+      qc.invalidateQueries({ queryKey: ["meetings"] });
       // reset
       setName("");
       setDate(today());
