@@ -27,6 +27,8 @@ interface EntryDraft {
   client_name: string;
   outcome: Outcome;
   meeting_type: CPMeetingType | null;
+  /** Pokud uživatel ručně přiřadil řádek k existujícímu případu, ukládáme ID. */
+  linked_case_id?: string | null;
 }
 
 interface SessionRow {
@@ -56,6 +58,7 @@ const emptyEntry = (): EntryDraft => ({
   client_name: "",
   outcome: "nezvedl",
   meeting_type: null,
+  linked_case_id: null,
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -193,12 +196,17 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           let created_case_id: string | null = null;
           let created_meeting_id: string | null = null;
 
-          if (e.outcome === "domluveno" && e.meeting_type) {
-            // Reuse existing case if exact duplicate found, jinak založ nový
+          // Vyhodnoť, na který case má řádek napojení (pro každý outcome).
+          // 1) explicitní volba uživatele má přednost
+          // 2) jinak exact duplicate
+          // 3) jinak (jen pro "domluveno") založ nový case
+          if (e.linked_case_id) {
+            created_case_id = e.linked_case_id;
+          } else {
             const dup = findDuplicateCases(e.client_name.trim(), existingCases);
             if (dup.exact.length > 0) {
               created_case_id = dup.exact[0].id;
-            } else {
+            } else if (e.outcome === "domluveno" && e.meeting_type) {
               const { data: caseRow, error: caseErr } = await supabase
                 .from("cases")
                 .insert({
@@ -211,7 +219,9 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
               if (caseErr) throw caseErr;
               created_case_id = caseRow.id;
             }
+          }
 
+          if (e.outcome === "domluveno" && e.meeting_type && created_case_id) {
             const { data: meetingRow, error: mErr } = await supabase
               .from("client_meetings")
               .insert({
@@ -444,9 +454,26 @@ function EntryRow({
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      {showWarning && (
+      {entry.linked_case_id && (
+        <div className="mt-1 ml-1 flex items-center gap-2 text-xs" style={{ color: "#00abbd" }}>
+          <span
+            className="px-2 py-0.5 rounded-md font-heading font-semibold"
+            style={{ background: "rgba(0,171,189,0.12)" }}
+          >
+            Přiřazeno k případu: „{existingCases.find((c) => c.id === entry.linked_case_id)?.nazev_pripadu ?? "—"}"
+          </span>
+          <button
+            onClick={() => onChange({ linked_case_id: null })}
+            className="text-muted-foreground hover:text-destructive"
+            title="Zrušit přiřazení"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {showWarning && !entry.linked_case_id && (
         <div
-          className="mt-1 ml-1 flex items-start gap-1.5 text-xs"
+          className="mt-1 ml-1 flex items-start gap-2 text-xs flex-wrap"
           style={{ color: hasExact ? "#b45309" : "#92400e" }}
         >
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
@@ -455,6 +482,16 @@ function EntryRow({
               ? `Tento klient už máš jako obchodní případ: „${duplicates.exact[0].nazev_pripadu}"`
               : `Podobný případ existuje: „${duplicates.similar[0].nazev_pripadu}". Zkontroluj duplicitu.`}
           </span>
+          {[...duplicates.exact, ...duplicates.similar].slice(0, 3).map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onChange({ linked_case_id: c.id })}
+              className="px-2 py-0.5 rounded-md font-heading font-semibold border transition hover:bg-muted"
+              style={{ borderColor: "#00abbd", color: "#00abbd" }}
+            >
+              Přiřadit k „{c.nazev_pripadu}"
+            </button>
+          ))}
         </div>
       )}
     </div>

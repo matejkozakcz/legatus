@@ -80,6 +80,23 @@ interface Meeting {
   outcome_recorded: boolean;
 }
 
+interface CallEntry {
+  id: string;
+  client_name: string;
+  outcome: "nezvedl" | "nedomluveno" | "domluveno";
+  meeting_type: string | null;
+  created_case_id: string | null;
+  session_id: string;
+  session_date: string;
+  session_name: string;
+}
+
+const callOutcomeLabel: Record<CallEntry["outcome"], string> = {
+  nezvedl: "Nezvedl",
+  nedomluveno: "Nedomluveno",
+  domluveno: "Domluveno",
+};
+
 const defaultForm = (caseId?: string): MeetingForm => ({
   ...defaultMeetingForm(),
   case_id: caseId || "",
@@ -235,6 +252,7 @@ function CaseModal({
 function CaseAccordion({
   c,
   meetings,
+  calls = [],
   onAddActivity,
   onEditCase,
   onClickMeeting,
@@ -242,6 +260,7 @@ function CaseAccordion({
 }: {
   c: Case;
   meetings: Meeting[];
+  calls?: CallEntry[];
   onAddActivity: () => void;
   onEditCase: () => void;
   onClickMeeting: (m: Meeting) => void;
@@ -249,9 +268,11 @@ function CaseAccordion({
 }) {
   const [expanded, setExpanded] = useState(false);
   const sorted = [...meetings].sort((a, b) => b.date.localeCompare(a.date));
+  const sortedCalls = [...calls].sort((a, b) => b.session_date.localeCompare(a.session_date));
   const activeMeetings = meetings.filter((m) => !m.cancelled);
   const sumRefs = activeMeetings.reduce((s, m) => s + totalRefs(m), 0);
   const sumBj = activeMeetings.reduce((s, m) => s + (m.podepsane_bj || 0), 0);
+  const callsCount = calls.length;
 
   return (
     <div className="legatus-card overflow-hidden" style={{ padding: 0 }}>
@@ -297,7 +318,7 @@ function CaseAccordion({
         </div>
 
         {/* Row 2: stats badges */}
-        {(sumRefs > 0 || sumBj > 0) && (
+        {(sumRefs > 0 || sumBj > 0 || callsCount > 0) && (
           <div className="flex items-center gap-1.5 ml-6 mt-1.5">
             {sumRefs > 0 && (
               <span
@@ -315,55 +336,88 @@ function CaseAccordion({
                 {sumBj} BJ
               </span>
             )}
+            {callsCount > 0 && (
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(124,58,237,0.10)", color: "#7c3aed" }}
+              >
+                {callsCount} {callsCount === 1 ? "hovor" : callsCount < 5 ? "hovory" : "hovorů"}
+              </span>
+            )}
           </div>
         )}
       </div>
 
       {expanded && (
         <div className="border-t border-border">
-          {sorted.length === 0 ? (
+          {sorted.length === 0 && sortedCalls.length === 0 ? (
             <p className="p-3 text-sm text-muted-foreground text-center">Žádné aktivity v tomto období.</p>
           ) : (
-            sorted.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center gap-3 px-3 py-2 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
-                style={m.cancelled ? { opacity: 0.45, textDecoration: "line-through" } : {}}
-                onClick={() => onClickMeeting(m)}
-              >
-                <span className="text-xs text-muted-foreground w-20 flex-shrink-0">
-                  {m.cancelled ? (
-                    <span style={{ color: "#fc7c71", fontWeight: 600 }}>Zrušená</span>
-                  ) : m.outcome_recorded ? (
-                    <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>
-                  ) : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
-                </span>
-                <span
-                  className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-                  style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
+            <>
+              {sorted.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-3 px-3 py-2 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
+                  style={m.cancelled ? { opacity: 0.45, textDecoration: "line-through" } : {}}
+                  onClick={() => onClickMeeting(m)}
                 >
-                  {meetingTypeLabel(m.meeting_type)}
-                </span>
-                {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
-                )}
-                <span className="text-xs text-muted-foreground flex-1">
-                  {!m.cancelled && m.has_poradenstvi && m.poradenstvi_status === "probehle"
-                    ? `${m.podepsane_bj} BJ`
-                    : ""}
-                  {!m.cancelled && totalRefs(m) > 0 ? ` · ${totalRefs(m)} dop.` : ""}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteMeeting(m.id);
-                  }}
-                  className="p-1 rounded-lg hover:bg-muted transition-colors"
+                  <span className="text-xs text-muted-foreground w-20 flex-shrink-0">
+                    {m.cancelled ? (
+                      <span style={{ color: "#fc7c71", fontWeight: 600 }}>Zrušená</span>
+                    ) : m.outcome_recorded ? (
+                      <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>
+                    ) : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
+                  </span>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                    style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
+                  >
+                    {meetingTypeLabel(m.meeting_type)}
+                  </span>
+                  {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                  )}
+                  <span className="text-xs text-muted-foreground flex-1">
+                    {!m.cancelled && m.has_poradenstvi && m.poradenstvi_status === "probehle"
+                      ? `${m.podepsane_bj} BJ`
+                      : ""}
+                    {!m.cancelled && totalRefs(m) > 0 ? ` · ${totalRefs(m)} dop.` : ""}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteMeeting(m.id);
+                    }}
+                    className="p-1 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" style={{ color: "#fc7c71" }} />
+                  </button>
+                </div>
+              ))}
+              {sortedCalls.map((call) => (
+                <div
+                  key={`call-${call.id}`}
+                  className="flex items-center gap-3 px-3 py-2 border-b border-border last:border-0"
+                  title={`Z Call party „${call.session_name}"`}
                 >
-                  <Trash2 className="h-3 w-3" style={{ color: "#fc7c71" }} />
-                </button>
-              </div>
-            ))
+                  <span className="text-xs text-muted-foreground w-20 flex-shrink-0">
+                    {format(parseISO(call.session_date), "d. M. yyyy", { locale: cs })}
+                  </span>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                    style={{ background: "rgba(124,58,237,0.12)", color: "#7c3aed" }}
+                  >
+                    Hovor
+                  </span>
+                  <span className="text-xs text-muted-foreground flex-1">
+                    {callOutcomeLabel[call.outcome]}
+                    {call.outcome === "domluveno" && call.meeting_type
+                      ? ` · domluveno ${meetingTypeLabel(call.meeting_type as MeetingType)}`
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}
@@ -465,6 +519,53 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
     }
     return map;
   }, [meetings]);
+
+  // ── Fetch call party entries linked to user's cases ──
+  const { data: callEntries = [] } = useQuery<CallEntry[]>({
+    queryKey: ["call_party_entries_by_case", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      // 1) sessions for this user
+      const { data: sessions, error: sErr } = await supabase
+        .from("call_party_sessions")
+        .select("id, name, date")
+        .eq("user_id", profile.id);
+      if (sErr) throw sErr;
+      if (!sessions || sessions.length === 0) return [];
+      const sessionMap = new Map(sessions.map((s) => [s.id, s]));
+      // 2) all entries within those sessions that have a created_case_id
+      const { data: entries, error: eErr } = await supabase
+        .from("call_party_entries")
+        .select("id, client_name, outcome, meeting_type, created_case_id, session_id")
+        .in("session_id", sessions.map((s) => s.id))
+        .not("created_case_id", "is", null);
+      if (eErr) throw eErr;
+      return (entries || []).map((e) => {
+        const s = sessionMap.get(e.session_id)!;
+        return {
+          id: e.id,
+          client_name: e.client_name,
+          outcome: e.outcome as CallEntry["outcome"],
+          meeting_type: e.meeting_type,
+          created_case_id: e.created_case_id,
+          session_id: e.session_id,
+          session_date: s.date,
+          session_name: s.name,
+        };
+      });
+    },
+    enabled: !!profile?.id,
+  });
+
+  const callsByCase = useMemo(() => {
+    const map: Record<string, CallEntry[]> = {};
+    for (const c of callEntries) {
+      if (!c.created_case_id) continue;
+      if (!map[c.created_case_id]) map[c.created_case_id] = [];
+      map[c.created_case_id].push(c);
+    }
+    return map;
+  }, [callEntries]);
 
   // Date range for selected period (Schůzky tab) — Den / Týden / Měsíc
   // Mobile vždy zobrazuje pouze vybraný den (denní picker), desktop respektuje viewMode.
@@ -1555,6 +1656,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               key={c.id}
               c={c}
               meetings={meetingsByCase[c.id] || []}
+              calls={callsByCase[c.id] || []}
               onAddActivity={() => openAddMeeting(c.id)}
               onEditCase={() => openEditCase(c)}
               onClickMeeting={(m) => setDetailMeeting(m)}
