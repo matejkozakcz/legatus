@@ -76,37 +76,75 @@ const today = () => new Date().toISOString().slice(0, 10);
 export default function CallParty() {
   const [tab, setTab] = useState<"new" | "history">("new");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const tabs = [
+    { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={15} /> },
+    { key: "history" as const, label: "Historie", icon: <History size={15} /> },
+  ];
 
   return (
-    <div className="px-4 md:px-8 py-6 md:py-10 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
-        >
-          <PhoneCall className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="font-heading text-2xl font-semibold" style={{ color: "hsl(var(--foreground))" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
+      {/* Desktop-style header — matches Dashboard / Můj byznys / Správa týmu */}
+      <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+        <div className="flex items-center gap-3">
+          <PhoneCall className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
             Call party
           </h1>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "new" | "history")}>
-        <TabsList>
-          <TabsTrigger value="new">Nová Call party</TabsTrigger>
-          <TabsTrigger value="history">Historie</TabsTrigger>
-        </TabsList>
+      {/* Tab switcher — matches Můj byznys */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <div style={{
+          display: "flex",
+          background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+          borderRadius: 14,
+          padding: 4,
+          gap: 4,
+          width: "100%",
+          maxWidth: 520,
+        }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "9px 14px",
+                borderRadius: 10,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: tab === t.key ? 700 : 500,
+                fontFamily: "Poppins, sans-serif",
+                background: tab === t.key
+                  ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
+                  : "transparent",
+                color: tab === t.key
+                  ? (isDark ? "#4dd8e8" : "#00555f")
+                  : (isDark ? "#7aadb3" : "#6b8a8f"),
+                boxShadow: tab === t.key
+                  ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
+                  : "none",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <TabsContent value="new" className="mt-4">
-          <NewCallPartyForm onSaved={() => setTab("history")} />
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-4">
-          <HistoryList onOpen={setOpenSession} />
-        </TabsContent>
-      </Tabs>
+      {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
+      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
