@@ -26,13 +26,14 @@ interface GoalItem {
   target: number | null;
 }
 
-const GOAL_META: Record<GoalType, { label: string; color: string; bg: string }> = {
-  called:   { label: "ZAVOLÁNO",       color: "#5a7479", bg: "rgba(90,116,121,0.12)" },
-  meetings: { label: "DOMLUVENO",      color: "#5a7479", bg: "rgba(90,116,121,0.12)" },
-  FSA:      { label: "ANALÝZA (FSA)",  color: "#b8801a", bg: "rgba(245,158,11,0.14)" },
-  SER:      { label: "SERVIS (SER)",   color: "#c2410c", bg: "rgba(239,68,68,0.14)" },
-  POH:      { label: "POHOVOR (POH)",  color: "#0a6e60", bg: "rgba(13,148,136,0.14)" },
-  NAB:      { label: "NÁBOR (NAB)",    color: "#6d28d9", bg: "rgba(139,92,246,0.16)" },
+// label = uppercase label color, bar = strong fill color, tint = card background tint, border = card border tint
+const GOAL_META: Record<GoalType, { label: string; labelColor: string; bar: string; tint: string; border: string }> = {
+  called:   { label: "ZAVOLÁNO",      labelColor: "#5a7479", bar: "#00abbd", tint: "rgba(0,171,189,0.05)",  border: "rgba(0,171,189,0.20)" },
+  meetings: { label: "DOMLUVENO",     labelColor: "#5a7479", bar: "#00abbd", tint: "rgba(0,171,189,0.05)",  border: "rgba(0,171,189,0.20)" },
+  FSA:      { label: "ANALÝZA (FSA)", labelColor: "#b8801a", bar: "#F59E0B", tint: "rgba(245,158,11,0.05)", border: "rgba(245,158,11,0.22)" },
+  SER:      { label: "SERVIS (SER)",  labelColor: "#c2410c", bar: "#EF4444", tint: "rgba(239,68,68,0.05)",  border: "rgba(239,68,68,0.22)" },
+  POH:      { label: "POHOVOR (POH)", labelColor: "#0a6e60", bar: "#0D9488", tint: "rgba(13,148,136,0.05)", border: "rgba(13,148,136,0.22)" },
+  NAB:      { label: "NÁBOR (NAB)",   labelColor: "#6d28d9", bar: "#8B5CF6", tint: "rgba(139,92,246,0.05)", border: "rgba(139,92,246,0.22)" },
 };
 
 const GOAL_LABEL_SHORT: Record<GoalType, string> = {
