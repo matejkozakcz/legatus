@@ -1139,3 +1139,147 @@ function GoalReadout({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
+
+// ─── Step indicator (centered, label below) ─────────────────────────────────
+function StepIndicator({ step }: { step: 1 | 2 }) {
+  const steps = [
+    { n: 1, label: "Záznam hovorů" },
+    { n: 2, label: "Naplánovat schůzky" },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-3">
+      {steps.map((s, idx) => {
+        const active = s.n === step;
+        const done = s.n < step;
+        return (
+          <div key={s.n} className="flex items-center gap-3">
+            <div className="flex flex-col items-center" style={{ minWidth: 110 }}>
+              <div
+                className="flex items-center justify-center font-heading font-bold"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  fontSize: 13,
+                  background: active || done ? "#00abbd" : "transparent",
+                  color: active || done ? "#fff" : "hsl(var(--muted-foreground))",
+                  border: active || done ? "none" : "1.5px solid hsl(var(--border))",
+                }}
+              >
+                {s.n}
+              </div>
+              <div
+                className="font-heading mt-1.5 text-center"
+                style={{
+                  fontSize: 11,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? "#00abbd" : "hsl(var(--muted-foreground))",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {s.label}
+              </div>
+            </div>
+            {idx < steps.length - 1 && (
+              <div
+                style={{
+                  height: 2,
+                  width: 48,
+                  background: done || step > s.n ? "#00abbd" : "hsl(var(--border))",
+                  marginBottom: 22,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Date picker field — same UI as PeriodNavigator (no day-cycling arrows) ──
+function DatePickerField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selected = useMemo(() => parseISO(value), [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const label = isToday(selected) ? "Dnes" : format(selected, "EEEE", { locale: cs });
+  const title = format(selected, "d. MMMM yyyy", { locale: cs });
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+          borderRadius: 16,
+          padding: "10px 16px",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+          width: "100%",
+          cursor: "pointer",
+        }}
+      >
+        <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>{label}</div>
+        <div
+          style={{
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 700,
+            fontSize: 15,
+            color: "var(--text-primary)",
+          }}
+        >
+          {title}
+        </div>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 50,
+            background: isDark ? "#0a1f23" : "#fff",
+            borderRadius: 14,
+            border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(d) => {
+              if (d) {
+                onChange(format(d, "yyyy-MM-dd"));
+                setOpen(false);
+              }
+            }}
+            locale={cs}
+            weekStartsOn={1}
+            className="p-3 pointer-events-auto"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
