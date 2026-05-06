@@ -554,6 +554,38 @@ const Dashboard = () => {
 
   const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
 
+  // ── Call Party stats for current period ──────────────────────────────────
+  const { data: cpStats = { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 } } = useQuery({
+    queryKey: [
+      "cp_stats",
+      activeUserId,
+      format(dateRange.from, "yyyy-MM-dd"),
+      format(dateRange.to, "yyyy-MM-dd"),
+    ],
+    queryFn: async () => {
+      if (!activeUserId) return { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 };
+      const { data: sessions } = await supabase
+        .from("call_party_sessions")
+        .select("id")
+        .eq("user_id", activeUserId)
+        .gte("date", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("date", format(dateRange.to, "yyyy-MM-dd"));
+      if (!sessions?.length) return { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 };
+      const { data: entries } = await supabase
+        .from("call_party_entries")
+        .select("outcome")
+        .in("session_id", sessions.map((s) => s.id));
+      const all = entries ?? [];
+      return {
+        called: all.length,
+        domluveno: all.filter((e) => e.outcome === "domluveno").length,
+        nezvedl: all.filter((e) => e.outcome === "nezvedl").length,
+        nedomluveno: all.filter((e) => e.outcome === "nedomluveno").length,
+      };
+    },
+    enabled: !!activeUserId,
+  });
+
   // ── Konverze aktivit: meetings for the currently selected dashboard period ────
   // (follows the global viewMode — week or month — via dateRange)
   const conversionRangeStartStr = format(dateRange.from, "yyyy-MM-dd");
@@ -1524,7 +1556,25 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Info & Postinfo team stats — vedouci/BV only, mobile */}
+            {/* ── Call Party mobile card ── */}
+            {cpStats.called > 0 && (
+              <div className="mobile-stat-card" style={{ padding: 14, marginBottom: 10 }}>
+                <p
+                  className="font-body text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: "#fc7c71", marginBottom: 8 }}
+                >
+                  Call party
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                  <MobileStatCard label="Volaných" actual={cpStats.called} sublabel="hovorů" />
+                  <MobileStatCard label="Domluveno" actual={cpStats.domluveno} sublabel={`z ${cpStats.called}`} />
+                  <MobileStatCard label="Nezvedl" actual={cpStats.nezvedl} sublabel="hovorů" />
+                  <MobileStatCard label="Nedomluveno" actual={cpStats.nedomluveno} sublabel="hovorů" />
+                </div>
+              </div>
+            )}
+
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               <InfoPostMobileCard
                 label="Info schůzky"
@@ -1621,6 +1671,24 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* ── Call Party mobile card ── */}
+            {cpStats.called > 0 && (
+              <div className="mobile-stat-card" style={{ padding: 14, marginBottom: 10 }}>
+                <p
+                  className="font-body text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: "#fc7c71", marginBottom: 8 }}
+                >
+                  Call party
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                  <MobileStatCard label="Volaných" actual={cpStats.called} sublabel="hovorů" />
+                  <MobileStatCard label="Domluveno" actual={cpStats.domluveno} sublabel={`z ${cpStats.called}`} />
+                  <MobileStatCard label="Nezvedl" actual={cpStats.nezvedl} sublabel="hovorů" />
+                  <MobileStatCard label="Nedomluveno" actual={cpStats.nedomluveno} sublabel="hovorů" />
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -2144,6 +2212,26 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* ── Call Party desktop card ── */}
+        {!isMobile && cpStats.called > 0 && (
+          <div
+            className="legatus-card"
+            style={{ padding: "20px 24px", marginTop: 8 }}
+          >
+            <h3
+              className="font-heading font-semibold"
+              style={{ fontSize: 15, color: "var(--deep-hex, #00555f)", marginBottom: 14 }}
+            >
+              Call party — {viewMode === "week" ? "tento týden" : "toto období"}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              <StatCard label="Volaných" actual={cpStats.called} actualLabel="hovorů celkem" />
+              <StatCard label="Domluveno" actual={cpStats.domluveno} actualLabel={`z ${cpStats.called} hovorů`} />
+              <StatCard label="Nezvedl" actual={cpStats.nezvedl} actualLabel="hovorů" />
+              <StatCard label="Nedomluveno" actual={cpStats.nedomluveno} actualLabel="hovorů" />
+            </div>
+          </div>
+        )}
 
         {profile?.id && (
           <VedouciGoalsModal

@@ -191,6 +191,30 @@ export const MojeAktivityContent = () => {
     enabled: !!profile?.id,
   });
 
+  // ── Call Party entries pro aktuální produkční období ─────────────────────
+  const { data: cpEntries = [] } = useQuery({
+    queryKey: ["cp_aktivity", profile?.id, format(monthStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data: sessions } = await supabase
+        .from("call_party_sessions")
+        .select("id, date")
+        .eq("user_id", profile.id)
+        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+      if (!sessions?.length) return [];
+      const { data: entries } = await supabase
+        .from("call_party_entries")
+        .select("session_id, outcome")
+        .in("session_id", sessions.map((s) => s.id));
+      return (entries ?? []).map((e) => ({
+        outcome: e.outcome as string,
+        date: sessions.find((s) => s.id === e.session_id)?.date ?? null,
+      }));
+    },
+    enabled: !!profile?.id,
+  });
+
   const upsertMutation = useMutation({
     mutationFn: async (record: { week_start: string; [key: string]: any }) => {
       if (!profile?.id) throw new Error("No user");
@@ -254,6 +278,32 @@ export const MojeAktivityContent = () => {
     });
     return sums;
   }, [records]);
+
+  const cpByWeek = useMemo(() => {
+    const map: Record<string, { called: number; domluveno: number }> = {};
+    for (const e of cpEntries) {
+      if (!e.date) continue;
+      const ws = format(
+        startOfWeek(new Date(e.date + "T00:00:00"), { weekStartsOn: 1 }),
+        "yyyy-MM-dd",
+      );
+      if (!map[ws]) map[ws] = { called: 0, domluveno: 0 };
+      map[ws].called += 1;
+      if (e.outcome === "domluveno") map[ws].domluveno += 1;
+    }
+    return map;
+  }, [cpEntries]);
+
+  const cpTotal = useMemo(
+    () => cpEntries.reduce(
+      (acc, e) => ({
+        called: acc.called + 1,
+        domluveno: acc.domluveno + (e.outcome === "domluveno" ? 1 : 0),
+      }),
+      { called: 0, domluveno: 0 },
+    ),
+    [cpEntries],
+  );
 
   // Mobile-specific data
   const mobileWeekStart = useMemo(
@@ -551,7 +601,36 @@ export const MojeAktivityContent = () => {
           </div>
         </div>
 
-        {/* Autosave */}
+        {/* Call Party summary — mobile */}
+        {cpTotal.called > 0 && (
+          <div className="legatus-card" style={{ padding: "16px 20px", marginBottom: 12 }}>
+            <p className="font-heading font-semibold" style={{ fontSize: 13, color: "var(--deep-hex, #00555f)", marginBottom: 10 }}>
+              Call party — toto období
+            </p>
+            <div style={{ display: "flex", gap: 20 }}>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                  {cpTotal.called}
+                </div>
+                <div className="text-xs text-muted-foreground">hovorů</div>
+              </div>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00abbd", lineHeight: 1 }}>
+                  {cpTotal.domluveno}
+                </div>
+                <div className="text-xs text-muted-foreground">domluveno</div>
+              </div>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#fc7c71", lineHeight: 1 }}>
+                  {Math.round(cpTotal.domluveno / cpTotal.called * 100)}%
+                </div>
+                <div className="text-xs text-muted-foreground">konverze</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         <div
           style={{
             textAlign: "center",
@@ -642,6 +721,8 @@ export const MojeAktivityContent = () => {
                 {ALL_DISPLAY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
+                <th style={{ color: "#00abbd" }}>CP Volaných</th>
+                <th style={{ color: "#00abbd" }}>CP Doml.</th>
               </tr>
             </thead>
             <tbody>
@@ -677,6 +758,15 @@ export const MojeAktivityContent = () => {
                         </td>
                       );
                     })}
+                    {(() => {
+                      const cp = cpByWeek[weekStr] ?? { called: 0, domluveno: 0 };
+                      return (
+                        <>
+                          <td style={{ color: "#00abbd" }}>{cp.called || "—"}</td>
+                          <td style={{ color: "#00abbd" }}>{cp.domluveno || "—"}</td>
+                        </>
+                      );
+                    })()}
                   </tr>
                 );
               })}
@@ -685,6 +775,8 @@ export const MojeAktivityContent = () => {
                 {ALL_DISPLAY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
+                <td style={{ fontWeight: 700, color: "#00abbd" }}>{cpTotal.called || "—"}</td>
+                <td style={{ fontWeight: 700, color: "#00abbd" }}>{cpTotal.domluveno || "—"}</td>
               </tr>
             </tbody>
           </table>
