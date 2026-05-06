@@ -1290,7 +1290,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                 {session.goals.map((g) => (
                   <div key={g.type} className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: GOAL_META[g.type].color }}>
+                    <span className="text-[10px] uppercase tracking-wide" style={{ color: GOAL_META[g.type].labelColor }}>
                       {GOAL_META[g.type].label}
                     </span>
                     <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
