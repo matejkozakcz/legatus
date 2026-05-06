@@ -1671,6 +1671,24 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* ── Call Party mobile card ── */}
+            {cpStats.called > 0 && (
+              <div className="mobile-stat-card" style={{ padding: 14, marginBottom: 10 }}>
+                <p
+                  className="font-body text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: "#fc7c71", marginBottom: 8 }}
+                >
+                  Call party
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
+                  <MobileStatCard label="Volaných" actual={cpStats.called} sublabel="hovorů" />
+                  <MobileStatCard label="Domluveno" actual={cpStats.domluveno} sublabel={`z ${cpStats.called}`} />
+                  <MobileStatCard label="Nezvedl" actual={cpStats.nezvedl} sublabel="hovorů" />
+                  <MobileStatCard label="Nedomluveno" actual={cpStats.nedomluveno} sublabel="hovorů" />
+                </div>
+              </div>
+            )}
           </>
         )}
 
