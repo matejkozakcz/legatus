@@ -1,14 +1,15 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { useTheme } from "@/contexts/ThemeContext";
 import { meetingTypeLabel, findDuplicateCases, type MeetingType } from "@/components/MeetingFormFields";
 import { MeetingDetailModal, type MeetingDetailData } from "@/components/MeetingDetailModal";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -75,37 +76,75 @@ const today = () => new Date().toISOString().slice(0, 10);
 export default function CallParty() {
   const [tab, setTab] = useState<"new" | "history">("new");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const tabs = [
+    { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={15} /> },
+    { key: "history" as const, label: "Historie", icon: <History size={15} /> },
+  ];
 
   return (
-    <div className="px-4 md:px-8 py-6 md:py-10 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
-        >
-          <PhoneCall className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="font-heading text-2xl font-semibold" style={{ color: "hsl(var(--foreground))" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
+      {/* Desktop-style header — matches Dashboard / Můj byznys / Správa týmu */}
+      <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+        <div className="flex items-center gap-3">
+          <PhoneCall className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
             Call party
           </h1>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "new" | "history")}>
-        <TabsList>
-          <TabsTrigger value="new">Nová Call party</TabsTrigger>
-          <TabsTrigger value="history">Historie</TabsTrigger>
-        </TabsList>
+      {/* Tab switcher — matches Můj byznys */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <div style={{
+          display: "flex",
+          background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+          borderRadius: 14,
+          padding: 4,
+          gap: 4,
+          width: "100%",
+          maxWidth: 520,
+        }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "9px 14px",
+                borderRadius: 10,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: tab === t.key ? 700 : 500,
+                fontFamily: "Poppins, sans-serif",
+                background: tab === t.key
+                  ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
+                  : "transparent",
+                color: tab === t.key
+                  ? (isDark ? "#4dd8e8" : "#00555f")
+                  : (isDark ? "#7aadb3" : "#6b8a8f"),
+                boxShadow: tab === t.key
+                  ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
+                  : "none",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <TabsContent value="new" className="mt-4">
-          <NewCallPartyForm onSaved={() => setTab("history")} />
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-4">
-          <HistoryList onOpen={setOpenSession} />
-        </TabsContent>
-      </Tabs>
+      {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
+      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
@@ -127,7 +166,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
     poh: 0,
     nab: 0,
   });
-  const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry(), emptyEntry(), emptyEntry()]);
+  const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry()]);
 
   // Načti vlastní obchodní případy pro detekci duplicit (jednou na otevření stránky)
   const { data: existingCases = [] } = useQuery({
@@ -280,7 +319,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       setName("");
       setDate(today());
       setGoals({ called: 0, meetings: 0, fsa: 0, ser: 0, poh: 0, nab: 0 });
-      setEntries([emptyEntry(), emptyEntry(), emptyEntry()]);
+      setEntries([emptyEntry()]);
       setStep(1);
       onSaved();
     },
@@ -301,12 +340,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   if (step === 2) {
     return (
       <div className="space-y-6">
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
-          <span>Krok 1</span>
-          <span>›</span>
-          <span style={{ color: "#00abbd" }}>Krok 2 — Naplánovat schůzky</span>
-        </div>
+        <StepIndicator step={2} />
 
         {/* Summary */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
@@ -370,12 +404,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
   return (
     <div className="space-y-6">
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
-        <span style={{ color: "#00abbd" }}>Krok 1 — Záznam hovorů</span>
-        <span>›</span>
-        <span>Krok 2</span>
-      </div>
+      <StepIndicator step={1} />
 
       {/* Header */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -385,7 +414,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
         </div>
         <div>
           <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Datum</label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DatePickerField value={date} onChange={setDate} />
         </div>
       </div>
 
@@ -436,17 +465,9 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
       {/* Entries */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading text-sm font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
-            Záznamy hovorů
-          </h2>
-          <button
-            onClick={addEntry}
-            className="flex items-center gap-1.5 text-sm font-heading font-semibold px-3 py-1.5 rounded-xl border border-input hover:bg-muted transition"
-          >
-            <Plus className="h-4 w-4" /> Přidat řádek
-          </button>
-        </div>
+        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
+          Záznamy hovorů
+        </h2>
         <div className="space-y-2">
           {entries.map((e, i) => (
             <EntryRow
@@ -458,6 +479,13 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
               existingCases={existingCases}
             />
           ))}
+          <button
+            onClick={addEntry}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2 rounded-xl border border-dashed border-input hover:bg-muted hover:border-solid transition"
+            style={{ color: "#00abbd" }}
+          >
+            <Plus className="h-4 w-4" /> Přidat řádek
+          </button>
         </div>
       </div>
 
@@ -1108,6 +1136,150 @@ function GoalReadout({ label, value }: { label: string; value: number }) {
       <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
         {value || "—"}
       </span>
+    </div>
+  );
+}
+
+// ─── Step indicator (centered, label below) ─────────────────────────────────
+function StepIndicator({ step }: { step: 1 | 2 }) {
+  const steps = [
+    { n: 1, label: "Záznam hovorů" },
+    { n: 2, label: "Naplánovat schůzky" },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-3">
+      {steps.map((s, idx) => {
+        const active = s.n === step;
+        const done = s.n < step;
+        return (
+          <div key={s.n} className="flex items-center gap-3">
+            <div className="flex flex-col items-center" style={{ minWidth: 110 }}>
+              <div
+                className="flex items-center justify-center font-heading font-bold"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  fontSize: 13,
+                  background: active || done ? "#00abbd" : "transparent",
+                  color: active || done ? "#fff" : "hsl(var(--muted-foreground))",
+                  border: active || done ? "none" : "1.5px solid hsl(var(--border))",
+                }}
+              >
+                {s.n}
+              </div>
+              <div
+                className="font-heading mt-1.5 text-center"
+                style={{
+                  fontSize: 11,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? "#00abbd" : "hsl(var(--muted-foreground))",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {s.label}
+              </div>
+            </div>
+            {idx < steps.length - 1 && (
+              <div
+                style={{
+                  height: 2,
+                  width: 48,
+                  background: done || step > s.n ? "#00abbd" : "hsl(var(--border))",
+                  marginBottom: 22,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Date picker field — same UI as PeriodNavigator (no day-cycling arrows) ──
+function DatePickerField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selected = useMemo(() => parseISO(value), [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const label = isToday(selected) ? "Dnes" : format(selected, "EEEE", { locale: cs });
+  const title = format(selected, "d. MMMM yyyy", { locale: cs });
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
+          borderRadius: 16,
+          padding: "10px 16px",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e1e9eb",
+          width: "100%",
+          cursor: "pointer",
+        }}
+      >
+        <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>{label}</div>
+        <div
+          style={{
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 700,
+            fontSize: 15,
+            color: "var(--text-primary)",
+          }}
+        >
+          {title}
+        </div>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 50,
+            background: isDark ? "#0a1f23" : "#fff",
+            borderRadius: 14,
+            border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(d) => {
+              if (d) {
+                onChange(format(d, "yyyy-MM-dd"));
+                setOpen(false);
+              }
+            }}
+            locale={cs}
+            weekStartsOn={1}
+            className="p-3 pointer-events-auto"
+          />
+        </div>
+      )}
     </div>
   );
 }
