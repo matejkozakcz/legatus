@@ -601,7 +601,36 @@ export const MojeAktivityContent = () => {
           </div>
         </div>
 
-        {/* Autosave */}
+        {/* Call Party summary — mobile */}
+        {cpTotal.called > 0 && (
+          <div className="legatus-card" style={{ padding: "16px 20px", marginBottom: 12 }}>
+            <p className="font-heading font-semibold" style={{ fontSize: 13, color: "var(--deep-hex, #00555f)", marginBottom: 10 }}>
+              Call party — toto období
+            </p>
+            <div style={{ display: "flex", gap: 20 }}>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00555f", lineHeight: 1 }}>
+                  {cpTotal.called}
+                </div>
+                <div className="text-xs text-muted-foreground">hovorů</div>
+              </div>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#00abbd", lineHeight: 1 }}>
+                  {cpTotal.domluveno}
+                </div>
+                <div className="text-xs text-muted-foreground">domluveno</div>
+              </div>
+              <div>
+                <div className="font-heading font-bold" style={{ fontSize: 28, color: "#fc7c71", lineHeight: 1 }}>
+                  {Math.round(cpTotal.domluveno / cpTotal.called * 100)}%
+                </div>
+                <div className="text-xs text-muted-foreground">konverze</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         <div
           style={{
             textAlign: "center",
