@@ -752,24 +752,40 @@ function StickyBottomBar({
   summary: { called: number; domluveno: number; nezvedl: number };
   onClick: () => void;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const isDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+  const [desktop, setDesktop] = useState(isDesktop);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = () => setDesktop(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   return (
     <div
       className="flex items-center justify-between gap-4 flex-wrap"
       style={{
-        background: "rgba(255,255,255,0.78)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        border: "0.5px solid rgba(255,255,255,0.95)",
-        borderRadius: 16,
-        boxShadow: "0 8px 32px rgba(0,85,95,0.12)",
-        padding: "14px 20px",
-        marginTop: -8,
-        position: "sticky",
+        position: "fixed",
         bottom: 16,
+        left: desktop ? "50%" : 16,
+        right: desktop ? undefined : 16,
+        transform: desktop ? "translateX(calc(-50% + 130px))" : "none",
+        width: desktop ? "calc(100% - 320px)" : undefined,
+        maxWidth: 1200,
+        zIndex: 40,
+        background: isDark ? "rgba(20,40,44,0.85)" : "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(20px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+        border: isDark ? "0.5px solid rgba(255,255,255,0.10)" : "0.5px solid rgba(255,255,255,0.95)",
+        borderRadius: 16,
+        boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(0,85,95,0.12)",
+        padding: "14px 20px",
       }}
     >
-      <div style={{ fontSize: 13, color: "#5a7479" }}>
-        <strong style={{ color: "var(--deep-hex, #00555f)" }}>
+      <div style={{ fontSize: 13, color: isDark ? "rgba(200,220,225,0.7)" : "#5a7479" }}>
+        <strong style={{ color: isDark ? "#4dd8e8" : "#00555f" }}>
           {summary.called} {summary.called === 1 ? "hovor" : summary.called >= 2 && summary.called <= 4 ? "hovory" : "hovorů"}
         </strong>
         {" · "}
