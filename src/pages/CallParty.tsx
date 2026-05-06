@@ -393,7 +393,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       {/* Goals */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
         <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
-          Cíle
+          Zde si zadej své cíle na tuto Call Party.
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <GoalInput
