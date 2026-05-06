@@ -554,6 +554,38 @@ const Dashboard = () => {
 
   const desktopWeekStats = useMemo(() => computeStats(desktopWeekMeetings, todayStr), [desktopWeekMeetings, todayStr]);
 
+  // ── Call Party stats for current period ──────────────────────────────────
+  const { data: cpStats = { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 } } = useQuery({
+    queryKey: [
+      "cp_stats",
+      activeUserId,
+      format(dateRange.from, "yyyy-MM-dd"),
+      format(dateRange.to, "yyyy-MM-dd"),
+    ],
+    queryFn: async () => {
+      if (!activeUserId) return { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 };
+      const { data: sessions } = await supabase
+        .from("call_party_sessions")
+        .select("id")
+        .eq("user_id", activeUserId)
+        .gte("date", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("date", format(dateRange.to, "yyyy-MM-dd"));
+      if (!sessions?.length) return { called: 0, domluveno: 0, nezvedl: 0, nedomluveno: 0 };
+      const { data: entries } = await supabase
+        .from("call_party_entries")
+        .select("outcome")
+        .in("session_id", sessions.map((s) => s.id));
+      const all = entries ?? [];
+      return {
+        called: all.length,
+        domluveno: all.filter((e) => e.outcome === "domluveno").length,
+        nezvedl: all.filter((e) => e.outcome === "nezvedl").length,
+        nedomluveno: all.filter((e) => e.outcome === "nedomluveno").length,
+      };
+    },
+    enabled: !!activeUserId,
+  });
+
   // ── Konverze aktivit: meetings for the currently selected dashboard period ────
   // (follows the global viewMode — week or month — via dateRange)
   const conversionRangeStartStr = format(dateRange.from, "yyyy-MM-dd");
