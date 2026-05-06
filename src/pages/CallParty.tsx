@@ -166,7 +166,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
     poh: 0,
     nab: 0,
   });
-  const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry(), emptyEntry(), emptyEntry()]);
+  const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry()]);
 
   // Načti vlastní obchodní případy pro detekci duplicit (jednou na otevření stránky)
   const { data: existingCases = [] } = useQuery({
