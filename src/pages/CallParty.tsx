@@ -404,12 +404,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
   return (
     <div className="space-y-6">
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
-        <span style={{ color: "#00abbd" }}>Krok 1 — Záznam hovorů</span>
-        <span>›</span>
-        <span>Krok 2</span>
-      </div>
+      <StepIndicator step={1} />
 
       {/* Header */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -419,7 +414,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
         </div>
         <div>
           <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Datum</label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DatePickerField value={date} onChange={setDate} />
         </div>
       </div>
 
