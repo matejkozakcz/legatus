@@ -465,17 +465,9 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
       {/* Entries */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading text-sm font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
-            Záznamy hovorů
-          </h2>
-          <button
-            onClick={addEntry}
-            className="flex items-center gap-1.5 text-sm font-heading font-semibold px-3 py-1.5 rounded-xl border border-input hover:bg-muted transition"
-          >
-            <Plus className="h-4 w-4" /> Přidat řádek
-          </button>
-        </div>
+        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
+          Záznamy hovorů
+        </h2>
         <div className="space-y-2">
           {entries.map((e, i) => (
             <EntryRow
@@ -487,6 +479,13 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
               existingCases={existingCases}
             />
           ))}
+          <button
+            onClick={addEntry}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2 rounded-xl border border-dashed border-input hover:bg-muted hover:border-solid transition"
+            style={{ color: "#00abbd" }}
+          >
+            <Plus className="h-4 w-4" /> Přidat řádek
+          </button>
         </div>
       </div>
 
