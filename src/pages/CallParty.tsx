@@ -444,7 +444,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ paddingBottom: 96 }}>
       <StepIndicator step={1} />
 
       {/* Name + Date */}
