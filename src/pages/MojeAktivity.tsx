@@ -729,6 +729,15 @@ export const MojeAktivityContent = () => {
                         </td>
                       );
                     })}
+                    {(() => {
+                      const cp = cpByWeek[weekStr] ?? { called: 0, domluveno: 0 };
+                      return (
+                        <>
+                          <td style={{ color: "#00abbd" }}>{cp.called || "—"}</td>
+                          <td style={{ color: "#00abbd" }}>{cp.domluveno || "—"}</td>
+                        </>
+                      );
+                    })()}
                   </tr>
                 );
               })}
@@ -737,6 +746,8 @@ export const MojeAktivityContent = () => {
                 {ALL_DISPLAY_COLUMNS.map((col) => (
                   <td key={col.key}>{columnSums[col.key]}</td>
                 ))}
+                <td style={{ fontWeight: 700, color: "#00abbd" }}>{cpTotal.called || "—"}</td>
+                <td style={{ fontWeight: 700, color: "#00abbd" }}>{cpTotal.domluveno || "—"}</td>
               </tr>
             </tbody>
           </table>
