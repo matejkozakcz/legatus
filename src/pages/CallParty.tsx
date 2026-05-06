@@ -647,9 +647,14 @@ function GoalRow({
     setEditing(true);
   };
 
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const cardStyle: React.CSSProperties = hasTarget
     ? { background: meta.tint, border: `0.5px solid ${meta.border}` }
-    : { background: "#f7f9fa", border: "0.5px solid rgba(0,85,95,0.1)" };
+    : {
+        background: isDark ? "rgba(255,255,255,0.04)" : "#f7f9fa",
+        border: isDark ? "0.5px solid rgba(255,255,255,0.08)" : "0.5px solid rgba(0,85,95,0.1)",
+      };
 
   return (
     <div className="rounded-xl p-3" style={cardStyle}>
