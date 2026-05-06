@@ -692,6 +692,8 @@ export const MojeAktivityContent = () => {
                 {ALL_DISPLAY_COLUMNS.map((col) => (
                   <th key={col.key}>{col.header}</th>
                 ))}
+                <th style={{ color: "#00abbd" }}>CP Volaných</th>
+                <th style={{ color: "#00abbd" }}>CP Doml.</th>
               </tr>
             </thead>
             <tbody>
