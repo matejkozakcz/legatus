@@ -627,7 +627,7 @@ export async function exportDashboardPdf(
 
     const { data: sessions = [] } = await supabase
       .from("call_party_sessions")
-      .select("id, user_id, name, date, goal_called, goal_meetings")
+      .select("id, user_id, name, date")
       .in("user_id", cpUserIds)
       .gte("date", periodFrom)
       .lte("date", periodTo)

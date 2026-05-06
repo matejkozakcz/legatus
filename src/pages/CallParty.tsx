@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isToday } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,10 +18,43 @@ type Outcome = "nezvedl" | "nedomluveno" | "domluveno";
 type CPMeetingType = "FSA" | "SER" | "POH" | "NAB";
 const CP_MEETING_TYPES: CPMeetingType[] = ["FSA", "SER", "POH", "NAB"];
 
+type GoalType = "called" | "meetings" | "FSA" | "SER" | "POH" | "NAB";
+const ALL_GOAL_TYPES: GoalType[] = ["called", "meetings", "FSA", "SER", "POH", "NAB"];
+
+interface GoalItem {
+  type: GoalType;
+  target: number | null;
+}
+
+const GOAL_META: Record<GoalType, { label: string; color: string; bg: string }> = {
+  called:   { label: "ZAVOLÁNO",       color: "#5a7479", bg: "rgba(90,116,121,0.12)" },
+  meetings: { label: "DOMLUVENO",      color: "#5a7479", bg: "rgba(90,116,121,0.12)" },
+  FSA:      { label: "ANALÝZA (FSA)",  color: "#b8801a", bg: "rgba(245,158,11,0.14)" },
+  SER:      { label: "SERVIS (SER)",   color: "#c2410c", bg: "rgba(239,68,68,0.14)" },
+  POH:      { label: "POHOVOR (POH)",  color: "#0a6e60", bg: "rgba(13,148,136,0.14)" },
+  NAB:      { label: "NÁBOR (NAB)",    color: "#6d28d9", bg: "rgba(139,92,246,0.16)" },
+};
+
+const GOAL_LABEL_SHORT: Record<GoalType, string> = {
+  called: "Zavoláno",
+  meetings: "Domluveno",
+  FSA: "Analýza (FSA)",
+  SER: "Servis (SER)",
+  POH: "Pohovor (POH)",
+  NAB: "Nábor (NAB)",
+};
+
 const outcomeLabel: Record<Outcome, string> = {
   nezvedl: "Nezvedl",
   nedomluveno: "Nedomluveno",
   domluveno: "Domluveno",
+};
+
+const MEETING_TYPE_PILL: Record<CPMeetingType, { color: string; bg: string }> = {
+  FSA: { color: "#b8801a", bg: "rgba(245,158,11,0.18)" },
+  SER: { color: "#c2410c", bg: "rgba(239,68,68,0.18)" },
+  POH: { color: "#0a6e60", bg: "rgba(13,148,136,0.18)" },
+  NAB: { color: "#6d28d9", bg: "rgba(139,92,246,0.20)" },
 };
 
 interface EntryDraft {
@@ -29,9 +62,7 @@ interface EntryDraft {
   client_name: string;
   outcome: Outcome;
   meeting_type: CPMeetingType | null;
-  /** Pokud uživatel ručně přiřadil řádek k existujícímu případu, ukládáme ID. */
   linked_case_id?: string | null;
-  /** Naplánování — vyplňuje se v kroku 2 */
   meeting_date?: string | null;
   meeting_time?: string | null;
   location_detail?: string | null;
@@ -42,12 +73,7 @@ interface SessionRow {
   user_id: string;
   name: string;
   date: string;
-  goal_called: number;
-  goal_meetings: number;
-  goal_fsa: number;
-  goal_ser: number;
-  goal_poh: number;
-  goal_nab: number;
+  goals: GoalItem[];
   notes: string | null;
   created_at: string;
 }
@@ -72,53 +98,92 @@ const emptyEntry = (): EntryDraft => ({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+function parseGoals(raw: unknown): GoalItem[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<GoalType>();
+  const out: GoalItem[] = [];
+  for (const g of raw as any[]) {
+    if (!g || typeof g !== "object") continue;
+    const t = g.type as GoalType;
+    if (!ALL_GOAL_TYPES.includes(t) || seen.has(t)) continue;
+    seen.add(t);
+    const target = g.target == null ? null : Number(g.target);
+    out.push({ type: t, target: Number.isFinite(target as number) ? (target as number) : null });
+  }
+  return out;
+}
+
+function computeCurrent(type: GoalType, entries: { client_name: string; outcome: Outcome; meeting_type: CPMeetingType | null }[]): number {
+  const filled = entries.filter((e) => e.client_name.trim());
+  if (type === "called") return filled.length;
+  const dom = filled.filter((e) => e.outcome === "domluveno");
+  if (type === "meetings") return dom.length;
+  return dom.filter((e) => e.meeting_type === type).length;
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CallParty() {
+  const { profile } = useAuth();
   const [tab, setTab] = useState<"new" | "history">("new");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  // Today's call count for header subtitle
+  const { data: todayCount = 0 } = useQuery({
+    queryKey: ["call_party_today_count", profile?.id],
+    enabled: !!profile,
+    queryFn: async () => {
+      const { data: sess } = await supabase
+        .from("call_party_sessions")
+        .select("id")
+        .eq("user_id", profile!.id)
+        .eq("date", today());
+      const ids = (sess || []).map((s: any) => s.id);
+      if (ids.length === 0) return 0;
+      const { count } = await supabase
+        .from("call_party_entries")
+        .select("id", { count: "exact", head: true })
+        .in("session_id", ids);
+      return count || 0;
+    },
+    staleTime: 30_000,
+  });
+
   const tabs = [
-    { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={15} /> },
-    { key: "history" as const, label: "Historie", icon: <History size={15} /> },
+    { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={14} /> },
+    { key: "history" as const, label: "Historie", icon: <History size={14} /> },
   ];
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
-      {/* Desktop-style header — matches Dashboard / Můj byznys / Správa týmu */}
-      <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
+      {/* Header — title left, segmented pill right (sjednoceno s Dashboard / Můj byznys) */}
+      <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: 22 }}>
         <div className="flex items-center gap-3">
           <PhoneCall className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
-          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)" }}>
+          <h1 className="font-heading font-bold" style={{ fontSize: 28, color: "var(--text-primary)", lineHeight: 1.1 }}>
             Call party
           </h1>
+          <span style={{ fontSize: 13, color: "#5a7479" }}>· {todayCount} {todayCount === 1 ? "hovor" : todayCount >= 2 && todayCount <= 4 ? "hovory" : "hovorů"} dnes</span>
         </div>
-      </div>
 
-      {/* Tab switcher — matches Můj byznys */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
         <div style={{
-          display: "flex",
+          display: "inline-flex",
           background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
-          borderRadius: 14,
+          borderRadius: 999,
           padding: 4,
           gap: 4,
-          width: "100%",
-          maxWidth: 520,
         }}>
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
-                flex: 1,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "center",
                 gap: 6,
-                padding: "9px 14px",
-                borderRadius: 10,
+                padding: "7px 14px",
+                borderRadius: 999,
                 border: "none",
                 cursor: "pointer",
                 fontSize: 13,
@@ -158,17 +223,12 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today());
-  const [goals, setGoals] = useState({
-    called: 0,
-    meetings: 0,
-    fsa: 0,
-    ser: 0,
-    poh: 0,
-    nab: 0,
-  });
+  const [goals, setGoals] = useState<GoalItem[]>([
+    { type: "called", target: null },
+    { type: "meetings", target: null },
+  ]);
   const [entries, setEntries] = useState<EntryDraft[]>([emptyEntry()]);
 
-  // Načti vlastní obchodní případy pro detekci duplicit (jednou na otevření stránky)
   const { data: existingCases = [] } = useQuery({
     queryKey: ["my_cases_for_duplicate_check", profile?.id],
     queryFn: async () => {
@@ -183,26 +243,22 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
     staleTime: 60_000,
   });
 
-  const counts = useMemo(() => {
-    const filled = entries.filter((e) => e.client_name.trim());
-    const called = filled.length;
-    const domluveno = filled.filter((e) => e.outcome === "domluveno");
-    return {
-      called,
-      meetings: domluveno.length,
-      fsa: domluveno.filter((e) => e.meeting_type === "FSA").length,
-      ser: domluveno.filter((e) => e.meeting_type === "SER").length,
-      poh: domluveno.filter((e) => e.meeting_type === "POH").length,
-      nab: domluveno.filter((e) => e.meeting_type === "NAB").length,
-    };
-  }, [entries]);
-
   const updateEntry = (i: number, patch: Partial<EntryDraft>) => {
     setEntries((arr) => arr.map((e, idx) => (idx === i ? { ...e, ...patch } : e)));
   };
-
   const removeEntry = (i: number) => setEntries((arr) => arr.filter((_, idx) => idx !== i));
   const addEntry = () => setEntries((arr) => [...arr, emptyEntry()]);
+
+  const summary = useMemo(() => {
+    const filled = entries.filter((e) => e.client_name.trim());
+    return {
+      called: filled.length,
+      domluveno: filled.filter((e) => e.outcome === "domluveno").length,
+      nezvedl: filled.filter((e) => e.outcome === "nezvedl").length,
+    };
+  }, [entries]);
+
+  const calledGoal = goals.find((g) => g.type === "called");
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -210,41 +266,25 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       const validEntries = entries.filter((e) => e.client_name.trim());
       if (validEntries.length === 0) throw new Error("Přidej alespoň jeden záznam");
 
-      // 1. session
+      const cleanGoals = goals.filter((g) => g.target != null && g.target > 0);
+
       const { data: session, error: sessionErr } = await supabase
         .from("call_party_sessions")
         .insert({
           user_id: profile.id,
           name: name.trim() || `Call party ${format(parseISO(date), "d. M. yyyy", { locale: cs })}`,
           date,
-          goal_called: goals.called,
-          goal_meetings: goals.meetings,
-          goal_fsa: goals.fsa,
-          goal_ser: goals.ser,
-          goal_poh: goals.poh,
-          goal_nab: goals.nab,
+          goals: cleanGoals as any,
         })
         .select()
         .single();
       if (sessionErr) throw sessionErr;
-
-      // 2. for each "domluveno" → create case + meeting
-      const week_start = (() => {
-        const d = parseISO(date);
-        const day = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() - (day - 1));
-        return d.toISOString().slice(0, 10);
-      })();
 
       const enriched = await Promise.all(
         validEntries.map(async (e, idx) => {
           let created_case_id: string | null = null;
           let created_meeting_id: string | null = null;
 
-          // Vyhodnoť, na který case má řádek napojení (pro každý outcome).
-          // 1) explicitní volba uživatele má přednost
-          // 2) jinak exact duplicate
-          // 3) jinak (jen pro "domluveno") založ nový case
           if (e.linked_case_id) {
             created_case_id = e.linked_case_id;
           } else {
@@ -311,14 +351,14 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
     onSuccess: () => {
       toast.success("Call party uložena");
       qc.invalidateQueries({ queryKey: ["call_party_sessions"] });
+      qc.invalidateQueries({ queryKey: ["call_party_today_count"] });
       qc.invalidateQueries({ queryKey: ["activity"] });
       qc.invalidateQueries({ queryKey: ["my_cases_for_duplicate_check"] });
       qc.invalidateQueries({ queryKey: ["cases"] });
       qc.invalidateQueries({ queryKey: ["meetings"] });
-      // reset
       setName("");
       setDate(today());
-      setGoals({ called: 0, meetings: 0, fsa: 0, ser: 0, poh: 0, nab: 0 });
+      setGoals([{ type: "called", target: null }, { type: "meetings", target: null }]);
       setEntries([emptyEntry()]);
       setStep(1);
       onSaved();
@@ -342,22 +382,22 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       <div className="space-y-6">
         <StepIndicator step={2} />
 
-        {/* Summary */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
           <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
             Shrnutí Call party
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            <SummaryStat label="Zavoláno" actual={counts.called} goal={goals.called} />
-            <SummaryStat label="Domluveno" actual={counts.meetings} goal={goals.meetings} />
-            <SummaryStat label="Analýza" actual={counts.fsa} goal={goals.fsa} />
-            <SummaryStat label="Servis" actual={counts.ser} goal={goals.ser} />
-            <SummaryStat label="Pohovor" actual={counts.poh} goal={goals.poh} />
-            <SummaryStat label="Nábor" actual={counts.nab} goal={goals.nab} />
+            {goals.filter((g) => g.target != null && g.target > 0).map((g) => (
+              <SummaryStat
+                key={g.type}
+                label={GOAL_LABEL_SHORT[g.type]}
+                actual={computeCurrent(g.type, entries as any)}
+                goal={g.target!}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Schedule meetings */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
           <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "var(--deep-hex, #00555f)" }}>
             Naplánuj domluvené schůzky
@@ -403,10 +443,10 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepIndicator step={1} />
 
-      {/* Header */}
+      {/* Name + Date */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Název</label>
@@ -418,56 +458,53 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
         </div>
       </div>
 
-      {/* Goals */}
+      {/* Goals card */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
-          Zde si zadej své cíle na tuto Call Party.
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <GoalInput
-            label="Zavolaných"
-            value={goals.called}
-            actual={counts.called}
-            onChange={(v) => setGoals((g) => ({ ...g, called: v }))}
-          />
-          <GoalInput
-            label="Domluveno"
-            value={goals.meetings}
-            actual={counts.meetings}
-            onChange={(v) => setGoals((g) => ({ ...g, meetings: v }))}
-          />
-          <GoalInput
-            label="Analýza (FSA)"
-            value={goals.fsa}
-            actual={counts.fsa}
-            onChange={(v) => setGoals((g) => ({ ...g, fsa: v }))}
-          />
-          <GoalInput
-            label="Servis (SER)"
-            value={goals.ser}
-            actual={counts.ser}
-            onChange={(v) => setGoals((g) => ({ ...g, ser: v }))}
-          />
-          <GoalInput
-            label="Pohovor (POH)"
-            value={goals.poh}
-            actual={counts.poh}
-            onChange={(v) => setGoals((g) => ({ ...g, poh: v }))}
-          />
-          <GoalInput
-            label="Nábor (NAB)"
-            value={goals.nab}
-            actual={counts.nab}
-            onChange={(v) => setGoals((g) => ({ ...g, nab: v }))}
-          />
+        <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+          <div>
+            <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
+              Cíle pro tuto Call party
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Volitelné — sleduj progress během volání</p>
+          </div>
+          <div
+            className="rounded-full"
+            style={{
+              padding: "5px 12px",
+              fontSize: 12,
+              fontWeight: 600,
+              background: "rgba(0,171,189,0.10)",
+              color: "var(--deep-hex, #00555f)",
+            }}
+          >
+            {summary.called}
+            {calledGoal?.target ? ` / ${calledGoal.target}` : ""} hovorů
+          </div>
         </div>
+
+        <GoalsEditor goals={goals} setGoals={setGoals} entries={entries} />
       </div>
 
-      {/* Entries */}
+      {/* Entries card */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
-          Záznamy hovorů
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
+            Záznamy hovorů
+          </h2>
+          <span className="text-xs text-muted-foreground">{validCount} {validCount === 1 ? "záznam" : validCount >= 2 && validCount <= 4 ? "záznamy" : "záznamů"}</span>
+        </div>
+
+        {/* Column headers */}
+        <div
+          className="hidden md:grid items-center mb-2 px-1"
+          style={{ gridTemplateColumns: "1.6fr 1fr 1fr 36px", gap: 10, fontSize: 10, letterSpacing: "0.06em", color: "#5a7479", textTransform: "uppercase", fontWeight: 600 }}
+        >
+          <span>Jméno</span>
+          <span>Výsledek</span>
+          <span>Typ schůzky</span>
+          <span />
+        </div>
+
         <div className="space-y-2">
           {entries.map((e, i) => (
             <EntryRow
@@ -481,23 +518,241 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           ))}
           <button
             onClick={addEntry}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2 rounded-xl border border-dashed border-input hover:bg-muted hover:border-solid transition"
-            style={{ color: "#00abbd" }}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2.5 rounded-xl border border-dashed hover:bg-muted transition"
+            style={{ color: "#00abbd", borderColor: "#9cd5dc" }}
           >
             <Plus className="h-4 w-4" /> Přidat řádek
           </button>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button
-          onClick={handleNext}
-          className="font-heading font-semibold"
-          style={{ background: "#fc7c71", color: "#fff" }}
+      {/* Sticky-style bottom bar */}
+      <StickyBottomBar
+        summary={summary}
+        onClick={handleNext}
+      />
+    </div>
+  );
+}
+
+// ─── Goals editor ────────────────────────────────────────────────────────────
+function GoalsEditor({
+  goals,
+  setGoals,
+  entries,
+}: {
+  goals: GoalItem[];
+  setGoals: (g: GoalItem[]) => void;
+  entries: EntryDraft[];
+}) {
+  const [adding, setAdding] = useState(false);
+
+  const usedTypes = new Set(goals.map((g) => g.type));
+  const availableTypes = ALL_GOAL_TYPES.filter((t) => !usedTypes.has(t));
+
+  const updateGoal = (idx: number, patch: Partial<GoalItem>) => {
+    setGoals(goals.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
+  };
+
+  const removeGoal = (idx: number) => {
+    const removed = goals[idx];
+    const next = goals.filter((_, i) => i !== idx);
+    setGoals(next);
+    toast("Cíl smazán", {
+      action: {
+        label: "Vrátit",
+        onClick: () => setGoals([...next.slice(0, idx), removed, ...next.slice(idx)]),
+      },
+      duration: 5000,
+    });
+  };
+
+  const addGoal = (type: GoalType) => {
+    setGoals([...goals, { type, target: null }]);
+    setAdding(false);
+  };
+
+  return (
+    <>
+      {goals.length > 0 && (
+        <div
+          className="grid gap-x-6 gap-y-4 mb-3"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
         >
-          Mám dovoláno →
-        </Button>
+          {goals.map((g, idx) => (
+            <GoalRow
+              key={g.type + "_" + idx}
+              goal={g}
+              entries={entries}
+              onChange={(patch) => updateGoal(idx, patch)}
+              onRemove={() => removeGoal(idx)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="border-t border-dashed pt-3 mt-1 flex items-center gap-3 flex-wrap" style={{ borderColor: "rgba(0,85,95,0.15)" }}>
+        {adding ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            {availableTypes.map((t) => (
+              <button
+                key={t}
+                onClick={() => addGoal(t)}
+                className="text-xs font-heading font-semibold px-3 py-1.5 rounded-full transition"
+                style={{ background: GOAL_META[t].bg, color: GOAL_META[t].color }}
+              >
+                {GOAL_LABEL_SHORT[t]}
+              </button>
+            ))}
+            <button onClick={() => setAdding(false)} className="text-xs text-muted-foreground hover:underline">
+              Zrušit
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={() => setAdding(true)}
+              disabled={availableTypes.length === 0}
+              className="inline-flex items-center gap-1.5 text-xs font-heading font-semibold px-3 py-1.5 rounded-full border border-dashed hover:bg-muted transition disabled:opacity-40"
+              style={{ color: "#00abbd", borderColor: "#9cd5dc" }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Přidat cíl
+            </button>
+            {availableTypes.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {availableTypes.map((t) => GOAL_LABEL_SHORT[t]).join(" · ")}
+              </span>
+            )}
+          </>
+        )}
       </div>
+    </>
+  );
+}
+
+function GoalRow({
+  goal,
+  entries,
+  onChange,
+  onRemove,
+}: {
+  goal: GoalItem;
+  entries: EntryDraft[];
+  onChange: (p: Partial<GoalItem>) => void;
+  onRemove: () => void;
+}) {
+  const meta = GOAL_META[goal.type];
+  const current = computeCurrent(goal.type, entries as any);
+  const target = goal.target ?? 0;
+  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(target ? String(target) : "");
+
+  return (
+    <div className="group">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-heading" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: meta.color }}>
+          {meta.label}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-heading text-sm" style={{ color: "var(--deep-hex, #00555f)" }}>
+            <strong style={{ color: meta.color }}>{current}</strong>
+            <span style={{ opacity: 0.5 }}> / </span>
+            {editing ? (
+              <input
+                autoFocus
+                type="number"
+                min={0}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={() => {
+                  const v = Number(draft);
+                  onChange({ target: Number.isFinite(v) && v > 0 ? v : null });
+                  setEditing(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                }}
+                className="w-12 text-right bg-transparent border-b border-input outline-none font-heading text-sm"
+              />
+            ) : (
+              <button
+                onClick={() => { setDraft(target ? String(target) : ""); setEditing(true); }}
+                className="hover:underline"
+                style={{ color: target ? "var(--deep-hex, #00555f)" : "#9aa9ad" }}
+              >
+                {target || "—"}
+              </button>
+            )}
+          </span>
+          <button
+            onClick={onRemove}
+            className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-destructive p-1 rounded"
+            title="Smazat cíl"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      <div className="rounded-full overflow-hidden" style={{ height: 6, background: meta.bg }}>
+        <div
+          className="h-full transition-all"
+          style={{ width: `${pct}%`, background: meta.color, borderRadius: 999 }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Sticky bottom bar ───────────────────────────────────────────────────────
+function StickyBottomBar({
+  summary,
+  onClick,
+}: {
+  summary: { called: number; domluveno: number; nezvedl: number };
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-4 flex-wrap"
+      style={{
+        background: "rgba(255,255,255,0.78)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "0.5px solid rgba(255,255,255,0.95)",
+        borderRadius: 16,
+        boxShadow: "0 8px 32px rgba(0,85,95,0.12)",
+        padding: "14px 20px",
+        marginTop: -8,
+        position: "sticky",
+        bottom: 16,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#5a7479" }}>
+        <strong style={{ color: "var(--deep-hex, #00555f)" }}>
+          {summary.called} {summary.called === 1 ? "hovor" : summary.called >= 2 && summary.called <= 4 ? "hovory" : "hovorů"}
+        </strong>
+        {" · "}
+        {summary.domluveno} domluveno
+        {" · "}
+        {summary.nezvedl} nezvednuto
+      </div>
+      <button
+        onClick={onClick}
+        className="font-heading font-semibold inline-flex items-center gap-1.5"
+        style={{
+          background: "#fc7c71",
+          color: "#fff",
+          padding: "11px 22px",
+          borderRadius: 12,
+          fontSize: 14,
+          boxShadow: "0 2px 8px rgba(252,124,113,0.3)",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        Mám dovoláno →
+      </button>
     </div>
   );
 }
@@ -533,12 +788,14 @@ function ScheduleRow({
         <div className="font-heading font-semibold text-sm" style={{ color: "var(--deep-hex, #00555f)" }}>
           {entry.client_name}
         </div>
-        <span
-          className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-          style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
-        >
-          {meetingTypeLabel(entry.meeting_type as MeetingType)}
-        </span>
+        {entry.meeting_type && (
+          <span
+            className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
+            style={{ background: MEETING_TYPE_PILL[entry.meeting_type].bg, color: MEETING_TYPE_PILL[entry.meeting_type].color }}
+          >
+            {meetingTypeLabel(entry.meeting_type as MeetingType)}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <div>
@@ -573,42 +830,7 @@ function ScheduleRow({
   );
 }
 
-function GoalInput({
-  label,
-  value,
-  actual,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  actual: number;
-  onChange: (v: number) => void;
-}) {
-  const reached = value > 0 && actual >= value;
-  return (
-    <div>
-      <label className="block text-[11px] font-heading uppercase tracking-wide text-muted-foreground mb-1">
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          value={value || ""}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className="h-9"
-        />
-        <span
-          className="text-xs font-heading font-semibold whitespace-nowrap"
-          style={{ color: reached ? "#00abbd" : "hsl(var(--muted-foreground))" }}
-        >
-          {actual}/{value || 0}
-        </span>
-      </div>
-    </div>
-  );
-}
-
+// ─── Entry row (Step 1) ──────────────────────────────────────────────────────
 function EntryRow({
   entry,
   onChange,
@@ -622,8 +844,6 @@ function EntryRow({
   canRemove: boolean;
   existingCases?: { id: string; nazev_pripadu: string; status: string }[];
 }) {
-  // Debounced duplicate check — počkej 400ms po posledním stisku klávesy,
-  // aby se nespouštěla detekce při každém znaku.
   const [debouncedName, setDebouncedName] = useState(entry.client_name);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedName(entry.client_name), 400);
@@ -639,48 +859,83 @@ function EntryRow({
   const hasSimilar = duplicates.similar.length > 0;
   const showWarning = hasExact || hasSimilar;
 
+  const inputBase = {
+    background: "#f1f5f6",
+    borderRadius: 10,
+    padding: "9px 14px",
+    border: showWarning ? "1px solid #f59e0b" : "1px solid transparent",
+    fontSize: 14,
+    width: "100%",
+    outline: "none",
+  } as React.CSSProperties;
+
+  const outcomeStyle = (o: Outcome): React.CSSProperties => {
+    if (o === "domluveno") return { background: "rgba(13,148,136,0.10)", color: "#0D9488", fontWeight: 600 };
+    return { background: "rgba(90,116,121,0.10)", color: "#5a7479", fontWeight: 500 };
+  };
+
+  const isDom = entry.outcome === "domluveno";
+  const mt = entry.meeting_type;
+
   return (
     <div>
-      <div className="grid grid-cols-12 gap-2 items-center">
-        <Input
-          className={`col-span-5 h-9 ${showWarning ? "border-amber-500" : ""}`}
+      <div
+        className="grid items-center"
+        style={{ gridTemplateColumns: "1.6fr 1fr 1fr 36px", gap: 10 }}
+      >
+        <input
+          style={inputBase}
           placeholder="Jméno"
           value={entry.client_name}
           onChange={(e) => onChange({ client_name: e.target.value })}
         />
-        <select
-          className="col-span-3 h-9 rounded-md border border-input bg-background px-2 text-sm"
+        <SelectPill
           value={entry.outcome}
-          onChange={(e) => {
-            const outcome = e.target.value as Outcome;
-            onChange({ outcome, meeting_type: outcome === "domluveno" ? (entry.meeting_type ?? "FSA") : null });
+          onChange={(v) => {
+            const outcome = v as Outcome;
+            onChange({ outcome, meeting_type: outcome === "domluveno" ? entry.meeting_type : null });
           }}
-        >
-          {(Object.keys(outcomeLabel) as Outcome[]).map((o) => (
-            <option key={o} value={o}>
-              {outcomeLabel[o]}
-            </option>
-          ))}
-        </select>
-        {entry.outcome === "domluveno" ? (
-          <select
-            className="col-span-3 h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value={entry.meeting_type ?? "FSA"}
-            onChange={(e) => onChange({ meeting_type: e.target.value as CPMeetingType })}
-          >
-            {CP_MEETING_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {meetingTypeLabel(t as MeetingType)}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div className="col-span-3" />
-        )}
+          options={(Object.keys(outcomeLabel) as Outcome[]).map((o) => ({ value: o, label: outcomeLabel[o] }))}
+          style={{
+            ...outcomeStyle(entry.outcome),
+            borderRadius: 10,
+            padding: "9px 14px",
+            border: "1px solid transparent",
+          }}
+        />
+        <SelectPill
+          value={mt ?? ""}
+          disabled={!isDom}
+          onChange={(v) => onChange({ meeting_type: v as CPMeetingType })}
+          options={[
+            ...(isDom ? [] : [{ value: "", label: "—" }]),
+            ...CP_MEETING_TYPES.map((t) => ({ value: t, label: meetingTypeLabel(t as MeetingType) })),
+          ]}
+          placeholder={isDom ? "Vyber" : "—"}
+          style={
+            isDom && mt
+              ? {
+                  background: MEETING_TYPE_PILL[mt].bg,
+                  color: MEETING_TYPE_PILL[mt].color,
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  padding: "9px 14px",
+                  border: "1px solid transparent",
+                }
+              : {
+                  background: "#f1f5f6",
+                  color: isDom ? "#5a7479" : "#9aa9ad",
+                  fontStyle: isDom ? "normal" : "italic",
+                  borderRadius: 10,
+                  padding: "9px 14px",
+                  border: "1px solid transparent",
+                }
+          }
+        />
         <button
           onClick={onRemove}
           disabled={!canRemove}
-          className="col-span-1 h-9 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:text-destructive disabled:opacity-40"
+          className="h-9 w-9 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive disabled:opacity-30 transition"
           title="Smazat"
         >
           <Trash2 className="h-4 w-4" />
@@ -730,6 +985,52 @@ function EntryRow({
   );
 }
 
+// ─── Reusable styled select with chevron ─────────────────────────────────────
+function SelectPill({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  style,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={{ position: "relative", opacity: disabled ? 0.7 : 1 }}>
+      <select
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none w-full text-sm cursor-pointer disabled:cursor-not-allowed"
+        style={{
+          ...style,
+          paddingRight: 28,
+          outline: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+        }}
+      >
+        {placeholder && !value && <option value="">{placeholder}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="absolute pointer-events-none"
+        style={{ right: 10, top: "50%", transform: "translateY(-50%)", height: 14, width: 14, opacity: 0.6, color: "currentColor" }}
+      />
+    </div>
+  );
+}
+
 // ─── History ─────────────────────────────────────────────────────────────────
 function HistoryList({ onOpen }: { onOpen: (s: SessionRow) => void }) {
   const { profile } = useAuth();
@@ -743,7 +1044,7 @@ function HistoryList({ onOpen }: { onOpen: (s: SessionRow) => void }) {
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as SessionRow[];
+      return (data || []).map((d: any) => ({ ...d, goals: parseGoals(d.goals) })) as SessionRow[];
     },
     enabled: !!profile,
   });
@@ -780,14 +1081,14 @@ function HistoryList({ onOpen }: { onOpen: (s: SessionRow) => void }) {
               {format(parseISO(s.date), "EEEE d. M. yyyy", { locale: cs })}
             </div>
           </div>
-          <SessionSummaryBadges sessionId={s.id} goals={s} />
+          <SessionSummaryBadges sessionId={s.id} goals={s.goals} />
         </button>
       ))}
     </div>
   );
 }
 
-function SessionSummaryBadges({ sessionId, goals }: { sessionId: string; goals: SessionRow }) {
+function SessionSummaryBadges({ sessionId, goals }: { sessionId: string; goals: GoalItem[] }) {
   const { data } = useQuery({
     queryKey: ["call_party_entries_summary", sessionId],
     queryFn: async () => {
@@ -801,18 +1102,20 @@ function SessionSummaryBadges({ sessionId, goals }: { sessionId: string; goals: 
   });
   const called = (data || []).filter((e) => e.client_name.trim()).length;
   const domluveno = (data || []).filter((e) => e.outcome === "domluveno").length;
+  const calledTarget = goals.find((g) => g.type === "called")?.target;
+  const meetTarget = goals.find((g) => g.type === "meetings")?.target;
   return (
     <div className="flex gap-2 text-xs">
       <span className="px-2 py-1 rounded-lg bg-muted">
         Zavoláno: <strong>{called}</strong>
-        {goals.goal_called > 0 ? `/${goals.goal_called}` : ""}
+        {calledTarget ? `/${calledTarget}` : ""}
       </span>
       <span
         className="px-2 py-1 rounded-lg"
         style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
       >
         Domluveno: <strong>{domluveno}</strong>
-        {goals.goal_meetings > 0 ? `/${goals.goal_meetings}` : ""}
+        {meetTarget ? `/${meetTarget}` : ""}
       </span>
     </div>
   );
@@ -848,13 +1151,15 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
     },
   });
 
-  // Edit state
   const [name, setName] = useState(session.name);
   const [date, setDate] = useState(session.date);
+  const [editGoals, setEditGoals] = useState<GoalItem[]>(session.goals);
   const [draft, setDraft] = useState<EntryDraft[] | null>(null);
+
   const startEdit = () => {
     setName(session.name);
     setDate(session.date);
+    setEditGoals(session.goals);
     setDraft(
       (entries || []).map((e) => ({
         id: e.id,
@@ -869,27 +1174,23 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
   const saveEdit = useMutation({
     mutationFn: async () => {
       if (!draft) return;
+      const cleanGoals = editGoals.filter((g) => g.target != null && g.target > 0);
       const { error: sErr } = await supabase
         .from("call_party_sessions")
-        .update({ name: name.trim() || session.name, date })
+        .update({ name: name.trim() || session.name, date, goals: cleanGoals as any })
         .eq("id", session.id);
       if (sErr) throw sErr;
 
-      // delete entries not in draft
       const keepIds = draft.filter((d) => d.id).map((d) => d.id!);
       const toDelete = (entries || []).filter((e) => !keepIds.includes(e.id));
       if (toDelete.length > 0) {
         const { error } = await supabase
           .from("call_party_entries")
           .delete()
-          .in(
-            "id",
-            toDelete.map((e) => e.id),
-          );
+          .in("id", toDelete.map((e) => e.id));
         if (error) throw error;
       }
 
-      // upsert
       for (let i = 0; i < draft.length; i++) {
         const d = draft[i];
         const payload = {
@@ -976,14 +1277,28 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
 
           <div className="rounded-xl border border-border p-3">
             <h3 className="text-xs font-heading uppercase tracking-wide text-muted-foreground mb-2">Cíle</h3>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <GoalReadout label="Zavolaných" value={session.goal_called} />
-              <GoalReadout label="Domluveno" value={session.goal_meetings} />
-              <GoalReadout label="Analýza" value={session.goal_fsa} />
-              <GoalReadout label="Servis" value={session.goal_ser} />
-              <GoalReadout label="Pohovor" value={session.goal_poh} />
-              <GoalReadout label="Nábor" value={session.goal_nab} />
-            </div>
+            {editMode ? (
+              <GoalsEditor
+                goals={editGoals}
+                setGoals={setEditGoals}
+                entries={(draft || []) as EntryDraft[]}
+              />
+            ) : session.goals.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Bez cílů</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                {session.goals.map((g) => (
+                  <div key={g.type} className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-wide" style={{ color: GOAL_META[g.type].color }}>
+                      {GOAL_META[g.type].label}
+                    </span>
+                    <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
+                      {g.target || "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -1034,7 +1349,10 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
                         {e.outcome === "domluveno" && e.meeting_type && (
                           <span
                             className="text-xs px-2 py-0.5 rounded-md font-heading font-semibold"
-                            style={{ background: "rgba(0,171,189,0.12)", color: "var(--deep-hex, #00555f)" }}
+                            style={{
+                              background: MEETING_TYPE_PILL[e.meeting_type as CPMeetingType]?.bg || "rgba(0,171,189,0.12)",
+                              color: MEETING_TYPE_PILL[e.meeting_type as CPMeetingType]?.color || "var(--deep-hex, #00555f)",
+                            }}
                           >
                             {meetingTypeLabel(e.meeting_type as MeetingType)}
                           </span>
@@ -1129,52 +1447,41 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
   );
 }
 
-function GoalReadout({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
-        {value || "—"}
-      </span>
-    </div>
-  );
-}
-
-// ─── Step indicator (centered, label below) ─────────────────────────────────
+// ─── Step indicator (compact) ────────────────────────────────────────────────
 function StepIndicator({ step }: { step: 1 | 2 }) {
   const steps = [
     { n: 1, label: "Záznam hovorů" },
     { n: 2, label: "Naplánovat schůzky" },
   ];
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-start justify-center" style={{ gap: 0 }}>
       {steps.map((s, idx) => {
         const active = s.n === step;
         const done = s.n < step;
         return (
-          <div key={s.n} className="flex items-center gap-3">
+          <div key={s.n} className="flex items-start">
             <div className="flex flex-col items-center" style={{ minWidth: 110 }}>
               <div
                 className="flex items-center justify-center font-heading font-bold"
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 22,
+                  height: 22,
                   borderRadius: "50%",
-                  fontSize: 13,
+                  fontSize: 11,
                   background: active || done ? "#00abbd" : "transparent",
-                  color: active || done ? "#fff" : "hsl(var(--muted-foreground))",
-                  border: active || done ? "none" : "1.5px solid hsl(var(--border))",
+                  color: active || done ? "#fff" : "rgba(0,85,95,0.6)",
+                  border: active || done ? "none" : "1.5px solid rgba(0,85,95,0.35)",
                 }}
               >
                 {s.n}
               </div>
               <div
-                className="font-heading mt-1.5 text-center"
+                className="font-heading mt-1 text-center"
                 style={{
                   fontSize: 11,
-                  fontWeight: active ? 700 : 500,
-                  color: active ? "#00abbd" : "hsl(var(--muted-foreground))",
-                  letterSpacing: "0.04em",
+                  fontWeight: active ? 700 : 600,
+                  color: active ? "#00abbd" : "#5a7479",
+                  letterSpacing: "0.06em",
                   textTransform: "uppercase",
                 }}
               >
@@ -1184,10 +1491,10 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
             {idx < steps.length - 1 && (
               <div
                 style={{
-                  height: 2,
-                  width: 48,
-                  background: done || step > s.n ? "#00abbd" : "hsl(var(--border))",
-                  marginBottom: 22,
+                  height: 1,
+                  width: 60,
+                  background: done || step > s.n ? "#00abbd" : "rgba(0,85,95,0.18)",
+                  marginTop: 11,
                 }}
               />
             )}

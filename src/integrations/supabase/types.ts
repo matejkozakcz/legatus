@@ -214,12 +214,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
-          goal_called: number
-          goal_fsa: number
-          goal_meetings: number
-          goal_nab: number
-          goal_poh: number
-          goal_ser: number
+          goals: Json | null
           id: string
           name: string
           notes: string | null
@@ -229,12 +224,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date?: string
-          goal_called?: number
-          goal_fsa?: number
-          goal_meetings?: number
-          goal_nab?: number
-          goal_poh?: number
-          goal_ser?: number
+          goals?: Json | null
           id?: string
           name?: string
           notes?: string | null
@@ -244,12 +234,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
-          goal_called?: number
-          goal_fsa?: number
-          goal_meetings?: number
-          goal_nab?: number
-          goal_poh?: number
-          goal_ser?: number
+          goals?: Json | null
           id?: string
           name?: string
           notes?: string | null
