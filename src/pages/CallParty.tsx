@@ -461,26 +461,11 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
       {/* Goals card */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
-          <div>
-            <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
-              Cíle pro tuto Call party
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Volitelné — sleduj progress během volání</p>
-          </div>
-          <div
-            className="rounded-full"
-            style={{
-              padding: "5px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              background: "rgba(0,171,189,0.10)",
-              color: "var(--deep-hex, #00555f)",
-            }}
-          >
-            {summary.called}
-            {calledGoal?.target ? ` / ${calledGoal.target}` : ""} hovorů
-          </div>
+        <div className="mb-4">
+          <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
+            Cíle pro tuto Call party
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Volitelné — sleduj progress během volání</p>
         </div>
 
         <GoalsEditor goals={goals} setGoals={setGoals} entries={entries} />
