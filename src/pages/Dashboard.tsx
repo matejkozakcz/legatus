@@ -2176,6 +2176,26 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* ── Call Party desktop card ── */}
+        {!isMobile && cpStats.called > 0 && (
+          <div
+            className="legatus-card"
+            style={{ padding: "20px 24px", marginTop: 8 }}
+          >
+            <h3
+              className="font-heading font-semibold"
+              style={{ fontSize: 15, color: "var(--deep-hex, #00555f)", marginBottom: 14 }}
+            >
+              Call party — {viewMode === "week" ? "tento týden" : "toto období"}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              <StatCard label="Volaných" actual={cpStats.called} actualLabel="hovorů celkem" />
+              <StatCard label="Domluveno" actual={cpStats.domluveno} actualLabel={`z ${cpStats.called} hovorů`} />
+              <StatCard label="Nezvedl" actual={cpStats.nezvedl} actualLabel="hovorů" />
+              <StatCard label="Nedomluveno" actual={cpStats.nedomluveno} actualLabel="hovorů" />
+            </div>
+          </div>
+        )}
 
         {profile?.id && (
           <VedouciGoalsModal
