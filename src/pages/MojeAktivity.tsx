@@ -279,6 +279,32 @@ export const MojeAktivityContent = () => {
     return sums;
   }, [records]);
 
+  const cpByWeek = useMemo(() => {
+    const map: Record<string, { called: number; domluveno: number }> = {};
+    for (const e of cpEntries) {
+      if (!e.date) continue;
+      const ws = format(
+        startOfWeek(new Date(e.date + "T00:00:00"), { weekStartsOn: 1 }),
+        "yyyy-MM-dd",
+      );
+      if (!map[ws]) map[ws] = { called: 0, domluveno: 0 };
+      map[ws].called += 1;
+      if (e.outcome === "domluveno") map[ws].domluveno += 1;
+    }
+    return map;
+  }, [cpEntries]);
+
+  const cpTotal = useMemo(
+    () => cpEntries.reduce(
+      (acc, e) => ({
+        called: acc.called + 1,
+        domluveno: acc.domluveno + (e.outcome === "domluveno" ? 1 : 0),
+      }),
+      { called: 0, domluveno: 0 },
+    ),
+    [cpEntries],
+  );
+
   // Mobile-specific data
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
