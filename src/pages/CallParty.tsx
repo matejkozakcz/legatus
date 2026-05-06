@@ -340,12 +340,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
   if (step === 2) {
     return (
       <div className="space-y-6">
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 text-xs font-heading uppercase tracking-wide text-muted-foreground">
-          <span>Krok 1</span>
-          <span>›</span>
-          <span style={{ color: "#00abbd" }}>Krok 2 — Naplánovat schůzky</span>
-        </div>
+        <StepIndicator step={2} />
 
         {/* Summary */}
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
