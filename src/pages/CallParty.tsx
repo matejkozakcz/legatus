@@ -89,7 +89,6 @@ export default function CallParty() {
           <h1 className="font-heading text-2xl font-semibold" style={{ color: "hsl(var(--foreground))" }}>
             Call party
           </h1>
-          <p className="text-sm text-muted-foreground">Veď si záznam ze sessionů volání a sleduj plnění cílů.</p>
         </div>
       </div>
 
