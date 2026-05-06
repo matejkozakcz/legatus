@@ -191,6 +191,30 @@ export const MojeAktivityContent = () => {
     enabled: !!profile?.id,
   });
 
+  // ── Call Party entries pro aktuální produkční období ─────────────────────
+  const { data: cpEntries = [] } = useQuery({
+    queryKey: ["cp_aktivity", profile?.id, format(monthStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data: sessions } = await supabase
+        .from("call_party_sessions")
+        .select("id, date")
+        .eq("user_id", profile.id)
+        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .lte("date", format(monthEnd, "yyyy-MM-dd"));
+      if (!sessions?.length) return [];
+      const { data: entries } = await supabase
+        .from("call_party_entries")
+        .select("session_id, outcome")
+        .in("session_id", sessions.map((s) => s.id));
+      return (entries ?? []).map((e) => ({
+        outcome: e.outcome as string,
+        date: sessions.find((s) => s.id === e.session_id)?.date ?? null,
+      }));
+    },
+    enabled: !!profile?.id,
+  });
+
   const upsertMutation = useMutation({
     mutationFn: async (record: { week_start: string; [key: string]: any }) => {
       if (!profile?.id) throw new Error("No user");
