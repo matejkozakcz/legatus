@@ -559,12 +559,9 @@ function GoalsEditor({
   };
 
   return (
-    <>
+    <div className="space-y-3">
       {goals.length > 0 && (
-        <div
-          className="grid gap-x-6 gap-y-4 mb-3"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
-        >
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
           {goals.map((g, idx) => (
             <GoalRow
               key={g.type + "_" + idx}
@@ -577,42 +574,47 @@ function GoalsEditor({
         </div>
       )}
 
-      <div className="border-t border-dashed pt-3 mt-1 flex items-center gap-3 flex-wrap" style={{ borderColor: "rgba(0,85,95,0.15)" }}>
-        {adding ? (
-          <div className="flex items-center gap-2 flex-wrap">
-            {availableTypes.map((t) => (
+      {adding && availableTypes.length > 0 ? (
+        <div
+          className="rounded-[10px] p-3 flex items-center gap-2 flex-wrap"
+          style={{ border: "1.5px dashed rgba(0,171,189,0.4)", background: "rgba(0,171,189,0.04)" }}
+        >
+          <span className="text-xs text-muted-foreground mr-1">Vyber typ cíle:</span>
+          {ALL_GOAL_TYPES.map((t) => {
+            const used = usedTypes.has(t);
+            return (
               <button
                 key={t}
-                onClick={() => addGoal(t)}
-                className="text-xs font-heading font-semibold px-3 py-1.5 rounded-full transition"
-                style={{ background: GOAL_META[t].bg, color: GOAL_META[t].color }}
+                onClick={() => !used && addGoal(t)}
+                disabled={used}
+                className="text-xs font-heading font-semibold px-3 py-1.5 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: GOAL_META[t].tint, color: GOAL_META[t].labelColor, border: `1px solid ${GOAL_META[t].border}` }}
               >
                 {GOAL_LABEL_SHORT[t]}
               </button>
-            ))}
-            <button onClick={() => setAdding(false)} className="text-xs text-muted-foreground hover:underline">
-              Zrušit
-            </button>
-          </div>
-        ) : (
-          <>
-            <button
-              onClick={() => setAdding(true)}
-              disabled={availableTypes.length === 0}
-              className="inline-flex items-center gap-1.5 text-xs font-heading font-semibold px-3 py-1.5 rounded-full border border-dashed hover:bg-muted transition disabled:opacity-40"
-              style={{ color: "#00abbd", borderColor: "#9cd5dc" }}
-            >
-              <Plus className="h-3.5 w-3.5" /> Přidat cíl
-            </button>
-            {availableTypes.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {availableTypes.map((t) => GOAL_LABEL_SHORT[t]).join(" · ")}
-              </span>
-            )}
-          </>
-        )}
-      </div>
-    </>
+            );
+          })}
+          <button onClick={() => setAdding(false)} className="text-xs text-muted-foreground hover:underline ml-1">
+            Zrušit
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          disabled={availableTypes.length === 0}
+          className="w-full inline-flex items-center justify-center gap-1.5 font-heading font-semibold transition hover:bg-[rgba(0,171,189,0.06)] disabled:opacity-40"
+          style={{
+            color: "#00abbd",
+            border: "1.5px dashed rgba(0,171,189,0.4)",
+            borderRadius: 10,
+            padding: "10px 12px",
+            fontSize: 13,
+          }}
+        >
+          <Plus className="h-4 w-4" /> Přidat cíl
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -630,62 +632,114 @@ function GoalRow({
   const meta = GOAL_META[goal.type];
   const current = computeCurrent(goal.type, entries as any);
   const target = goal.target ?? 0;
-  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+  const hasTarget = target > 0;
+  const pct = hasTarget ? Math.min(100, (current / target) * 100) : 0;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(target ? String(target) : "");
 
+  const commit = () => {
+    const v = Number(draft);
+    onChange({ target: Number.isFinite(v) && v > 0 ? v : null });
+    setEditing(false);
+  };
+  const startEdit = () => {
+    setDraft(target ? String(target) : "");
+    setEditing(true);
+  };
+
+  const cardStyle: React.CSSProperties = hasTarget
+    ? { background: meta.tint, border: `0.5px solid ${meta.border}` }
+    : { background: "#f7f9fa", border: "0.5px solid rgba(0,85,95,0.1)" };
+
   return (
-    <div className="group">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="font-heading" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: meta.color }}>
+    <div className="rounded-xl p-3" style={cardStyle}>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span
+          className="font-heading"
+          style={{
+            fontSize: 11,
+            fontWeight: hasTarget ? 700 : 600,
+            letterSpacing: "0.06em",
+            color: meta.labelColor,
+            textTransform: "uppercase",
+          }}
+        >
           {meta.label}
         </span>
-        <div className="flex items-center gap-2">
-          <span className="font-heading text-sm" style={{ color: "var(--deep-hex, #00555f)" }}>
-            <strong style={{ color: meta.color }}>{current}</strong>
-            <span style={{ opacity: 0.5 }}> / </span>
-            {editing ? (
-              <input
-                autoFocus
-                type="number"
-                min={0}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => {
-                  const v = Number(draft);
-                  onChange({ target: Number.isFinite(v) && v > 0 ? v : null });
-                  setEditing(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                }}
-                className="w-12 text-right bg-transparent border-b border-input outline-none font-heading text-sm"
-              />
-            ) : (
-              <button
-                onClick={() => { setDraft(target ? String(target) : ""); setEditing(true); }}
-                className="hover:underline"
-                style={{ color: target ? "var(--deep-hex, #00555f)" : "#9aa9ad" }}
-              >
-                {target || "—"}
-              </button>
-            )}
-          </span>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={startEdit}
+            className="p-1 rounded hover:bg-[rgba(0,171,189,0.12)] transition"
+            title="Upravit cíl"
+            style={{ color: "#00abbd" }}
+          >
+            <Pencil style={{ width: 13, height: 13 }} />
+          </button>
           <button
             onClick={onRemove}
-            className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-destructive p-1 rounded"
+            className="p-1 rounded hover:bg-[rgba(226,75,74,0.12)] transition"
             title="Smazat cíl"
+            style={{ color: "#e24b4a" }}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 style={{ width: 13, height: 13 }} />
           </button>
         </div>
       </div>
-      <div className="rounded-full overflow-hidden" style={{ height: 6, background: meta.bg }}>
-        <div
-          className="h-full transition-all"
-          style={{ width: `${pct}%`, background: meta.color, borderRadius: 999 }}
-        />
-      </div>
+
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            type="number"
+            min={0}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            placeholder="Cíl (např. 20)"
+            className="flex-1 bg-white/70 border border-input rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,171,189,0.3)]"
+          />
+          <button
+            onClick={commit}
+            className="text-xs font-heading font-semibold px-3 py-1.5 rounded-md text-white"
+            style={{ background: "#00abbd" }}
+          >
+            Uložit
+          </button>
+        </div>
+      ) : hasTarget ? (
+        <>
+          <div className="flex items-baseline gap-1 mb-2">
+            <span className="font-heading font-bold" style={{ fontSize: 22, color: meta.bar, lineHeight: 1 }}>
+              {current}
+            </span>
+            <span className="text-[13px] text-muted-foreground">/ {target}</span>
+          </div>
+          <div className="rounded-full overflow-hidden" style={{ height: 4, background: `${meta.bar}1f` }}>
+            <div
+              className="h-full transition-all"
+              style={{ width: `${pct}%`, background: meta.bar, borderRadius: 999 }}
+            />
+          </div>
+        </>
+      ) : (
+        <button
+          onClick={startEdit}
+          className="w-full font-heading font-semibold transition hover:bg-[rgba(0,171,189,0.06)]"
+          style={{
+            border: "1px dashed rgba(0,171,189,0.5)",
+            color: "#00abbd",
+            borderRadius: 8,
+            padding: "5px 12px",
+            fontSize: 13,
+          }}
+        >
+          Nastav cíl
+        </button>
+      )}
     </div>
   );
 }
