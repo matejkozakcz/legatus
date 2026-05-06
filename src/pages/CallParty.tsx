@@ -108,9 +108,7 @@ export default function CallParty() {
         </TabsContent>
       </Tabs>
 
-      {openSession && (
-        <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />
-      )}
+      {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
   );
 }
@@ -266,7 +264,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
             created_meeting_id,
             sort_order: idx,
           };
-        })
+        }),
       );
 
       const { error: eErr } = await supabase.from("call_party_entries").insert(enriched);
@@ -290,9 +288,7 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
     onError: (e: Error) => toast.error(e.message || "Uložení selhalo"),
   });
 
-  const scheduledEntries = entries.filter(
-    (e) => e.client_name.trim() && e.outcome === "domluveno" && e.meeting_type
-  );
+  const scheduledEntries = entries.filter((e) => e.client_name.trim() && e.outcome === "domluveno" && e.meeting_type);
   const validCount = entries.filter((e) => e.client_name.trim()).length;
 
   const handleNext = () => {
@@ -337,20 +333,13 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
             Doplň datum (povinné), čas a místo (volitelné). Bez data se použije datum Call party.
           </p>
           {scheduledEntries.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Žádné domluvené schůzky k naplánování.
-            </p>
+            <p className="text-sm text-muted-foreground py-4 text-center">Žádné domluvené schůzky k naplánování.</p>
           ) : (
             <div className="space-y-3">
               {scheduledEntries.map((e) => {
                 const realIdx = entries.indexOf(e);
                 return (
-                  <ScheduleRow
-                    key={realIdx}
-                    entry={e}
-                    fallbackDate={date}
-                    onChange={(p) => updateEntry(realIdx, p)}
-                  />
+                  <ScheduleRow key={realIdx} entry={e} fallbackDate={date} onChange={(p) => updateEntry(realIdx, p)} />
                 );
               })}
             </div>
@@ -407,12 +396,42 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
           Cíle
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <GoalInput label="Zavolaných" value={goals.called} actual={counts.called} onChange={(v) => setGoals((g) => ({ ...g, called: v }))} />
-          <GoalInput label="Domluveno" value={goals.meetings} actual={counts.meetings} onChange={(v) => setGoals((g) => ({ ...g, meetings: v }))} />
-          <GoalInput label="Analýza (FSA)" value={goals.fsa} actual={counts.fsa} onChange={(v) => setGoals((g) => ({ ...g, fsa: v }))} />
-          <GoalInput label="Servis (SER)" value={goals.ser} actual={counts.ser} onChange={(v) => setGoals((g) => ({ ...g, ser: v }))} />
-          <GoalInput label="Pohovor (POH)" value={goals.poh} actual={counts.poh} onChange={(v) => setGoals((g) => ({ ...g, poh: v }))} />
-          <GoalInput label="Nábor (NAB)" value={goals.nab} actual={counts.nab} onChange={(v) => setGoals((g) => ({ ...g, nab: v }))} />
+          <GoalInput
+            label="Zavolaných"
+            value={goals.called}
+            actual={counts.called}
+            onChange={(v) => setGoals((g) => ({ ...g, called: v }))}
+          />
+          <GoalInput
+            label="Domluveno"
+            value={goals.meetings}
+            actual={counts.meetings}
+            onChange={(v) => setGoals((g) => ({ ...g, meetings: v }))}
+          />
+          <GoalInput
+            label="Analýza (FSA)"
+            value={goals.fsa}
+            actual={counts.fsa}
+            onChange={(v) => setGoals((g) => ({ ...g, fsa: v }))}
+          />
+          <GoalInput
+            label="Servis (SER)"
+            value={goals.ser}
+            actual={counts.ser}
+            onChange={(v) => setGoals((g) => ({ ...g, ser: v }))}
+          />
+          <GoalInput
+            label="Pohovor (POH)"
+            value={goals.poh}
+            actual={counts.poh}
+            onChange={(v) => setGoals((g) => ({ ...g, poh: v }))}
+          />
+          <GoalInput
+            label="Nábor (NAB)"
+            value={goals.nab}
+            actual={counts.nab}
+            onChange={(v) => setGoals((g) => ({ ...g, nab: v }))}
+          />
         </div>
       </div>
 
@@ -461,8 +480,12 @@ function SummaryStat({ label, actual, goal }: { label: string; actual: number; g
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="font-heading font-semibold text-base" style={{ color: reached ? "#00abbd" : "var(--deep-hex, #00555f)" }}>
-        {actual}{goal > 0 ? ` / ${goal}` : ""}
+      <div
+        className="font-heading font-semibold text-base"
+        style={{ color: reached ? "#00abbd" : "var(--deep-hex, #00555f)" }}
+      >
+        {actual}
+        {goal > 0 ? ` / ${goal}` : ""}
       </div>
     </div>
   );
@@ -492,9 +515,7 @@ function ScheduleRow({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <div>
-          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-            Datum *
-          </label>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Datum *</label>
           <Input
             type="date"
             value={entry.meeting_date || fallbackDate}
@@ -503,9 +524,7 @@ function ScheduleRow({
           />
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-            Čas
-          </label>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Čas</label>
           <Input
             type="time"
             value={entry.meeting_time || ""}
@@ -514,9 +533,7 @@ function ScheduleRow({
           />
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-            Místo
-          </label>
+          <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Místo</label>
           <Input
             placeholder="Kavárna, Online, Adresa…"
             value={entry.location_detail || ""}
@@ -600,7 +617,7 @@ function EntryRow({
       <div className="grid grid-cols-12 gap-2 items-center">
         <Input
           className={`col-span-5 h-9 ${showWarning ? "border-amber-500" : ""}`}
-          placeholder="Jméno klienta"
+          placeholder="Jméno"
           value={entry.client_name}
           onChange={(e) => onChange({ client_name: e.target.value })}
         />
@@ -609,7 +626,7 @@ function EntryRow({
           value={entry.outcome}
           onChange={(e) => {
             const outcome = e.target.value as Outcome;
-            onChange({ outcome, meeting_type: outcome === "domluveno" ? entry.meeting_type ?? "FSA" : null });
+            onChange({ outcome, meeting_type: outcome === "domluveno" ? (entry.meeting_type ?? "FSA") : null });
           }}
         >
           {(Object.keys(outcomeLabel) as Outcome[]).map((o) => (
@@ -785,11 +802,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
     queryKey: ["call_party_open_meeting", openMeetingId],
     enabled: !!openMeetingId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("client_meetings")
-        .select("*")
-        .eq("id", openMeetingId!)
-        .maybeSingle();
+      const { data, error } = await supabase.from("client_meetings").select("*").eq("id", openMeetingId!).maybeSingle();
       if (error) throw error;
       return data as MeetingDetailData | null;
     },
@@ -821,7 +834,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
         client_name: e.client_name,
         outcome: e.outcome,
         meeting_type: (e.meeting_type as CPMeetingType) ?? null,
-      }))
+      })),
     );
     setEditMode(true);
   };
@@ -842,7 +855,10 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
         const { error } = await supabase
           .from("call_party_entries")
           .delete()
-          .in("id", toDelete.map((e) => e.id));
+          .in(
+            "id",
+            toDelete.map((e) => e.id),
+          );
         if (error) throw error;
       }
 
@@ -955,9 +971,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
                   <EntryRow
                     key={i}
                     entry={e}
-                    onChange={(p) =>
-                      setDraft((d) => (d ? d.map((x, idx) => (idx === i ? { ...x, ...p } : x)) : d))
-                    }
+                    onChange={(p) => setDraft((d) => (d ? d.map((x, idx) => (idx === i ? { ...x, ...p } : x)) : d))}
                     onRemove={() => setDraft((d) => (d ? d.filter((_, idx) => idx !== i) : d))}
                     canRemove={draft.length > 1}
                   />
@@ -987,9 +1001,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
                         clickable ? "hover:bg-muted/50 rounded-md px-2 -mx-2 transition" : ""
                       }`}
                     >
-                      <span className={clickable ? "underline-offset-2 hover:underline" : ""}>
-                        {e.client_name}
-                      </span>
+                      <span className={clickable ? "underline-offset-2 hover:underline" : ""}>{e.client_name}</span>
                       <span className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{outcomeLabel[e.outcome]}</span>
                         {e.outcome === "domluveno" && e.meeting_type && (
@@ -1004,9 +1016,7 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
                     </Wrapper>
                   );
                 })}
-                {(entries || []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">Žádné záznamy.</p>
-                )}
+                {(entries || []).length === 0 && <p className="text-sm text-muted-foreground">Žádné záznamy.</p>}
               </div>
             )}
           </div>
@@ -1023,7 +1033,13 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
           <div className="flex items-center gap-2">
             {editMode ? (
               <>
-                <Button variant="outline" onClick={() => { setEditMode(false); setDraft(null); }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditMode(false);
+                    setDraft(null);
+                  }}
+                >
                   Zrušit
                 </Button>
                 <Button
@@ -1090,7 +1106,9 @@ function GoalReadout({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>{value || "—"}</span>
+      <span className="font-heading font-semibold" style={{ color: "var(--deep-hex, #00555f)" }}>
+        {value || "—"}
+      </span>
     </div>
   );
 }
