@@ -39,6 +39,8 @@ import {
 import { X, Plus, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
+import { WorkspaceBillingTab } from "@/components/billing/WorkspaceBillingTab";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OrgUnit {
   id: string;
