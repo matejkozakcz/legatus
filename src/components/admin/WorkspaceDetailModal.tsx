@@ -662,6 +662,8 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
                 {renderRuleBlock("bv_to_vedouci")}
               </div>
             </section>
+              </>
+            )}
           </div>
 
           {/* Footer */}
