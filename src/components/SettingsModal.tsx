@@ -181,6 +181,61 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     }
   }, [open, handleEscape]);
 
+  // ── Owner / billing detection ──
+  const { data: ownerInfo } = useQuery({
+    queryKey: ["settings_owner_check", user?.id, profile?.org_unit_id],
+    enabled: !!user && !!profile?.org_unit_id && profile?.role === "vedouci",
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("org_units")
+        .select("id, owner_id")
+        .eq("id", profile!.org_unit_id!)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const isOwner = !!ownerInfo && ownerInfo.owner_id === user?.id;
+  const orgUnitId = profile?.org_unit_id ?? null;
+
+  const { data: ownerBilling } = useQuery({
+    queryKey: ["owner_billing", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workspace_billing")
+        .select("*")
+        .eq("org_unit_id", orgUnitId!)
+        .maybeSingle();
+      return (data ?? null) as BillingRow | null;
+    },
+  });
+
+  const { data: ownerPayments = [] } = useQuery({
+    queryKey: ["owner_payments", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workspace_payments")
+        .select("*")
+        .eq("org_unit_id", orgUnitId!)
+        .order("paid_at", { ascending: false });
+      return (data ?? []) as unknown as PaymentRow[];
+    },
+  });
+
+  const { data: ownerMemberCount = 0 } = useQuery({
+    queryKey: ["owner_member_count", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("org_unit_id", orgUnitId!)
+        .eq("is_active", true);
+      return count ?? 0;
+    },
+  });
+
   if (!open || !user || !profile) return null;
 
   const initials =
