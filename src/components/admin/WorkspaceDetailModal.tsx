@@ -676,13 +676,15 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
               <Trash2 className="h-4 w-4 mr-1.5" />
               Smazat workspace
             </Button>
-            <Button
-              onClick={() => saveAll.mutate()}
-              disabled={saveAll.isPending}
-              className="bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
-            >
-              {saveAll.isPending ? "Ukládání…" : "Uložit změny"}
-            </Button>
+            {activeTab === "workspace" && (
+              <Button
+                onClick={() => saveAll.mutate()}
+                disabled={saveAll.isPending}
+                className="bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
+              >
+                {saveAll.isPending ? "Ukládání…" : "Uložit změny"}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
