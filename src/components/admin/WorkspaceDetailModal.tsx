@@ -475,7 +475,38 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
             </button>
           </div>
 
+          {/* Tabs */}
+          {isAdmin && (
+            <div className="flex gap-1 px-6 pt-3 border-b border-border bg-background/30">
+              {([
+                { k: "workspace", label: "Workspace" },
+                { k: "billing", label: "Předplatné" },
+              ] as const).map((t) => (
+                <button
+                  key={t.k}
+                  onClick={() => setActiveTab(t.k)}
+                  className="px-4 py-2.5 text-sm font-medium whitespace-nowrap -mb-px transition-colors"
+                  style={{
+                    borderBottom: activeTab === t.k ? "2px solid #00555f" : "2px solid transparent",
+                    color: activeTab === t.k ? "#00555f" : "hsl(var(--muted-foreground))",
+                    fontWeight: activeTab === t.k ? 500 : 400,
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="max-h-[70vh] overflow-y-auto p-6 space-y-6">
+            {activeTab === "billing" && isAdmin ? (
+              <WorkspaceBillingTab
+                orgUnitId={orgUnit.id}
+                ownerId={orgUnit.owner_id}
+                memberCount={members?.length ?? 0}
+              />
+            ) : (
+              <>
             {/* Basic info */}
             <section className="space-y-3">
               <h3 className="font-heading font-semibold text-foreground">Základní údaje</h3>
