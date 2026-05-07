@@ -18,7 +18,10 @@ interface SettingsModalProps {
 
 const TABS = ["Profil", "Oznámení"] as const;
 
-// (Notifications system removed — placeholder tab below.)
+import { useQuery } from "@tanstack/react-query";
+import { PaymentsTable, calcPrice, PLAN_LABELS, StatusBadge, type BillingRow, type PaymentRow } from "@/components/billing/BillingShared";
+import { format } from "date-fns";
+import { cs as csLocale } from "date-fns/locale";
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
