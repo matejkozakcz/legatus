@@ -1308,6 +1308,97 @@ export type Database = {
           },
         ]
       }
+      workspace_billing: {
+        Row: {
+          billing_start: string | null
+          created_at: string
+          grandfathered_until: string | null
+          id: string
+          notes: string | null
+          org_unit_id: string
+          plan: string
+          price_base: number
+          price_per_user: number
+          updated_at: string
+          users_included: number
+        }
+        Insert: {
+          billing_start?: string | null
+          created_at?: string
+          grandfathered_until?: string | null
+          id?: string
+          notes?: string | null
+          org_unit_id: string
+          plan?: string
+          price_base?: number
+          price_per_user?: number
+          updated_at?: string
+          users_included?: number
+        }
+        Update: {
+          billing_start?: string | null
+          created_at?: string
+          grandfathered_until?: string | null
+          id?: string
+          notes?: string | null
+          org_unit_id?: string
+          plan?: string
+          price_base?: number
+          price_per_user?: number
+          updated_at?: string
+          users_included?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_billing_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: true
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_payments: {
+        Row: {
+          amount_czk: number | null
+          created_at: string
+          description: string
+          id: string
+          members_snapshot: Json | null
+          org_unit_id: string
+          paid_at: string
+          status: string
+        }
+        Insert: {
+          amount_czk?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          members_snapshot?: Json | null
+          org_unit_id: string
+          paid_at: string
+          status?: string
+        }
+        Update: {
+          amount_czk?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          members_snapshot?: Json | null
+          org_unit_id?: string
+          paid_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_payments_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

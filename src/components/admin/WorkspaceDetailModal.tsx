@@ -39,6 +39,8 @@ import {
 import { X, Plus, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { WorkspaceInviteLinkCard } from "@/components/WorkspaceInviteLinkCard";
+import { WorkspaceBillingTab } from "@/components/billing/WorkspaceBillingTab";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OrgUnit {
   id: string;
@@ -94,6 +96,8 @@ interface RuleFields {
 
 export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
   const qc = useQueryClient();
+  const { isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<"workspace" | "billing">("workspace");
   const [name, setName] = useState(orgUnit.name);
   const [parentId, setParentId] = useState<string | null>(orgUnit.parent_unit_id);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -471,7 +475,38 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
             </button>
           </div>
 
+          {/* Tabs */}
+          {isAdmin && (
+            <div className="flex gap-1 px-6 pt-3 border-b border-border bg-background/30">
+              {([
+                { k: "workspace", label: "Workspace" },
+                { k: "billing", label: "Předplatné" },
+              ] as const).map((t) => (
+                <button
+                  key={t.k}
+                  onClick={() => setActiveTab(t.k)}
+                  className="px-4 py-2.5 text-sm font-medium whitespace-nowrap -mb-px transition-colors"
+                  style={{
+                    borderBottom: activeTab === t.k ? "2px solid #00555f" : "2px solid transparent",
+                    color: activeTab === t.k ? "#00555f" : "hsl(var(--muted-foreground))",
+                    fontWeight: activeTab === t.k ? 500 : 400,
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="max-h-[70vh] overflow-y-auto p-6 space-y-6">
+            {activeTab === "billing" && isAdmin ? (
+              <WorkspaceBillingTab
+                orgUnitId={orgUnit.id}
+                ownerId={orgUnit.owner_id}
+                memberCount={members?.length ?? 0}
+              />
+            ) : (
+              <>
             {/* Basic info */}
             <section className="space-y-3">
               <h3 className="font-heading font-semibold text-foreground">Základní údaje</h3>
@@ -627,6 +662,8 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
                 {renderRuleBlock("bv_to_vedouci")}
               </div>
             </section>
+              </>
+            )}
           </div>
 
           {/* Footer */}
@@ -639,13 +676,15 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
               <Trash2 className="h-4 w-4 mr-1.5" />
               Smazat workspace
             </Button>
-            <Button
-              onClick={() => saveAll.mutate()}
-              disabled={saveAll.isPending}
-              className="bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
-            >
-              {saveAll.isPending ? "Ukládání…" : "Uložit změny"}
-            </Button>
+            {activeTab === "workspace" && (
+              <Button
+                onClick={() => saveAll.mutate()}
+                disabled={saveAll.isPending}
+                className="bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
+              >
+                {saveAll.isPending ? "Ukládání…" : "Uložit změny"}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

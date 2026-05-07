@@ -4,10 +4,13 @@ import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshC
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { PaymentsTable, calcPrice, PLAN_LABELS, StatusBadge, type BillingRow, type PaymentRow } from "@/components/billing/BillingShared";
+import { format } from "date-fns";
+import { cs as csLocale } from "date-fns/locale";
 
 
 interface SettingsModalProps {
@@ -15,10 +18,6 @@ interface SettingsModalProps {
   onClose: () => void;
   initialTab?: number;
 }
-
-const TABS = ["Profil", "Oznámení"] as const;
-
-// (Notifications system removed — placeholder tab below.)
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
@@ -181,6 +180,62 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [open, handleEscape]);
+  const profileOrgUnitId = (profile as any)?.org_unit_id as string | null | undefined;
+
+  // ── Owner / billing detection ──
+  const { data: ownerInfo } = useQuery({
+    queryKey: ["settings_owner_check", user?.id, profileOrgUnitId],
+    enabled: !!user && !!profileOrgUnitId && profile?.role === "vedouci",
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("org_units")
+        .select("id, owner_id")
+        .eq("id", profileOrgUnitId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const isOwner = !!ownerInfo && ownerInfo.owner_id === user?.id;
+  const orgUnitId = profileOrgUnitId ?? null;
+
+  const { data: ownerBilling } = useQuery({
+    queryKey: ["owner_billing", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workspace_billing")
+        .select("*")
+        .eq("org_unit_id", orgUnitId!)
+        .maybeSingle();
+      return (data ?? null) as BillingRow | null;
+    },
+  });
+
+  const { data: ownerPayments = [] } = useQuery({
+    queryKey: ["owner_payments", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workspace_payments")
+        .select("*")
+        .eq("org_unit_id", orgUnitId!)
+        .order("paid_at", { ascending: false });
+      return (data ?? []) as unknown as PaymentRow[];
+    },
+  });
+
+  const { data: ownerMemberCount = 0 } = useQuery({
+    queryKey: ["owner_member_count", orgUnitId],
+    enabled: isOwner && !!orgUnitId,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("org_unit_id", orgUnitId!)
+        .eq("is_active", true);
+      return count ?? 0;
+    },
+  });
 
   if (!open || !user || !profile) return null;
 
@@ -673,10 +728,73 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     );
   };
 
-  const tabContent = [
-    renderProfil,
-    renderNotifikace,
-  ];
+  const renderPredplatne = () => {
+    const billing = ownerBilling;
+    const memberCount = ownerMemberCount;
+    const monthly = calcPrice(billing as any, memberCount);
+    const status: "active" | "trial" | "unpaid" = (() => {
+      if (!billing?.billing_start) return "trial";
+      const now = new Date();
+      if (billing.grandfathered_until && new Date(billing.grandfathered_until) >= now) return "active";
+      const lastPaid = ownerPayments.find((p) => p.status === "paid");
+      if (!lastPaid) return "unpaid";
+      const days = (now.getTime() - new Date(lastPaid.paid_at).getTime()) / 86400000;
+      return days < 35 ? "active" : "unpaid";
+    })();
+
+    if (!billing) {
+      return (
+        <p className="text-sm text-muted-foreground italic">
+          Předplatné zatím není nastaveno. Kontaktuj prosím správce.
+        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-5">
+        <div className="rounded-2xl p-4" style={{ background: "hsl(var(--muted))" }}>
+          <div className="flex items-center justify-between">
+            <div className="font-heading font-semibold text-foreground">
+              {PLAN_LABELS[billing.plan]}
+            </div>
+            <StatusBadge status={status} />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <div className="text-2xl font-heading font-bold text-foreground">
+                {monthly.toLocaleString("cs-CZ")} Kč
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {memberCount} čl. · {billing.price_base} +{" "}
+                {Math.max(0, memberCount - billing.users_included)} × {billing.price_per_user}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Grandfathered do</div>
+              <div className="text-sm font-medium text-foreground mt-0.5">
+                {billing.grandfathered_until
+                  ? format(new Date(billing.grandfathered_until), "d. M. yyyy", { locale: csLocale })
+                  : "—"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-heading font-semibold text-foreground mb-2">Historie plateb</h3>
+          <PaymentsTable payments={ownerPayments} ownerId={user!.id} />
+        </div>
+      </div>
+    );
+  };
+
+  const TABS = isOwner
+    ? (["Profil", "Oznámení", "Předplatné"] as const)
+    : (["Profil", "Oznámení"] as const);
+
+  const tabContent: Array<() => JSX.Element> = isOwner
+    ? [renderProfil, renderNotifikace, renderPredplatne]
+    : [renderProfil, renderNotifikace];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -706,8 +824,12 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
             <button
               key={tab}
               onClick={() => setActiveTab(i)}
-              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px cursor-pointer
-                ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className="px-4 py-2.5 text-sm font-medium whitespace-nowrap -mb-px cursor-pointer transition-colors"
+              style={{
+                borderBottom: i === activeTab ? "2px solid #00555f" : "2px solid transparent",
+                color: i === activeTab ? "#00555f" : "hsl(var(--muted-foreground))",
+                fontWeight: i === activeTab ? 500 : 400,
+              }}
             >
               {tab}
             </button>
