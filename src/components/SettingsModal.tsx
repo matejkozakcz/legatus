@@ -728,10 +728,73 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
     );
   };
 
-  const tabContent = [
-    renderProfil,
-    renderNotifikace,
-  ];
+  const renderPredplatne = () => {
+    const billing = ownerBilling;
+    const memberCount = ownerMemberCount;
+    const monthly = calcPrice(billing as any, memberCount);
+    const status: "active" | "trial" | "unpaid" = (() => {
+      if (!billing?.billing_start) return "trial";
+      const now = new Date();
+      if (billing.grandfathered_until && new Date(billing.grandfathered_until) >= now) return "active";
+      const lastPaid = ownerPayments.find((p) => p.status === "paid");
+      if (!lastPaid) return "unpaid";
+      const days = (now.getTime() - new Date(lastPaid.paid_at).getTime()) / 86400000;
+      return days < 35 ? "active" : "unpaid";
+    })();
+
+    if (!billing) {
+      return (
+        <p className="text-sm text-muted-foreground italic">
+          Předplatné zatím není nastaveno. Kontaktuj prosím správce.
+        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-5">
+        <div className="rounded-2xl p-4" style={{ background: "hsl(var(--muted))" }}>
+          <div className="flex items-center justify-between">
+            <div className="font-heading font-semibold text-foreground">
+              {PLAN_LABELS[billing.plan]}
+            </div>
+            <StatusBadge status={status} />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <div className="text-2xl font-heading font-bold text-foreground">
+                {monthly.toLocaleString("cs-CZ")} Kč
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {memberCount} čl. · {billing.price_base} +{" "}
+                {Math.max(0, memberCount - billing.users_included)} × {billing.price_per_user}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Grandfathered do</div>
+              <div className="text-sm font-medium text-foreground mt-0.5">
+                {billing.grandfathered_until
+                  ? format(new Date(billing.grandfathered_until), "d. M. yyyy", { locale: csLocale })
+                  : "—"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-heading font-semibold text-foreground mb-2">Historie plateb</h3>
+          <PaymentsTable payments={ownerPayments} ownerId={user!.id} />
+        </div>
+      </div>
+    );
+  };
+
+  const TABS = isOwner
+    ? (["Profil", "Oznámení", "Předplatné"] as const)
+    : (["Profil", "Oznámení"] as const);
+
+  const tabContent: Array<() => JSX.Element> = isOwner
+    ? [renderProfil, renderNotifikace, renderPredplatne]
+    : [renderProfil, renderNotifikace];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
