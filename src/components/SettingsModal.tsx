@@ -824,8 +824,12 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
             <button
               key={tab}
               onClick={() => setActiveTab(i)}
-              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px cursor-pointer
-                ${i === activeTab ? "border-secondary text-secondary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className="px-4 py-2.5 text-sm font-medium whitespace-nowrap -mb-px cursor-pointer transition-colors"
+              style={{
+                borderBottom: i === activeTab ? "2px solid #00555f" : "2px solid transparent",
+                color: i === activeTab ? "#00555f" : "hsl(var(--muted-foreground))",
+                fontWeight: i === activeTab ? 500 : 400,
+              }}
             >
               {tab}
             </button>
