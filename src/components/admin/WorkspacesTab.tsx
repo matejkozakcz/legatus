@@ -86,6 +86,13 @@ export function WorkspacesTab() {
 
       if (error) throw error;
 
+      // Fetch all billing rows once
+      const { data: billings } = await supabase
+        .from("workspace_billing")
+        .select("*");
+      const billingMap = new Map<string, any>();
+      (billings ?? []).forEach((b: any) => billingMap.set(b.org_unit_id, b));
+
       const enriched = await Promise.all(
         (data ?? []).map(async (ws: any) => {
           const { count } = await supabase
@@ -104,7 +111,8 @@ export function WorkspacesTab() {
             ...ws,
             member_count: count ?? 0,
             has_custom_rules: (customRules?.length ?? 0) > 0,
-          } as OrgUnit;
+            billing: billingMap.get(ws.id) ?? null,
+          } as OrgUnit & { billing: any };
         })
       );
 
