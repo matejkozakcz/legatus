@@ -180,22 +180,23 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [open, handleEscape]);
+  const profileOrgUnitId = (profile as any)?.org_unit_id as string | null | undefined;
 
   // ── Owner / billing detection ──
   const { data: ownerInfo } = useQuery({
-    queryKey: ["settings_owner_check", user?.id, profile?.org_unit_id],
-    enabled: !!user && !!profile?.org_unit_id && profile?.role === "vedouci",
+    queryKey: ["settings_owner_check", user?.id, profileOrgUnitId],
+    enabled: !!user && !!profileOrgUnitId && profile?.role === "vedouci",
     queryFn: async () => {
       const { data } = await supabase
         .from("org_units")
         .select("id, owner_id")
-        .eq("id", profile!.org_unit_id!)
+        .eq("id", profileOrgUnitId!)
         .maybeSingle();
       return data;
     },
   });
   const isOwner = !!ownerInfo && ownerInfo.owner_id === user?.id;
-  const orgUnitId = profile?.org_unit_id ?? null;
+  const orgUnitId = profileOrgUnitId ?? null;
 
   const { data: ownerBilling } = useQuery({
     queryKey: ["owner_billing", orgUnitId],
