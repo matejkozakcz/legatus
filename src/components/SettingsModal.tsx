@@ -4,10 +4,13 @@ import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshC
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { PaymentsTable, calcPrice, PLAN_LABELS, StatusBadge, type BillingRow, type PaymentRow } from "@/components/billing/BillingShared";
+import { format } from "date-fns";
+import { cs as csLocale } from "date-fns/locale";
 
 
 interface SettingsModalProps {
@@ -15,13 +18,6 @@ interface SettingsModalProps {
   onClose: () => void;
   initialTab?: number;
 }
-
-const TABS = ["Profil", "Oznámení"] as const;
-
-import { useQuery } from "@tanstack/react-query";
-import { PaymentsTable, calcPrice, PLAN_LABELS, StatusBadge, type BillingRow, type PaymentRow } from "@/components/billing/BillingShared";
-import { format } from "date-fns";
-import { cs as csLocale } from "date-fns/locale";
 
 export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalProps) {
   useBodyScrollLock(open);
