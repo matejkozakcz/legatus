@@ -254,14 +254,31 @@ export function WorkspacesTab() {
                     <div className="text-[11px] text-muted-foreground">členů</div>
                   </div>
                   <div className="rounded-md bg-muted/50 px-3 py-2">
-                    <div className="text-base font-heading font-bold text-foreground">–</div>
-                    <div className="text-[11px] text-muted-foreground">garantů</div>
+                    <div
+                      className="text-base font-heading font-bold"
+                      style={{ color: "#00555f" }}
+                    >
+                      {(ws as any).billing
+                        ? (ws as any).billing.plan === "pioneers"
+                          ? "Pioneers"
+                          : (ws as any).billing.plan === "legacy"
+                            ? "Legacy"
+                            : "Custom"
+                        : "—"}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">plán</div>
                   </div>
                   <div className="rounded-md bg-muted/50 px-3 py-2">
                     <div className="text-base font-heading font-bold text-foreground">
-                      {ws.has_custom_rules ? "vlastní" : "globální"}
+                      {(ws as any).billing
+                        ? `${(
+                            (ws as any).billing.price_base +
+                            Math.max(0, (ws.member_count ?? 0) - (ws as any).billing.users_included) *
+                              (ws as any).billing.price_per_user
+                          ).toLocaleString("cs-CZ")} Kč`
+                        : "—"}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">pravidla</div>
+                    <div className="text-[11px] text-muted-foreground">předplatné/měs</div>
                   </div>
                 </div>
 
