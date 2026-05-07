@@ -96,6 +96,8 @@ interface RuleFields {
 
 export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
   const qc = useQueryClient();
+  const { isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<"workspace" | "billing">("workspace");
   const [name, setName] = useState(orgUnit.name);
   const [parentId, setParentId] = useState<string | null>(orgUnit.parent_unit_id);
   const [confirmDelete, setConfirmDelete] = useState(false);
