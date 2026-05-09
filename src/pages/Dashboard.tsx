@@ -1789,7 +1789,7 @@ const Dashboard = () => {
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
             periodKey={periodKey}
-            onSaved={() => refetchGoals()}
+            canEdit
             role={activeProfile?.role}
           />
         )}
@@ -2236,7 +2236,7 @@ const Dashboard = () => {
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
             periodKey={periodKey}
-            onSaved={() => refetchGoals()}
+            canEdit
             role={activeProfile?.role}
           />
         )}
