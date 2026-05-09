@@ -987,21 +987,57 @@ const Dashboard = () => {
     enabled: !!activeUserId && (activeRole === "vedouci" || activeRole === "budouci_vedouci"),
   });
 
-  // Vedoucí goals per period
-  const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
-    queryKey: ["vedouci_goals", profile?.id, periodKey],
-    queryFn: async () => {
-      if (!profile?.id) return null;
-      const { data } = await supabase
-        .from("vedouci_goals" as any)
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("period_key", periodKey)
-        .maybeSingle();
-      return data as any;
-    },
-    enabled: !!profile?.id && activeRole === "vedouci",
-  });
+  // User goals (new system) — periodické pro aktuální období + trvalé
+  const { data: userGoalsData, refetch: refetchGoals } = useUserGoals(profile?.id, periodKey);
+  const periodicUserGoals = userGoalsData?.periodicGoals ?? [];
+  const permanentUserGoals = userGoalsData?.permanentGoals ?? [];
+
+  // Personal per-period meeting aggregates (pro metriky: ser_bj, fsa_count, poh_count, referrals, lidi_na_info)
+  const { data: personalPeriodMetrics = { ser_bj: 0, fsa_count: 0, poh_count: 0, referrals: 0, lidi_na_info: 0 } } =
+    useQuery({
+      queryKey: ["personal_period_metrics", activeUserId, periodStartStr, periodEndStr],
+      queryFn: async () => {
+        const empty = { ser_bj: 0, fsa_count: 0, poh_count: 0, referrals: 0, lidi_na_info: 0 };
+        if (!activeUserId) return empty;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const [aggRes, futureFsaRes] = await Promise.all([
+          supabase
+            .from("client_meetings")
+            .select(
+              "meeting_type, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, cancelled, outcome_recorded, date",
+            )
+            .eq("user_id", activeUserId)
+            .eq("cancelled", false)
+            .gte("date", periodStartStr)
+            .lte("date", periodEndStr),
+          supabase
+            .from("client_meetings")
+            .select("id, outcome_recorded, date")
+            .eq("user_id", activeUserId)
+            .eq("cancelled", false)
+            .eq("meeting_type", "FSA"),
+        ]);
+        const rows = (aggRes.data || []) as any[];
+        let ser_bj = 0,
+          fsa_count = 0,
+          poh_count = 0,
+          referrals = 0;
+        for (const r of rows) {
+          if (r.meeting_type === "SER") ser_bj += Number(r.podepsane_bj) || 0;
+          if (r.meeting_type === "FSA") fsa_count += 1;
+          if (r.meeting_type === "POH") poh_count += 1;
+          referrals +=
+            (Number(r.doporuceni_fsa) || 0) +
+            (Number(r.doporuceni_poradenstvi) || 0) +
+            (Number(r.doporuceni_pohovor) || 0);
+        }
+        // lidi_na_info = počet domluvených FSA bez zaznamenaného outcome NEBO v budoucnu
+        const futureRows = (futureFsaRes.data || []) as any[];
+        const lidi_na_info = futureRows.filter((r) => r.outcome_recorded === false || (r.date && r.date > todayStr)).length;
+        return { ser_bj, fsa_count, poh_count, referrals, lidi_na_info };
+      },
+      enabled: !!activeUserId,
+    });
 
   // Onboarding tasks for Nováček progress bar
   const { data: onboardingTasks = [] } = useQuery({
