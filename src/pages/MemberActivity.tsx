@@ -292,8 +292,8 @@ const MemberActivity = () => {
       const bj_por = confirmed
         .filter((m) => m.meeting_type === "POR")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
-      const bj_nab = confirmed
-        .filter((m) => m.meeting_type === "NAB")
+      const bj_old = confirmed
+        .filter((m) => m.meeting_type === "SER")
         .reduce((s, m) => s + (Number(m.podepsane_bj) || 0), 0);
       map.set(wsStr, {
         fsa: wstats.fsa.actual,
@@ -302,8 +302,8 @@ const MemberActivity = () => {
         por: wstats.por.actual,
         ref: wstats.ref.actual,
         bj_por,
-        bj_nab,
-        bj_total: bj_por + bj_nab,
+        bj_old,
+        bj_total: bj_por + bj_old,
       });
     }
     return map;
