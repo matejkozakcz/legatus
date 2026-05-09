@@ -139,6 +139,9 @@ export function UserDetailModal({ userId, open, onClose, currentVersion }: UserD
               <TabsTrigger value="tech" className="gap-2 data-[state=active]:bg-transparent">
                 <Wrench className="h-3.5 w-3.5" /> Tech
               </TabsTrigger>
+              <TabsTrigger value="goals" className="gap-2 data-[state=active]:bg-transparent">
+                <Target className="h-3.5 w-3.5" /> Cíle
+              </TabsTrigger>
               <TabsTrigger value="manage" className="gap-2 data-[state=active]:bg-transparent">
                 <Shield className="h-3.5 w-3.5" /> Správa
               </TabsTrigger>
@@ -155,6 +158,10 @@ export function UserDetailModal({ userId, open, onClose, currentVersion }: UserD
 
               <TabsContent value="tech" className="m-0">
                 <TechTab profile={profile} currentVersion={currentVersion} />
+              </TabsContent>
+
+              <TabsContent value="goals" className="m-0">
+                <GoalsTab profile={profile} />
               </TabsContent>
 
               <TabsContent value="manage" className="m-0">
