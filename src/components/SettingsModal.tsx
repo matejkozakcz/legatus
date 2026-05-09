@@ -195,7 +195,12 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
       return data;
     },
   });
-  const isOwner = !!ownerInfo && ownerInfo.owner_id === user?.id;
+  // Vedoucí je vlastníkem svého workspace. Pokud owner_id není explicitně nastaveno,
+  // považujeme vedoucího daného org_unitu za vlastníka.
+  const isOwner =
+    profile?.role === "vedouci" &&
+    !!profileOrgUnitId &&
+    (!ownerInfo?.owner_id || ownerInfo.owner_id === user?.id);
   const orgUnitId = profileOrgUnitId ?? null;
 
   const { data: ownerBilling } = useQuery({
