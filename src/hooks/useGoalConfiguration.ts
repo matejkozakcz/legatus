@@ -52,7 +52,6 @@ export function useGoalConfiguration(role: string | undefined) {
     referrals_weekly: null,
     team_bj: null,
     onboarding: null,
-    promotions: [],
     allow_custom_goals: false,
   };
 
@@ -70,7 +69,6 @@ export function useGoalConfiguration(role: string | undefined) {
     resolved.referrals_weekly = resolve(roleGoals.referrals_weekly);
     resolved.team_bj = resolve(roleGoals.team_bj);
     resolved.onboarding = resolve(roleGoals.onboarding);
-    resolved.promotions = roleGoals.promotions || [];
     resolved.allow_custom_goals = roleGoals.allow_custom_goals ?? false;
   }
 
