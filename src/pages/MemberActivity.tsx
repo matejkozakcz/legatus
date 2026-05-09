@@ -1,11 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, BarChart3, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Download, Loader2, ChevronRight, ChevronDown } from "lucide-react";
+import { meetingTypeBadgeColors } from "@/lib/meetingColors";
 import { startOfWeek, endOfWeek, addWeeks, format, isSameWeek } from "date-fns";
 import { cs } from "date-fns/locale";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
@@ -107,6 +108,7 @@ const MemberActivity = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -258,7 +260,7 @@ const MemberActivity = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, case_name, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
         )
         .eq("user_id", userId)
         .gte("date", format(firstWeek, "yyyy-MM-dd"))
@@ -801,13 +803,96 @@ const MemberActivity = () => {
               {weeks.map((weekStart, index) => {
                 const weekStr = format(weekStart, "yyyy-MM-dd");
                 const row = weeklyRows.get(weekStr);
+                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+                const periodStartStr = format(periodStart, "yyyy-MM-dd");
+                const periodEndStr = format(periodEnd, "yyyy-MM-dd");
+                const fromStr = weekStr < periodStartStr ? periodStartStr : weekStr;
+                const weStr = format(weekEnd, "yyyy-MM-dd");
+                const toStr = weStr > periodEndStr ? periodEndStr : weStr;
+                const bjMeetings = (weeklyMeetings as any[])
+                  .filter((m) => {
+                    if (m.cancelled || m.outcome_recorded !== true) return false;
+                    if (m.meeting_type !== "POR" && m.meeting_type !== "SER") return false;
+                    if ((Number(m.podepsane_bj) || 0) <= 0) return false;
+                    const d = m.date as string;
+                    return d >= fromStr && d <= toStr;
+                  })
+                  .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+                const hasBj = bjMeetings.length > 0;
+                const isOpen = expandedWeeks.has(weekStr);
+                const toggle = () => {
+                  if (!hasBj) return;
+                  setExpandedWeeks((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(weekStr)) next.delete(weekStr);
+                    else next.add(weekStr);
+                    return next;
+                  });
+                };
                 return (
-                  <tr key={weekStr} className="past">
-                    <td className="text-left whitespace-nowrap font-medium">Týden {index + 1}</td>
-                    {ACTIVITY_COLUMNS.map((col) => (
-                      <td key={col.key}>{row?.[col.key as keyof WeeklyRow] ?? 0}</td>
-                    ))}
-                  </tr>
+                  <React.Fragment key={weekStr}>
+                    <tr
+                      className="past"
+                      onClick={toggle}
+                      style={{ cursor: hasBj ? "pointer" : "default" }}
+                      title={hasBj ? "Zobrazit schůzky s BJ" : undefined}
+                    >
+                      <td className="text-left whitespace-nowrap font-medium">
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          {hasBj ? (
+                            isOpen ? (
+                              <ChevronDown className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+                            )
+                          ) : (
+                            <span style={{ width: 16, display: "inline-block" }} />
+                          )}
+                          Týden {index + 1}
+                        </span>
+                      </td>
+                      {ACTIVITY_COLUMNS.map((col) => (
+                        <td key={col.key}>{row?.[col.key as keyof WeeklyRow] ?? 0}</td>
+                      ))}
+                    </tr>
+                    {isOpen && bjMeetings.map((m, i) => {
+                      const isPor = m.meeting_type === "POR";
+                      const colors = meetingTypeBadgeColors(m.meeting_type);
+                      return (
+                        <tr key={`${weekStr}-bj-${i}`} style={{ background: "rgba(0,0,0,0.02)" }}>
+                          <td colSpan={ACTIVITY_COLUMNS.length + 1} style={{ padding: "8px 16px 8px 38px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontSize: 13 }}>
+                              <span
+                                style={{
+                                  background: colors.background,
+                                  color: colors.color,
+                                  padding: "2px 10px",
+                                  borderRadius: 999,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {isPor ? "Poradenství" : "Servis"}
+                              </span>
+                              <span style={{ flex: 1, minWidth: 120, color: "var(--text-primary)" }}>
+                                {m.case_name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>bez názvu</span>}
+                              </span>
+                              <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>
+                                {format(new Date(m.date), "d. M. yyyy", { locale: cs })}
+                              </span>
+                              <span
+                                className="font-heading font-semibold"
+                                style={{ color: "#00555f", minWidth: 60, textAlign: "right", whiteSpace: "nowrap" }}
+                              >
+                                {Number(m.podepsane_bj).toLocaleString("cs-CZ")} BJ
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })}
               <tr className="summary">
