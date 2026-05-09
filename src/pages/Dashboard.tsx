@@ -1066,101 +1066,60 @@ const Dashboard = () => {
   const [goalsSwipePage, setGoalsSwipePage] = useState(0);
   const goalsSwipeRef = useRef<HTMLDivElement>(null);
 
-  // Helper: map goal key to current value (scope + count_type aware for people goals)
-  const getGoalScope = (key: GoalKey): string => {
-    if (!vedouciGoals) return "direct";
+  // ── New user_goals system ──────────────────────────────────────────────────
+  // Helper: aktuální hodnota pro danou metric_key + scope + count_type.
+  const computeMetricActual = (
+    key: MetricKey,
+    scope: "direct" | "structure" = "direct",
+    countType: "total" | "increment" = "total",
+  ): number => {
     switch (key) {
-      case "vedouci_count":
-        return vedouciGoals.vedouci_count_scope || "direct";
-      case "budouci_vedouci_count":
-        return vedouciGoals.budouci_vedouci_count_scope || "direct";
-      case "garant_count":
-        return vedouciGoals.garant_count_scope || "direct";
-      case "ziskatel_count":
-        return (vedouciGoals as any).ziskatel_count_scope || "direct";
-      default:
-        return "direct";
-    }
-  };
-  const getGoalType = (key: GoalKey): "total" | "increment" => {
-    if (!vedouciGoals) return "total";
-    switch (key) {
-      case "vedouci_count":
-        return ((vedouciGoals as any).vedouci_count_type || "total") as "total" | "increment";
-      case "budouci_vedouci_count":
-        return ((vedouciGoals as any).budouci_vedouci_count_type || "total") as "total" | "increment";
-      case "garant_count":
-        return ((vedouciGoals as any).garant_count_type || "total") as "total" | "increment";
-      case "ziskatel_count":
-        return ((vedouciGoals as any).ziskatel_count_type || "total") as "total" | "increment";
-      default:
-        return "total";
-    }
-  };
-  const getGoalValue = (key: GoalKey): number => {
-    const scope = getGoalScope(key);
-    const type = getGoalType(key);
-    // People goals: pokud type=increment, použij počet povýšení v období
-    if (["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key)) {
-      const roleKey = key.replace("_count", "") as "vedouci" | "budouci_vedouci" | "garant" | "ziskatel";
-      if (type === "increment") {
-        const bucket = scope === "direct" ? incrementCounts.direct : incrementCounts.structure;
-        return (bucket as any)[roleKey] ?? 0;
-      }
-      // total — stávající chování
-      switch (key) {
-        case "vedouci_count":
-          return scope === "direct" ? directVedouciCount : vedouciSubCount;
-        case "budouci_vedouci_count":
-          return scope === "direct" ? directBvCount : bvCount;
-        case "garant_count":
-          return scope === "direct" ? directGarantCount : garantCount;
-        default:
-          return 0;
-      }
-    }
-    switch (key) {
-      case "team_bj":
-        return vedouciMonthlyBj;
       case "personal_bj":
         return personalMonthlyBj;
-      default:
-        return 0;
-    }
-  };
-  const getGoalMax = (key: GoalKey): number => {
-    if (!vedouciGoals) return 0;
-    switch (key) {
       case "team_bj":
-        return vedouciGoals.team_bj_goal || 0;
-      case "personal_bj":
-        return vedouciGoals.personal_bj_goal || 0;
+        return vedouciMonthlyBj;
+      case "ser_bj":
+        return personalPeriodMetrics.ser_bj;
+      case "fsa_count":
+        return personalPeriodMetrics.fsa_count;
+      case "poh_count":
+        return personalPeriodMetrics.poh_count;
+      case "referrals":
+        return personalPeriodMetrics.referrals;
+      case "lidi_na_info":
+        return personalPeriodMetrics.lidi_na_info;
       case "vedouci_count":
-        return vedouciGoals.vedouci_count_goal || 0;
       case "budouci_vedouci_count":
-        return vedouciGoals.budouci_vedouci_count_goal || 0;
       case "garant_count":
-        return vedouciGoals.garant_count_goal || 0;
-      case "ziskatel_count":
-        return (vedouciGoals as any).ziskatel_count_goal || 0;
+      case "ziskatel_count": {
+        const roleKey = key.replace("_count", "") as "vedouci" | "budouci_vedouci" | "garant" | "ziskatel";
+        if (countType === "increment") {
+          const bucket = scope === "direct" ? incrementCounts.direct : incrementCounts.structure;
+          return (bucket as any)[roleKey] ?? 0;
+        }
+        // total
+        if (key === "vedouci_count") return scope === "direct" ? directVedouciCount : vedouciSubCount;
+        if (key === "budouci_vedouci_count") return scope === "direct" ? directBvCount : bvCount;
+        if (key === "garant_count") return scope === "direct" ? directGarantCount : garantCount;
+        // ziskatel — fallback (data nejsou specificky fetched, použij subtree count)
+        return scope === "direct" ? 0 : ziskatelStructureCount;
+      }
       default:
         return 0;
     }
   };
-  const getGoalLabel = (key: GoalKey): string => {
-    const base = GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
-    const isPeopleGoal = ["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key);
-    if (!isPeopleGoal) return base;
-    const scope = getGoalScope(key);
-    const type = getGoalType(key);
+
+  const buildLabelForGoal = (
+    key: MetricKey,
+    scope: "direct" | "structure",
+    countType: "total" | "increment",
+  ): string => {
+    const base = METRIC_DEFS[key]?.label ?? key;
+    if (!PEOPLE_METRICS.includes(key)) return base;
     const scopeLabel = scope === "direct" ? "přímí" : "celkem";
-    return type === "increment"
-      ? `${base} (${scopeLabel}, přírůstek)`
-      : `${base} (${scopeLabel})`;
+    return countType === "increment" ? `${base} (${scopeLabel}, přírůstek)` : `${base} (${scopeLabel})`;
   };
-  const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
-  const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
-  const vedouciGaugeKeys: GoalKey[] = selectedGoal2 ? [selectedGoal1, selectedGoal2] : [selectedGoal1];
+
 
   // ── Header period navigator helpers (desktop) ─ MUST be declared before any early return
   const headerNav = useMemo(() => {
