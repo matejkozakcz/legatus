@@ -22,10 +22,14 @@ import {
   Coins,
   ArrowUpRight,
   History,
+  Target,
+  Pencil,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
+import { UserGoalsModal } from "@/components/UserGoalsModal";
+import { metricLabel } from "@/lib/goalMetrics";
 
 const ROLE_LABELS: Record<string, string> = {
   vedouci: "Vedoucí",
