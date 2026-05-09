@@ -193,11 +193,7 @@ export function GoalConfiguratorTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ["app_config", "goal_configuration"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "goal_configuration")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "goal_configuration").single();
       return (data?.value as unknown as GoalConfiguration) ?? null;
     },
   });
@@ -223,13 +219,11 @@ export function GoalConfiguratorTab() {
           .eq("key", "goal_configuration");
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("app_config")
-          .insert({
-            key: "goal_configuration",
-            value: JSON.parse(JSON.stringify(value)),
-            description: "Konfigurace cílů per role (system/custom)",
-          });
+        const { error } = await supabase.from("app_config").insert({
+          key: "goal_configuration",
+          value: JSON.parse(JSON.stringify(value)),
+          description: "Konfigurace cílů per role (system/custom)",
+        });
         if (error) throw error;
       }
     },
@@ -292,9 +286,7 @@ export function GoalConfiguratorTab() {
   const toggleAllowedMetric = (role: string, metric: MetricKey) => {
     setForm((prev) => {
       const current = prev[role]?.allowed_metrics || [];
-      const next = current.includes(metric)
-        ? current.filter((m) => m !== metric)
-        : [...current, metric];
+      const next = current.includes(metric) ? current.filter((m) => m !== metric) : [...current, metric];
       return { ...prev, [role]: { ...prev[role], allowed_metrics: next } };
     });
   };
@@ -333,10 +325,7 @@ export function GoalConfiguratorTab() {
                     <UserCog className="h-3.5 w-3.5" />
                     Uživatel si může stanovit vlastní cíle
                   </Label>
-                  <Switch
-                    checked={allowCustom}
-                    onCheckedChange={() => toggleAllowCustomGoals(role)}
-                  />
+                  <Switch checked={allowCustom} onCheckedChange={() => toggleAllowCustomGoals(role)} />
                 </div>
                 {allowCustom && (
                   <div className="pt-2 space-y-1.5">
@@ -394,90 +383,6 @@ export function GoalConfiguratorTab() {
                       role={role}
                       onUpdate={(field, val) => updateGoal(role, "team_bj", field, val)}
                     />
-                  </>
-                )}
-
-                {/* Promotion targets */}
-                {hasPromotions(role) && (
-                  <>
-                    <div className="border-t border-border my-2" />
-                    <Label className="text-xs font-medium">Cíle povýšení</Label>
-                    {(goals.promotions || []).map((promo, idx) => (
-                      <div key={idx} className="rounded-lg border border-border bg-muted/20 p-2.5 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={promo.role}
-                            onValueChange={(v) => updatePromotion(role, idx, "role", v)}
-                          >
-                            <SelectTrigger className="h-7 text-xs flex-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PROMOTION_ROLE_OPTIONS.map((o) => (
-                                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <button
-                            onClick={() => removePromotion(role, idx)}
-                            className="text-xs text-destructive hover:text-destructive/80 px-1"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <ModeSelect
-                            value={promo.mode}
-                            onChange={(v) => updatePromotion(role, idx, "mode", v)}
-                          />
-                          {promo.mode === "system" && (
-                            <Input
-                              type="number"
-                              className="h-7 w-14 text-xs"
-                              value={promo.value}
-                              onChange={(e) => updatePromotion(role, idx, "value", Number(e.target.value))}
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Select
-                            value={promo.type || "increment"}
-                            onValueChange={(v) => updatePromotion(role, idx, "type", v)}
-                          >
-                            <SelectTrigger className="h-7 text-xs flex-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="increment">Nový přírůstek (default)</SelectItem>
-                              <SelectItem value="total">Celkový stav (default)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={promo.scope}
-                            onValueChange={(v) => updatePromotion(role, idx, "scope", v)}
-                          >
-                            <SelectTrigger className="h-7 text-xs flex-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="direct">Přímí</SelectItem>
-                              <SelectItem value="full_structure">Celá struktura</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground italic -mt-1">
-                          Způsob měření (celkový stav / přírůstek) si nově nastavuje uživatel sám u svých cílů. Zde nastavený typ slouží jen jako výchozí předvolba.
-                        </div>
-                      </div>
-                    ))}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => addPromotion(role)}
-                      className="h-7 text-xs w-full"
-                    >
-                      + Přidat cíl povýšení
-                    </Button>
                   </>
                 )}
               </CardContent>
