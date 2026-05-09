@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Save, Target, UserCog, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { ALL_METRICS, METRIC_DEFS, type MetricKey } from "@/lib/goalMetrics";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
