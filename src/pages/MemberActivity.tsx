@@ -108,6 +108,7 @@ const MemberActivity = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentPeriod.month);
   const [mobileWeekOffset, setMobileWeekOffset] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
