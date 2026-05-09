@@ -6,7 +6,7 @@ import { meetingTypeBadgeColors } from "@/lib/meetingColors";
 import { startOfWeek, endOfWeek, addWeeks, format, isSameWeek } from "date-fns";
 import { cs } from "date-fns/locale";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
