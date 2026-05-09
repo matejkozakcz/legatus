@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Save, Target, UserCog, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { ALL_METRICS, METRIC_DEFS, type MetricKey } from "@/lib/goalMetrics";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ROLES = ["vedouci", "budouci_vedouci", "garant", "ziskatel"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -42,6 +44,7 @@ interface RoleGoals {
   onboarding?: GoalSetting;
   promotions?: PromotionTarget[];
   allow_custom_goals?: boolean;
+  allowed_metrics?: MetricKey[];
 }
 
 type GoalConfiguration = Record<string, RoleGoals>;
@@ -286,6 +289,16 @@ export function GoalConfiguratorTab() {
     }));
   };
 
+  const toggleAllowedMetric = (role: string, metric: MetricKey) => {
+    setForm((prev) => {
+      const current = prev[role]?.allowed_metrics || [];
+      const next = current.includes(metric)
+        ? current.filter((m) => m !== metric)
+        : [...current, metric];
+      return { ...prev, [role]: { ...prev[role], allowed_metrics: next } };
+    });
+  };
+
   const hasPromotions = (role: string) =>
     role === "vedouci" || role === "budouci_vedouci" || role === "garant" || role === "ziskatel";
 
@@ -325,6 +338,33 @@ export function GoalConfiguratorTab() {
                     onCheckedChange={() => toggleAllowCustomGoals(role)}
                   />
                 </div>
+                {allowCustom && (
+                  <div className="pt-2 space-y-1.5">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Povolené metriky pro vlastní cíle
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {ALL_METRICS.map((m) => {
+                        const checked = (goals.allowed_metrics || []).includes(m);
+                        return (
+                          <label
+                            key={m}
+                            className="flex items-center gap-1.5 text-xs cursor-pointer hover:text-foreground"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => toggleAllowedMetric(role, m)}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className={checked ? "text-foreground" : "text-muted-foreground"}>
+                              {METRIC_DEFS[m].label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Onboarding goal removed — Nováček role deactivated */}
