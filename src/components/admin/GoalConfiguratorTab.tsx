@@ -44,6 +44,7 @@ interface RoleGoals {
   onboarding?: GoalSetting;
   promotions?: PromotionTarget[];
   allow_custom_goals?: boolean;
+  allowed_metrics?: MetricKey[];
 }
 
 type GoalConfiguration = Record<string, RoleGoals>;
