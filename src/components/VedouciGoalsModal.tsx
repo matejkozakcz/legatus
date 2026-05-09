@@ -19,13 +19,6 @@ const ROLE_COUNT_LABELS: Record<string, string> = {
   ziskatel: "Lidi po SV",
 };
 
-const ROLE_TO_GOAL_KEY: Record<string, GoalKey> = {
-  vedouci: "vedouci_count",
-  budouci_vedouci: "budouci_vedouci_count",
-  garant: "garant_count",
-  ziskatel: "ziskatel_count",
-};
-
 export interface GoalOption {
   key: GoalKey;
   label: string;
@@ -108,52 +101,31 @@ export function VedouciGoalsModal({ open, onClose, userId, periodKey, onSaved, r
   const [saving, setSaving] = useState(false);
 
   // Fetch admin goal configuration for the user's role
-  const { goals: adminGoals, rawConfig } = useGoalConfiguration(role);
+  const { rawConfig } = useGoalConfiguration(role);
 
   // Build available goal options dynamically from admin config
   const availableGoalOptions: GoalOption[] = useMemo(() => {
     if (!rawConfig || !role || !rawConfig[role]) {
-      // Fallback to all options if no admin config (includes "Lidi po SV")
       return BASE_GOAL_OPTIONS;
     }
 
     const roleConfig = rawConfig[role];
     const options: GoalOption[] = [];
 
-    // Add team_bj if configured
     if (roleConfig.team_bj) {
       options.push(BASE_GOAL_OPTIONS.find((g) => g.key === "team_bj")!);
     }
 
-    // Always offer personal_bj as an option for roles that have monthly_bj
     if (roleConfig.monthly_bj) {
       options.push(BASE_GOAL_OPTIONS.find((g) => g.key === "personal_bj")!);
-    }
-
-    // Add promotion targets as count goals
-    if (roleConfig.promotions) {
-      for (const promo of roleConfig.promotions) {
-        const goalKey = ROLE_TO_GOAL_KEY[promo.role];
-        if (goalKey) {
-          const existing = BASE_GOAL_OPTIONS.find((g) => g.key === goalKey);
-          if (existing) {
-            options.push(existing);
-          }
-        }
-      }
     }
 
     return options.length > 0 ? options : BASE_GOAL_OPTIONS.slice(0, 2);
   }, [rawConfig, role]);
 
-  // Doporučené defaults pro count_type podle admin konfigurace (pokud
-  // admin u dané promotion role nastavil "increment" jako výchozí, nový
-  // uživatel to dostane jako pre-select; uživatel však může změnit).
-  const defaultTypeForRole = (roleKey: string): CountType => {
-    if (!rawConfig || !role) return "total";
-    const promos = rawConfig[role]?.promotions || [];
-    const match = promos.find((p) => p.role === roleKey);
-    return (match?.type as CountType) || "total";
+  // Default count type — always "total" (promotions concept removed)
+  const defaultTypeForRole = (_roleKey: string): CountType => {
+    return "total";
   };
 
   useEffect(() => {
