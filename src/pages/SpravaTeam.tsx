@@ -121,13 +121,56 @@ function MemberCard({
       )}
       <div className="flex-1 min-w-0">
         <p className="font-body font-medium text-foreground text-sm leading-tight">{member.full_name}</p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className={`${badge.className}`} style={{ fontSize: 10 }}>{badge.label}</span>
-          {bjInfo != null && (
-            <span className="font-heading font-semibold" style={{ fontSize: 10, color: borderColor }}>
-              {bjInfo.value.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
-            </span>
-          )}
+          {bjInfo != null && bjInfo.value > 0 && (() => {
+            const total = bjInfo.value;
+            const novePct = total > 0 ? (bjInfo.nove / total) * 100 : 0;
+            const isLow = novePct < 30;
+            const noveColor = isLow ? "#ef4444" : borderColor;
+            return (
+              <>
+                <span
+                  className="font-heading font-semibold"
+                  style={{ fontSize: 10, color: borderColor }}
+                  title={isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : undefined}
+                >
+                  {total.toLocaleString("cs-CZ")} BJ{bjInfo.isTeam ? " tým" : ""}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>·</span>
+                <span
+                  className="font-heading font-semibold"
+                  style={{ fontSize: 10, color: noveColor }}
+                  title={isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : undefined}
+                >
+                  Nové: {bjInfo.nove.toLocaleString("cs-CZ")}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                  Servis: {bjInfo.servisni.toLocaleString("cs-CZ")}
+                </span>
+                <div
+                  title={isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : `${Math.round(novePct)} % Nové`}
+                  style={{
+                    flexBasis: "100%",
+                    height: 4,
+                    borderRadius: 2,
+                    background: "rgba(0,0,0,0.08)",
+                    overflow: "hidden",
+                    marginTop: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(0, novePct))}%`,
+                      height: "100%",
+                      background: noveColor,
+                      transition: "width 0.4s ease-out",
+                    }}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
