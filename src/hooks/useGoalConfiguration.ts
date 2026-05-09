@@ -6,14 +6,6 @@ interface GoalSetting {
   value: number | null;
 }
 
-interface PromotionTarget {
-  role: string;
-  mode: "system" | "custom";
-  value: number;
-  scope: "direct" | "full_structure";
-  type: "total" | "increment";
-}
-
 interface RoleGoals {
   monthly_bj: GoalSetting;
   fsa_weekly: GoalSetting;
@@ -35,7 +27,6 @@ interface ResolvedGoals {
   referrals_weekly: number | null;
   team_bj: number | null;
   onboarding: number | null;
-  promotions: PromotionTarget[];
   allow_custom_goals: boolean;
 }
 
