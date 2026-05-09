@@ -338,6 +338,33 @@ export function GoalConfiguratorTab() {
                     onCheckedChange={() => toggleAllowCustomGoals(role)}
                   />
                 </div>
+                {allowCustom && (
+                  <div className="pt-2 space-y-1.5">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Povolené metriky pro vlastní cíle
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {ALL_METRICS.map((m) => {
+                        const checked = (goals.allowed_metrics || []).includes(m);
+                        return (
+                          <label
+                            key={m}
+                            className="flex items-center gap-1.5 text-xs cursor-pointer hover:text-foreground"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => toggleAllowedMetric(role, m)}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className={checked ? "text-foreground" : "text-muted-foreground"}>
+                              {METRIC_DEFS[m].label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Onboarding goal removed — Nováček role deactivated */}
