@@ -322,6 +322,25 @@ const MemberActivity = () => {
     return sums;
   }, [weeklyRows]);
 
+  // Nové vs. Servisní BJ for the period (POR = nové, SER = servisní)
+  const bjBreakdown = useMemo(() => {
+    const periodStartStr = format(periodStart, "yyyy-MM-dd");
+    const periodEndStr = format(periodEnd, "yyyy-MM-dd");
+    let nove = 0;
+    let servisni = 0;
+    (weeklyMeetings as any[]).forEach((m) => {
+      if (m.cancelled) return;
+      const d = m.date as string;
+      if (d < periodStartStr || d > periodEndStr) return;
+      const v = Number(m.podepsane_bj) || 0;
+      if (m.meeting_type === "POR") nove += v;
+      else if (m.meeting_type === "SER") servisni += v;
+    });
+    const total = nove + servisni;
+    const novePct = total > 0 ? (nove / total) * 100 : 0;
+    return { nove: Math.round(nove), servisni: Math.round(servisni), total: Math.round(total), novePct, isLow: total > 0 && novePct < 30 };
+  }, [weeklyMeetings, periodStart, periodEnd]);
+
   // Mobile week navigation
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
