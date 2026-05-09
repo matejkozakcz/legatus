@@ -322,6 +322,25 @@ const MemberActivity = () => {
     return sums;
   }, [weeklyRows]);
 
+  // Nové vs. Servisní BJ for the period (POR = nové, SER = servisní)
+  const bjBreakdown = useMemo(() => {
+    const periodStartStr = format(periodStart, "yyyy-MM-dd");
+    const periodEndStr = format(periodEnd, "yyyy-MM-dd");
+    let nove = 0;
+    let servisni = 0;
+    (weeklyMeetings as any[]).forEach((m) => {
+      if (m.cancelled) return;
+      const d = m.date as string;
+      if (d < periodStartStr || d > periodEndStr) return;
+      const v = Number(m.podepsane_bj) || 0;
+      if (m.meeting_type === "POR") nove += v;
+      else if (m.meeting_type === "SER") servisni += v;
+    });
+    const total = nove + servisni;
+    const novePct = total > 0 ? (nove / total) * 100 : 0;
+    return { nove: Math.round(nove), servisni: Math.round(servisni), total: Math.round(total), novePct, isLow: total > 0 && novePct < 30 };
+  }, [weeklyMeetings, periodStart, periodEnd]);
+
   // Mobile week navigation
   const mobileWeekStart = useMemo(
     () => addWeeks(startOfWeek(now, { weekStartsOn: 1 }), mobileWeekOffset),
@@ -517,6 +536,53 @@ const MemberActivity = () => {
           ))}
         </div>
 
+        {bjBreakdown.total > 0 && (
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 16,
+              padding: "12px 14px",
+              border: "1px solid #e1e9eb",
+              marginBottom: 16,
+            }}
+            title={bjBreakdown.isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : undefined}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Nové BJ</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: bjBreakdown.isLow ? "#ef4444" : "var(--text-primary)" }}>
+                  {bjBreakdown.nove}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Servisní BJ</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+                  {bjBreakdown.servisni}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Celkem</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+                  {bjBreakdown.total}
+                </div>
+              </div>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.min(100, Math.max(0, bjBreakdown.novePct))}%`,
+                  height: "100%",
+                  background: bjBreakdown.isLow ? "#ef4444" : "#00abbd",
+                  transition: "width 0.4s ease-out",
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 10, color: bjBreakdown.isLow ? "#ef4444" : "var(--text-muted)", marginTop: 4, textAlign: "center" }}>
+              {Math.round(bjBreakdown.novePct)} % Nové{bjBreakdown.isLow && " — riziko vyhnití"}
+            </div>
+          </div>
+        )}
+
         {/* Period summary — single compact card */}
         <div
           style={{
@@ -668,6 +734,55 @@ const MemberActivity = () => {
           Export PDF
         </button>
       </div>
+
+      {bjBreakdown.total > 0 && (
+        <section
+          className="legatus-card"
+          style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}
+          title={bjBreakdown.isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : undefined}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Nové BJ
+            </span>
+            <span className="font-heading font-bold" style={{ fontSize: 22, color: bjBreakdown.isLow ? "#ef4444" : "#00555f" }}>
+              {bjBreakdown.nove}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Servisní BJ
+            </span>
+            <span className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>
+              {bjBreakdown.servisni}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Celkem
+            </span>
+            <span className="font-heading font-bold" style={{ fontSize: 22, color: "#00555f" }}>
+              {bjBreakdown.total}
+            </span>
+          </div>
+          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ height: 8, borderRadius: 4, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.min(100, Math.max(0, bjBreakdown.novePct))}%`,
+                  height: "100%",
+                  background: bjBreakdown.isLow ? "#ef4444" : "#00abbd",
+                  transition: "width 0.4s ease-out",
+                }}
+              />
+            </div>
+            <span style={{ fontSize: 11, color: bjBreakdown.isLow ? "#ef4444" : "var(--text-muted)" }}>
+              {Math.round(bjBreakdown.novePct)} % Nové
+              {bjBreakdown.isLow && " — riziko vyhnití"}
+            </span>
+          </div>
+        </section>
+      )}
 
       <ConversionFunnel meetings={conversionMeetings as any} />
 
