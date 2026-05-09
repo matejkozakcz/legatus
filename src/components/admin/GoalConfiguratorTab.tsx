@@ -289,6 +289,16 @@ export function GoalConfiguratorTab() {
     }));
   };
 
+  const toggleAllowedMetric = (role: string, metric: MetricKey) => {
+    setForm((prev) => {
+      const current = prev[role]?.allowed_metrics || [];
+      const next = current.includes(metric)
+        ? current.filter((m) => m !== metric)
+        : [...current, metric];
+      return { ...prev, [role]: { ...prev[role], allowed_metrics: next } };
+    });
+  };
+
   const hasPromotions = (role: string) =>
     role === "vedouci" || role === "budouci_vedouci" || role === "garant" || role === "ziskatel";
 
