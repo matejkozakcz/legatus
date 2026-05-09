@@ -1190,15 +1190,14 @@ const Dashboard = () => {
     const r = activeRole;
 
     if (r === "vedouci" || r === "budouci_vedouci") {
-      vedouciGaugeKeys.forEach((gk) => {
-        const max = getGoalMax(gk);
-        const value = getGoalValue(gk);
+      periodicUserGoals.forEach((g) => {
+        const value = computeMetricActual(g.metric_key, g.scope, g.count_type);
         monthlyGoals.push({
-          key: gk,
+          key: g.metric_key,
           value,
-          max,
-          label: getGoalLabel(gk),
-          placeholder: max === 0,
+          max: g.target_value,
+          label: buildLabelForGoal(g.metric_key, g.scope, g.count_type),
+          placeholder: g.target_value === 0,
         });
       });
       if (r === "budouci_vedouci") {
