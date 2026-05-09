@@ -34,7 +34,6 @@ interface RoleGoals {
   referrals_weekly: GoalSetting;
   team_bj?: GoalSetting;
   onboarding?: GoalSetting;
-  promotions?: PromotionTarget[];
   allow_custom_goals?: boolean;
   allowed_metrics?: MetricKey[];
 }
