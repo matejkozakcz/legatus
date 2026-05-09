@@ -22,7 +22,6 @@ interface RoleGoals {
   referrals_weekly: GoalSetting;
   team_bj?: GoalSetting;
   onboarding?: GoalSetting;
-  promotions?: PromotionTarget[];
   allow_custom_goals?: boolean;
 }
 
@@ -48,11 +47,7 @@ export function useGoalConfiguration(role: string | undefined) {
   const { data: config, isLoading } = useQuery({
     queryKey: ["app_config", "goal_configuration"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "goal_configuration")
-        .single();
+      const { data } = await supabase.from("app_config").select("value").eq("key", "goal_configuration").single();
       return (data?.value as unknown as GoalConfiguration) ?? null;
     },
     staleTime: 5 * 60 * 1000,

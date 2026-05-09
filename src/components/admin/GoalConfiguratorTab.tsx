@@ -26,14 +26,6 @@ interface GoalSetting {
   value: number | null;
 }
 
-interface PromotionTarget {
-  role: string;
-  mode: "system" | "custom";
-  value: number;
-  scope: "direct" | "full_structure";
-  type: "total" | "increment";
-}
-
 interface RoleGoals {
   monthly_bj: GoalSetting;
   fsa_weekly: GoalSetting;
@@ -84,10 +76,6 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 3 },
     team_bj: { mode: "system", value: 3000 },
-    promotions: [
-      { role: "garant", mode: "system", value: 1, scope: "direct", type: "increment" },
-      { role: "budouci_vedouci", mode: "system", value: 1, scope: "full_structure", type: "total" },
-    ],
     allow_custom_goals: true,
   },
   budouci_vedouci: {
@@ -96,7 +84,6 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     ser_weekly: { mode: "system", value: 2 },
     poh_weekly: { mode: "system", value: 1 },
     referrals_weekly: { mode: "system", value: 3 },
-    promotions: [],
     allow_custom_goals: true,
   },
   garant: {
@@ -125,13 +112,6 @@ const DEFAULT_CONFIG: GoalConfiguration = {
     allow_custom_goals: false,
   },
 };
-
-const PROMOTION_ROLE_OPTIONS = [
-  { value: "ziskatel", label: "Získatel" },
-  { value: "garant", label: "Garant" },
-  { value: "budouci_vedouci", label: "Budoucí vedoucí" },
-  { value: "vedouci", label: "Vedoucí" },
-];
 
 function ModeSelect({ value, onChange }: { value: "system" | "custom"; onChange: (v: "system" | "custom") => void }) {
   return (
@@ -249,30 +229,6 @@ export function GoalConfiguratorTab() {
     }));
   };
 
-  const updatePromotion = (role: string, index: number, field: string, val: any) => {
-    setForm((prev) => {
-      const promotions = [...(prev[role]?.promotions || [])];
-      promotions[index] = { ...promotions[index], [field]: val };
-      return { ...prev, [role]: { ...prev[role], promotions } };
-    });
-  };
-
-  const addPromotion = (role: string) => {
-    setForm((prev) => {
-      const promotions = [...(prev[role]?.promotions || [])];
-      promotions.push({ role: "garant", mode: "system", value: 1, scope: "direct", type: "increment" });
-      return { ...prev, [role]: { ...prev[role], promotions } };
-    });
-  };
-
-  const removePromotion = (role: string, index: number) => {
-    setForm((prev) => {
-      const promotions = [...(prev[role]?.promotions || [])];
-      promotions.splice(index, 1);
-      return { ...prev, [role]: { ...prev[role], promotions } };
-    });
-  };
-
   const toggleAllowCustomGoals = (role: string) => {
     setForm((prev) => ({
       ...prev,
@@ -290,9 +246,6 @@ export function GoalConfiguratorTab() {
       return { ...prev, [role]: { ...prev[role], allowed_metrics: next } };
     });
   };
-
-  const hasPromotions = (role: string) =>
-    role === "vedouci" || role === "budouci_vedouci" || role === "garant" || role === "ziskatel";
 
   return (
     <div className="space-y-4">
