@@ -56,8 +56,8 @@ const ACTIVITY_COLUMNS = [
   { key: "nab", header: "Nábory" },
   { key: "por", header: "Poradenství" },
   { key: "ref", header: "Doporučení" },
-  { key: "bj_por", header: "BJ z Poradenství" },
-  { key: "bj_nab", header: "BJ Nábory" },
+  { key: "bj_por", header: "BJ New" },
+  { key: "bj_old", header: "BJ Old" },
   { key: "bj_total", header: "BJ celkem" },
 ] as const;
 
@@ -68,7 +68,7 @@ type WeeklyRow = {
   por: number;
   ref: number;
   bj_por: number;
-  bj_nab: number;
+  bj_old: number;
   bj_total: number;
 };
 
