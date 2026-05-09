@@ -115,6 +115,7 @@ export function GoalsSection({
   hideMonthlyTitle = false,
   compact = false,
   stacked = false,
+  wrap = false,
   promotionFirst = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
