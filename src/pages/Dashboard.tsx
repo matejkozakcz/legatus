@@ -19,7 +19,9 @@ import {
   Plus,
 } from "lucide-react";
 import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
-import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
+import { METRIC_DEFS, PEOPLE_METRICS, type MetricKey } from "@/lib/goalMetrics";
+import { useUserGoals } from "@/hooks/useUserGoals";
+import { UserGoalsModal } from "@/components/UserGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { GoalsSection, type GoalGaugeItem } from "@/components/GoalsSection";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
@@ -36,7 +38,8 @@ import { OrgChart } from "@/components/OrgChart";
 
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
-import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
+// Legacy: VedouciGoalsModal nahrazen UserGoalsModal. Komponenta zůstává v kódu pro rollback.
+// import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -984,21 +987,57 @@ const Dashboard = () => {
     enabled: !!activeUserId && (activeRole === "vedouci" || activeRole === "budouci_vedouci"),
   });
 
-  // Vedoucí goals per period
-  const { data: vedouciGoals, refetch: refetchGoals } = useQuery({
-    queryKey: ["vedouci_goals", profile?.id, periodKey],
-    queryFn: async () => {
-      if (!profile?.id) return null;
-      const { data } = await supabase
-        .from("vedouci_goals" as any)
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("period_key", periodKey)
-        .maybeSingle();
-      return data as any;
-    },
-    enabled: !!profile?.id && activeRole === "vedouci",
-  });
+  // User goals (new system) — periodické pro aktuální období + trvalé
+  const { data: userGoalsData, refetch: refetchGoals } = useUserGoals(profile?.id, periodKey);
+  const periodicUserGoals = userGoalsData?.periodicGoals ?? [];
+  const permanentUserGoals = userGoalsData?.permanentGoals ?? [];
+
+  // Personal per-period meeting aggregates (pro metriky: ser_bj, fsa_count, poh_count, referrals, lidi_na_info)
+  const { data: personalPeriodMetrics = { ser_bj: 0, fsa_count: 0, poh_count: 0, referrals: 0, lidi_na_info: 0 } } =
+    useQuery({
+      queryKey: ["personal_period_metrics", activeUserId, periodStartStr, periodEndStr],
+      queryFn: async () => {
+        const empty = { ser_bj: 0, fsa_count: 0, poh_count: 0, referrals: 0, lidi_na_info: 0 };
+        if (!activeUserId) return empty;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const [aggRes, futureFsaRes] = await Promise.all([
+          supabase
+            .from("client_meetings")
+            .select(
+              "meeting_type, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, cancelled, outcome_recorded, date",
+            )
+            .eq("user_id", activeUserId)
+            .eq("cancelled", false)
+            .gte("date", periodStartStr)
+            .lte("date", periodEndStr),
+          supabase
+            .from("client_meetings")
+            .select("id, outcome_recorded, date")
+            .eq("user_id", activeUserId)
+            .eq("cancelled", false)
+            .eq("meeting_type", "FSA"),
+        ]);
+        const rows = (aggRes.data || []) as any[];
+        let ser_bj = 0,
+          fsa_count = 0,
+          poh_count = 0,
+          referrals = 0;
+        for (const r of rows) {
+          if (r.meeting_type === "SER") ser_bj += Number(r.podepsane_bj) || 0;
+          if (r.meeting_type === "FSA") fsa_count += 1;
+          if (r.meeting_type === "POH") poh_count += 1;
+          referrals +=
+            (Number(r.doporuceni_fsa) || 0) +
+            (Number(r.doporuceni_poradenstvi) || 0) +
+            (Number(r.doporuceni_pohovor) || 0);
+        }
+        // lidi_na_info = počet domluvených FSA bez zaznamenaného outcome NEBO v budoucnu
+        const futureRows = (futureFsaRes.data || []) as any[];
+        const lidi_na_info = futureRows.filter((r) => r.outcome_recorded === false || (r.date && r.date > todayStr)).length;
+        return { ser_bj, fsa_count, poh_count, referrals, lidi_na_info };
+      },
+      enabled: !!activeUserId,
+    });
 
   // Onboarding tasks for Nováček progress bar
   const { data: onboardingTasks = [] } = useQuery({
@@ -1027,101 +1066,60 @@ const Dashboard = () => {
   const [goalsSwipePage, setGoalsSwipePage] = useState(0);
   const goalsSwipeRef = useRef<HTMLDivElement>(null);
 
-  // Helper: map goal key to current value (scope + count_type aware for people goals)
-  const getGoalScope = (key: GoalKey): string => {
-    if (!vedouciGoals) return "direct";
+  // ── New user_goals system ──────────────────────────────────────────────────
+  // Helper: aktuální hodnota pro danou metric_key + scope + count_type.
+  const computeMetricActual = (
+    key: MetricKey,
+    scope: "direct" | "structure" = "direct",
+    countType: "total" | "increment" = "total",
+  ): number => {
     switch (key) {
-      case "vedouci_count":
-        return vedouciGoals.vedouci_count_scope || "direct";
-      case "budouci_vedouci_count":
-        return vedouciGoals.budouci_vedouci_count_scope || "direct";
-      case "garant_count":
-        return vedouciGoals.garant_count_scope || "direct";
-      case "ziskatel_count":
-        return (vedouciGoals as any).ziskatel_count_scope || "direct";
-      default:
-        return "direct";
-    }
-  };
-  const getGoalType = (key: GoalKey): "total" | "increment" => {
-    if (!vedouciGoals) return "total";
-    switch (key) {
-      case "vedouci_count":
-        return ((vedouciGoals as any).vedouci_count_type || "total") as "total" | "increment";
-      case "budouci_vedouci_count":
-        return ((vedouciGoals as any).budouci_vedouci_count_type || "total") as "total" | "increment";
-      case "garant_count":
-        return ((vedouciGoals as any).garant_count_type || "total") as "total" | "increment";
-      case "ziskatel_count":
-        return ((vedouciGoals as any).ziskatel_count_type || "total") as "total" | "increment";
-      default:
-        return "total";
-    }
-  };
-  const getGoalValue = (key: GoalKey): number => {
-    const scope = getGoalScope(key);
-    const type = getGoalType(key);
-    // People goals: pokud type=increment, použij počet povýšení v období
-    if (["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key)) {
-      const roleKey = key.replace("_count", "") as "vedouci" | "budouci_vedouci" | "garant" | "ziskatel";
-      if (type === "increment") {
-        const bucket = scope === "direct" ? incrementCounts.direct : incrementCounts.structure;
-        return (bucket as any)[roleKey] ?? 0;
-      }
-      // total — stávající chování
-      switch (key) {
-        case "vedouci_count":
-          return scope === "direct" ? directVedouciCount : vedouciSubCount;
-        case "budouci_vedouci_count":
-          return scope === "direct" ? directBvCount : bvCount;
-        case "garant_count":
-          return scope === "direct" ? directGarantCount : garantCount;
-        default:
-          return 0;
-      }
-    }
-    switch (key) {
-      case "team_bj":
-        return vedouciMonthlyBj;
       case "personal_bj":
         return personalMonthlyBj;
-      default:
-        return 0;
-    }
-  };
-  const getGoalMax = (key: GoalKey): number => {
-    if (!vedouciGoals) return 0;
-    switch (key) {
       case "team_bj":
-        return vedouciGoals.team_bj_goal || 0;
-      case "personal_bj":
-        return vedouciGoals.personal_bj_goal || 0;
+        return vedouciMonthlyBj;
+      case "ser_bj":
+        return personalPeriodMetrics.ser_bj;
+      case "fsa_count":
+        return personalPeriodMetrics.fsa_count;
+      case "poh_count":
+        return personalPeriodMetrics.poh_count;
+      case "referrals":
+        return personalPeriodMetrics.referrals;
+      case "lidi_na_info":
+        return personalPeriodMetrics.lidi_na_info;
       case "vedouci_count":
-        return vedouciGoals.vedouci_count_goal || 0;
       case "budouci_vedouci_count":
-        return vedouciGoals.budouci_vedouci_count_goal || 0;
       case "garant_count":
-        return vedouciGoals.garant_count_goal || 0;
-      case "ziskatel_count":
-        return (vedouciGoals as any).ziskatel_count_goal || 0;
+      case "ziskatel_count": {
+        const roleKey = key.replace("_count", "") as "vedouci" | "budouci_vedouci" | "garant" | "ziskatel";
+        if (countType === "increment") {
+          const bucket = scope === "direct" ? incrementCounts.direct : incrementCounts.structure;
+          return (bucket as any)[roleKey] ?? 0;
+        }
+        // total
+        if (key === "vedouci_count") return scope === "direct" ? directVedouciCount : vedouciSubCount;
+        if (key === "budouci_vedouci_count") return scope === "direct" ? directBvCount : bvCount;
+        if (key === "garant_count") return scope === "direct" ? directGarantCount : garantCount;
+        // ziskatel — fallback (data nejsou specificky fetched, použij subtree count)
+        return scope === "direct" ? 0 : ziskatelStructureCount;
+      }
       default:
         return 0;
     }
   };
-  const getGoalLabel = (key: GoalKey): string => {
-    const base = GOAL_OPTIONS.find((g) => g.key === key)?.label ?? key;
-    const isPeopleGoal = ["vedouci_count", "budouci_vedouci_count", "garant_count", "ziskatel_count"].includes(key);
-    if (!isPeopleGoal) return base;
-    const scope = getGoalScope(key);
-    const type = getGoalType(key);
+
+  const buildLabelForGoal = (
+    key: MetricKey,
+    scope: "direct" | "structure",
+    countType: "total" | "increment",
+  ): string => {
+    const base = METRIC_DEFS[key]?.label ?? key;
+    if (!PEOPLE_METRICS.includes(key)) return base;
     const scopeLabel = scope === "direct" ? "přímí" : "celkem";
-    return type === "increment"
-      ? `${base} (${scopeLabel}, přírůstek)`
-      : `${base} (${scopeLabel})`;
+    return countType === "increment" ? `${base} (${scopeLabel}, přírůstek)` : `${base} (${scopeLabel})`;
   };
-  const selectedGoal1: GoalKey = vedouciGoals?.selected_goal_1 || "team_bj";
-  const selectedGoal2: GoalKey | null = vedouciGoals?.selected_goal_2 || null;
-  const vedouciGaugeKeys: GoalKey[] = selectedGoal2 ? [selectedGoal1, selectedGoal2] : [selectedGoal1];
+
 
   // ── Header period navigator helpers (desktop) ─ MUST be declared before any early return
   const headerNav = useMemo(() => {
@@ -1192,15 +1190,14 @@ const Dashboard = () => {
     const r = activeRole;
 
     if (r === "vedouci" || r === "budouci_vedouci") {
-      vedouciGaugeKeys.forEach((gk) => {
-        const max = getGoalMax(gk);
-        const value = getGoalValue(gk);
+      periodicUserGoals.forEach((g) => {
+        const value = computeMetricActual(g.metric_key, g.scope, g.count_type);
         monthlyGoals.push({
-          key: gk,
+          key: g.metric_key,
           value,
-          max,
-          label: getGoalLabel(gk),
-          placeholder: max === 0,
+          max: g.target_value,
+          label: buildLabelForGoal(g.metric_key, g.scope, g.count_type),
+          placeholder: g.target_value === 0,
         });
       });
       if (r === "budouci_vedouci") {
@@ -1787,12 +1784,12 @@ const Dashboard = () => {
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
         {profile?.id && (
-          <VedouciGoalsModal
+          <UserGoalsModal
             open={goalsModalOpen}
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
             periodKey={periodKey}
-            onSaved={() => refetchGoals()}
+            canEdit
             role={activeProfile?.role}
           />
         )}
@@ -2234,12 +2231,12 @@ const Dashboard = () => {
         )}
 
         {profile?.id && (
-          <VedouciGoalsModal
+          <UserGoalsModal
             open={goalsModalOpen}
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
             periodKey={periodKey}
-            onSaved={() => refetchGoals()}
+            canEdit
             role={activeProfile?.role}
           />
         )}

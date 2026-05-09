@@ -34,6 +34,10 @@ export interface GoalsSectionProps {
   /** Zobrazit gauges pod sebou (sloupec) místo vedle sebe. */
   stacked?: boolean;
   /**
+   * Wrap gauges into multiple rows when count is high (e.g. > 3). Pairs nicely with `compact`.
+   */
+  wrap?: boolean;
+  /**
    * Desktop layout: promotion gauges nahoře (vedle sebe, compact), monthly dole.
    * Odpovídá novému designu pro Získatel/Garant/BV na desktopu.
    */
@@ -69,16 +73,17 @@ function SectionTitle({ children, dark }: { children: React.ReactNode; dark?: bo
   );
 }
 
-function GaugeRow({ items, dark, compact, stacked }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean; stacked?: boolean }) {
+function GaugeRow({ items, dark, compact, stacked, wrap }: { items: GoalGaugeItem[]; dark?: boolean; compact?: boolean; stacked?: boolean; wrap?: boolean }) {
   return (
     <div
       style={{
         display: "flex",
         flexDirection: stacked ? "column" : "row",
-        flexWrap: stacked ? "nowrap" : "nowrap",
+        flexWrap: wrap ? "wrap" : stacked ? "nowrap" : "nowrap",
         justifyContent: "center",
         alignItems: "center",
         gap: stacked ? 12 : items.length > 1 ? (compact ? 4 : 8) : 0,
+        rowGap: wrap ? 16 : undefined,
       }}
     >
       {items.map((item) => (
@@ -110,6 +115,7 @@ export function GoalsSection({
   hideMonthlyTitle = false,
   compact = false,
   stacked = false,
+  wrap = false,
   promotionFirst = false,
 }: GoalsSectionProps) {
   const hasMonthly = monthlyGoals.length > 0;
@@ -151,7 +157,7 @@ export function GoalsSection({
         {hasMonthly && (
           <div>
             {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
-            <GaugeRow items={monthlyGoals} dark={dark} compact stacked={stacked} />
+            <GaugeRow items={monthlyGoals} dark={dark} compact stacked={stacked} wrap={wrap} />
           </div>
         )}
       </div>
@@ -187,7 +193,7 @@ export function GoalsSection({
       {hasMonthly && (
         <div>
           {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
-          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} stacked={stacked} />
+          <GaugeRow items={monthlyGoals} dark={dark} compact={compact} stacked={stacked} wrap={wrap} />
         </div>
       )}
 
