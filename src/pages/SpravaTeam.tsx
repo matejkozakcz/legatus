@@ -217,7 +217,7 @@ function HierarchyGroup({
   onEdit: (m: Profile) => void;
   depth: number;
   readOnly?: boolean;
-  bjMap?: Map<string, { value: number; isTeam: boolean }>;
+  bjMap?: Map<string, { value: number; isTeam: boolean; nove: number; servisni: number }>;
   progressMap?: Map<string, number>;
 }) {
   const [collapsed, setCollapsed] = useState(depth >= 2);
