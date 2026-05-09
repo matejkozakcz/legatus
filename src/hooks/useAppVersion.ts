@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const VERSION_KEY = "legatus_app_version";
-const CONFIG_KEY = "app_version";
+const VERSION_URL = "/version.json";
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min while tab is open
 
 /**
- * Subscribes to app_config.app_version changes (realtime + initial fetch).
- * Returns `serverVersion` and `localVersion`. Banner shows when they differ.
+ * Detects newly published builds by polling `/version.json`, which is emitted
+ * by the Vite build with a unique timestamp on every build (see vite.config.ts).
  *
- * In PWA / installed app contexts the realtime websocket often dies while the
- * app is backgrounded, so we additionally re-fetch the value when the page
- * becomes visible / regains focus, and expose a manual `refresh()` so screens
- * like Nastavení can force a check on open.
+ * Strategy:
+ *  - Fetch `/version.json` with `cache: "no-store"` + cache-bust query string
+ *    (Lovable proxy also serves it with no-store headers).
+ *  - Compare the build version to the value persisted in localStorage. First
+ *    visit silently adopts the current version. Subsequent mismatches surface
+ *    `isStale` so the UpdateBanner can prompt the user to refresh.
+ *  - Re-check on visibility/focus/online + on a 5 min interval.
+ *  - `performUpdate()` clears caches + service workers + storage (preserving
+ *    auth tokens) and reloads with a cache-bust query.
  */
 export function useAppVersion() {
   const [serverVersion, setServerVersion] = useState<string | null>(null);
@@ -24,6 +29,7 @@ export function useAppVersion() {
   const applyValue = useCallback((value: unknown) => {
     if (value === null || value === undefined) return;
     const v = typeof value === "string" ? value : JSON.stringify(value);
+    if (!v) return;
     setServerVersion(v);
     // First-time visitors: silently adopt current version, no banner.
     if (!localVersionRef.current) {
@@ -34,45 +40,21 @@ export function useAppVersion() {
 
   const refresh = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", CONFIG_KEY)
-        .maybeSingle();
-      applyValue(data?.value);
+      const res = await fetch(`${VERSION_URL}?_=${Date.now()}`, {
+        cache: "no-store",
+        credentials: "omit",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { version?: string };
+      applyValue(data?.version);
     } catch (e) {
       console.warn("[app_version] refresh failed:", e);
     }
   }, [applyValue]);
 
   useEffect(() => {
-    let cancelled = false;
+    void refresh();
 
-    // Initial fetch
-    supabase
-      .from("app_config")
-      .select("value")
-      .eq("key", CONFIG_KEY)
-      .maybeSingle()
-      .then(({ data }) => { if (!cancelled) applyValue(data?.value); });
-
-    // Realtime subscription (unique channel per hook instance to avoid
-    // "cannot add postgres_changes callbacks after subscribe()" when multiple
-    // components mount this hook simultaneously).
-    const channel = supabase
-      .channel(`app_version_changes_${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "app_config", filter: `key=eq.${CONFIG_KEY}` },
-        (payload) => {
-          const next = (payload.new as { value?: unknown })?.value;
-          applyValue(next);
-        },
-      )
-      .subscribe();
-
-    // Refresh when PWA / tab returns to the foreground — realtime websocket
-    // is unreliable in standalone installs (iOS/Android/desktop PWA).
     const onVisibility = () => {
       if (document.visibilityState === "visible") void refresh();
     };
@@ -83,14 +65,15 @@ export function useAppVersion() {
     window.addEventListener("focus", onFocus);
     window.addEventListener("online", onOnline);
 
+    const interval = window.setInterval(() => { void refresh(); }, POLL_INTERVAL_MS);
+
     return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("online", onOnline);
+      window.clearInterval(interval);
     };
-  }, [applyValue, refresh]);
+  }, [refresh]);
 
   const isStale = !!serverVersion && !!localVersion && serverVersion !== localVersion;
 

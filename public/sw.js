@@ -30,6 +30,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/~oauth")) return;
+  if (url.pathname === "/version.json") return; // always hit network for build version
   if (url.hostname.includes("supabase.co")) return;
 
   const isNavigation =
