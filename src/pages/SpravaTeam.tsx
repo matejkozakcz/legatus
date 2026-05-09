@@ -92,7 +92,7 @@ function MemberCard({
   onClick: () => void;
   depth?: number;
   readOnly?: boolean;
-  bjInfo?: { value: number; isTeam: boolean };
+  bjInfo?: { value: number; isTeam: boolean; nove: number; servisni: number };
   progress?: number;
 }) {
   const badge = roleBadge[member.role] || roleBadge.novacek;
