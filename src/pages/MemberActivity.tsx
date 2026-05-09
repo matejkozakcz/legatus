@@ -1,7 +1,8 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, BarChart3, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Download, Loader2, ChevronRight, ChevronDown } from "lucide-react";
+import { meetingTypeBadgeColors } from "@/lib/meetingColors";
 import { startOfWeek, endOfWeek, addWeeks, format, isSameWeek } from "date-fns";
 import { cs } from "date-fns/locale";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
