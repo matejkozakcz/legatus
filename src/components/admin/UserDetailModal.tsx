@@ -625,3 +625,144 @@ function ManageTab({ profile, onUpdated }: { profile: any; onUpdated: () => void
     </div>
   );
 }
+
+// ─── Goals ───────────────────────────────────────────────────────────────────
+
+function GoalsTab({ profile }: { profile: any }) {
+  const now = new Date();
+  const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [periodKey, setPeriodKey] = useState(defaultPeriod);
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  // Generate last 6 + next 3 months for picker
+  const periods = useMemo(() => {
+    const arr: { key: string; label: string }[] = [];
+    for (let i = -6; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      arr.push({ key, label: format(d, "LLLL yyyy", { locale: cs }) });
+    }
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { data: goals, isLoading, refetch } = useQuery({
+    queryKey: ["admin_user_goals", profile.id, periodKey],
+    queryFn: async () => {
+      const [{ data: per }, { data: perm }] = await Promise.all([
+        supabase
+          .from("user_goals")
+          .select("*")
+          .eq("user_id", profile.id)
+          .eq("period_key", periodKey),
+        supabase
+          .from("user_goals")
+          .select("*")
+          .eq("user_id", profile.id)
+          .is("period_key", null),
+      ]);
+      return { periodic: per || [], permanent: perm || [] };
+    },
+  });
+
+  const setterIds = useMemo(() => {
+    const all = [...(goals?.periodic || []), ...(goals?.permanent || [])];
+    return Array.from(new Set(all.map((g: any) => g.set_by).filter(Boolean)));
+  }, [goals]);
+
+  const { data: setters } = useQuery({
+    queryKey: ["admin_user_goals_setters", setterIds],
+    enabled: setterIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", setterIds as string[]);
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.full_name; });
+      return map;
+    },
+  });
+
+  const renderRow = (g: any) => (
+    <div key={g.id} className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm">
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-foreground">{metricLabel(g.metric_key)}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {g.scope === "structure" ? "Struktura" : "Přímí"} ·{" "}
+          {g.count_type === "increment" ? "Přírůstek" : "Celkem"}
+          {g.set_by && (
+            <> · nastavil {setters?.[g.set_by] || "—"} ({fmtRel(g.updated_at)})</>
+          )}
+        </div>
+      </div>
+      <div className="text-base font-heading font-bold text-foreground">{g.target_value}</div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Label className="text-xs text-muted-foreground">Období:</Label>
+        <Select value={periodKey} onValueChange={setPeriodKey}>
+          <SelectTrigger className="h-8 w-44 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {periods.map((p) => (
+              <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          onClick={() => setEditorOpen(true)}
+          className="h-8 gap-1.5 bg-[#fc7c71] hover:bg-[#fc7c71]/90 text-white"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Upravit cíle
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Načítání…</p>
+      ) : (
+        <>
+          <div>
+            <h4 className="text-xs font-heading uppercase tracking-wide text-muted-foreground mb-2">
+              Periodické cíle ({periods.find((p) => p.key === periodKey)?.label})
+            </h4>
+            {(goals?.periodic.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">Žádné periodické cíle pro toto období.</p>
+            ) : (
+              <div className="space-y-1.5">{goals!.periodic.map(renderRow)}</div>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-heading uppercase tracking-wide text-muted-foreground mb-2">
+              Trvalé cíle
+            </h4>
+            {(goals?.permanent.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">Žádné trvalé cíle.</p>
+            ) : (
+              <div className="space-y-1.5">{goals!.permanent.map(renderRow)}</div>
+            )}
+          </div>
+        </>
+      )}
+
+      <UserGoalsModal
+        open={editorOpen}
+        onClose={() => {
+          setEditorOpen(false);
+          refetch();
+        }}
+        userId={profile.id}
+        periodKey={periodKey}
+        canEdit={true}
+        role={profile.role}
+      />
+    </div>
+  );
+}
