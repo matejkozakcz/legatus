@@ -1784,7 +1784,7 @@ const Dashboard = () => {
 
         <PromotionModal open={!!promotionRole} onClose={() => setPromotionRole(null)} newRole={promotionRole || ""} />
         {profile?.id && (
-          <VedouciGoalsModal
+          <UserGoalsModal
             open={goalsModalOpen}
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
@@ -2231,7 +2231,7 @@ const Dashboard = () => {
         )}
 
         {profile?.id && (
-          <VedouciGoalsModal
+          <UserGoalsModal
             open={goalsModalOpen}
             onClose={() => setGoalsModalOpen(false)}
             userId={profile.id}
