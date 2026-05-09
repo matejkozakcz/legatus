@@ -1228,6 +1228,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_goals: {
+        Row: {
+          count_type: string
+          created_at: string
+          id: string
+          metric_key: string
+          period_key: string | null
+          scope: string
+          set_by: string | null
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          count_type?: string
+          created_at?: string
+          id?: string
+          metric_key: string
+          period_key?: string | null
+          scope?: string
+          set_by?: string | null
+          target_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          count_type?: string
+          created_at?: string
+          id?: string
+          metric_key?: string
+          period_key?: string | null
+          scope?: string
+          set_by?: string | null
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_goals_set_by_fkey"
+            columns: ["set_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vedouci_goals: {
         Row: {
           budouci_vedouci_count_goal: number
