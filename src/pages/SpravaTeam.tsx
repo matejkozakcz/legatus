@@ -542,7 +542,7 @@ const SpravaTeam = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_meetings")
-        .select("user_id, podepsane_bj")
+        .select("user_id, podepsane_bj, meeting_type")
         .eq("cancelled", false)
         .gte("date", periodStartStr)
         .lte("date", periodEndStr);
@@ -553,38 +553,54 @@ const SpravaTeam = () => {
   });
 
   const bjMap = useMemo(() => {
-    const personalMap = new Map<string, number>();
+    const personalAll = new Map<string, number>();
+    const personalNove = new Map<string, number>();
+    const personalServisni = new Map<string, number>();
     periodMeetingBj.forEach((r: any) => {
-      personalMap.set(r.user_id, (personalMap.get(r.user_id) || 0) + (Number(r.podepsane_bj) || 0));
+      const v = Number(r.podepsane_bj) || 0;
+      personalAll.set(r.user_id, (personalAll.get(r.user_id) || 0) + v);
+      if (r.meeting_type === "POR") {
+        personalNove.set(r.user_id, (personalNove.get(r.user_id) || 0) + v);
+      } else if (r.meeting_type === "SER") {
+        personalServisni.set(r.user_id, (personalServisni.get(r.user_id) || 0) + v);
+      }
     });
 
-    function subtreeBj(nodeId: string): number {
-      let total = personalMap.get(nodeId) || 0;
+    function subtree(nodeId: string, src: Map<string, number>): number {
+      let total = src.get(nodeId) || 0;
       const kids = childrenMap.get(nodeId) || [];
-      kids.forEach((k) => { total += subtreeBj(k.id); });
+      kids.forEach((k) => { total += subtree(k.id, src); });
       return total;
     }
 
-    const map = new Map<string, { value: number; isTeam: boolean }>();
-    members.forEach((m) => {
-      if (m.role === "vedouci" || m.role === "budouci_vedouci") {
-        map.set(m.id, { value: Math.round(subtreeBj(m.id)), isTeam: true });
-      } else {
-        map.set(m.id, { value: Math.round(personalMap.get(m.id) || 0), isTeam: false });
+    const map = new Map<string, { value: number; isTeam: boolean; nove: number; servisni: number }>();
+    const buildEntry = (id: string, isTeam: boolean) => {
+      if (isTeam) {
+        return {
+          value: Math.round(subtree(id, personalAll)),
+          isTeam: true,
+          nove: Math.round(subtree(id, personalNove)),
+          servisni: Math.round(subtree(id, personalServisni)),
+        };
       }
+      return {
+        value: Math.round(personalAll.get(id) || 0),
+        isTeam: false,
+        nove: Math.round(personalNove.get(id) || 0),
+        servisni: Math.round(personalServisni.get(id) || 0),
+      };
+    };
+
+    members.forEach((m) => {
+      const isTeam = m.role === "vedouci" || m.role === "budouci_vedouci";
+      map.set(m.id, buildEntry(m.id, isTeam));
     });
-    // Also compute for the logged-in user if they're BV/Ved
     if (profile && (profile.role === "vedouci" || profile.role === "budouci_vedouci")) {
-      const selfBj = (personalMap.get(profile.id) || 0);
-      let teamTotal = selfBj;
-      members.forEach((m) => {
-        teamTotal += (personalMap.get(m.id) || 0);
-      });
-      // Use subtree approach properly
-      map.set(profile.id, { value: Math.round(subtreeBj(profile.id)), isTeam: true });
+      map.set(profile.id, buildEntry(profile.id, true));
     }
     return map;
   }, [members, periodMeetingBj, childrenMap, profile]);
+
 
   // ── Progress (same logic as OrgChart) ──
   // All-time cumulative BJ from activity_records + client_meetings
