@@ -34,6 +34,10 @@ export interface GoalsSectionProps {
   /** Zobrazit gauges pod sebou (sloupec) místo vedle sebe. */
   stacked?: boolean;
   /**
+   * Wrap gauges into multiple rows when count is high (e.g. > 3). Pairs nicely with `compact`.
+   */
+  wrap?: boolean;
+  /**
    * Desktop layout: promotion gauges nahoře (vedle sebe, compact), monthly dole.
    * Odpovídá novému designu pro Získatel/Garant/BV na desktopu.
    */
