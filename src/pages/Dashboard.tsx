@@ -38,7 +38,8 @@ import { OrgChart } from "@/components/OrgChart";
 
 import { fireConfetti } from "@/lib/confetti";
 import { PromotionModal } from "@/components/PromotionModal";
-import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
+// Legacy: VedouciGoalsModal nahrazen UserGoalsModal. Komponenta zůstává v kódu pro rollback.
+// import { VedouciGoalsModal } from "@/components/VedouciGoalsModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toVocative } from "@/lib/vocative";
 import { useTheme } from "@/contexts/ThemeContext";
