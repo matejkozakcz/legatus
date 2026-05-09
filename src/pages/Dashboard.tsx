@@ -19,7 +19,9 @@ import {
   Plus,
 } from "lucide-react";
 import { exportDashboardPdf, type ExportPeriod } from "@/lib/exportPdf";
-import { GoalKey, GOAL_OPTIONS } from "@/components/VedouciGoalsModal";
+import { METRIC_DEFS, PEOPLE_METRICS, type MetricKey } from "@/lib/goalMetrics";
+import { useUserGoals } from "@/hooks/useUserGoals";
+import { UserGoalsModal } from "@/components/UserGoalsModal";
 import { GaugeIndicator } from "@/components/GaugeIndicator";
 import { GoalsSection, type GoalGaugeItem } from "@/components/GoalsSection";
 import { startOfWeek, endOfWeek, subWeeks, addWeeks, format, isSameWeek } from "date-fns";
