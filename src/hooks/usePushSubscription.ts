@@ -169,8 +169,50 @@ export function usePushSubscription(): UsePushSubscriptionResult {
     void (async () => {
       try {
         const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (!sub) return;
+        let sub = await reg.pushManager.getSubscription();
+
+        // Auto-resubscribe after app update / SW unregister.
+        // Browser-level Notification permission persists across SW unregister,
+        // so if the user previously granted it (and we have a DB row for this UA),
+        // we can silently re-create the push subscription with no UI prompt.
+        if (!sub) {
+          // Look up prior consent for THIS user on THIS device (UA fingerprint).
+          const { data: priorRows } = await supabase
+            .from("push_subscriptions")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("user_agent", navigator.userAgent)
+            .limit(1);
+
+          const hadPriorConsent = !!priorRows && priorRows.length > 0;
+          if (!hadPriorConsent) return; // never opted in on this device → do nothing
+
+          const vapidKey = await getVapidPublicKey();
+          if (!vapidKey) {
+            console.warn("[push] auto-resubscribe skipped: missing VAPID key");
+            return;
+          }
+
+          try {
+            console.log("[push] auto-resubscribing after SW reset...");
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
+            });
+            console.log("[push] auto-resubscribed:", sub.endpoint);
+
+            // Clean up stale rows for this device — endpoint changed.
+            await supabase
+              .from("push_subscriptions")
+              .delete()
+              .eq("user_id", user.id)
+              .eq("user_agent", navigator.userAgent)
+              .neq("endpoint", sub.endpoint);
+          } catch (e) {
+            console.warn("[push] auto-resubscribe failed:", e);
+            return;
+          }
+        }
 
         const json = sub.toJSON() as {
           endpoint: string;
