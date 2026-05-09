@@ -259,7 +259,7 @@ const MemberActivity = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
+          "meeting_type, cancelled, outcome_recorded, date, podepsane_bj, case_name, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor",
         )
         .eq("user_id", userId)
         .gte("date", format(firstWeek, "yyyy-MM-dd"))
