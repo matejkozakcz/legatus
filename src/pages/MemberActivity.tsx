@@ -881,6 +881,32 @@ const MemberActivity = () => {
                               <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>
                                 {format(new Date(m.date), "d. M. yyyy", { locale: cs })}
                               </span>
+                              {(() => {
+                                const fsa = Number(m.doporuceni_fsa) || 0;
+                                const por = Number(m.doporuceni_poradenstvi) || 0;
+                                const poh = Number(m.doporuceni_pohovor) || 0;
+                                const total = fsa + por + poh;
+                                if (total === 0) {
+                                  return (
+                                    <span style={{ color: "var(--text-muted)", fontSize: 12, fontStyle: "italic", whiteSpace: "nowrap" }}>
+                                      bez doporučení
+                                    </span>
+                                  );
+                                }
+                                const parts: string[] = [];
+                                if (fsa) parts.push(`${fsa}× FSA`);
+                                if (por) parts.push(`${por}× POR`);
+                                if (poh) parts.push(`${poh}× POH`);
+                                return (
+                                  <span
+                                    style={{ color: "var(--text-secondary)", fontSize: 12, whiteSpace: "nowrap" }}
+                                    title={parts.join(", ")}
+                                  >
+                                    Dop.: <strong style={{ color: "#00555f" }}>{total}</strong>
+                                    <span style={{ marginLeft: 6, color: "var(--text-muted)" }}>({parts.join(" · ")})</span>
+                                  </span>
+                                );
+                              })()}
                               <span
                                 className="font-heading font-semibold"
                                 style={{ color: "#00555f", minWidth: 60, textAlign: "right", whiteSpace: "nowrap" }}
