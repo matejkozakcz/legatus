@@ -536,6 +536,53 @@ const MemberActivity = () => {
           ))}
         </div>
 
+        {bjBreakdown.total > 0 && (
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 16,
+              padding: "12px 14px",
+              border: "1px solid #e1e9eb",
+              marginBottom: 16,
+            }}
+            title={bjBreakdown.isLow ? "Méně než 30 % nových BJ — riziko vyhnití." : undefined}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Nové BJ</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: bjBreakdown.isLow ? "#ef4444" : "var(--text-primary)" }}>
+                  {bjBreakdown.nove}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Servisní BJ</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+                  {bjBreakdown.servisni}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <div style={{ fontSize: 10, color: "#00abbd", fontWeight: 600, marginBottom: 2 }}>Celkem</div>
+                <div className="font-heading" style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)" }}>
+                  {bjBreakdown.total}
+                </div>
+              </div>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.min(100, Math.max(0, bjBreakdown.novePct))}%`,
+                  height: "100%",
+                  background: bjBreakdown.isLow ? "#ef4444" : "#00abbd",
+                  transition: "width 0.4s ease-out",
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 10, color: bjBreakdown.isLow ? "#ef4444" : "var(--text-muted)", marginTop: 4, textAlign: "center" }}>
+              {Math.round(bjBreakdown.novePct)} % Nové{bjBreakdown.isLow && " — riziko vyhnití"}
+            </div>
+          </div>
+        )}
+
         {/* Period summary — single compact card */}
         <div
           style={{
