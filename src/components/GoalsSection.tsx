@@ -157,7 +157,7 @@ export function GoalsSection({
         {hasMonthly && (
           <div>
             {!hideMonthlyTitle && <SectionTitle dark={dark}>{resolvedMonthlyTitle}</SectionTitle>}
-            <GaugeRow items={monthlyGoals} dark={dark} compact stacked={stacked} />
+            <GaugeRow items={monthlyGoals} dark={dark} compact stacked={stacked} wrap={wrap} />
           </div>
         )}
       </div>
