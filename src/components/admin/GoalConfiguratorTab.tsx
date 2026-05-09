@@ -52,11 +52,21 @@ const GOAL_LABELS: Record<string, string> = {
   ser_weekly: "SER / týden",
   poh_weekly: "POH / týden",
   referrals_weekly: "Doporučení / týden",
+  ser_bj_weekly: "Servisní BJ / týden",
+  lidi_na_info_weekly: "Lidi na info / týden",
   team_bj: "Týmový BJ cíl",
   onboarding: "Dokončené zapracování",
 };
 
-const BASIC_GOALS = ["monthly_bj", "fsa_weekly", "ser_weekly", "poh_weekly", "referrals_weekly"] as const;
+const BASIC_GOALS = [
+  "monthly_bj",
+  "fsa_weekly",
+  "ser_weekly",
+  "ser_bj_weekly",
+  "poh_weekly",
+  "referrals_weekly",
+  "lidi_na_info_weekly",
+] as const;
 
 const MODE_LABELS = {
   system: "Stanoví admin",
