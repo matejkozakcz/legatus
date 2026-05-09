@@ -323,39 +323,43 @@ async function persistTab(
   setBy: string | null,
   existing: UserGoal[],
 ) {
+  // Update existing, insert new, delete unchecked / zero.
   const existingByKey = new Map(existing.map((g) => [g.metric_key, g]));
-  const draftKeys = new Set(Object.keys(drafts));
+  const activeDrafts = Object.values(drafts).filter((d) => d.target_value > 0);
+  const activeKeys = new Set(activeDrafts.map((d) => d.metric_key));
 
-  // Delete: existing rows whose metric was unchecked OR target_value=0
-  const toDelete: string[] = [];
-  for (const ex of existing) {
-    const draft = drafts[ex.metric_key];
-    if (!draft || draft.target_value <= 0) toDelete.push(ex.id);
-  }
+  // Delete rows that are no longer present (or target=0)
+  const toDelete = existing.filter((g) => !activeKeys.has(g.metric_key)).map((g) => g.id);
   if (toDelete.length > 0) {
-    await supabase.from("user_goals" as any).delete().in("id", toDelete);
-  }
-
-  // Upsert active drafts (target_value > 0)
-  const upserts = Object.values(drafts)
-    .filter((d) => d.target_value > 0)
-    .map((d) => ({
-      user_id: userId,
-      metric_key: d.metric_key,
-      period_key: periodKey,
-      target_value: d.target_value,
-      scope: d.scope,
-      count_type: d.count_type,
-      set_by: setBy,
-      updated_at: new Date().toISOString(),
-    }));
-
-  if (upserts.length > 0) {
-    const { error } = await supabase
-      .from("user_goals" as any)
-      .upsert(upserts as any, { onConflict: "user_id,metric_key,period_key" });
+    const { error } = await supabase.from("user_goals" as any).delete().in("id", toDelete);
     if (error) throw error;
   }
-  void draftKeys;
-  void existingByKey;
+
+  for (const d of activeDrafts) {
+    const ex = existingByKey.get(d.metric_key);
+    if (ex) {
+      const { error } = await supabase
+        .from("user_goals" as any)
+        .update({
+          target_value: d.target_value,
+          scope: d.scope,
+          count_type: d.count_type,
+          set_by: setBy,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ex.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("user_goals" as any).insert({
+        user_id: userId,
+        metric_key: d.metric_key,
+        period_key: periodKey,
+        target_value: d.target_value,
+        scope: d.scope,
+        count_type: d.count_type,
+        set_by: setBy,
+      } as any);
+      if (error) throw error;
+    }
+  }
 }
