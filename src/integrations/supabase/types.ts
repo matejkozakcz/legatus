@@ -455,6 +455,7 @@ export type Database = {
           created_at: string
           id: string
           meeting_date: string
+          next_steps: string
           notes: string
           org_unit_id: string
           subject_id: string
@@ -465,6 +466,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_date?: string
+          next_steps?: string
           notes?: string
           org_unit_id: string
           subject_id: string
@@ -475,6 +477,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_date?: string
+          next_steps?: string
           notes?: string
           org_unit_id?: string
           subject_id?: string

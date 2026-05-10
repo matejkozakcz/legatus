@@ -33,11 +33,11 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
   const orgUnitId = (profile as any)?.org_unit_id as string | null | undefined;
 
   const saveMutation = useMutation({
-    mutationFn: async (input: { id?: string; meeting_date: string; notes: string }) => {
+    mutationFn: async (input: { id?: string; meeting_date: string; notes: string; next_steps: string }) => {
       if (input.id) {
         const { error } = await supabase
           .from("individual_meetings")
-          .update({ notes: input.notes, meeting_date: input.meeting_date })
+          .update({ notes: input.notes, next_steps: input.next_steps, meeting_date: input.meeting_date })
           .eq("id", input.id);
         if (error) throw error;
       } else {
@@ -48,6 +48,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
           author_id: currentUserId,
           meeting_date: input.meeting_date,
           notes: input.notes,
+          next_steps: input.next_steps,
         });
         if (error) throw error;
       }
@@ -150,6 +151,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
               id: editing === "new" ? undefined : editing.id,
               meeting_date: data.meeting_date,
               notes: data.notes,
+              next_steps: data.next_steps,
             })
           }
           saving={saveMutation.isPending}
@@ -208,11 +210,12 @@ function RecordFormModal({
 }: {
   initial: IndividualMeeting | null;
   onClose: () => void;
-  onSave: (data: { meeting_date: string; notes: string }) => void;
+  onSave: (data: { meeting_date: string; notes: string; next_steps: string }) => void;
   saving: boolean;
 }) {
   const [date, setDate] = useState(initial?.meeting_date || format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState(initial?.notes || "");
+  const [nextSteps, setNextSteps] = useState(initial?.next_steps || "");
 
   return (
     <ModalShell onClose={onClose}>
@@ -233,13 +236,24 @@ function RecordFormModal({
         </div>
         <div>
           <label className="text-xs font-semibold block mb-1" style={{ color: "var(--text-secondary)" }}>
-            Zápisek
+            Záznam
           </label>
           <textarea
             autoFocus
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={6}
+            rows={5}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold block mb-1" style={{ color: "var(--text-secondary)" }}>
+            Next steps
+          </label>
+          <textarea
+            value={nextSteps}
+            onChange={(e) => setNextSteps(e.target.value)}
+            rows={3}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#00abbd]"
           />
         </div>
@@ -252,7 +266,7 @@ function RecordFormModal({
           Zrušit
         </button>
         <button
-          onClick={() => onSave({ meeting_date: date, notes })}
+          onClick={() => onSave({ meeting_date: date, notes, next_steps: nextSteps })}
           disabled={saving || !notes.trim() || !date}
           className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
           style={{ background: "#fc7c71" }}
@@ -294,11 +308,29 @@ function RecordDetailModal({
           </span>
         )}
       </div>
-      <div
-        className="text-sm whitespace-pre-wrap leading-relaxed mb-5"
-        style={{ color: "var(--text-primary)" }}
-      >
-        {record.notes}
+      <div className="mb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+          Záznam
+        </p>
+        <div
+          className="text-sm whitespace-pre-wrap leading-relaxed mb-4"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {record.notes}
+        </div>
+        <div className="border-t mb-3" style={{ borderColor: "var(--border)" }} />
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+          Next steps
+        </p>
+        {record.next_steps ? (
+          <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+            {record.next_steps}
+          </div>
+        ) : (
+          <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
+            Žádné next steps
+          </p>
+        )}
       </div>
       {canEdit && (
         <div className="flex gap-2">
