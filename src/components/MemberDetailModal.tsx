@@ -11,6 +11,7 @@ import { computeMeetingStats } from "@/lib/meetingStats";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { IndividualyTab } from "@/components/IndividualyTab";
 
 interface ProfileNode {
   id: string;
