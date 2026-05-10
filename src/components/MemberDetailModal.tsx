@@ -719,6 +719,15 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           </>
         )}
 
+        </>
+        )}
+
+        {activeTab === "rozvoj" && (
+          <div className="mt-4">
+            <IndividualyTab memberId={member.id} />
+          </div>
+        )}
+
         {/* Divider */}
         <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
 
