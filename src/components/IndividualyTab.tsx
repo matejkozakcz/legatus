@@ -9,6 +9,8 @@ import { useIndividualMeetings, type IndividualMeeting } from "@/hooks/useIndivi
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
+export { type IndividualMeeting };
+
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
   budouci_vedouci: { label: "Budoucí vedoucí", className: "role-badge role-badge-vedouci" },
