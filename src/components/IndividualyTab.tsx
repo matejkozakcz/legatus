@@ -33,11 +33,11 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
   const orgUnitId = (profile as any)?.org_unit_id as string | null | undefined;
 
   const saveMutation = useMutation({
-    mutationFn: async (input: { id?: string; meeting_date: string; notes: string }) => {
+    mutationFn: async (input: { id?: string; meeting_date: string; notes: string; next_steps: string }) => {
       if (input.id) {
         const { error } = await supabase
           .from("individual_meetings")
-          .update({ notes: input.notes, meeting_date: input.meeting_date })
+          .update({ notes: input.notes, next_steps: input.next_steps, meeting_date: input.meeting_date })
           .eq("id", input.id);
         if (error) throw error;
       } else {
@@ -48,6 +48,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
           author_id: currentUserId,
           meeting_date: input.meeting_date,
           notes: input.notes,
+          next_steps: input.next_steps,
         });
         if (error) throw error;
       }
