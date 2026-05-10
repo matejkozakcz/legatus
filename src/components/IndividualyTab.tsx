@@ -308,11 +308,29 @@ function RecordDetailModal({
           </span>
         )}
       </div>
-      <div
-        className="text-sm whitespace-pre-wrap leading-relaxed mb-5"
-        style={{ color: "var(--text-primary)" }}
-      >
-        {record.notes}
+      <div className="mb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+          Záznam
+        </p>
+        <div
+          className="text-sm whitespace-pre-wrap leading-relaxed mb-4"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {record.notes}
+        </div>
+        <div className="border-t mb-3" style={{ borderColor: "var(--border)" }} />
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+          Next steps
+        </p>
+        {record.next_steps ? (
+          <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+            {record.next_steps}
+          </div>
+        ) : (
+          <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
+            Žádné next steps
+          </p>
+        )}
       </div>
       {canEdit && (
         <div className="flex gap-2">
