@@ -8,6 +8,7 @@ export interface IndividualMeeting {
   author_id: string;
   meeting_date: string;
   notes: string;
+  next_steps: string;
   created_at: string;
   updated_at: string;
   author: { id: string; full_name: string; role: string } | null;
