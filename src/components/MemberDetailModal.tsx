@@ -62,6 +62,7 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   // Onboarding task management state
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDeadline, setNewTaskDeadline] = useState("");
+  const [activeTab, setActiveTab] = useState<"stats" | "rozvoj">("stats");
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
