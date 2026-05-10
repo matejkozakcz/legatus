@@ -151,6 +151,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
               id: editing === "new" ? undefined : editing.id,
               meeting_date: data.meeting_date,
               notes: data.notes,
+              next_steps: data.next_steps,
             })
           }
           saving={saveMutation.isPending}
