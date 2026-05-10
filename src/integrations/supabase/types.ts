@@ -449,6 +449,61 @@ export type Database = {
           },
         ]
       }
+      individual_meetings: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          meeting_date: string
+          notes: string
+          org_unit_id: string
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          meeting_date?: string
+          notes?: string
+          org_unit_id: string
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          meeting_date?: string
+          notes?: string
+          org_unit_id?: string
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "individual_meetings_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "individual_meetings_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "individual_meetings_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_attempts: {
         Row: {
           created_at: string
