@@ -2,12 +2,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { Plus, Pencil, Trash2, X, Lock } from "lucide-react";
+import { Plus, X, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndividualMeetings, type IndividualMeeting } from "@/hooks/useIndividualMeetings";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export { type IndividualMeeting };
 
@@ -21,16 +20,26 @@ const roleBadgeConfig: Record<string, { label: string; className: string }> = {
 
 interface IndividualyTabProps {
   memberId: string;
+  onViewMeeting: (m: IndividualMeeting | null) => void;
+  viewingId: string | null;
+  editingRecord: IndividualMeeting | "new" | null;
+  onSetEditing: (r: IndividualMeeting | "new" | null) => void;
+  confirmDeleteId: string | null;
+  onSetConfirmDelete: (id: string | null) => void;
 }
 
-export function IndividualyTab({ memberId }: IndividualyTabProps) {
+export function IndividualyTab({
+  memberId,
+  onViewMeeting,
+  viewingId,
+  editingRecord,
+  onSetEditing,
+  confirmDeleteId,
+  onSetConfirmDelete,
+}: IndividualyTabProps) {
   const { profile, user } = useAuth();
   const qc = useQueryClient();
   const { data: records = [], isLoading } = useIndividualMeetings(memberId);
-
-  const [editing, setEditing] = useState<null | "new" | IndividualMeeting>(null);
-  const [viewing, setViewing] = useState<IndividualMeeting | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const currentUserId = user?.id;
   const orgUnitId = (profile as any)?.org_unit_id as string | null | undefined;
@@ -58,7 +67,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["individual_meetings", memberId] });
-      setEditing(null);
+      onSetEditing(null);
       toast.success("Uloženo");
     },
     onError: (e: any) => toast.error(e?.message || "Chyba při ukládání"),
@@ -71,8 +80,8 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["individual_meetings", memberId] });
-      setConfirmDelete(null);
-      setViewing(null);
+      onSetConfirmDelete(null);
+      onViewMeeting(null);
       toast.success("Smazáno");
     },
     onError: (e: any) => toast.error(e?.message || "Chyba při mazání"),
@@ -85,7 +94,7 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
           Individuály
         </p>
         <button
-          onClick={() => setEditing("new")}
+          onClick={() => onSetEditing("new")}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: "#fc7c71" }}
         >
@@ -105,16 +114,17 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
         <div className="space-y-2">
           {records.map((r) => {
             const isMine = r.author_id === currentUserId;
+            const isSelected = r.id === viewingId;
             const badge = roleBadgeConfig[r.author?.role || ""] || null;
             return (
               <button
                 key={r.id}
-                onClick={() => setViewing(r)}
+                onClick={() => onViewMeeting(isSelected ? null : r)}
                 className="w-full text-left rounded-lg border transition-colors hover:border-[#00abbd]"
                 style={{
                   padding: "10px 12px",
-                  background: isMine ? "rgba(0,85,95,0.04)" : "rgba(0,0,0,0.02)",
-                  borderColor: "var(--border)",
+                  background: isSelected ? "rgba(0,171,189,0.08)" : isMine ? "rgba(0,85,95,0.04)" : "rgba(0,0,0,0.02)",
+                  borderColor: isSelected ? "#00abbd" : "var(--border)",
                 }}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
@@ -151,13 +161,13 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
         </div>
       )}
 
-      {editing && (
+      {editingRecord && (
         <RecordFormModal
-          initial={editing === "new" ? null : editing}
-          onClose={() => setEditing(null)}
+          initial={editingRecord === "new" ? null : editingRecord}
+          onClose={() => onSetEditing(null)}
           onSave={(data) =>
             saveMutation.mutate({
-              id: editing === "new" ? undefined : editing.id,
+              id: editingRecord === "new" ? undefined : editingRecord.id,
               meeting_date: data.meeting_date,
               notes: data.notes,
               next_steps: data.next_steps,
@@ -167,19 +177,10 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
         />
       )}
 
-      <RecordDetailSheet
-        record={viewing}
-        canEdit={!!viewing && viewing.author_id === currentUserId}
-        open={!!viewing && !editing}
-        onClose={() => setViewing(null)}
-        onEdit={() => viewing && setEditing(viewing)}
-        onDelete={() => viewing && setConfirmDelete(viewing.id)}
-      />
-
-      {confirmDelete && (
+      {confirmDeleteId && (
         <ConfirmDeleteModal
-          onCancel={() => setConfirmDelete(null)}
-          onConfirm={() => deleteMutation.mutate(confirmDelete)}
+          onCancel={() => onSetConfirmDelete(null)}
+          onConfirm={() => deleteMutation.mutate(confirmDeleteId)}
           loading={deleteMutation.isPending}
         />
       )}
@@ -280,88 +281,6 @@ function RecordFormModal({
         </button>
       </div>
     </ModalShell>
-  );
-}
-
-function RecordDetailSheet({
-  record,
-  canEdit,
-  open,
-  onClose,
-  onEdit,
-  onDelete,
-}: {
-  record: IndividualMeeting | null;
-  canEdit: boolean;
-  open: boolean;
-  onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  if (!record) return null;
-  const badge = roleBadgeConfig[record.author?.role || ""] || null;
-  return (
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto flex flex-col gap-4">
-        <SheetHeader>
-          <SheetTitle>{format(new Date(record.meeting_date), "d. M. yyyy", { locale: cs })}</SheetTitle>
-        </SheetHeader>
-        <div className="flex items-center gap-2 flex-wrap -mt-2">
-          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {record.author?.full_name || "—"}
-          </span>
-          {badge && <span className={badge.className}>{badge.label}</span>}
-          {!canEdit && (
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full"
-              style={{ background: "var(--muted)", color: "var(--text-muted)" }}
-            >
-              Pouze pro čtení
-            </span>
-          )}
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
-            Záznam
-          </p>
-          <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
-            {record.notes}
-          </div>
-        </div>
-        <div className="border-t" style={{ borderColor: "var(--border)" }} />
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
-            Next steps
-          </p>
-          {record.next_steps ? (
-            <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
-              {record.next_steps}
-            </div>
-          ) : (
-            <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
-              Žádné next steps
-            </p>
-          )}
-        </div>
-        {canEdit && (
-          <div className="flex gap-2 mt-auto pt-2">
-            <button
-              onClick={onEdit}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
-            >
-              <Pencil size={14} /> Upravit
-            </button>
-            <button
-              onClick={onDelete}
-              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
-              style={{ background: "rgba(252,124,113,0.1)", color: "#fc7c71" }}
-            >
-              <Trash2 size={14} /> Smazat
-            </button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
   );
 }
 
