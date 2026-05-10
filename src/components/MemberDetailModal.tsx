@@ -395,11 +395,31 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="my-4" style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+        {/* Tabs */}
+        <div className="flex gap-1 mt-4 border-b" style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }}>
+          {([
+            { key: "stats", label: "Statistiky" },
+            { key: "rozvoj", label: "Rozvoj" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className="px-3 py-2 text-sm font-semibold transition-colors"
+              style={{
+                color: activeTab === t.key ? "#00abbd" : "var(--text-muted)",
+                borderBottom: activeTab === t.key ? "2px solid #00abbd" : "2px solid transparent",
+                marginBottom: -1,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
+        {activeTab === "stats" && (
+        <>
         {/* Stats */}
-        <div>
+        <div className="mt-4">
           <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
             Statistiky tohoto týdne
           </p>
