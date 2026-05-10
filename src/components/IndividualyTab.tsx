@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndividualMeetings, type IndividualMeeting } from "@/hooks/useIndividualMeetings";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const roleBadgeConfig: Record<string, { label: string; className: string }> = {
   vedouci: { label: "Vedoucí", className: "role-badge role-badge-vedouci" },
@@ -94,7 +95,9 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
         <p className="text-xs text-muted-foreground py-4 text-center">Načítám…</p>
       ) : records.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Zatím žádné zápisky</p>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Zatím žádné zápisky
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -117,7 +120,11 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
                     {format(new Date(r.meeting_date), "d. M. yyyy", { locale: cs })}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    {badge && <span className={badge.className} style={{ fontSize: 10 }}>{badge.label}</span>}
+                    {badge && (
+                      <span className={badge.className} style={{ fontSize: 10 }}>
+                        {badge.label}
+                      </span>
+                    )}
                     {!isMine && <Lock size={11} style={{ color: "var(--text-muted)" }} />}
                   </div>
                 </div>
@@ -158,15 +165,14 @@ export function IndividualyTab({ memberId }: IndividualyTabProps) {
         />
       )}
 
-      {viewing && !editing && (
-        <RecordDetailModal
-          record={viewing}
-          canEdit={viewing.author_id === currentUserId}
-          onClose={() => setViewing(null)}
-          onEdit={() => setEditing(viewing)}
-          onDelete={() => setConfirmDelete(viewing.id)}
-        />
-      )}
+      <RecordDetailSheet
+        record={viewing}
+        canEdit={!!viewing && viewing.author_id === currentUserId}
+        open={!!viewing && !editing}
+        onClose={() => setViewing(null)}
+        onEdit={() => viewing && setEditing(viewing)}
+        onDelete={() => viewing && setConfirmDelete(viewing.id)}
+      />
 
       {confirmDelete && (
         <ConfirmDeleteModal
@@ -190,10 +196,7 @@ function ModalShell({ onClose, children }: { onClose: () => void; children: Reac
         className="relative w-full max-w-md rounded-2xl bg-card shadow-2xl p-6 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted"
-        >
+        <button onClick={onClose} className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted">
           <X size={18} style={{ color: "var(--text-muted)" }} />
         </button>
         {children}
@@ -278,78 +281,85 @@ function RecordFormModal({
   );
 }
 
-function RecordDetailModal({
+function RecordDetailSheet({
   record,
   canEdit,
+  open,
   onClose,
   onEdit,
   onDelete,
 }: {
-  record: IndividualMeeting;
+  record: IndividualMeeting | null;
   canEdit: boolean;
+  open: boolean;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  if (!record) return null;
   const badge = roleBadgeConfig[record.author?.role || ""] || null;
   return (
-    <ModalShell onClose={onClose}>
-      <p className="font-heading text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>
-        {format(new Date(record.meeting_date), "d. M. yyyy", { locale: cs })}
-      </p>
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-          {record.author?.full_name || "—"}
-        </span>
-        {badge && <span className={badge.className}>{badge.label}</span>}
-        {!canEdit && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "var(--muted)", color: "var(--text-muted)" }}>
-            Pouze pro čtení
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto flex flex-col gap-4">
+        <SheetHeader>
+          <SheetTitle>{format(new Date(record.meeting_date), "d. M. yyyy", { locale: cs })}</SheetTitle>
+        </SheetHeader>
+        <div className="flex items-center gap-2 flex-wrap -mt-2">
+          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+            {record.author?.full_name || "—"}
           </span>
-        )}
-      </div>
-      <div className="mb-5">
-        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
-          Záznam
-        </p>
-        <div
-          className="text-sm whitespace-pre-wrap leading-relaxed mb-4"
-          style={{ color: "var(--text-primary)" }}
-        >
-          {record.notes}
+          {badge && <span className={badge.className}>{badge.label}</span>}
+          {!canEdit && (
+            <span
+              className="text-[10px] px-2 py-0.5 rounded-full"
+              style={{ background: "var(--muted)", color: "var(--text-muted)" }}
+            >
+              Pouze pro čtení
+            </span>
+          )}
         </div>
-        <div className="border-t mb-3" style={{ borderColor: "var(--border)" }} />
-        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
-          Next steps
-        </p>
-        {record.next_steps ? (
-          <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
-            {record.next_steps}
-          </div>
-        ) : (
-          <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
-            Žádné next steps
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+            Záznam
           </p>
-        )}
-      </div>
-      {canEdit && (
-        <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
-          >
-            <Pencil size={14} /> Upravit
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
-            style={{ background: "rgba(252,124,113,0.1)", color: "#fc7c71" }}
-          >
-            <Trash2 size={14} /> Smazat
-          </button>
+          <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+            {record.notes}
+          </div>
         </div>
-      )}
-    </ModalShell>
+        <div className="border-t" style={{ borderColor: "var(--border)" }} />
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+            Next steps
+          </p>
+          {record.next_steps ? (
+            <div className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+              {record.next_steps}
+            </div>
+          ) : (
+            <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
+              Žádné next steps
+            </p>
+          )}
+        </div>
+        {canEdit && (
+          <div className="flex gap-2 mt-auto pt-2">
+            <button
+              onClick={onEdit}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
+            >
+              <Pencil size={14} /> Upravit
+            </button>
+            <button
+              onClick={onDelete}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
+              style={{ background: "rgba(252,124,113,0.1)", color: "#fc7c71" }}
+            >
+              <Trash2 size={14} /> Smazat
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
 
