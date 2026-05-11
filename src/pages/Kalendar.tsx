@@ -289,8 +289,8 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
   // Save outcome only
   const outcomeMutation = useMutation({
     mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
-      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
-      if (error) throw error;
+      const { updateMeetingWithRetry } = await import("@/lib/retryUpdate");
+      await updateMeetingWithRetry(meetingId, data);
       return { meetingId };
     },
     onSuccess: () => {
@@ -305,7 +305,10 @@ export default function Kalendar({ mobileEmbedded = false }: { mobileEmbedded?: 
         }
       }
     },
-    onError: (err: any) => toast.error(err.message || "Chyba při ukládání výsledku"),
+    onError: async (err: any) => {
+      const { friendlyMutationError } = await import("@/lib/retryUpdate");
+      toast.error(friendlyMutationError(err));
+    },
   });
 
   const handleSlotClick = (dayIndex: number, hour: number, half: boolean) => {
