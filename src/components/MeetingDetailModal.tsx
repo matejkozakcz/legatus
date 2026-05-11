@@ -146,7 +146,11 @@ export function MeetingDetailModal({
   const handleSaveOutcome = () => {
     if (!onSaveOutcome) return;
     const data: Record<string, unknown> = { outcome_recorded: true };
-    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
+    if (m.meeting_type === "FSA") {
+      data.doporuceni_fsa = parseInt(dopFsa) || 0;
+    } else if (m.meeting_type === "NAB") {
+      // NAB má jak "Jde dál?" (recruitment vs. klientská cesta) tak počet doporučení
+      data.pohovor_jde_dal = pohDal;
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       data.podepsane_bj = parseFloat(podBj) || 0;
@@ -163,7 +167,10 @@ export function MeetingDetailModal({
 
   const renderOutcomeSummary = () => {
     const rows: { label: string; value: string }[] = [];
-    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
+    if (m.meeting_type === "FSA") {
+      rows.push({ label: "Doporučení", value: String(m.doporuceni_fsa) });
+    } else if (m.meeting_type === "NAB") {
+      rows.push({ label: "Jde dál?", value: m.pohovor_jde_dal === true ? "Ano" : m.pohovor_jde_dal === false ? "Ne" : "—" });
       rows.push({ label: "Doporučení", value: String(m.doporuceni_fsa) });
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       rows.push({ label: "Podepsané BJ", value: String(m.podepsane_bj) });
@@ -348,7 +355,7 @@ export function MeetingDetailModal({
           <div className="mt-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
-            {(m.meeting_type === "FSA" || m.meeting_type === "NAB") && (
+            {m.meeting_type === "FSA" && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení</label>
                 <input type="number" value={dopFsa} onChange={(e) => setDopFsa(e.target.value)} min={0}
@@ -371,7 +378,7 @@ export function MeetingDetailModal({
               </div>
             )}
 
-            {m.meeting_type === "POH" && (
+            {(m.meeting_type === "POH" || m.meeting_type === "NAB") && (
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Jde dál?</label>
@@ -395,8 +402,13 @@ export function MeetingDetailModal({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení</label>
-                  <input type="number" value={dopPoh} onChange={(e) => setDopPoh(e.target.value)} min={0}
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  {m.meeting_type === "POH" ? (
+                    <input type="number" value={dopPoh} onChange={(e) => setDopPoh(e.target.value)} min={0}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  ) : (
+                    <input type="number" value={dopFsa} onChange={(e) => setDopFsa(e.target.value)} min={0}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  )}
                 </div>
               </div>
             )}
@@ -442,10 +454,12 @@ export function MeetingDetailModal({
         {showNextStep && onScheduleFollowUp && !showReschedule && (() => {
           const nextType = m.meeting_type === "FSA" ? "POR"
             : m.meeting_type === "POR" ? "SER"
-            : m.meeting_type === "NAB" ? "FSA"
             : m.meeting_type === "INFO" ? "POST"
             : m.meeting_type === "POST" ? "FSA"
+            : (m.meeting_type === "POH" || m.meeting_type === "NAB") && pohDal === false ? "FSA"
             : m.meeting_type === "POH" && pohDal === true ? "FSA"
+            : m.meeting_type === "NAB" && pohDal === true ? "FSA"
+            : m.meeting_type === "NAB" && pohDal === null ? "FSA"
             : null;
           const nextLabel = nextType ? meetingTypeLabel(nextType as MeetingType) : null;
           if (!nextType || !nextLabel) return null;
