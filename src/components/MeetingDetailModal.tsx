@@ -146,7 +146,11 @@ export function MeetingDetailModal({
   const handleSaveOutcome = () => {
     if (!onSaveOutcome) return;
     const data: Record<string, unknown> = { outcome_recorded: true };
-    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
+    if (m.meeting_type === "FSA") {
+      data.doporuceni_fsa = parseInt(dopFsa) || 0;
+    } else if (m.meeting_type === "NAB") {
+      // NAB má jak "Jde dál?" (recruitment vs. klientská cesta) tak počet doporučení
+      data.pohovor_jde_dal = pohDal;
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       data.podepsane_bj = parseFloat(podBj) || 0;
@@ -163,7 +167,10 @@ export function MeetingDetailModal({
 
   const renderOutcomeSummary = () => {
     const rows: { label: string; value: string }[] = [];
-    if (m.meeting_type === "FSA" || m.meeting_type === "NAB") {
+    if (m.meeting_type === "FSA") {
+      rows.push({ label: "Doporučení", value: String(m.doporuceni_fsa) });
+    } else if (m.meeting_type === "NAB") {
+      rows.push({ label: "Jde dál?", value: m.pohovor_jde_dal === true ? "Ano" : m.pohovor_jde_dal === false ? "Ne" : "—" });
       rows.push({ label: "Doporučení", value: String(m.doporuceni_fsa) });
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
       rows.push({ label: "Podepsané BJ", value: String(m.podepsane_bj) });
