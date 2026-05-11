@@ -454,10 +454,12 @@ export function MeetingDetailModal({
         {showNextStep && onScheduleFollowUp && !showReschedule && (() => {
           const nextType = m.meeting_type === "FSA" ? "POR"
             : m.meeting_type === "POR" ? "SER"
-            : m.meeting_type === "NAB" ? "FSA"
             : m.meeting_type === "INFO" ? "POST"
             : m.meeting_type === "POST" ? "FSA"
+            : (m.meeting_type === "POH" || m.meeting_type === "NAB") && pohDal === false ? "FSA"
             : m.meeting_type === "POH" && pohDal === true ? "FSA"
+            : m.meeting_type === "NAB" && pohDal === true ? "FSA"
+            : m.meeting_type === "NAB" && pohDal === null ? "FSA"
             : null;
           const nextLabel = nextType ? meetingTypeLabel(nextType as MeetingType) : null;
           if (!nextType || !nextLabel) return null;
