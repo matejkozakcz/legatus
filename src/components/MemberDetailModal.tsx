@@ -26,7 +26,7 @@ import { computeMeetingStats } from "@/lib/meetingStats";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { IndividualyTab, type IndividualMeeting } from "@/components/IndividualyTab";
+import { IndividualyTab, IndividualFormInline, useIndividualSave, useIndividualDelete, type IndividualMeeting } from "@/components/IndividualyTab";
 
 interface ProfileNode {
   id: string;
@@ -340,18 +340,36 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const viewingBadge = viewingMeeting ? roleBadgeConfig[viewingMeeting.author?.role || ""] || null : null;
   const canEditViewing = !!viewingMeeting && viewingMeeting.author_id === currentUserId;
 
+  const showRightColumn = activeTab === "rozvoj";
+  const rightContent: "form" | "confirm" | "detail" | "empty" = editingRecord
+    ? "form"
+    : confirmDeleteId
+      ? "confirm"
+      : viewingMeeting
+        ? "detail"
+        : "empty";
+
+  const saveMutation = useIndividualSave(member.id, () => setEditingRecord(null));
+  const deleteMutation = useIndividualDelete(member.id, () => {
+    setConfirmDeleteId(null);
+    setViewingMeeting(null);
+  });
+
+  const LEFT_W = 600;
+  const RIGHT_W = 460;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
       onClick={onClose}
     >
-      {/* Modal — rozšíří se do dvou sloupců když je otevřený detail */}
+      {/* Modal — dvousloupcový na záložce Rozvoj */}
       <div
         className="relative w-full mx-4 rounded-2xl shadow-2xl overflow-hidden flex"
         style={{
-          maxWidth: viewingMeeting ? 780 : 448,
-          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
+          maxWidth: showRightColumn ? LEFT_W + RIGHT_W : LEFT_W,
+          height: "min(760px, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px))",
           animation: "modalIn 150ms ease-out forwards",
           background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
           border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
@@ -364,11 +382,11 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         <div
           className="flex flex-col overflow-y-auto"
           style={{
-            width: 448,
+            width: LEFT_W,
             flexShrink: 0,
             padding: "1.5rem",
             paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
-            borderRight: viewingMeeting ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E1E9EB") : "none",
+            borderRight: showRightColumn ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E1E9EB") : "none",
           }}
         >
           {/* Close button */}
@@ -891,91 +909,142 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
           </div>
         </div>
 
-        {/* Pravý sloupec — detail zápisku */}
-        {viewingMeeting && (
+        {/* Pravý sloupec — vždy přítomný na záložce Rozvoj */}
+        {showRightColumn && (
           <div
             className="flex flex-col gap-4 overflow-y-auto"
             style={{
-              width: 332,
+              width: RIGHT_W,
               flexShrink: 0,
               padding: "1.5rem",
               background: isDark ? "hsl(188,18%,16%)" : "#f8fbfb",
             }}
           >
-            {/* Datum + meta */}
-            <div>
-              <p className="font-heading text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                {format(new Date(viewingMeeting.meeting_date), "d. M. yyyy", { locale: cs })}
-              </p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {viewingMeeting.author?.full_name || "—"}
-                </span>
-                {viewingBadge && <span className={viewingBadge.className}>{viewingBadge.label}</span>}
-                {!canEditViewing && (
-                  <span
-                    className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-                    style={{ background: "var(--muted)", color: "var(--text-muted)" }}
+            {rightContent === "empty" && (
+              <div className="flex flex-1 items-center justify-center text-center px-4">
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                  Vyber zápisek vlevo nebo vytvoř nový individuál.
+                </p>
+              </div>
+            )}
+
+            {rightContent === "form" && editingRecord && (
+              <IndividualFormInline
+                initial={editingRecord === "new" ? null : editingRecord}
+                onCancel={() => setEditingRecord(null)}
+                saving={saveMutation.isPending}
+                onSave={(data) =>
+                  saveMutation.mutate({
+                    id: editingRecord === "new" ? undefined : editingRecord.id,
+                    meeting_date: data.meeting_date,
+                    notes: data.notes,
+                    next_steps: data.next_steps,
+                  })
+                }
+              />
+            )}
+
+            {rightContent === "confirm" && (
+              <div className="flex flex-col gap-3 h-full">
+                <h3 className="font-heading text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Smazat zápis?
+                </h3>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  Opravdu chceš smazat tento zápis? Tato akce je nevratná.
+                </p>
+                <div className="flex gap-2 mt-auto pt-2">
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="flex-1 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
                   >
-                    <Lock size={9} /> Pouze pro čtení
-                  </span>
+                    Zrušit
+                  </button>
+                  <button
+                    onClick={() => deleteMutation.mutate(confirmDeleteId!)}
+                    disabled={deleteMutation.isPending}
+                    className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    style={{ background: "#fc7c71" }}
+                  >
+                    {deleteMutation.isPending ? "Mažu…" : "Smazat"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {rightContent === "detail" && viewingMeeting && (
+              <>
+                <div>
+                  <p className="font-heading text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+                    {format(new Date(viewingMeeting.meeting_date), "d. M. yyyy", { locale: cs })}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                      {viewingMeeting.author?.full_name || "—"}
+                    </span>
+                    {viewingBadge && <span className={viewingBadge.className}>{viewingBadge.label}</span>}
+                    {!canEditViewing && (
+                      <span
+                        className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                        style={{ background: "var(--muted)", color: "var(--text-muted)" }}
+                      >
+                        <Lock size={9} /> Pouze pro čtení
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+
+                <div>
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wide mb-1"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Záznam
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                    {viewingMeeting.notes}
+                  </p>
+                </div>
+
+                <div style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
+
+                <div>
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wide mb-1"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Next steps
+                  </p>
+                  {viewingMeeting.next_steps ? (
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                      {viewingMeeting.next_steps}
+                    </p>
+                  ) : (
+                    <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
+                      Žádné next steps
+                    </p>
+                  )}
+                </div>
+
+                {canEditViewing && (
+                  <div className="flex gap-2 mt-auto pt-2">
+                    <button
+                      onClick={() => setEditingRecord(viewingMeeting)}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
+                    >
+                      <Pencil size={14} /> Upravit
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(viewingMeeting.id)}
+                      className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
+                      style={{ background: "rgba(252,124,113,0.1)", color: "#fc7c71" }}
+                    >
+                      <Trash2 size={14} /> Smazat
+                    </button>
+                  </div>
                 )}
-              </div>
-            </div>
-
-            <div style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
-
-            {/* Záznam */}
-            <div>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-wide mb-1"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Záznam
-              </p>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
-                {viewingMeeting.notes}
-              </p>
-            </div>
-
-            <div style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#E1E9EB" }} />
-
-            {/* Next steps */}
-            <div>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-wide mb-1"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Next steps
-              </p>
-              {viewingMeeting.next_steps ? (
-                <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "var(--text-primary)" }}>
-                  {viewingMeeting.next_steps}
-                </p>
-              ) : (
-                <p className="text-sm italic" style={{ color: "var(--text-muted)" }}>
-                  Žádné next steps
-                </p>
-              )}
-            </div>
-
-            {/* Edit / Delete — jen pro autora */}
-            {canEditViewing && (
-              <div className="flex gap-2 mt-auto pt-2">
-                <button
-                  onClick={() => setEditingRecord(viewingMeeting)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
-                >
-                  <Pencil size={14} /> Upravit
-                </button>
-                <button
-                  onClick={() => setConfirmDeleteId(viewingMeeting.id)}
-                  className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold"
-                  style={{ background: "rgba(252,124,113,0.1)", color: "#fc7c71" }}
-                >
-                  <Trash2 size={14} /> Smazat
-                </button>
-              </div>
+              </>
             )}
           </div>
         )}
