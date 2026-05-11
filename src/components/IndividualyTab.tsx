@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { Plus, X, Lock } from "lucide-react";
+import { Plus, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndividualMeetings, type IndividualMeeting } from "@/hooks/useIndividualMeetings";
