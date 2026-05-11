@@ -340,18 +340,36 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
   const viewingBadge = viewingMeeting ? roleBadgeConfig[viewingMeeting.author?.role || ""] || null : null;
   const canEditViewing = !!viewingMeeting && viewingMeeting.author_id === currentUserId;
 
+  const showRightColumn = activeTab === "rozvoj";
+  const rightContent: "form" | "confirm" | "detail" | "empty" = editingRecord
+    ? "form"
+    : confirmDeleteId
+      ? "confirm"
+      : viewingMeeting
+        ? "detail"
+        : "empty";
+
+  const saveMutation = useIndividualSave(member.id, () => setEditingRecord(null));
+  const deleteMutation = useIndividualDelete(member.id, () => {
+    setConfirmDeleteId(null);
+    setViewingMeeting(null);
+  });
+
+  const LEFT_W = 600;
+  const RIGHT_W = 460;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)" }}
       onClick={onClose}
     >
-      {/* Modal — rozšíří se do dvou sloupců když je otevřený detail */}
+      {/* Modal — dvousloupcový na záložce Rozvoj */}
       <div
         className="relative w-full mx-4 rounded-2xl shadow-2xl overflow-hidden flex"
         style={{
-          maxWidth: viewingMeeting ? 780 : 448,
-          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
+          maxWidth: showRightColumn ? LEFT_W + RIGHT_W : LEFT_W,
+          height: "min(760px, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px))",
           animation: "modalIn 150ms ease-out forwards",
           background: isDark ? "hsl(188,18%,18%)" : "#ffffff",
           border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
@@ -364,11 +382,11 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
         <div
           className="flex flex-col overflow-y-auto"
           style={{
-            width: 448,
+            width: LEFT_W,
             flexShrink: 0,
             padding: "1.5rem",
             paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
-            borderRight: viewingMeeting ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E1E9EB") : "none",
+            borderRight: showRightColumn ? (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E1E9EB") : "none",
           }}
         >
           {/* Close button */}
