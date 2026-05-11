@@ -161,14 +161,17 @@ export default function Hledani() {
   // Outcome mutation for meeting detail
   const outcomeMutation = useMutation({
     mutationFn: async ({ meetingId, data }: { meetingId: string; data: Record<string, unknown> }) => {
-      const { error } = await supabase.from("client_meetings").update(data).eq("id", meetingId);
-      if (error) throw error;
+      const { updateMeetingWithRetry } = await import("@/lib/retryUpdate");
+      await updateMeetingWithRetry(meetingId, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global-search"] });
       toast.success("Výsledek uložen");
     },
-    onError: (err: any) => toast.error(err.message || "Chyba"),
+    onError: async (err: any) => {
+      const { friendlyMutationError } = await import("@/lib/retryUpdate");
+      toast.error(friendlyMutationError(err));
+    },
   });
 
   const handleResultClick = (item: SearchResult) => {
