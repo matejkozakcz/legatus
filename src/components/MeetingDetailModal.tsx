@@ -355,7 +355,7 @@ export function MeetingDetailModal({
           <div className="mt-4 p-3 rounded-xl border border-input">
             <label className="block text-xs font-semibold text-muted-foreground mb-3">Výsledek schůzky</label>
 
-            {(m.meeting_type === "FSA" || m.meeting_type === "NAB") && (
+            {m.meeting_type === "FSA" && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení</label>
                 <input type="number" value={dopFsa} onChange={(e) => setDopFsa(e.target.value)} min={0}
@@ -378,7 +378,7 @@ export function MeetingDetailModal({
               </div>
             )}
 
-            {m.meeting_type === "POH" && (
+            {(m.meeting_type === "POH" || m.meeting_type === "NAB") && (
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Jde dál?</label>
@@ -402,8 +402,13 @@ export function MeetingDetailModal({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">Doporučení</label>
-                  <input type="number" value={dopPoh} onChange={(e) => setDopPoh(e.target.value)} min={0}
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  {m.meeting_type === "POH" ? (
+                    <input type="number" value={dopPoh} onChange={(e) => setDopPoh(e.target.value)} min={0}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  ) : (
+                    <input type="number" value={dopFsa} onChange={(e) => setDopFsa(e.target.value)} min={0}
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  )}
                 </div>
               </div>
             )}
