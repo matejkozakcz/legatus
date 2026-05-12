@@ -501,6 +501,14 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
           {activeTab === "stats" && (
             <>
+              {showBjFunnel && (
+                <div className="mt-4">
+                  <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                    BJ funnel — toto období
+                  </p>
+                  <BjFunnelCard funnel={bjFunnel} compact />
+                </div>
+              )}
               <div className="mt-4">
                 <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
                   Statistiky tohoto týdne
