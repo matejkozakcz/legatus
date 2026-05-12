@@ -27,6 +27,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { IndividualyTab, IndividualFormInline, useIndividualSave, useIndividualDelete, type IndividualMeeting } from "@/components/IndividualyTab";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel, BJ_FUNNEL_COLUMNS } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 
 interface ProfileNode {
   id: string;
