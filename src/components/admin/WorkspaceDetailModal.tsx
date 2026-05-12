@@ -101,6 +101,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<"workspace" | "billing">("workspace");
   const [name, setName] = useState(orgUnit.name);
   const [parentId, setParentId] = useState<string | null>(orgUnit.parent_unit_id);
+  const [showBjFunnel, setShowBjFunnel] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
@@ -111,11 +112,19 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
     bv_to_vedouci: {},
   });
 
+  // Load workspace feature flags (show_bj_funnel)
   useEffect(() => {
-    if (open) {
-      setName(orgUnit.name);
-      setParentId(orgUnit.parent_unit_id);
-    }
+    if (!open) return;
+    setName(orgUnit.name);
+    setParentId(orgUnit.parent_unit_id);
+    (async () => {
+      const { data } = await supabase
+        .from("org_units")
+        .select("show_bj_funnel")
+        .eq("id", orgUnit.id)
+        .maybeSingle();
+      setShowBjFunnel(Boolean((data as any)?.show_bj_funnel));
+    })();
   }, [open, orgUnit.id]);
 
   // ── All other workspaces (for parent select) ──
