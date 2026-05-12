@@ -45,6 +45,9 @@ import {
 } from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
 
