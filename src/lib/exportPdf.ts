@@ -6,6 +6,7 @@ import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { OPEN_SANS_REGULAR, OPEN_SANS_BOLD } from "@/lib/fonts";
 import { computeMeetingStats } from "@/lib/meetingStats";
+import { computeBjFunnel, BJ_FUNNEL_COLUMNS } from "@/lib/bjFunnel";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
