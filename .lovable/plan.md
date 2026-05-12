@@ -1,31 +1,48 @@
-## Plán: user_goals refactor
+## Plán: BJ Funnel (Plánované → Rozpracované → Realizované)
 
-Rozsah je velký (~4100 řádků dotčeno). Navrhuji rozdělit na 4 kroky a každý ověřit, než pokračuju dál — jinak hrozí, že rozbiju Dashboard pro všechny role najednou.
+### Definice (potvrzené)
 
-### Krok 1 — Základ (tato iterace)
-1. **`src/hooks/useUserGoals.ts`** — nový hook (load + computed actuals podle metric_key).
-2. **`src/lib/goalMetrics.ts`** — centrální definice metrik: `METRIC_DEFS = { personal_bj: { label, periodic, peopleGoal, computeActual(...) }, ... }`. Sem patří všech 12 metrik z tabulky.
-3. **`src/components/UserGoalsModal.tsx`** — nová komponenta (2 záložky periodické/trvalé, chips, scope/count_type pro people goals, upsert/delete do `user_goals`). Respektuje `allowed_metrics` z `goal_configuration` (kromě canEdit=admin).
-4. **`GoalsSection.tsx`** — přidat prop `wrap?: boolean` pro 2-řadý layout když gauges > 3.
+| Krok | Vzorec |
+|---|---|
+| **Plánované BJ** | `SUM(potencial_bj)` ze všech FSA/SER schůzek v období, kde `cancelled=false` (i budoucí, i proběhlé) |
+| **Rozpracované BJ** | `SUM(bj)` ze schůzek, kde `outcome_recorded=true` AND `vizi_spoluprace=true` AND `podepsane_bj=0` AND `cancelled=false` (klient řekl ANO, ale ještě nepodepsal) |
+| **Realizované BJ** | `SUM(podepsane_bj)` ze všech schůzek v období (to už dnes plníme z Obchodních případů) |
 
-### Krok 2 — Dashboard přepis
-- Nahradit `vedouci_goals` query za `useUserGoals(user.id, currentPeriodKey)`.
-- `getGoalValue/getGoalMax` přepsat tak, aby četly z `user_goals` a používaly `goalMetrics.computeActual`.
-- Otevřít `UserGoalsModal` místo `VedouciGoalsModal`. Import `VedouciGoalsModal` zakomentovat.
-- Renderovat všechny aktivní gauges (bez limitu 2), `wrap` když > 3.
+### Krok 1 — Feature flag (DB + admin UI)
 
-### Krok 3 — Admin
-- `UserDetailModal.tsx`: nová sekce/záložka „Cíle" s period dropdownem, seznamem metrik (inputs + scope/count_type), tlačítka Uložit periodické / Uložit trvalé. Zobrazit existující cíle s `set_by` jménem a datem. Ukládá `set_by = auth.uid()`.
+1. **Migrace**: přidat sloupec `org_units.show_bj_funnel boolean DEFAULT false`.
+2. **Admin UI** (`WorkspaceDetailModal.tsx`): toggle „Zobrazit BJ funnel (Plánované / Rozpracované / Realizované)" v sekci Nastavení workspace.
+3. **Hook** `useWorkspaceSettings.ts` (nový) — vrací `{ showBjFunnel: boolean }` pro aktuálního usera (joinem na `profiles.org_unit_id → org_units`).
 
-### Krok 4 — GoalConfiguratorTab
-- Odstranit sekci výběru cílů vedoucího.
-- Přidat `ser_bj_weekly`, `lidi_na_info_weekly` do `BASIC_GOALS` + `GOAL_LABELS`.
-- Pod `allow_custom_goals` toggle: checkboxy `allowed_metrics` (zobrazí se jen když toggle on). Uložit do `goal_configuration[role].allowed_metrics`.
+### Krok 2 — Centrální výpočet
+
+**`src/lib/bjFunnel.ts`** (nový) — jediný zdroj pravdy:
+```ts
+export interface BjFunnel { planned: number; inProgress: number; realized: number; }
+export function computeBjFunnel(meetings: ClientMeetingRow[]): BjFunnel
+```
+Použijí ho Dashboard, MemberActivity, ObchodniPripady i export.
+
+### Krok 3 — UI komponenta
+
+**`src/components/BjFunnelCard.tsx`** — 3 StatCardy vedle sebe se šipkami mezi nimi (→), v Legatus designu:
+- Plánované: teal #00abbd label, deep teal číslo
+- Rozpracované: teal #00abbd
+- Realizované: coral #fc7c71 (cíl funnelu = realizace)
+
+Pod kartami volitelně mini conversion rate „Realizováno z plánovaných: 42 %".
+
+### Krok 4 — Integrace do 4 míst
+
+1. **Dashboard.tsx** — když `showBjFunnel`, nahradit jeden BJ StatCard `<BjFunnelCard />`.
+2. **MemberDetailModal → záložka Statistiky** — totéž (per-člen).
+3. **ObchodniPripady.tsx** — funnel v hlavičce nad tabulkou case-ů.
+4. **exportPdf.ts** — pokud `showBjFunnel`, přidat 3-sloupcovou sekci „BJ Funnel" pod stávající součty.
 
 ### Co NEMĚNIT
-- `vedouci_goals` tabulka ani její RLS (zachovat pro rollback).
-- `VedouciGoalsModal.tsx` v kódu zůstává, jen se nepoužívá.
-- DB migrace — `user_goals` už existuje.
+- Stávající `bj` sloupec a všechny dosavadní výpočty (Dashboard, gauges, cíle) zůstávají.
+- Když je flag OFF, vše vypadá přesně jako dnes.
+- `vedouci_goals` ani `user_goals` se neupravují — funnel je pouze zobrazení, ne nový cíl.
 
 ### Otázka před startem
-Chceš, abych udělal **všechny 4 kroky najednou v této odpovědi** (riziko: rozbitý Dashboard, dlouhá iterace na opravy), nebo **začneme krokem 1+2** (nový hook + modal + Dashboard) a admin/configurator přijdou v dalším promptu po ověření?
+Mám pokračovat **rovnou implementací všech 4 kroků** (cca 6–8 souborů, jeden velký commit), nebo to **rozdělit na 2 iterace** (1+2+3 = základ a zobrazení na Dashboardu, pak 4 = ostatní místa po ověření)?
