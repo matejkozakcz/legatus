@@ -2193,6 +2193,21 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* ─── BJ Funnel (feature flag: show_bj_funnel) ─────────────────── */}
+        {!isMobile && showBjFunnel && (
+          <section className="mt-8">
+            <div className="legatus-card" style={{ padding: "20px 24px" }}>
+              <h3
+                className="font-heading font-semibold"
+                style={{ fontSize: 15, color: "#00555f", marginBottom: 14 }}
+              >
+                BJ funnel — toto období
+              </h3>
+              <BjFunnelCard funnel={bjFunnel} />
+            </div>
+          </section>
+        )}
+
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (
           <section className="space-y-6 mt-8">
