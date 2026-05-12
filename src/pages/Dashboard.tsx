@@ -52,6 +52,9 @@ import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 import { computeMeetingStats } from "@/lib/meetingStats";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
