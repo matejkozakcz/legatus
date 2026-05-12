@@ -350,7 +350,41 @@ export async function exportDashboardPdf(
     });
   }
 
-  // ── Týdenní rozpis (osobní) — single source of truth: client_meetings + computeMeetingStats.
+  // ── BJ funnel (feature flag: workspace.show_bj_funnel) ──────────────────
+  if (showBjFunnel) {
+    const ownFunnel = computeBjFunnel(ownMeetings as any);
+    const lastY = (doc as any).lastAutoTable?.finalY || 60;
+    let funnelY = lastY + 10;
+    if (funnelY > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage();
+      funnelY = 16;
+    }
+    doc.setFontSize(12);
+    doc.setFont(fontName, "bold");
+    doc.text("BJ funnel", 14, funnelY);
+    autoTable(doc, {
+      startY: funnelY + 4,
+      head: [["Plánované BJ", "Rozpracované BJ", "Realizované BJ"]],
+      body: [[
+        Math.round(ownFunnel.planned).toLocaleString("cs-CZ"),
+        Math.round(ownFunnel.inProgress).toLocaleString("cs-CZ"),
+        Math.round(ownFunnel.realized).toLocaleString("cs-CZ"),
+      ]],
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 9,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
+      bodyStyles: { fontSize: 11, font: fontName, halign: "center", fontStyle: "bold" },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
   // Same definition of "actual" as the cards above (outcome_recorded = true AND not cancelled),
   // so totals match the cards exactly.
   const weekRanges: { start: Date; end: Date }[] = [];
