@@ -500,6 +500,10 @@ const Dashboard = () => {
 
   const stats = useMemo(() => computeStats(desktopMeetings, todayStr), [desktopMeetings, todayStr]);
 
+  // ── BJ funnel (Plánované → Rozpracované → Realizované) ────────────────────
+  const { showBjFunnel } = useWorkspaceSettings();
+  const bjFunnel = useMemo(() => computeBjFunnel(desktopMeetings as any), [desktopMeetings]);
+
   // ── Mobile stats from client_meetings (week) ───────────────────────────────
   const mobileWeekStartStr = format(mobileWeekStart, "yyyy-MM-dd");
   const mobileWeekEndStr = format(mobileWeekEnd, "yyyy-MM-dd");
