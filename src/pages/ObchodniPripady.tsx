@@ -512,6 +512,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
 
   const isLoading = casesLoading || meetingsLoading;
 
+  // ── BJ funnel (feature flag) ──
+  const { showBjFunnel } = useWorkspaceSettings();
+  const obchodFunnel = useMemo(() => computeBjFunnel(meetings as any), [meetings]);
+
   // Group meetings by case_id
   const meetingsByCase = useMemo(() => {
     const map: Record<string, Meeting[]> = {};
