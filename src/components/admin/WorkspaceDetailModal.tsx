@@ -270,7 +270,8 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
         .update({
           name: name.trim(),
           parent_unit_id: parentId,
-        })
+          show_bj_funnel: showBjFunnel,
+        } as any)
         .eq("id", orgUnit.id);
       if (ouErr) throw ouErr;
 
