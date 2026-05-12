@@ -220,6 +220,25 @@ export async function exportDashboardPdf(
 
   const ownStats = computePersonStats(ownMeetings as MeetingRow[], todayStr, periodFrom, periodTo, userName, userRole);
 
+  // Workspace feature flag for BJ funnel
+  let showBjFunnel = false;
+  {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("org_unit_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const orgUnitId = (prof as any)?.org_unit_id;
+    if (orgUnitId) {
+      const { data: ou } = await supabase
+        .from("org_units")
+        .select("show_bj_funnel")
+        .eq("id", orgUnitId)
+        .maybeSingle();
+      showBjFunnel = Boolean((ou as any)?.show_bj_funnel);
+    }
+  }
+
   // Fetch team members — V/BV viewers always see subordinates of the target user
   const viewerIsTopLeader = ["vedouci", "budouci_vedouci"].includes(viewerRole || "");
   const targetIsLeader = ["vedouci", "budouci_vedouci", "garant"].includes(userRole);
