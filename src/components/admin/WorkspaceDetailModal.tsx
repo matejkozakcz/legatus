@@ -548,7 +548,29 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
               </div>
             </section>
 
-            {/* Invite link */}
+            {/* Funkce / Feature flags */}
+            <section className="space-y-3">
+              <h3 className="font-heading font-semibold text-foreground">Funkce</h3>
+              <div
+                className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                style={{ borderColor: "var(--border)", background: "var(--card)" }}
+              >
+                <div className="min-w-0">
+                  <Label className="text-sm font-semibold cursor-pointer" htmlFor="show-bj-funnel">
+                    Zobrazit BJ funnel
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Rozdělí BJ na 3 kroky (Plánované → Rozpracované → Realizované) na Dashboardu, v Detailu člena, v Obchodních případech a v PDF exportu.
+                  </p>
+                </div>
+                <Switch
+                  id="show-bj-funnel"
+                  checked={showBjFunnel}
+                  onCheckedChange={setShowBjFunnel}
+                />
+              </div>
+            </section>
+
             <section className="space-y-3">
               <h3 className="font-heading font-semibold text-foreground">Pozvánkový odkaz</h3>
               <WorkspaceInviteLinkCard orgUnitId={orgUnit.id} canRotate variant="admin" />
