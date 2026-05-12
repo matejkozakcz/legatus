@@ -141,6 +141,22 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
     },
   });
 
+  // ── BJ funnel pro člena (feature flag) ──
+  const { showBjFunnel } = useWorkspaceSettings();
+  const { data: bjFunnel = { planned: 0, inProgress: 0, realized: 0 } } = useQuery({
+    queryKey: ["member_bj_funnel", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_meetings")
+        .select(BJ_FUNNEL_COLUMNS)
+        .eq("user_id", member.id)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      return computeBjFunnel((data as any) || []);
+    },
+    enabled: showBjFunnel,
+  });
+
   const isLeader = member.role === "vedouci" || member.role === "budouci_vedouci";
   const { data: teamBj = 0 } = useQuery({
     queryKey: ["member_team_bj", member.id, periodStartStr, periodEndStr],
