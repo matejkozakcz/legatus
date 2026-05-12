@@ -27,6 +27,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { IndividualyTab, IndividualFormInline, useIndividualSave, useIndividualDelete, type IndividualMeeting } from "@/components/IndividualyTab";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel, BJ_FUNNEL_COLUMNS } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 
 interface ProfileNode {
   id: string;
@@ -136,6 +139,22 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
       if (error) throw error;
       return (data || []).reduce((acc: number, r: any) => acc + (Number(r.podepsane_bj) || 0), 0);
     },
+  });
+
+  // ── BJ funnel pro člena (feature flag) ──
+  const { showBjFunnel } = useWorkspaceSettings();
+  const { data: bjFunnel = { planned: 0, inProgress: 0, realized: 0 } } = useQuery({
+    queryKey: ["member_bj_funnel", member.id, periodStartStr, periodEndStr],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_meetings")
+        .select(BJ_FUNNEL_COLUMNS)
+        .eq("user_id", member.id)
+        .gte("date", periodStartStr)
+        .lte("date", periodEndStr);
+      return computeBjFunnel((data as any) || []);
+    },
+    enabled: showBjFunnel,
   });
 
   const isLeader = member.role === "vedouci" || member.role === "budouci_vedouci";
@@ -482,6 +501,14 @@ export function MemberDetailModal({ member, onClose, onEdit, onNotify }: MemberD
 
           {activeTab === "stats" && (
             <>
+              {showBjFunnel && (
+                <div className="mt-4">
+                  <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+                    BJ funnel — toto období
+                  </p>
+                  <BjFunnelCard funnel={bjFunnel} compact />
+                </div>
+              )}
               <div className="mt-4">
                 <p className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
                   Statistiky tohoto týdne

@@ -45,6 +45,9 @@ import {
 } from "@/components/MeetingFormFields";
 import { FollowUpModal, type FollowUpScheduleData } from "@/components/FollowUpModal";
 import { PeriodNavigator } from "@/components/PeriodNavigator";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
 
@@ -508,6 +511,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   });
 
   const isLoading = casesLoading || meetingsLoading;
+
+  // ── BJ funnel (feature flag) ──
+  const { showBjFunnel } = useWorkspaceSettings();
+  const obchodFunnel = useMemo(() => computeBjFunnel(meetings as any), [meetings]);
 
   // Group meetings by case_id
   const meetingsByCase = useMemo(() => {
@@ -1643,6 +1650,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       )}
 
       {activeTab === "pripady" && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
+      {/* BJ funnel header (feature flag) */}
+      {showBjFunnel && !isLoading && cases.length > 0 && (
+        <div className="legatus-card mb-3" style={{ padding: isMobile ? "12px 14px" : "16px 20px" }}>
+          <BjFunnelCard funnel={obchodFunnel} compact />
+        </div>
+      )}
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">

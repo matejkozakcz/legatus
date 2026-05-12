@@ -1,0 +1,1 @@
+ALTER TABLE public.org_units ADD COLUMN IF NOT EXISTS show_bj_funnel boolean NOT NULL DEFAULT false;

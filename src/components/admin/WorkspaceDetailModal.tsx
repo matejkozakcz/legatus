@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -100,6 +101,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<"workspace" | "billing">("workspace");
   const [name, setName] = useState(orgUnit.name);
   const [parentId, setParentId] = useState<string | null>(orgUnit.parent_unit_id);
+  const [showBjFunnel, setShowBjFunnel] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
@@ -110,11 +112,19 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
     bv_to_vedouci: {},
   });
 
+  // Load workspace feature flags (show_bj_funnel)
   useEffect(() => {
-    if (open) {
-      setName(orgUnit.name);
-      setParentId(orgUnit.parent_unit_id);
-    }
+    if (!open) return;
+    setName(orgUnit.name);
+    setParentId(orgUnit.parent_unit_id);
+    (async () => {
+      const { data } = await supabase
+        .from("org_units")
+        .select("show_bj_funnel")
+        .eq("id", orgUnit.id)
+        .maybeSingle();
+      setShowBjFunnel(Boolean((data as any)?.show_bj_funnel));
+    })();
   }, [open, orgUnit.id]);
 
   // ── All other workspaces (for parent select) ──
@@ -260,7 +270,8 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
         .update({
           name: name.trim(),
           parent_unit_id: parentId,
-        })
+          show_bj_funnel: showBjFunnel,
+        } as any)
         .eq("id", orgUnit.id);
       if (ouErr) throw ouErr;
 
@@ -537,7 +548,29 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
               </div>
             </section>
 
-            {/* Invite link */}
+            {/* Funkce / Feature flags */}
+            <section className="space-y-3">
+              <h3 className="font-heading font-semibold text-foreground">Funkce</h3>
+              <div
+                className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                style={{ borderColor: "var(--border)", background: "var(--card)" }}
+              >
+                <div className="min-w-0">
+                  <Label className="text-sm font-semibold cursor-pointer" htmlFor="show-bj-funnel">
+                    Zobrazit BJ funnel
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Rozdělí BJ na 3 kroky (Plánované → Rozpracované → Realizované) na Dashboardu, v Detailu člena, v Obchodních případech a v PDF exportu.
+                  </p>
+                </div>
+                <Switch
+                  id="show-bj-funnel"
+                  checked={showBjFunnel}
+                  onCheckedChange={setShowBjFunnel}
+                />
+              </div>
+            </section>
+
             <section className="space-y-3">
               <h3 className="font-heading font-semibold text-foreground">Pozvánkový odkaz</h3>
               <WorkspaceInviteLinkCard orgUnitId={orgUnit.id} canRotate variant="admin" />

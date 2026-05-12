@@ -6,6 +6,7 @@ import { cs } from "date-fns/locale";
 import { getProductionPeriodForMonth, getProductionPeriodMonth } from "@/lib/productionPeriod";
 import { OPEN_SANS_REGULAR, OPEN_SANS_BOLD } from "@/lib/fonts";
 import { computeMeetingStats } from "@/lib/meetingStats";
+import { computeBjFunnel, BJ_FUNNEL_COLUMNS } from "@/lib/bjFunnel";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -211,13 +212,32 @@ export async function exportDashboardPdf(
   const { data: ownMeetings = [] } = await supabase
     .from("client_meetings")
     .select(
-      "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se",
+      "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, potencial_bj, vizi_spoluprace, info_pocet_lidi, info_zucastnil_se",
     )
     .eq("user_id", userId)
     .gte("date", periodFrom)
     .lte("date", periodTo);
 
   const ownStats = computePersonStats(ownMeetings as MeetingRow[], todayStr, periodFrom, periodTo, userName, userRole);
+
+  // Workspace feature flag for BJ funnel
+  let showBjFunnel = false;
+  {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("org_unit_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const orgUnitId = (prof as any)?.org_unit_id;
+    if (orgUnitId) {
+      const { data: ou } = await supabase
+        .from("org_units")
+        .select("show_bj_funnel")
+        .eq("id", orgUnitId)
+        .maybeSingle();
+      showBjFunnel = Boolean((ou as any)?.show_bj_funnel);
+    }
+  }
 
   // Fetch team members — V/BV viewers always see subordinates of the target user
   const viewerIsTopLeader = ["vedouci", "budouci_vedouci"].includes(viewerRole || "");
@@ -244,7 +264,7 @@ export async function exportDashboardPdf(
       const { data: teamMeetings = [] } = await supabase
         .from("client_meetings")
         .select(
-          "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, info_pocet_lidi, info_zucastnil_se",
+          "user_id, meeting_type, cancelled, date, created_at, outcome_recorded, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, potencial_bj, vizi_spoluprace, info_pocet_lidi, info_zucastnil_se",
         )
         .in("user_id", subIds)
         .gte("date", periodFrom)
@@ -330,7 +350,41 @@ export async function exportDashboardPdf(
     });
   }
 
-  // ── Týdenní rozpis (osobní) — single source of truth: client_meetings + computeMeetingStats.
+  // ── BJ funnel (feature flag: workspace.show_bj_funnel) ──────────────────
+  if (showBjFunnel) {
+    const ownFunnel = computeBjFunnel(ownMeetings as any);
+    const lastY = (doc as any).lastAutoTable?.finalY || 60;
+    let funnelY = lastY + 10;
+    if (funnelY > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage();
+      funnelY = 16;
+    }
+    doc.setFontSize(12);
+    doc.setFont(fontName, "bold");
+    doc.text("BJ funnel", 14, funnelY);
+    autoTable(doc, {
+      startY: funnelY + 4,
+      head: [["Plánované BJ", "Rozpracované BJ", "Realizované BJ"]],
+      body: [[
+        Math.round(ownFunnel.planned).toLocaleString("cs-CZ"),
+        Math.round(ownFunnel.inProgress).toLocaleString("cs-CZ"),
+        Math.round(ownFunnel.realized).toLocaleString("cs-CZ"),
+      ]],
+      theme: "grid",
+      styles: { font: fontName },
+      headStyles: {
+        fillColor: HEAD_FILL,
+        textColor: 255,
+        fontSize: 9,
+        fontStyle: "bold",
+        halign: "center",
+        font: fontName,
+      },
+      bodyStyles: { fontSize: 11, font: fontName, halign: "center", fontStyle: "bold" },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
   // Same definition of "actual" as the cards above (outcome_recorded = true AND not cancelled),
   // so totals match the cards exactly.
   const weekRanges: { start: Date; end: Date }[] = [];

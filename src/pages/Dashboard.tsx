@@ -52,6 +52,9 @@ import { FollowUpModal } from "@/components/FollowUpModal";
 import { toast } from "sonner";
 import { computeMeetingStats } from "@/lib/meetingStats";
 import { ConversionFunnel } from "@/components/ConversionFunnel";
+import { BjFunnelCard } from "@/components/BjFunnelCard";
+import { computeBjFunnel } from "@/lib/bjFunnel";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 
 // ─── Mobile read-only stat card ───────────────────────────────────────────────
 
@@ -484,7 +487,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("client_meetings")
         .select(
-          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, outcome_recorded",
+          "meeting_type, cancelled, date, created_at, doporuceni_fsa, doporuceni_poradenstvi, doporuceni_pohovor, podepsane_bj, potencial_bj, vizi_spoluprace, outcome_recorded",
         )
         .eq("user_id", activeUserId)
         .gte("date", format(dateRange.from, "yyyy-MM-dd"))
@@ -496,6 +499,10 @@ const Dashboard = () => {
   });
 
   const stats = useMemo(() => computeStats(desktopMeetings, todayStr), [desktopMeetings, todayStr]);
+
+  // ── BJ funnel (Plánované → Rozpracované → Realizované) ────────────────────
+  const { showBjFunnel } = useWorkspaceSettings();
+  const bjFunnel = useMemo(() => computeBjFunnel(desktopMeetings as any), [desktopMeetings]);
 
   // ── Mobile stats from client_meetings (week) ───────────────────────────────
   const mobileWeekStartStr = format(mobileWeekStart, "yyyy-MM-dd");
@@ -2185,6 +2192,21 @@ const Dashboard = () => {
             </div>
           </div>
         </section>
+
+        {/* ─── BJ Funnel (feature flag: show_bj_funnel) ─────────────────── */}
+        {!isMobile && showBjFunnel && (
+          <section className="mt-8">
+            <div className="legatus-card" style={{ padding: "20px 24px" }}>
+              <h3
+                className="font-heading font-semibold"
+                style={{ fontSize: 15, color: "#00555f", marginBottom: 14 }}
+              >
+                BJ funnel — toto období
+              </h3>
+              <BjFunnelCard funnel={bjFunnel} />
+            </div>
+          </section>
+        )}
 
         {/* ─── Konverze aktivit ───────────────────────────────────────────── */}
         {!isMobile && (

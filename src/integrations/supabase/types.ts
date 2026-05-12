@@ -900,6 +900,7 @@ export type Database = {
           name: string
           owner_id: string | null
           parent_unit_id: string | null
+          show_bj_funnel: boolean
         }
         Insert: {
           created_at?: string
@@ -909,6 +910,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           parent_unit_id?: string | null
+          show_bj_funnel?: boolean
         }
         Update: {
           created_at?: string
@@ -918,6 +920,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           parent_unit_id?: string | null
+          show_bj_funnel?: boolean
         }
         Relationships: [
           {
