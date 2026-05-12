@@ -1643,6 +1643,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       )}
 
       {activeTab === "pripady" && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
+      {/* BJ funnel header (feature flag) */}
+      {showBjFunnel && !isLoading && cases.length > 0 && (
+        <div className="legatus-card mb-3" style={{ padding: isMobile ? "12px 14px" : "16px 20px" }}>
+          <BjFunnelCard funnel={obchodFunnel} compact />
+        </div>
+      )}
       {/* Cases accordion list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
