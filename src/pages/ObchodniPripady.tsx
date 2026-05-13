@@ -953,6 +953,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               {([
                 { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={14} /> },
                 { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
+                ...(showRecruitmentFunnel ? [{ key: "nabor" as const, label: "Nábor", icon: <UserPlus size={14} /> }] : []),
               ]).map((tab) => (
                 <button
                   key={tab.key}
@@ -1231,6 +1232,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={15} /> },
                 { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={15} /> },
                 { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={15} /> },
+                ...(showRecruitmentFunnel ? [{ key: "nabor" as const, label: "Nábor", icon: <UserPlus size={15} /> }] : []),
               ]).map((tab) => (
                 <button
                   key={tab.key}
