@@ -2,10 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
+import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban, UserPlus } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { cs } from "date-fns/locale";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
+import { CandidatePicker } from "@/components/recruitment/CandidatePicker";
+import { stageAfterMeeting, type RecruitmentStage } from "@/lib/recruitmentFunnel";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface MeetingDetailData {
   id: string;
@@ -24,6 +28,7 @@ export interface MeetingDetailData {
   outcome_recorded: boolean;
   info_zucastnil_se?: boolean | null;
   info_pocet_lidi?: number | null;
+  recruitment_candidate_id?: string | null;
 }
 
 interface MeetingDetailModalProps {
