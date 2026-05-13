@@ -1837,6 +1837,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       )}
 
+      {activeTab === "nabor" && !isMobile && (
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <RecruitmentTab />
+        </div>
+      )}
+
       {/* Unrecorded meetings modal */}
       {showUnrecordedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowUnrecordedModal(false)}>
