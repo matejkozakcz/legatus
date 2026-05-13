@@ -182,7 +182,61 @@ export function MeetingDetailModal({
       data.info_zucastnil_se = infoZuc;
       data.info_pocet_lidi = parseInt(infoPocet) || 0;
     }
+
+    // Recruitment: link candidate for POH/NAB
+    if (showRecruitmentFunnel && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
+      data.recruitment_candidate_id = candidateId;
+    }
+
     onSaveOutcome(m.id, data);
+
+    // Recruitment side-effects (fire-and-forget)
+    if (showRecruitmentFunnel) {
+      try {
+        // Sync attendees for INFO/POST
+        if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+          const { data: existing } = await supabase
+            .from("info_attendees" as any)
+            .select("id, candidate_id")
+            .eq("meeting_id", m.id);
+          const existingMap = new Map<string, string>(((existing ?? []) as any[]).map((r) => [r.candidate_id, r.id]));
+          const toAdd = attendeeIds.filter((id) => !existingMap.has(id));
+          const toRemove = [...existingMap.entries()].filter(([cid]) => !attendeeIds.includes(cid)).map(([, id]) => id);
+          if (toAdd.length) {
+            await supabase.from("info_attendees" as any).insert(
+              toAdd.map((cid) => ({ meeting_id: m.id, candidate_id: cid })) as any,
+            );
+          }
+          if (toRemove.length) {
+            await supabase.from("info_attendees" as any).delete().in("id", toRemove);
+          }
+        }
+
+        // Auto-advance candidate stage for POH/NAB
+        if (candidateId && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
+          const next = stageAfterMeeting(m.meeting_type, { jdeDal: pohDal });
+          if (next && user) {
+            const { data: cand } = await supabase
+              .from("recruitment_candidates" as any)
+              .select("current_stage, stage_history")
+              .eq("id", candidateId)
+              .maybeSingle();
+            const curStage = (cand as any)?.current_stage as RecruitmentStage | undefined;
+            // Only advance forward
+            const order = ["CALL","NAB","POH","INFO","POST","REG","SUPERVIZE"];
+            if (curStage && order.indexOf(next) > order.indexOf(curStage)) {
+              const history = [...(((cand as any)?.stage_history) ?? []), { stage: next, at: new Date().toISOString(), by: user.id }];
+              await supabase
+                .from("recruitment_candidates" as any)
+                .update({ current_stage: next, stage_changed_at: new Date().toISOString(), stage_history: history } as any)
+                .eq("id", candidateId);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Recruitment sync failed:", e);
+      }
+    }
   };
 
   const renderOutcomeSummary = () => {
