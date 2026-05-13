@@ -526,6 +526,21 @@ export function MeetingDetailModal({
                   <input type="number" value={infoPocet} onChange={(e) => setInfoPocet(e.target.value)} min={0}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
+                {showRecruitmentFunnel && (
+                  <div className="pt-2 border-t border-border">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                      <UserPlus className="h-3.5 w-3.5" /> Účastníci z náborové cesty
+                    </label>
+                    <CandidatePicker
+                      selectedIds={attendeeIds}
+                      onChange={setAttendeeIds}
+                      placeholder="Přidat účastníka…"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      Vlastník kandidáta po proběhnutí odklikne účast v detailu kandidáta.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
