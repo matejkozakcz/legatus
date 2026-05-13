@@ -102,6 +102,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
   const [name, setName] = useState(orgUnit.name);
   const [parentId, setParentId] = useState<string | null>(orgUnit.parent_unit_id);
   const [showBjFunnel, setShowBjFunnel] = useState(false);
+  const [showRecruitmentFunnel, setShowRecruitmentFunnel] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
@@ -120,10 +121,11 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
     (async () => {
       const { data } = await supabase
         .from("org_units")
-        .select("show_bj_funnel")
+        .select("show_bj_funnel, show_recruitment_funnel")
         .eq("id", orgUnit.id)
         .maybeSingle();
       setShowBjFunnel(Boolean((data as any)?.show_bj_funnel));
+      setShowRecruitmentFunnel(Boolean((data as any)?.show_recruitment_funnel));
     })();
   }, [open, orgUnit.id]);
 
@@ -271,6 +273,7 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
           name: name.trim(),
           parent_unit_id: parentId,
           show_bj_funnel: showBjFunnel,
+          show_recruitment_funnel: showRecruitmentFunnel,
         } as any)
         .eq("id", orgUnit.id);
       if (ouErr) throw ouErr;
@@ -567,6 +570,24 @@ export function WorkspaceDetailModal({ orgUnit, open, onClose }: Props) {
                   id="show-bj-funnel"
                   checked={showBjFunnel}
                   onCheckedChange={setShowBjFunnel}
+                />
+              </div>
+              <div
+                className="flex items-start justify-between gap-4 rounded-lg border p-3"
+                style={{ borderColor: "var(--border)", background: "var(--card)" }}
+              >
+                <div className="min-w-0">
+                  <Label className="text-sm font-semibold cursor-pointer" htmlFor="show-recruitment-funnel">
+                    Zobrazit Náborovou cestu
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Přidá záložku „Nábor" v Můj byznys a sekci kandidátů u schůzek POH/NAB/INFO/POST. Sleduje cestu člověka od prvního callu po Supervizi.
+                  </p>
+                </div>
+                <Switch
+                  id="show-recruitment-funnel"
+                  checked={showRecruitmentFunnel}
+                  onCheckedChange={setShowRecruitmentFunnel}
                 />
               </div>
             </section>
