@@ -53,7 +53,7 @@ export function CandidatePicker({ selectedIds, onChange, single, placeholder = "
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data ?? []) as Candidate[];
+      return (data ?? []) as unknown as Candidate[];
     },
   });
 
