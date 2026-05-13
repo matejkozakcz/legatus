@@ -80,6 +80,17 @@ export function MeetingDetailModal({
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setInfoZuc(meeting.info_zucastnil_se ?? null);
       setInfoPocet(meeting.info_pocet_lidi != null ? String(meeting.info_pocet_lidi) : "0");
+      setCandidateId(meeting.recruitment_candidate_id ?? null);
+      // Load attendees for INFO/POST
+      if (meeting.meeting_type === "INFO" || meeting.meeting_type === "POST") {
+        supabase
+          .from("info_attendees" as any)
+          .select("candidate_id")
+          .eq("meeting_id", meeting.id)
+          .then(({ data }) => setAttendeeIds(((data ?? []) as any[]).map((r) => r.candidate_id)));
+      } else {
+        setAttendeeIds([]);
+      }
       setEditingOutcome(false);
       setShowReschedule(false);
       setShowNextStep(false);
@@ -153,13 +164,12 @@ export function MeetingDetailModal({
     </div>
   );
 
-  const handleSaveOutcome = () => {
+  const handleSaveOutcome = async () => {
     if (!onSaveOutcome) return;
     const data: Record<string, unknown> = { outcome_recorded: true };
     if (m.meeting_type === "FSA") {
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "NAB") {
-      // NAB má jak "Jde dál?" (recruitment vs. klientská cesta) tak počet doporučení
       data.pohovor_jde_dal = pohDal;
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
