@@ -484,6 +484,18 @@ export function MeetingDetailModal({
                       className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                   )}
                 </div>
+                {showRecruitmentFunnel && (
+                  <div className="pt-2 border-t border-border">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                      <UserPlus className="h-3.5 w-3.5" /> Náborová cesta — kandidát
+                    </label>
+                    <CandidatePicker
+                      single
+                      selectedIds={candidateId ? [candidateId] : []}
+                      onChange={(ids) => setCandidateId(ids[0] ?? null)}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
