@@ -49,6 +49,9 @@ export function MeetingDetailModal({
 }: MeetingDetailModalProps) {
   useBodyScrollLock(open);
 
+  const { showRecruitmentFunnel } = useWorkspaceSettings();
+  const { user } = useAuth();
+
   const [dopFsa, setDopFsa] = useState("0");
   const [podBj, setPodBj] = useState("0");
   const [dopPor, setDopPor] = useState("0");
@@ -62,6 +65,8 @@ export function MeetingDetailModal({
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [justCancelled, setJustCancelled] = useState(false);
   const [prevSaving, setPrevSaving] = useState(false);
+  const [candidateId, setCandidateId] = useState<string | null>(null);
+  const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const prevMeetingId = useRef<string | null>(null);
 
   // Reset state only when opening a DIFFERENT meeting (not on refetch of the same one)
