@@ -2,10 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban } from "lucide-react";
+import { X, Loader2, Pencil, CalendarPlus, Users, FileText, Shield, Check, Clock, ClipboardCheck, Ban, UserPlus } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 import { cs } from "date-fns/locale";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
+import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
+import { CandidatePicker } from "@/components/recruitment/CandidatePicker";
+import { stageAfterMeeting, type RecruitmentStage } from "@/lib/recruitmentFunnel";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface MeetingDetailData {
   id: string;
@@ -24,6 +28,7 @@ export interface MeetingDetailData {
   outcome_recorded: boolean;
   info_zucastnil_se?: boolean | null;
   info_pocet_lidi?: number | null;
+  recruitment_candidate_id?: string | null;
 }
 
 interface MeetingDetailModalProps {
@@ -44,6 +49,9 @@ export function MeetingDetailModal({
 }: MeetingDetailModalProps) {
   useBodyScrollLock(open);
 
+  const { showRecruitmentFunnel } = useWorkspaceSettings();
+  const { user } = useAuth();
+
   const [dopFsa, setDopFsa] = useState("0");
   const [podBj, setPodBj] = useState("0");
   const [dopPor, setDopPor] = useState("0");
@@ -57,6 +65,8 @@ export function MeetingDetailModal({
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [justCancelled, setJustCancelled] = useState(false);
   const [prevSaving, setPrevSaving] = useState(false);
+  const [candidateId, setCandidateId] = useState<string | null>(null);
+  const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const prevMeetingId = useRef<string | null>(null);
 
   // Reset state only when opening a DIFFERENT meeting (not on refetch of the same one)
@@ -70,6 +80,17 @@ export function MeetingDetailModal({
       setDopPoh(meeting.doporuceni_pohovor?.toString() || "0");
       setInfoZuc(meeting.info_zucastnil_se ?? null);
       setInfoPocet(meeting.info_pocet_lidi != null ? String(meeting.info_pocet_lidi) : "0");
+      setCandidateId(meeting.recruitment_candidate_id ?? null);
+      // Load attendees for INFO/POST
+      if (meeting.meeting_type === "INFO" || meeting.meeting_type === "POST") {
+        supabase
+          .from("info_attendees" as any)
+          .select("candidate_id")
+          .eq("meeting_id", meeting.id)
+          .then(({ data }) => setAttendeeIds(((data ?? []) as any[]).map((r) => r.candidate_id)));
+      } else {
+        setAttendeeIds([]);
+      }
       setEditingOutcome(false);
       setShowReschedule(false);
       setShowNextStep(false);
@@ -143,13 +164,12 @@ export function MeetingDetailModal({
     </div>
   );
 
-  const handleSaveOutcome = () => {
+  const handleSaveOutcome = async () => {
     if (!onSaveOutcome) return;
     const data: Record<string, unknown> = { outcome_recorded: true };
     if (m.meeting_type === "FSA") {
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "NAB") {
-      // NAB má jak "Jde dál?" (recruitment vs. klientská cesta) tak počet doporučení
       data.pohovor_jde_dal = pohDal;
       data.doporuceni_fsa = parseInt(dopFsa) || 0;
     } else if (m.meeting_type === "POR" || m.meeting_type === "SER") {
@@ -162,7 +182,61 @@ export function MeetingDetailModal({
       data.info_zucastnil_se = infoZuc;
       data.info_pocet_lidi = parseInt(infoPocet) || 0;
     }
+
+    // Recruitment: link candidate for POH/NAB
+    if (showRecruitmentFunnel && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
+      data.recruitment_candidate_id = candidateId;
+    }
+
     onSaveOutcome(m.id, data);
+
+    // Recruitment side-effects (fire-and-forget)
+    if (showRecruitmentFunnel) {
+      try {
+        // Sync attendees for INFO/POST
+        if (m.meeting_type === "INFO" || m.meeting_type === "POST") {
+          const { data: existing } = await supabase
+            .from("info_attendees" as any)
+            .select("id, candidate_id")
+            .eq("meeting_id", m.id);
+          const existingMap = new Map<string, string>(((existing ?? []) as any[]).map((r) => [r.candidate_id, r.id]));
+          const toAdd = attendeeIds.filter((id) => !existingMap.has(id));
+          const toRemove = [...existingMap.entries()].filter(([cid]) => !attendeeIds.includes(cid)).map(([, id]) => id);
+          if (toAdd.length) {
+            await supabase.from("info_attendees" as any).insert(
+              toAdd.map((cid) => ({ meeting_id: m.id, candidate_id: cid })) as any,
+            );
+          }
+          if (toRemove.length) {
+            await supabase.from("info_attendees" as any).delete().in("id", toRemove);
+          }
+        }
+
+        // Auto-advance candidate stage for POH/NAB
+        if (candidateId && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
+          const next = stageAfterMeeting(m.meeting_type, { jdeDal: pohDal });
+          if (next && user) {
+            const { data: cand } = await supabase
+              .from("recruitment_candidates" as any)
+              .select("current_stage, stage_history")
+              .eq("id", candidateId)
+              .maybeSingle();
+            const curStage = (cand as any)?.current_stage as RecruitmentStage | undefined;
+            // Only advance forward
+            const order = ["CALL","NAB","POH","INFO","POST","REG","SUPERVIZE"];
+            if (curStage && order.indexOf(next) > order.indexOf(curStage)) {
+              const history = [...(((cand as any)?.stage_history) ?? []), { stage: next, at: new Date().toISOString(), by: user.id }];
+              await supabase
+                .from("recruitment_candidates" as any)
+                .update({ current_stage: next, stage_changed_at: new Date().toISOString(), stage_history: history } as any)
+                .eq("id", candidateId);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Recruitment sync failed:", e);
+      }
+    }
   };
 
   const renderOutcomeSummary = () => {
@@ -410,6 +484,18 @@ export function MeetingDetailModal({
                       className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                   )}
                 </div>
+                {showRecruitmentFunnel && (
+                  <div className="pt-2 border-t border-border">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                      <UserPlus className="h-3.5 w-3.5" /> Náborová cesta — kandidát
+                    </label>
+                    <CandidatePicker
+                      single
+                      selectedIds={candidateId ? [candidateId] : []}
+                      onChange={(ids) => setCandidateId(ids[0] ?? null)}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -440,6 +526,21 @@ export function MeetingDetailModal({
                   <input type="number" value={infoPocet} onChange={(e) => setInfoPocet(e.target.value)} min={0}
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
+                {showRecruitmentFunnel && (
+                  <div className="pt-2 border-t border-border">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                      <UserPlus className="h-3.5 w-3.5" /> Účastníci z náborové cesty
+                    </label>
+                    <CandidatePicker
+                      selectedIds={attendeeIds}
+                      onChange={setAttendeeIds}
+                      placeholder="Přidat účastníka…"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      Vlastník kandidáta po proběhnutí odklikne účast v detailu kandidáta.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

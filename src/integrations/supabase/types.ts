@@ -170,6 +170,7 @@ export type Database = {
         Row: {
           client_name: string
           created_at: string
+          created_candidate_id: string | null
           created_case_id: string | null
           created_meeting_id: string | null
           id: string
@@ -181,6 +182,7 @@ export type Database = {
         Insert: {
           client_name?: string
           created_at?: string
+          created_candidate_id?: string | null
           created_case_id?: string | null
           created_meeting_id?: string | null
           id?: string
@@ -192,6 +194,7 @@ export type Database = {
         Update: {
           client_name?: string
           created_at?: string
+          created_candidate_id?: string | null
           created_case_id?: string | null
           created_meeting_id?: string | null
           id?: string
@@ -309,6 +312,7 @@ export type Database = {
           poradenstvi_status: string | null
           potencial_bj: number | null
           poznamka: string | null
+          recruitment_candidate_id: string | null
           updated_at: string
           user_id: string
           vizi_spoluprace: boolean
@@ -344,6 +348,7 @@ export type Database = {
           poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
+          recruitment_candidate_id?: string | null
           updated_at?: string
           user_id: string
           vizi_spoluprace?: boolean
@@ -379,6 +384,7 @@ export type Database = {
           poradenstvi_status?: string | null
           potencial_bj?: number | null
           poznamka?: string | null
+          recruitment_candidate_id?: string | null
           updated_at?: string
           user_id?: string
           vizi_spoluprace?: boolean
@@ -506,6 +512,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      info_attendees: {
+        Row: {
+          attended: boolean | null
+          candidate_id: string
+          created_at: string
+          id: string
+          meeting_id: string
+          updated_at: string
+        }
+        Insert: {
+          attended?: boolean | null
+          candidate_id: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+          updated_at?: string
+        }
+        Update: {
+          attended?: boolean | null
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       invite_attempts: {
         Row: {
@@ -901,6 +934,7 @@ export type Database = {
           owner_id: string | null
           parent_unit_id: string | null
           show_bj_funnel: boolean
+          show_recruitment_funnel: boolean
         }
         Insert: {
           created_at?: string
@@ -911,6 +945,7 @@ export type Database = {
           owner_id?: string | null
           parent_unit_id?: string | null
           show_bj_funnel?: boolean
+          show_recruitment_funnel?: boolean
         }
         Update: {
           created_at?: string
@@ -921,6 +956,7 @@ export type Database = {
           owner_id?: string | null
           parent_unit_id?: string | null
           show_bj_funnel?: boolean
+          show_recruitment_funnel?: boolean
         }
         Relationships: [
           {
@@ -1243,6 +1279,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recruitment_candidates: {
+        Row: {
+          created_at: string
+          current_stage: string
+          email: string | null
+          full_name: string
+          id: string
+          lost_reason: string | null
+          notes: string | null
+          org_unit_id: string
+          owner_id: string
+          phone: string | null
+          registered_profile_id: string | null
+          source: string | null
+          stage_changed_at: string
+          stage_history: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_stage?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          org_unit_id: string
+          owner_id: string
+          phone?: string | null
+          registered_profile_id?: string | null
+          source?: string | null
+          stage_changed_at?: string
+          stage_history?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_stage?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          lost_reason?: string | null
+          notes?: string | null
+          org_unit_id?: string
+          owner_id?: string
+          phone?: string | null
+          registered_profile_id?: string | null
+          source?: string | null
+          stage_changed_at?: string
+          stage_history?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_calendar_connections: {
         Row: {
