@@ -452,7 +452,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
-  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity">(mobileEmbedded ? "pripady" : "schuzky");
+  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity" | "nabor">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
   const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
@@ -513,7 +513,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const isLoading = casesLoading || meetingsLoading;
 
   // ── BJ funnel (feature flag) ──
-  const { showBjFunnel } = useWorkspaceSettings();
+  const { showBjFunnel, showRecruitmentFunnel } = useWorkspaceSettings();
   const obchodFunnel = useMemo(() => computeBjFunnel(meetings as any), [meetings]);
 
   // Group meetings by case_id
