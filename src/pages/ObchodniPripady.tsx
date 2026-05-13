@@ -29,7 +29,9 @@ import {
   MapPin,
   Calendar as CalendarIcon,
   BarChart3,
+  UserPlus,
 } from "lucide-react";
+import { RecruitmentTab } from "@/components/recruitment/RecruitmentTab";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
