@@ -1204,6 +1204,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           )}
           </>)}
           {activeTab === "aktivity" && <MojeAktivityContent />}
+          {activeTab === "nabor" && <RecruitmentTab />}
         </>
       ) : (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
