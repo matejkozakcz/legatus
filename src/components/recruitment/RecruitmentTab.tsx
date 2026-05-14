@@ -87,8 +87,8 @@ export function RecruitmentTab() {
         owner_id: user.id,
         full_name: newName.trim(),
         phone: newPhone.trim() || null,
-        current_stage: "CALL",
-        stage_history: [{ stage: "CALL", at: new Date().toISOString(), by: user.id }],
+        current_stage: "NAB",
+        stage_history: [{ stage: "NAB", at: new Date().toISOString(), by: user.id }],
       } as any);
       if (error) throw error;
     },
