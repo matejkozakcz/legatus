@@ -454,7 +454,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
-  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "aktivity" | "nabor">(mobileEmbedded ? "pripady" : "schuzky");
+  const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "nabor">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
   const [viewModeMenuOpen, setViewModeMenuOpen] = useState(false);
@@ -1203,7 +1203,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             </div>
           )}
           </>)}
-          {activeTab === "aktivity" && <MojeAktivityContent />}
           {activeTab === "nabor" && <RecruitmentTab />}
         </>
       ) : (
@@ -1232,7 +1231,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
               {([
                 { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={15} /> },
                 { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={15} /> },
-                { key: "aktivity" as const, label: "Aktivity", icon: <BarChart3 size={15} /> },
                 ...(showRecruitmentFunnel ? [{ key: "nabor" as const, label: "Nábor", icon: <UserPlus size={15} /> }] : []),
               ]).map((tab) => (
                 <button
@@ -1830,12 +1828,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           });
         }}
       />
-
-      {activeTab === "aktivity" && (
-        <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
-          <MojeAktivityContent />
-        </div>
-      )}
 
       {activeTab === "nabor" && !isMobile && (
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
