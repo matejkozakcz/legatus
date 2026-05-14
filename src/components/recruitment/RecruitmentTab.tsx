@@ -115,7 +115,7 @@ export function RecruitmentTab() {
             Aktivních: <strong style={{ color: "#00abbd" }}>{summary.active}</strong> · Konverze: <strong style={{ color: "#fc7c71" }}>{summary.conversion}%</strong>
           </span>
         </div>
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-6 gap-1.5">
           {RECRUITMENT_STAGES.map((s) => (
             <button
               key={s}
