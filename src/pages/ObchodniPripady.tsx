@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { MojeAktivityContent } from "@/pages/MojeAktivity";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +28,6 @@ import {
   Clock,
   MapPin,
   Calendar as CalendarIcon,
-  BarChart3,
   UserPlus,
 } from "lucide-react";
 import { RecruitmentTab } from "@/components/recruitment/RecruitmentTab";
