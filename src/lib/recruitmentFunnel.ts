@@ -1,45 +1,42 @@
 // Náborová cesta — typy a centrální výpočet.
 // Volitelný modul, řízen `org_units.show_recruitment_funnel`.
+// Sekvence: NAB (volitelný) → POH (spouštěč) → INFO → POST → SUPERVIZE → REG.
 
 export type RecruitmentStage =
-  | "CALL"
   | "NAB"
   | "POH"
   | "INFO"
   | "POST"
-  | "REG"
   | "SUPERVIZE"
+  | "REG"
   | "LOST";
 
 export const RECRUITMENT_STAGES: RecruitmentStage[] = [
-  "CALL",
   "NAB",
   "POH",
   "INFO",
   "POST",
-  "REG",
   "SUPERVIZE",
+  "REG",
 ];
 
 export const STAGE_LABELS: Record<RecruitmentStage, string> = {
-  CALL: "Call",
   NAB: "Nábor",
   POH: "Pohovor",
   INFO: "Info",
   POST: "Postinfo",
-  REG: "Registrace",
   SUPERVIZE: "Supervize",
+  REG: "Registrace",
   LOST: "Ztracený",
 };
 
 export const STAGE_COLORS: Record<RecruitmentStage, string> = {
-  CALL: "#8aadb3",
   NAB: "#7E22CE",
   POH: "#0D9488",
   INFO: "#7B5EA7",
   POST: "#5E7AB5",
-  REG: "#00abbd",
   SUPERVIZE: "#fc7c71",
+  REG: "#00abbd",
   LOST: "#9ca3af",
 };
 
@@ -55,12 +52,12 @@ export interface FunnelSummary {
   byStage: Record<RecruitmentStage, number>;
   total: number;
   active: number; // vše kromě LOST
-  conversion: number; // REG+SUPERVIZE / active (procenta 0-100)
+  conversion: number; // REG / active (procenta 0-100)
 }
 
 export function emptyByStage(): Record<RecruitmentStage, number> {
   return {
-    CALL: 0, NAB: 0, POH: 0, INFO: 0, POST: 0, REG: 0, SUPERVIZE: 0, LOST: 0,
+    NAB: 0, POH: 0, INFO: 0, POST: 0, SUPERVIZE: 0, REG: 0, LOST: 0,
   };
 }
 
@@ -69,12 +66,11 @@ export function computeRecruitmentFunnel(rows: CandidateRow[]): FunnelSummary {
   for (const r of rows) byStage[r.current_stage] = (byStage[r.current_stage] || 0) + 1;
   const total = rows.length;
   const active = total - byStage.LOST;
-  const reached = byStage.REG + byStage.SUPERVIZE;
-  const conversion = active > 0 ? Math.round((reached / active) * 100) : 0;
+  const conversion = active > 0 ? Math.round((byStage.REG / active) * 100) : 0;
   return { byStage, total, active, conversion };
 }
 
-/** Vrací další "očekávanou" fázi (manuální posun). LOST a SUPERVIZE jsou koncové. */
+/** Vrací další "očekávanou" fázi (manuální posun). LOST a REG jsou koncové. */
 export function nextStage(stage: RecruitmentStage): RecruitmentStage | null {
   const i = RECRUITMENT_STAGES.indexOf(stage);
   if (i < 0 || i >= RECRUITMENT_STAGES.length - 1) return null;
@@ -89,6 +85,6 @@ export function stageAfterMeeting(
   if (meetingType === "NAB" && outcome.jdeDal === true) return "POH";
   if (meetingType === "POH" && outcome.jdeDal === true) return "INFO";
   if (meetingType === "INFO" && outcome.attended === true) return "POST";
-  if (meetingType === "POST" && outcome.attended === true) return "REG";
+  if (meetingType === "POST" && outcome.attended === true) return "SUPERVIZE";
   return null;
 }

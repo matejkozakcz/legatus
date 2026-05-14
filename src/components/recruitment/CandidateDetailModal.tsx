@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { X, ChevronRight, ArrowRight, Check, Trash2 } from "lucide-react";
+import { X, ArrowRight, Trash2, Plus, Copy, GraduationCap, Lock, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   RecruitmentStage,
@@ -13,6 +13,13 @@ import {
   STAGE_COLORS,
   nextStage,
 } from "@/lib/recruitmentFunnel";
+import {
+  IndividualFormInline,
+  useIndividualSave,
+  useIndividualDelete,
+  type IndividualMeeting,
+} from "@/components/IndividualyTab";
+import { useIndividualMeetings } from "@/hooks/useIndividualMeetings";
 
 interface Props {
   candidateId: string;
@@ -32,21 +39,18 @@ interface CandidateFull {
   lost_reason: string | null;
   notes: string | null;
   owner_id: string;
+  org_unit_id: string;
+  registered_profile_id: string | null;
   created_at: string;
-}
-
-interface AttendanceRow {
-  id: string;
-  meeting_id: string;
-  attended: boolean | null;
-  meeting?: { date: string; meeting_type: string } | null;
 }
 
 export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [notes, setNotes] = useState("");
+  const [tab, setTab] = useState<"zapracovani" | "rozvoj">("zapracovani");
   const [lostReason, setLostReason] = useState("");
+  const [editingRecord, setEditingRecord] = useState<IndividualMeeting | "new" | null>(null);
+  const [viewing, setViewing] = useState<IndividualMeeting | null>(null);
 
   const { data: candidate } = useQuery({
     queryKey: ["recruitment_candidate", candidateId],
@@ -58,10 +62,7 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
         .eq("id", candidateId)
         .maybeSingle();
       if (error) throw error;
-      if (data) {
-        setNotes((data as any).notes ?? "");
-        setLostReason((data as any).lost_reason ?? "");
-      }
+      if (data) setLostReason((data as any).lost_reason ?? "");
       return data as unknown as CandidateFull;
     },
   });
@@ -72,7 +73,7 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from("client_meetings")
-        .select("id, date, meeting_type, outcome_recorded, pohovor_jde_dal")
+        .select("id, date, meeting_type, outcome_recorded, pohovor_jde_dal, case_name")
         .eq("recruitment_candidate_id", candidateId)
         .order("date", { ascending: true });
       return data ?? [];
@@ -85,13 +86,23 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from("info_attendees" as any)
-        .select("id, meeting_id, attended, client_meetings!inner(date, meeting_type)")
-        .eq("candidate_id", candidateId)
-        .order("created_at", { ascending: true });
-      return ((data ?? []) as any[]).map((r) => ({
-        ...r,
-        meeting: r.client_meetings,
-      })) as AttendanceRow[];
+        .select("id, meeting_id, attended, client_meetings!inner(date, meeting_type, case_name)")
+        .eq("candidate_id", candidateId);
+      return ((data ?? []) as any[]).map((r) => ({ ...r, meeting: r.client_meetings }));
+    },
+  });
+
+  // Workspace invite token (for invite link display)
+  const { data: workspace } = useQuery({
+    queryKey: ["candidate_workspace", candidate?.org_unit_id],
+    enabled: !!candidate?.org_unit_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("org_units")
+        .select("invite_token, name")
+        .eq("id", candidate!.org_unit_id)
+        .maybeSingle();
+      return data;
     },
   });
 
@@ -109,7 +120,6 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
       toast.success("Fáze posunuta");
       qc.invalidateQueries({ queryKey: ["recruitment_candidate", candidateId] });
       qc.invalidateQueries({ queryKey: ["recruitment_candidates_list"] });
-      qc.invalidateQueries({ queryKey: ["recruitment_candidates_picker"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Chyba"),
   });
@@ -137,15 +147,17 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
     onError: (e: any) => toast.error(e.message ?? "Chyba"),
   });
 
-  const saveNotes = useMutation({
+  const deleteCandidate = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("recruitment_candidates" as any)
-        .update({ notes: notes.trim() || null } as any)
-        .eq("id", candidateId);
+      const { error } = await supabase.from("recruitment_candidates" as any).delete().eq("id", candidateId);
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Uloženo"),
+    onSuccess: () => {
+      toast.success("Kandidát smazán");
+      qc.invalidateQueries({ queryKey: ["recruitment_candidates_list"] });
+      onClose();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Chyba"),
   });
 
   const setAttendance = useMutation({
@@ -161,18 +173,20 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
     },
   });
 
-  const deleteCandidate = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("recruitment_candidates" as any).delete().eq("id", candidateId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Kandidát smazán");
-      qc.invalidateQueries({ queryKey: ["recruitment_candidates_list"] });
-      onClose();
-    },
-    onError: (e: any) => toast.error(e.message ?? "Chyba"),
+  // ── Rozvoj (Individuály) ────────────────────────────────────────────
+  const { data: individualRecords = [], isLoading: indLoading } = useIndividualMeetings(candidateId);
+  const saveInd = useIndividualSave(candidateId, () => {
+    setEditingRecord(null);
   });
+  const deleteInd = useIndividualDelete(candidateId, () => setViewing(null));
+
+  useEffect(() => {
+    if (!open) {
+      setTab("zapracovani");
+      setEditingRecord(null);
+      setViewing(null);
+    }
+  }, [open]);
 
   if (!open) return null;
   if (!candidate) {
@@ -187,6 +201,20 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
   const next = nextStage(candidate.current_stage);
   const canEdit = candidate.owner_id === user?.id;
   const isLost = candidate.current_stage === "LOST";
+  const showInviteLink =
+    !isLost &&
+    !candidate.registered_profile_id &&
+    (candidate.current_stage === "SUPERVIZE" || candidate.current_stage === "REG");
+
+  const inviteUrl = workspace?.invite_token
+    ? `${window.location.origin}/join?ws=${workspace.invite_token}`
+    : null;
+
+  const copyInvite = async () => {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link zkopírován");
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 pb-8 px-4" onClick={onClose}>
@@ -242,9 +270,14 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
               ❌ Ztracený{candidate.lost_reason ? ` — ${candidate.lost_reason}` : ""}
             </div>
           )}
+          {candidate.registered_profile_id && (
+            <div className="text-xs font-semibold text-center" style={{ color: STAGE_COLORS.REG }}>
+              ✓ Registrován v Legatovi
+            </div>
+          )}
         </div>
 
-        {/* Akce */}
+        {/* Akce posunu fáze */}
         {canEdit && !isLost && (
           <div className="flex flex-wrap gap-2 mb-4">
             {next && (
@@ -272,95 +305,232 @@ export function CandidateDetailModal({ candidateId, open, onClose }: Props) {
           </div>
         )}
 
-        {/* Schůzky */}
-        {meetings.length > 0 && (
-          <section className="mb-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-2">Schůzky</h3>
-            <div className="space-y-1.5">
-              {meetings.map((m: any) => (
-                <div key={m.id} className="flex items-center justify-between text-xs p-2 rounded-md border border-border">
-                  <span>
-                    <span className="font-semibold">{m.meeting_type}</span>
-                    <span className="text-muted-foreground ml-2">
-                      {format(new Date(m.date), "d. M. yyyy", { locale: cs })}
-                    </span>
-                  </span>
-                  {m.outcome_recorded && (
-                    <span className="text-[10px] font-semibold" style={{ color: "#00abbd" }}>✓ vyplněno</span>
-                  )}
-                </div>
-              ))}
+        {/* Invite link pro registraci do Legata */}
+        {showInviteLink && inviteUrl && (
+          <div
+            className="mb-4 p-3 rounded-xl border"
+            style={{ background: "rgba(0,171,189,0.06)", borderColor: "rgba(0,171,189,0.25)" }}
+          >
+            <div className="text-xs font-semibold mb-1" style={{ color: "#00555f" }}>
+              Pozvánka do Legata
             </div>
-          </section>
+            <div className="text-[11px] text-muted-foreground mb-2">
+              Po registraci se profil automaticky spáruje s tímto kandidátem (podle e-mailu, telefonu nebo jména).
+            </div>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={inviteUrl}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-[11px]"
+              />
+              <button
+                onClick={copyInvite}
+                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[11px] font-semibold text-white"
+                style={{ background: "#fc7c71" }}
+              >
+                <Copy className="h-3 w-3" /> Kopírovat
+              </button>
+            </div>
+          </div>
         )}
 
-        {/* Účast na Info / Postinfo (vyžaduje potvrzení) */}
-        {attendance.length > 0 && (
-          <section className="mb-4">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-2">Potvrzení účasti</h3>
-            <div className="space-y-1.5">
-              {attendance.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border">
-                  <span className="text-xs">
-                    <span className="font-semibold">{a.meeting?.meeting_type}</span>
-                    {a.meeting && (
+        {/* Tabs: Zapracování / Rozvoj */}
+        <div className="flex gap-1 mt-2 mb-3 border-b" style={{ borderColor: "var(--border)" }}>
+          {([
+            { key: "zapracovani" as const, label: "Zapracování" },
+            { key: "rozvoj" as const, label: "Rozvoj" },
+          ]).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="px-3 py-2 text-sm font-semibold transition-colors"
+              style={{
+                color: tab === t.key ? "#00abbd" : "var(--text-muted)",
+                borderBottom: tab === t.key ? "2px solid #00abbd" : "2px solid transparent",
+                marginBottom: -1,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "zapracovani" && (
+          <div>
+            {/* Schůzky kandidáta */}
+            <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+              <GraduationCap className="h-3.5 w-3.5" /> Schůzky
+            </h3>
+            {meetings.length === 0 && attendance.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-3 text-center">
+                Zatím žádné schůzky.
+              </p>
+            ) : (
+              <div className="space-y-1.5 mb-4">
+                {meetings.map((m: any) => (
+                  <div key={m.id} className="flex items-center justify-between text-xs p-2 rounded-md border border-border">
+                    <span>
+                      <span className="font-semibold">{m.meeting_type}</span>
                       <span className="text-muted-foreground ml-2">
-                        {format(new Date(a.meeting.date), "d. M. yyyy", { locale: cs })}
+                        {format(new Date(m.date), "d. M. yyyy", { locale: cs })}
+                      </span>
+                      {m.case_name && (
+                        <span className="text-muted-foreground ml-2 text-[10px]">· {m.case_name}</span>
+                      )}
+                    </span>
+                    {m.outcome_recorded && (
+                      <span className="text-[10px] font-semibold" style={{ color: "#00abbd" }}>✓ vyplněno</span>
+                    )}
+                  </div>
+                ))}
+                {attendance.map((a: any) => (
+                  <div key={a.id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border">
+                    <span className="text-xs">
+                      <span className="font-semibold">{a.meeting?.meeting_type}</span>
+                      {a.meeting && (
+                        <span className="text-muted-foreground ml-2">
+                          {format(new Date(a.meeting.date), "d. M. yyyy", { locale: cs })}
+                        </span>
+                      )}
+                    </span>
+                    {canEdit ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setAttendance.mutate({ id: a.id, attended: true })}
+                          className={`h-7 px-2.5 rounded-md text-[11px] font-semibold ${a.attended === true ? "text-white" : "border border-input"}`}
+                          style={a.attended === true ? { background: "#00abbd" } : {}}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => setAttendance.mutate({ id: a.id, attended: false })}
+                          className={`h-7 px-2.5 rounded-md text-[11px] font-semibold ${a.attended === false ? "text-white" : "border border-input"}`}
+                          style={a.attended === false ? { background: "#fc7c71" } : {}}
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">
+                        {a.attended === true ? "✓" : a.attended === false ? "✗" : "?"}
                       </span>
                     )}
-                  </span>
-                  {canEdit ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setAttendance.mutate({ id: a.id, attended: true })}
-                        className={`h-7 px-2.5 rounded-md text-[11px] font-semibold ${a.attended === true ? "text-white" : "border border-input"}`}
-                        style={a.attended === true ? { background: "#00abbd" } : {}}
-                      >
-                        Účast ✓
-                      </button>
-                      <button
-                        onClick={() => setAttendance.mutate({ id: a.id, attended: false })}
-                        className={`h-7 px-2.5 rounded-md text-[11px] font-semibold ${a.attended === false ? "text-white" : "border border-input"}`}
-                        style={a.attended === false ? { background: "#fc7c71" } : {}}
-                      >
-                        Nepřišel ✗
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-[11px] text-muted-foreground">
-                      {a.attended === true ? "✓ účast" : a.attended === false ? "✗ nepřišel" : "neodklikáno"}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Poznámka */}
-        {canEdit && (
-          <section className="mb-4">
-            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Poznámka</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={() => saveNotes.mutate()}
-              rows={3}
-              className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
-            />
-          </section>
+        {tab === "rozvoj" && (
+          <div>
+            {editingRecord ? (
+              <IndividualFormInline
+                initial={editingRecord === "new" ? null : editingRecord}
+                onCancel={() => setEditingRecord(null)}
+                onSave={(d) => saveInd.mutate({ id: editingRecord === "new" ? undefined : editingRecord.id, ...d })}
+                saving={saveInd.isPending}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-heading text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                    Deník rozvoje
+                  </p>
+                  <button
+                    onClick={() => setEditingRecord("new")}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                    style={{ background: "#fc7c71" }}
+                  >
+                    <Plus size={14} /> Nový individuál
+                  </button>
+                </div>
+                {indLoading ? (
+                  <p className="text-xs text-muted-foreground py-4 text-center">Načítám…</p>
+                ) : individualRecords.length === 0 ? (
+                  <p className="text-sm text-center py-6" style={{ color: "var(--text-muted)" }}>
+                    Zatím žádné zápisky
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {individualRecords.map((r) => {
+                      const isMine = r.author_id === user?.id;
+                      const isOpen = viewing?.id === r.id;
+                      return (
+                        <div key={r.id}>
+                          <button
+                            onClick={() => setViewing(isOpen ? null : r)}
+                            className="w-full text-left rounded-lg border transition-colors hover:border-[#00abbd]"
+                            style={{
+                              padding: "10px 12px",
+                              background: isOpen ? "rgba(0,171,189,0.08)" : "rgba(0,0,0,0.02)",
+                              borderColor: isOpen ? "#00abbd" : "var(--border)",
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                                {format(new Date(r.meeting_date), "d. M. yyyy", { locale: cs })}
+                              </span>
+                              {!isMine && <Lock size={11} style={{ color: "var(--text-muted)" }} />}
+                            </div>
+                            <p className="text-[11px] mb-1" style={{ color: "var(--text-muted)" }}>
+                              {r.author?.full_name || "—"}
+                            </p>
+                            <p className="text-xs leading-snug" style={{ color: "var(--text-secondary)" }}>
+                              {isOpen ? r.notes : r.notes.slice(0, 120)}
+                            </p>
+                            {isOpen && r.next_steps && (
+                              <div className="mt-2 pt-2 border-t border-border">
+                                <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Next steps</p>
+                                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{r.next_steps}</p>
+                              </div>
+                            )}
+                          </button>
+                          {isOpen && isMine && (
+                            <div className="flex gap-2 mt-1.5">
+                              <button
+                                onClick={() => setEditingRecord(r)}
+                                className="text-[11px] font-semibold"
+                                style={{ color: "#00abbd" }}
+                              >
+                                Upravit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm("Smazat zápisek?")) deleteInd.mutate(r.id);
+                                }}
+                                className="text-[11px] font-semibold text-destructive"
+                              >
+                                Smazat
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-3">
+                  Po registraci kandidáta v Legatovi se zápisky zachovají a zůstanou navázané na nově vzniklý profil.
+                </p>
+              </>
+            )}
+          </div>
         )}
 
         {/* Smazat */}
         {canEdit && (
-          <button
-            onClick={() => {
-              if (confirm("Smazat tohoto kandidáta?")) deleteCandidate.mutate();
-            }}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Smazat kandidáta
-          </button>
+          <div className="mt-5 pt-3 border-t border-border">
+            <button
+              onClick={() => {
+                if (confirm("Smazat tohoto kandidáta?")) deleteCandidate.mutate();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Smazat kandidáta
+            </button>
+          </div>
         )}
       </div>
     </div>

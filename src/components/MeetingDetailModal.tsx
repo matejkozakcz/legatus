@@ -212,24 +212,61 @@ export function MeetingDetailModal({
           }
         }
 
+        // AUTO-CREATE candidate from POH with jde_dal=true (no candidate linked yet)
+        let effectiveCandidateId = candidateId;
+        if (
+          !effectiveCandidateId &&
+          m.meeting_type === "POH" &&
+          pohDal === true &&
+          user
+        ) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("org_unit_id")
+            .eq("id", user.id)
+            .maybeSingle();
+          const orgUnitId = (prof as any)?.org_unit_id;
+          const candName = (m.case_name || "").trim() || "Nový kandidát";
+          if (orgUnitId) {
+            const { data: created } = await supabase
+              .from("recruitment_candidates" as any)
+              .insert({
+                org_unit_id: orgUnitId,
+                owner_id: user.id,
+                full_name: candName,
+                current_stage: "POH",
+                stage_history: [{ stage: "POH", at: new Date().toISOString(), by: user.id, source: "auto_from_meeting" }],
+              } as any)
+              .select("id")
+              .single();
+            if (created) {
+              effectiveCandidateId = (created as any).id;
+              await supabase
+                .from("client_meetings")
+                .update({ recruitment_candidate_id: effectiveCandidateId } as any)
+                .eq("id", m.id);
+            }
+          }
+        }
+
         // Auto-advance candidate stage for POH/NAB
-        if (candidateId && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
+        if (effectiveCandidateId && (m.meeting_type === "POH" || m.meeting_type === "NAB")) {
           const next = stageAfterMeeting(m.meeting_type, { jdeDal: pohDal });
           if (next && user) {
             const { data: cand } = await supabase
               .from("recruitment_candidates" as any)
               .select("current_stage, stage_history")
-              .eq("id", candidateId)
+              .eq("id", effectiveCandidateId)
               .maybeSingle();
             const curStage = (cand as any)?.current_stage as RecruitmentStage | undefined;
             // Only advance forward
-            const order = ["CALL","NAB","POH","INFO","POST","REG","SUPERVIZE"];
+            const order = ["NAB","POH","INFO","POST","SUPERVIZE","REG"];
             if (curStage && order.indexOf(next) > order.indexOf(curStage)) {
               const history = [...(((cand as any)?.stage_history) ?? []), { stage: next, at: new Date().toISOString(), by: user.id }];
               await supabase
                 .from("recruitment_candidates" as any)
                 .update({ current_stage: next, stage_changed_at: new Date().toISOString(), stage_history: history } as any)
-                .eq("id", candidateId);
+                .eq("id", effectiveCandidateId);
             }
           }
         }
