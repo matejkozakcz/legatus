@@ -158,8 +158,14 @@ export default function CallParty() {
 
   const tabs = [
     { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={14} /> },
+    { key: "group" as const, label: "Skupinová", icon: <Users size={14} /> },
     { key: "history" as const, label: "Historie", icon: <History size={14} /> },
   ];
+
+  // Auto-open Group tab when ?party=… is present
+  useEffect(() => {
+    if (directPartyId) setTab("group");
+  }, [directPartyId]);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
