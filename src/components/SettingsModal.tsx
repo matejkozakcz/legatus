@@ -4,6 +4,7 @@ import { X, Camera, ChevronDown, ChevronUp, Loader2, Zap, LogOut, Bell, RefreshC
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useVividBackground } from "@/hooks/useVividBackground";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePushSubscription } from "@/hooks/usePushSubscription";
