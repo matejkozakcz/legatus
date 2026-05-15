@@ -67,7 +67,7 @@ export async function fetchPeriodMeetings(userId: string, start: Date, end: Date
   const { data, error } = await supabase
     .from("client_meetings")
     .select(
-      "id, date, meeting_type, case_name, podepsane_bj, poradenstvi_status, bj_recognized_date, cancelled, outcome_recorded"
+      "id, date, meeting_type, case_id, case_name, podepsane_bj, poradenstvi_status, bj_recognized_date, cancelled, outcome_recorded"
     )
     .eq("user_id", userId)
     .in("meeting_type", ["POR", "FSA", "SER"])
