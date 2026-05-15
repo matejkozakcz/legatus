@@ -26,8 +26,8 @@ export const PLAN_LABELS: Record<string, string> = {
 };
 
 export const PLAN_DEFAULTS: Record<string, { price_base: number; price_per_user: number; users_included: number }> = {
-  pioneers: { price_base: 299, price_per_user: 99, users_included: 1 },
-  legacy: { price_base: 599, price_per_user: 159, users_included: 1 },
+  pioneers: { price_base: 299, price_per_user: 69, users_included: 1 },
+  legacy: { price_base: 499, price_per_user: 99, users_included: 1 },
   custom: { price_base: 0, price_per_user: 0, users_included: 1 },
 };
 
@@ -52,7 +52,10 @@ export interface PaymentRow {
   members_snapshot: Array<{ id: string; full_name: string; role: string; amount_czk: number }> | null;
 }
 
-export function calcPrice(billing: { price_base: number; price_per_user: number; users_included: number } | null, memberCount: number) {
+export function calcPrice(
+  billing: { price_base: number; price_per_user: number; users_included: number } | null,
+  memberCount: number,
+) {
   if (!billing) return 0;
   return billing.price_base + Math.max(0, memberCount - billing.users_included) * billing.price_per_user;
 }
@@ -77,18 +80,10 @@ export function StatusBadge({ status }: { status: "active" | "trial" | "unpaid" 
   );
 }
 
-export function PaymentTableRow({
-  payment,
-  ownerId,
-}: {
-  payment: PaymentRow;
-  ownerId?: string | null;
-}) {
+export function PaymentTableRow({ payment, ownerId }: { payment: PaymentRow; ownerId?: string | null }) {
   const [open, setOpen] = useState(false);
   const expandable = payment.status !== "info" && (payment.members_snapshot?.length ?? 0) > 0;
-  const total =
-    payment.amount_czk ??
-    (payment.members_snapshot?.reduce((s, m) => s + (m.amount_czk ?? 0), 0) ?? 0);
+  const total = payment.amount_czk ?? payment.members_snapshot?.reduce((s, m) => s + (m.amount_czk ?? 0), 0) ?? 0;
 
   return (
     <>
@@ -136,9 +131,7 @@ export function PaymentTableRow({
                       </div>
                       <div className="min-w-0">
                         <div className="text-foreground truncate">{m.full_name}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {ROLE_LABELS[m.role] ?? m.role}
-                        </div>
+                        <div className="text-[11px] text-muted-foreground">{ROLE_LABELS[m.role] ?? m.role}</div>
                       </div>
                     </div>
                     <div
@@ -164,16 +157,8 @@ export function PaymentTableRow({
   );
 }
 
-export function PaymentsTable({
-  payments,
-  ownerId,
-}: {
-  payments: PaymentRow[];
-  ownerId?: string | null;
-}) {
-  const totalPaid = payments
-    .filter((p) => p.status === "paid")
-    .reduce((s, p) => s + (p.amount_czk ?? 0), 0);
+export function PaymentsTable({ payments, ownerId }: { payments: PaymentRow[]; ownerId?: string | null }) {
+  const totalPaid = payments.filter((p) => p.status === "paid").reduce((s, p) => s + (p.amount_czk ?? 0), 0);
 
   if (payments.length === 0) {
     return <p className="text-sm text-muted-foreground italic">Žádné platby</p>;
