@@ -24,7 +24,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (isMobile) {
     return (
       <ProtectedRoute>
+        <AppBackground />
         <div
+          data-app-shell
           style={{
             minHeight: "100dvh",
             display: "flex",
