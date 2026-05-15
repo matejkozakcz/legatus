@@ -24,6 +24,7 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
   useBodyScrollLock(open);
   const { user, profile, isAdmin, godMode, toggleGodMode, signOut } = useAuth();
   const { theme, autoTheme, setAutoTheme } = useTheme();
+  const { vivid, setVivid } = useVividBackground();
   const isDark = theme === "dark";
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
