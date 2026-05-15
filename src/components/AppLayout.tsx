@@ -124,8 +124,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ProtectedRoute>
+      <AppBackground />
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div data-app-shell className="min-h-screen flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div
