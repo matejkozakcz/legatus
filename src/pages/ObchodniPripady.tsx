@@ -51,6 +51,9 @@ import { computeBjFunnel } from "@/lib/bjFunnel";
 import { useWorkspaceSettings } from "@/hooks/useWorkspaceSettings";
 import { MeetingDetailModal } from "@/components/MeetingDetailModal";
 import { MEETING_TYPE_COLORS, meetingTypeBadgeColors } from "@/lib/meetingColors";
+import { UzaverkaModal } from "@/components/uzaverka/UzaverkaModal";
+import { useProductionClosure } from "@/hooks/useProductionClosure";
+import { ClipboardCheck } from "lucide-react";
 
 type PoradkoStatus = "probehle" | "zrusene" | null;
 
@@ -463,8 +466,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [showCancelled, setShowCancelled] = useState(false);
   const [showUnrecordedModal, setShowUnrecordedModal] = useState(false);
   const [showUnrecordedBanner, setShowUnrecordedBanner] = useState(true);
+  const [uzaverkaOpen, setUzaverkaOpen] = useState(false);
+  const [uzaverkaDismissed, setUzaverkaDismissed] = useState(false);
 
   const { unrecordedMeetings, unrecordedCount } = useUnrecordedMeetings();
+  const { data: closureStatus } = useProductionClosure();
+  const showClosureBanner = !!closureStatus?.shouldOffer && !uzaverkaDismissed && !viewingAsUser;
 
 
   const periodRange = useMemo(
