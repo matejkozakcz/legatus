@@ -218,6 +218,7 @@ export type Database = {
           created_at: string
           date: string
           goals: Json | null
+          group_party_id: string | null
           id: string
           name: string
           notes: string | null
@@ -228,6 +229,7 @@ export type Database = {
           created_at?: string
           date?: string
           goals?: Json | null
+          group_party_id?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -238,13 +240,22 @@ export type Database = {
           created_at?: string
           date?: string
           goals?: Json | null
+          group_party_id?: string | null
           id?: string
           name?: string
           notes?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "call_party_sessions_group_party_id_fkey"
+            columns: ["group_party_id"]
+            isOneToOne: false
+            referencedRelation: "group_call_parties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cases: {
         Row: {
@@ -457,6 +468,98 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_call_parties: {
+        Row: {
+          allow_external: boolean
+          created_at: string
+          ended_at: string | null
+          goals: Json
+          host_id: string
+          id: string
+          join_token: string
+          name: string
+          notes: string | null
+          org_unit_id: string | null
+          planned_duration_min: number | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allow_external?: boolean
+          created_at?: string
+          ended_at?: string | null
+          goals?: Json
+          host_id: string
+          id?: string
+          join_token?: string
+          name: string
+          notes?: string | null
+          org_unit_id?: string | null
+          planned_duration_min?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_external?: boolean
+          created_at?: string
+          ended_at?: string | null
+          goals?: Json
+          host_id?: string
+          id?: string
+          join_token?: string
+          name?: string
+          notes?: string | null
+          org_unit_id?: string | null
+          planned_duration_min?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      group_call_party_participants: {
+        Row: {
+          id: string
+          invited_via: string
+          joined_at: string
+          left_at: string | null
+          party_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_via?: string
+          joined_at?: string
+          left_at?: string | null
+          party_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_via?: string
+          joined_at?: string
+          left_at?: string | null
+          party_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_call_party_participants_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "group_call_parties"
             referencedColumns: ["id"]
           },
         ]
@@ -1664,6 +1767,14 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
+      is_group_party_host: {
+        Args: { _party_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_party_participant: {
+        Args: { _party_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_in_vedouci_subtree: {
         Args: { _target_id: string; _vedouci_id: string }
         Returns: boolean

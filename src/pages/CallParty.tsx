@@ -5,7 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isToday } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History, ChevronDown, Users } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { GroupCallPartyTab } from "@/components/group-call-party/GroupCallPartyTab";
+import { GroupCallPartyRoom } from "@/components/group-call-party/GroupCallPartyRoom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -125,7 +128,9 @@ function computeCurrent(type: GoalType, entries: { client_name: string; outcome:
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CallParty() {
   const { profile } = useAuth();
-  const [tab, setTab] = useState<"new" | "history">("new");
+  const [tab, setTab] = useState<"new" | "history" | "group">("new");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const directPartyId = searchParams.get("party");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -153,8 +158,14 @@ export default function CallParty() {
 
   const tabs = [
     { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={14} /> },
+    { key: "group" as const, label: "Skupinová", icon: <Users size={14} /> },
     { key: "history" as const, label: "Historie", icon: <History size={14} /> },
   ];
+
+  // Auto-open Group tab when ?party=… is present
+  useEffect(() => {
+    if (directPartyId) setTab("group");
+  }, [directPartyId]);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
@@ -211,6 +222,11 @@ export default function CallParty() {
 
       {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
       {tab === "history" && <HistoryList onOpen={setOpenSession} />}
+      {tab === "group" && (
+        directPartyId
+          ? <GroupCallPartyRoom partyId={directPartyId} onClose={() => { setSearchParams({}); setTab("group"); }} />
+          : <GroupCallPartyTab />
+      )}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
