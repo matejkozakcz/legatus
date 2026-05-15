@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PushOptInBanner } from "@/components/PushOptInBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { WorkspaceViewBanner } from "@/components/WorkspaceViewBanner";
+import { AppBackground } from "@/components/AppBackground";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +24,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (isMobile) {
     return (
       <ProtectedRoute>
+        <AppBackground />
         <div
+          data-app-shell
           style={{
             minHeight: "100dvh",
             display: "flex",
@@ -121,8 +124,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ProtectedRoute>
+      <AppBackground />
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div data-app-shell className="min-h-screen flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div
