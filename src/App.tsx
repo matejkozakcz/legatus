@@ -90,6 +90,7 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route path="/call-party/join/:token" element={<JoinGroupCallParty />} />
             <Route
               path="/obchodni-pripady"
               element={
