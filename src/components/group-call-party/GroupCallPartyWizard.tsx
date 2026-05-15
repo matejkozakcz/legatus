@@ -191,6 +191,12 @@ function GroupLobby({ partyId, onClose }: { partyId: string; onClose: () => void
   const [activePreset, setActivePreset] = useState<Preset>(null);
   const [copied, setCopied] = useState(false);
   const [scheduledAtDraft, setScheduledAtDraft] = useState<string>("");
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (party?.scheduled_at) {
@@ -401,11 +407,6 @@ function GroupLobby({ partyId, onClose }: { partyId: string; onClose: () => void
 
   // Countdown
   const startTs = party.scheduled_at ? new Date(party.scheduled_at).getTime() : null;
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
   const remainingMs = startTs ? startTs - now : null;
 
   return (
