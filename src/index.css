@@ -129,6 +129,16 @@
   }
 }
 
+/* ===== Vivid background mode ===== */
+/* When enabled, AppBackground renders a fixed gradient at z-index:-1.
+   We need body + app shell to be transparent so the gradient shows through. */
+html[data-vivid] body {
+  background: transparent !important;
+}
+html[data-vivid] [data-app-shell] {
+  background: transparent !important;
+}
+
 /* ===== Dark mode variables ===== */
 .dark {
   --background: 188 35% 7%;
