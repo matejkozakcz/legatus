@@ -1,96 +1,68 @@
-# Skupinová Call Party
+## Cíl
 
-## Fáze 1 — Databáze
+Rozdělit "Novou call party" na výběr typu + víc kroků; přidat lobby pro skupinové party; přesunout leaderboard do samostatné záložky.
 
-**Nové tabulky:**
+## A. Top-level záložky (`src/pages/CallParty.tsx`)
 
-```
-group_call_parties
-  id, name, host_id, org_unit_id
-  scheduled_at, started_at, ended_at, planned_duration_min (nullable)
-  status: scheduled | live | ended
-  join_token (unique, rotovatelný)
-  goals jsonb            -- { calls: 100, fsa: 10, poh: 5 }
-  allow_external bool    -- pro link join mimo workspace
-  created_at, updated_at
+Současné: `Nová · Skupinová · Historie`
+Nové: `Nová · Žebříček · Historie`
 
-group_call_party_participants
-  id, party_id, user_id
-  joined_at, left_at (nullable)
-  invited_via: 'host' | 'preset_direct' | 'preset_subtree' | 'preset_garant' | 'manual' | 'link'
-  role: 'host' | 'caller'
-  UNIQUE(party_id, user_id)
-```
+"Skupinová" jako samostatná záložka mizí — vstup do skupinové party jde přes chooser v "Nové", běžící/naplánované party se zobrazí jako "Pokračovat" karty na úvodu chooseru.
 
-**Změny existujících:**
-- `call_party_sessions` + `group_party_id uuid nullable` (FK volný — bez constraint kvůli RLS rychlosti)
+## B. "Nová call party" — chooser
 
-**RLS:**
-- party SELECT: host, účastníci, vedoucí v subtree hosta, admin
-- party INSERT: kdokoli (host_id = auth.uid())
-- party UPDATE: jen host
-- public SELECT podle `join_token` (anon/authenticated) → join screen
-- participants: účastník může číst svoje + ostatní v té samé party; host může všechny mazat
+Pokud uživatel nemá rozjetou party (žádná aktivní `live` group party kde je host nebo participant, žádný rozpracovaný private wizard), zobrazí se:
 
-**Realtime publikace:**
-- `group_call_parties`, `group_call_party_participants`, `call_party_entries` (už existuje? ověřit, případně přidat)
+- Karta **Soukromá** (ikona `UserRound`) — krátký popisek "Budu volat sám."
+- Karta **Skupinová** (ikona `Users`) — popisek "Apes together strong."
 
-## Fáze 2 — Edge function
+Pod tím (volitelně) řádek "Pokračovat" s aktivními/naplánovanými skupinovými party uživatele (klik → lobby/room).
 
-`group-call-party-action` — POST akce:
-- `start` → status=live, started_at=now
-- `end` → status=ended, ended_at=now
-- `join_via_link` (token) → vytvoří participant row + návratová party data
-- `rotate_token`
+## C. Soukromá — 3 kroky
 
-## Fáze 3 — UI
+1. **Setup** — Název + Datum + Cíle (`GoalsEditor`). Tlačítko "Pokračovat".
+2. **Volání** — header (název, datum, progress cílů z aktuálních záznamů) + tabulka záznamů (současný `EntryRow`). Sticky bar "Mám dovoláno →".
+3. **Naplánovat schůzky** — současný step 2 (ScheduleRow + Uložit).
 
-**`src/pages/CallParty.tsx`** — přidat tab "Skupinová" vedle existujícího single-mode.
+`StepIndicator` rozšířen na 3 kroky.
 
-**Nové komponenty:**
+## D. Skupinová — 3 kroky (wizard nahrazuje současný `GroupCallPartyCreateModal`)
 
-1. `GroupCallPartyList.tsx` — seznam mých party (host + účastník), tlačítko "Vytvořit"
-2. `GroupCallPartyCreateModal.tsx`
-   - Název, plánovaný start, volitelná délka, cíle (calls/FSA/POH)
-   - Pozvánky:
-     - Toggle "Moje přímá struktura" / "Celá struktura" / "Moji nováčci" / "Workspace"
-     - PersonPicker pro manuální
-     - Switch "Povolit připojení přes odkaz mimo workspace"
-3. `GroupCallPartyRoom.tsx` — live UI:
-   - Header: status, timer/countdown, společný cíl progress bar
-   - Levý panel: existující call-party UI (entries) — reuse `useCallParty` + propíchnout `group_party_id`
-   - Pravý panel: leaderboard (tabs: Hovory / Schůzky / Konverze) + live feed (posledních 20 událostí)
-   - QR kód + odkaz pro pozvání (pro hosta)
-   - Tlačítka: Start / End party (host only)
-4. `JoinGroupCallParty.tsx` route `/call-party/join/:token` — landing s "Připojit se", po přihlášení zápis do participants
+Po kliknutí na "Skupinová" se nezobrazí dialog, ale inline wizard:
 
-**Realtime:**
-- Hook `useGroupParty(partyId)` — subscribe na entries + participants, agreguje leaderboard a feed
-- Konfety při splnění cíle (`src/lib/confetti.ts`)
+1. **Setup** — Název + Plánovaný start (datetime) + Délka (volitelná) + Cíle (calls, meetings) + Povolit externí odkaz.
+  → "Pokračovat" → vytvoří `group_call_parties` v stavu `scheduled` a založí host záznam.
+2. **Lobby (Pozvánky a guest list)** — header s názvem + plánovaným časem + countdown do startu.
+  - Preset chipy (moje přímá / celá struktura / nováčci / workspace) — klik přidá nebo odebere skupinu jako pozvané participanty (insert/delete `group_call_party_participants`).
+  - QR kód s odkazem (`/call-party/join/:token`) + tlačítko Kopírovat.
+  - Guest list — `participants` z `useGroupParty`, badge `pozvaný` / `připojený` (podle `joined_at` vs. nepřítomnosti relevantní `call_party_session`). Host je zvýrazněn 👑.
+  - Pole na úpravu plánovaného startu (datetime input → `scheduled_at`).
+  - Tlačítko **Spustit teď** (host) → `group-call-party-action` `start`. Pro non-host: text "Připravit ke startu…".
+3. **Live room** = stávající `GroupCallPartyRoom` (po přechodu z lobby).
 
-## Fáze 4 — Notifikace
+Logika zobrazení: pokud party je `scheduled` → lobby, pokud `live` → room, pokud `ended` → room v read-only.
 
-- Push při pozvání (využije existující `notifications` + `send-push-notification` edge fn)
-- Push 5 min před plánovaným startem
+## E. Žebříček tab
 
-## Technické detaily
+Nová záložka. Logika:
 
-- QR kód: `qrcode.react` (nová dep)
-- Časovač: čistý React interval, žádný cron
-- Leaderboard agregace: client-side z entries (subscribe), bez RPC
-- Limit: 1 live party per host současně (validace v edge fn)
+- Vezme nejnovější `live` group party uživatele; pokud žádná, poslední `ended` z posledních 14 dní.
+- Zobrazí header (název party, status, čas) + společný progress cílů + leaderboard (řazený podle hovorů) — vytaženo přes `useGroupParty` + `buildLeaderboard`.
+- Empty state: "Zatím žádná skupinová party. Vytvoř první v 'Nová'."
 
-## Co NEbudu dělat (mimo scope)
+## F. Mimo scope (pro V2/V3)
 
-- Cheers/emoji reakce → V3
-- Post-party PDF summary → V3
-- Cross-workspace discovery (jen přes přímý odkaz)
+- Cheers reakce — vynecháno dle požadavku.
+- Notifikace 5 min před startem (V3).
+- PDF souhrn (V3).
+- Cross-workspace discovery.
 
-## Pořadí buildu
+## Soubory
 
-1. Migrace (tabulky + RLS + realtime publikace)
-2. Edge function
-3. List + Create modal
-4. Room (host + caller view)
-5. Join route + QR
-6. Push pozvánky
+- `src/pages/CallParty.tsx` — chooser, 3-step private, nová tab struktura
+- `src/components/group-call-party/GroupCallPartyWizard.tsx` (nový) — 3-step group flow s lobby
+- `src/components/group-call-party/GroupCallPartyLeaderboardTab.tsx` (nový) — obsah Žebříček tabu
+- `GroupCallPartyCreateModal.tsx` — odstraněn (nahrazen wizardem)
+- `GroupCallPartyTab.tsx` — odstraněn nebo využit v chooser řádku "Pokračovat"
+
+Žádné DB migrace — schéma stačí.

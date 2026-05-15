@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isToday } from "date-fns";
 import { cs } from "date-fns/locale";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, CheckCircle2, History, ChevronDown, Users } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Loader2, PhoneCall, AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, History, ChevronDown, Users, UserRound, Trophy } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { GroupCallPartyTab } from "@/components/group-call-party/GroupCallPartyTab";
-import { GroupCallPartyRoom } from "@/components/group-call-party/GroupCallPartyRoom";
+import { GroupCallPartyWizard } from "@/components/group-call-party/GroupCallPartyWizard";
+import { GroupCallPartyLeaderboardTab } from "@/components/group-call-party/GroupCallPartyLeaderboardTab";
+import { useMyGroupParties } from "@/hooks/useGroupParty";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -128,7 +129,7 @@ function computeCurrent(type: GoalType, entries: { client_name: string; outcome:
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CallParty() {
   const { profile } = useAuth();
-  const [tab, setTab] = useState<"new" | "history" | "group">("new");
+  const [tab, setTab] = useState<"new" | "history" | "leaderboard">("new");
   const [searchParams, setSearchParams] = useSearchParams();
   const directPartyId = searchParams.get("party");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
@@ -158,18 +159,18 @@ export default function CallParty() {
 
   const tabs = [
     { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={14} /> },
-    { key: "group" as const, label: "Skupinová", icon: <Users size={14} /> },
+    { key: "leaderboard" as const, label: "Žebříček", icon: <Trophy size={14} /> },
     { key: "history" as const, label: "Historie", icon: <History size={14} /> },
   ];
 
-  // Auto-open Group tab when ?party=… is present
+  // Auto-open Nová with party context when ?party=… is present
   useEffect(() => {
-    if (directPartyId) setTab("group");
+    if (directPartyId) setTab("new");
   }, [directPartyId]);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
-      {/* Header — title left, segmented pill right (sjednoceno s Dashboard / Můj byznys) */}
+      {/* Header — title left, segmented pill right */}
       <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: 22 }}>
         <div className="flex items-center gap-3">
           <PhoneCall className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
@@ -220,24 +221,158 @@ export default function CallParty() {
         </div>
       </div>
 
-      {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
-      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
-      {tab === "group" && (
-        directPartyId
-          ? <GroupCallPartyRoom partyId={directPartyId} onClose={() => { setSearchParams({}); setTab("group"); }} />
-          : <GroupCallPartyTab />
+      {tab === "new" && (
+        <NewCallPartyEntry
+          directPartyId={directPartyId}
+          onClearDirect={() => setSearchParams({})}
+          onSaved={() => setTab("history")}
+        />
       )}
+      {tab === "leaderboard" && (
+        <GroupCallPartyLeaderboardTab
+          onOpenParty={(id) => { setSearchParams({ party: id }); setTab("new"); }}
+        />
+      )}
+      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
   );
 }
 
+// ─── Entry: chooser → private wizard | group wizard ──────────────────────────
+function NewCallPartyEntry({
+  directPartyId,
+  onClearDirect,
+  onSaved,
+}: {
+  directPartyId: string | null;
+  onClearDirect: () => void;
+  onSaved: () => void;
+}) {
+  const { profile } = useAuth();
+  const [mode, setMode] = useState<"chooser" | "private" | "group">(
+    directPartyId ? "group" : "chooser",
+  );
+  const [groupPartyId, setGroupPartyId] = useState<string | null>(directPartyId);
+
+  // Sync if directPartyId changes externally
+  useEffect(() => {
+    if (directPartyId) {
+      setGroupPartyId(directPartyId);
+      setMode("group");
+    }
+  }, [directPartyId]);
+
+  const { data: parties = [] } = useMyGroupParties(profile?.id ?? null);
+  const ongoing = parties.filter((p) => p.status === "live" || p.status === "scheduled");
+
+  const goChooser = () => {
+    setMode("chooser");
+    setGroupPartyId(null);
+    if (directPartyId) onClearDirect();
+  };
+
+  if (mode === "private") {
+    return <NewCallPartyForm onSaved={onSaved} onBack={() => setMode("chooser")} />;
+  }
+  if (mode === "group") {
+    return <GroupCallPartyWizard initialPartyId={groupPartyId} onClose={goChooser} />;
+  }
+
+  // Chooser
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ChooserCard
+          icon={<UserRound className="h-10 w-10" strokeWidth={1.5} />}
+          title="Soukromá"
+          description="Budu volat sám."
+          onClick={() => setMode("private")}
+        />
+        <ChooserCard
+          icon={<Users className="h-10 w-10" strokeWidth={1.5} />}
+          title="Skupinová"
+          description="Apes together strong."
+          onClick={() => { setGroupPartyId(null); setMode("group"); }}
+          accent
+        />
+      </div>
+
+      {ongoing.length > 0 && (
+        <div>
+          <h3 className="font-heading font-semibold text-xs uppercase tracking-wide mb-2" style={{ color: "#5a7479" }}>
+            Pokračovat
+          </h3>
+          <div className="space-y-2">
+            {ongoing.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setGroupPartyId(p.id); setMode("group"); }}
+                className="w-full text-left rounded-xl border border-border bg-card p-3 hover:shadow-md transition-shadow flex items-center gap-3"
+              >
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: p.status === "live" ? "#22c55e" : "#f59e0b", color: "#fff" }}
+                >
+                  {p.status === "live" ? "LIVE" : "Naplánováno"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-heading font-semibold text-sm truncate" style={{ color: "var(--text-primary, #00555f)" }}>{p.name}</div>
+                  {p.scheduled_at && (
+                    <div className="text-xs text-muted-foreground">
+                      {format(parseISO(p.scheduled_at), "EEEE d. M. · HH:mm", { locale: cs })}
+                    </div>
+                  )}
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChooserCard({
+  icon, title, description, onClick, accent,
+}: {
+  icon: React.ReactNode; title: string; description: string; onClick: () => void; accent?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative rounded-2xl border border-border bg-card p-6 text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+      style={{
+        background: accent ? "linear-gradient(135deg, rgba(0,171,189,0.08), rgba(0,85,95,0.04))" : undefined,
+      }}
+    >
+      <div
+        className="inline-flex items-center justify-center rounded-2xl mb-4"
+        style={{
+          width: 64, height: 64,
+          background: accent ? "rgba(0,171,189,0.12)" : "rgba(0,85,95,0.06)",
+          color: accent ? "#00abbd" : "#00555f",
+        }}
+      >
+        {icon}
+      </div>
+      <h3 className="font-heading font-bold text-lg mb-1" style={{ color: "var(--text-primary, #00555f)" }}>{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+      <ArrowRight
+        className="absolute top-6 right-6 h-5 w-5 transition-transform group-hover:translate-x-1"
+        style={{ color: accent ? "#00abbd" : "#5a7479" }}
+      />
+    </button>
+  );
+}
+
 // ─── New form ────────────────────────────────────────────────────────────────
-function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
+function NewCallPartyForm({ onSaved, onBack }: { onSaved: () => void; onBack?: () => void }) {
   const { profile } = useAuth();
   const qc = useQueryClient();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today());
   const [goals, setGoals] = useState<GoalItem[]>([
@@ -274,8 +409,6 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
       nezvedl: filled.filter((e) => e.outcome === "nezvedl").length,
     };
   }, [entries]);
-
-  const calledGoal = goals.find((g) => g.type === "called");
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -385,154 +518,212 @@ function NewCallPartyForm({ onSaved }: { onSaved: () => void }) {
 
   const scheduledEntries = entries.filter((e) => e.client_name.trim() && e.outcome === "domluveno" && e.meeting_type);
   const validCount = entries.filter((e) => e.client_name.trim()).length;
+  const activeGoals = goals.filter((g) => g.target != null && g.target > 0);
 
-  const handleNext = () => {
-    if (validCount === 0) {
-      toast.error("Přidej alespoň jeden záznam");
-      return;
-    }
-    setStep(2);
-  };
-
-  if (step === 2) {
+  // ─── STEP 1: Setup (name, date, goals) ─────────────────────────────────
+  if (step === 1) {
     return (
-      <div className="space-y-6">
-        <StepIndicator step={2} />
+      <div className="space-y-5">
+        <StepIndicator step={1} />
 
-        <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-          <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
-            Shrnutí Call party
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            {goals.filter((g) => g.target != null && g.target > 0).map((g) => (
-              <SummaryStat
-                key={g.type}
-                label={GOAL_LABEL_SHORT[g.type]}
-                actual={computeCurrent(g.type, entries as any)}
-                goal={g.target!}
-              />
-            ))}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Název</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Pondělní call party" />
+          </div>
+          <div>
+            <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Datum</label>
+            <DatePickerField value={date} onChange={setDate} />
           </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-          <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "var(--deep-hex, #00555f)" }}>
-            Naplánuj domluvené schůzky
-          </h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Doplň datum (povinné), čas a místo (volitelné). Bez data se použije datum Call party.
-          </p>
-          {scheduledEntries.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Žádné domluvené schůzky k naplánování.</p>
-          ) : (
-            <div className="space-y-3">
-              {scheduledEntries.map((e) => {
-                const realIdx = entries.indexOf(e);
-                return (
-                  <ScheduleRow key={realIdx} entry={e} fallbackDate={date} onChange={(p) => updateEntry(realIdx, p)} />
-                );
-              })}
-            </div>
-          )}
+          <div className="mb-4">
+            <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
+              Cíle pro tuto Call party
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Volitelné — sleduj progress během volání</p>
+          </div>
+          <GoalsEditor goals={goals} setGoals={setGoals} entries={entries} />
         </div>
 
         <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => setStep(1)} className="flex items-center gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Zpět k hovorům
-          </Button>
+          {onBack ? (
+            <Button variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-1" /> Zpět</Button>
+          ) : <span />}
           <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-            className="font-heading font-semibold"
+            onClick={() => setStep(2)}
             style={{ background: "#fc7c71", color: "#fff" }}
+            className="gap-1.5 hover:opacity-90"
           >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4" /> Uložit Call party
-              </span>
-            )}
+            Pokračovat <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
     );
   }
 
+  // ─── STEP 2: Calling — header (name, date, goal progress) + entries ────
+  if (step === 2) {
+    return (
+      <div className="space-y-5" style={{ paddingBottom: 96 }}>
+        <StepIndicator step={2} />
+
+        {/* Live header */}
+        <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+            <div>
+              <h2 className="font-heading font-bold text-lg" style={{ color: "var(--text-primary, #00555f)" }}>
+                {name.trim() || "Call party"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {format(parseISO(date), "EEEE d. M. yyyy", { locale: cs })}
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="gap-1">
+              <Pencil className="h-3.5 w-3.5" /> Upravit nastavení
+            </Button>
+          </div>
+          {activeGoals.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {activeGoals.map((g) => {
+                const cur = computeCurrent(g.type, entries as any);
+                const pct = g.target ? Math.min(100, (cur / g.target) * 100) : 0;
+                const meta = GOAL_META[g.type];
+                return (
+                  <div key={g.type} className="rounded-xl p-2.5" style={{ background: meta.tint, border: `0.5px solid ${meta.border}` }}>
+                    <div className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: meta.labelColor }}>
+                      {meta.label}
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-heading font-bold" style={{ fontSize: 18, color: meta.bar }}>{cur}</span>
+                      <span className="text-xs text-muted-foreground">/ {g.target}</span>
+                    </div>
+                    <div className="rounded-full overflow-hidden mt-1" style={{ height: 3, background: `${meta.bar}1f` }}>
+                      <div className="h-full transition-all" style={{ width: `${pct}%`, background: meta.bar }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Entries */}
+        <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
+              Záznamy hovorů
+            </h2>
+            <span className="text-xs text-muted-foreground">{validCount} {validCount === 1 ? "záznam" : validCount >= 2 && validCount <= 4 ? "záznamy" : "záznamů"}</span>
+          </div>
+
+          <div
+            className="hidden md:grid items-center mb-2 px-1"
+            style={{ gridTemplateColumns: "1.6fr 1fr 1fr 36px", gap: 10, fontSize: 10, letterSpacing: "0.06em", color: "#5a7479", textTransform: "uppercase", fontWeight: 600 }}
+          >
+            <span>Jméno</span>
+            <span>Výsledek</span>
+            <span>Typ schůzky</span>
+            <span />
+          </div>
+
+          <div className="space-y-2">
+            {entries.map((e, i) => (
+              <EntryRow
+                key={i}
+                entry={e}
+                onChange={(p) => updateEntry(i, p)}
+                onRemove={() => removeEntry(i)}
+                canRemove={entries.length > 1}
+                existingCases={existingCases}
+              />
+            ))}
+            <button
+              onClick={addEntry}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2.5 rounded-xl border border-dashed hover:bg-muted transition"
+              style={{ color: "#00abbd", borderColor: "#9cd5dc" }}
+            >
+              <Plus className="h-4 w-4" /> Přidat řádek
+            </button>
+          </div>
+        </div>
+
+        <StickyBottomBar
+          summary={summary}
+          onClick={() => {
+            if (validCount === 0) {
+              toast.error("Přidej alespoň jeden záznam");
+              return;
+            }
+            setStep(3);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ─── STEP 3: Schedule meetings ─────────────────────────────────────────
   return (
-    <div className="space-y-5" style={{ paddingBottom: 96 }}>
-      <StepIndicator step={1} />
+    <div className="space-y-6">
+      <StepIndicator step={3} />
 
-      {/* Name + Date */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Název</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Pondělní call party" />
-        </div>
-        <div>
-          <label className="block text-xs font-heading uppercase tracking-wide text-muted-foreground mb-1">Datum</label>
-          <DatePickerField value={date} onChange={setDate} />
-        </div>
-      </div>
-
-      {/* Goals card */}
       <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <div className="mb-4">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
-            Cíle pro tuto Call party
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Volitelné — sleduj progress během volání</p>
-        </div>
-
-        <GoalsEditor goals={goals} setGoals={setGoals} entries={entries} />
-      </div>
-
-      {/* Entries card */}
-      <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-heading font-semibold" style={{ fontSize: 15, color: "var(--deep-hex, #00555f)" }}>
-            Záznamy hovorů
-          </h2>
-          <span className="text-xs text-muted-foreground">{validCount} {validCount === 1 ? "záznam" : validCount >= 2 && validCount <= 4 ? "záznamy" : "záznamů"}</span>
-        </div>
-
-        {/* Column headers */}
-        <div
-          className="hidden md:grid items-center mb-2 px-1"
-          style={{ gridTemplateColumns: "1.6fr 1fr 1fr 36px", gap: 10, fontSize: 10, letterSpacing: "0.06em", color: "#5a7479", textTransform: "uppercase", fontWeight: 600 }}
-        >
-          <span>Jméno</span>
-          <span>Výsledek</span>
-          <span>Typ schůzky</span>
-          <span />
-        </div>
-
-        <div className="space-y-2">
-          {entries.map((e, i) => (
-            <EntryRow
-              key={i}
-              entry={e}
-              onChange={(p) => updateEntry(i, p)}
-              onRemove={() => removeEntry(i)}
-              canRemove={entries.length > 1}
-              existingCases={existingCases}
+        <h2 className="font-heading text-sm font-semibold mb-3" style={{ color: "var(--deep-hex, #00555f)" }}>
+          Shrnutí Call party
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          {activeGoals.map((g) => (
+            <SummaryStat
+              key={g.type}
+              label={GOAL_LABEL_SHORT[g.type]}
+              actual={computeCurrent(g.type, entries as any)}
+              goal={g.target!}
             />
           ))}
-          <button
-            onClick={addEntry}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-heading font-semibold px-3 py-2.5 rounded-xl border border-dashed hover:bg-muted transition"
-            style={{ color: "#00abbd", borderColor: "#9cd5dc" }}
-          >
-            <Plus className="h-4 w-4" /> Přidat řádek
-          </button>
         </div>
       </div>
 
-      {/* Sticky-style bottom bar */}
-      <StickyBottomBar
-        summary={summary}
-        onClick={handleNext}
-      />
+      <div className="rounded-2xl border border-border bg-card p-4 md:p-5">
+        <h2 className="font-heading text-sm font-semibold mb-1" style={{ color: "var(--deep-hex, #00555f)" }}>
+          Naplánuj domluvené schůzky
+        </h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Doplň datum (povinné), čas a místo (volitelné). Bez data se použije datum Call party.
+        </p>
+        {scheduledEntries.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Žádné domluvené schůzky k naplánování.</p>
+        ) : (
+          <div className="space-y-3">
+            {scheduledEntries.map((e) => {
+              const realIdx = entries.indexOf(e);
+              return (
+                <ScheduleRow key={realIdx} entry={e} fallbackDate={date} onChange={(p) => updateEntry(realIdx, p)} />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={() => setStep(2)} className="flex items-center gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Zpět k hovorům
+        </Button>
+        <Button
+          onClick={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+          className="font-heading font-semibold"
+          style={{ background: "#fc7c71", color: "#fff" }}
+        >
+          {saveMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4" /> Uložit Call party
+            </span>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1525,10 +1716,11 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
 }
 
 // ─── Step indicator (compact) ────────────────────────────────────────────────
-function StepIndicator({ step }: { step: 1 | 2 }) {
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
   const steps = [
-    { n: 1, label: "Záznam hovorů" },
-    { n: 2, label: "Naplánovat schůzky" },
+    { n: 1, label: "Nastavení" },
+    { n: 2, label: "Záznam hovorů" },
+    { n: 3, label: "Naplánovat schůzky" },
   ];
   return (
     <div className="flex items-start justify-center" style={{ gap: 0 }}>
