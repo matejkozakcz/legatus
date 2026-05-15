@@ -1003,6 +1003,36 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           )}
 
           {activeTab === "schuzky" && (<>
+          {/* Production closure banner — mobile */}
+          {showClosureBanner && (
+            <div
+              style={{
+                margin: "0 0 12px",
+                padding: "10px 14px",
+                borderRadius: 14,
+                background: isDark ? "rgba(0,171,189,0.12)" : "rgba(0,171,189,0.08)",
+                border: `1px solid ${isDark ? "rgba(0,171,189,0.3)" : "rgba(0,171,189,0.25)"}`,
+                display: "flex", alignItems: "center", gap: 10,
+              }}
+            >
+              <ClipboardCheck size={16} color="#00abbd" style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#4dd8e8" : "#00555f" }}>
+                Uzavři produkci za uplynulé období
+              </span>
+              <button
+                onClick={() => setUzaverkaOpen(true)}
+                style={{ fontSize: 11, fontWeight: 700, fontFamily: "Poppins, sans-serif", color: "#00abbd", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", whiteSpace: "nowrap" }}
+              >
+                Otevřít
+              </button>
+              <button
+                onClick={() => setUzaverkaDismissed(true)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+              >
+                <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
+              </button>
+            </div>
+          )}
           {/* Unrecorded meetings banner — mobile */}
           {unrecordedCount > 0 && showUnrecordedBanner && (
             <div
@@ -1282,6 +1312,24 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           {/* Desktop: Day picker + unrecorded banner for Schůzky tab */}
           {activeTab === "schuzky" && (
             <div style={{ marginBottom: 16 }}>
+              {showClosureBanner && (
+                <button
+                  onClick={() => setUzaverkaOpen(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%",
+                    padding: "10px 16px", marginBottom: 12, borderRadius: 14,
+                    background: isDark ? "rgba(0,171,189,0.10)" : "rgba(0,171,189,0.06)",
+                    border: `1px solid ${isDark ? "rgba(0,171,189,0.25)" : "rgba(0,171,189,0.2)"}`,
+                    cursor: "pointer", textAlign: "left",
+                  }}
+                >
+                  <ClipboardCheck size={16} color="#00abbd" style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#4dd8e8" : "#00555f" }}>
+                    Uzavři produkci za uplynulé období
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#00abbd" }}>Otevřít →</span>
+                </button>
+              )}
               {unrecordedCount > 0 && (
                 <button
                   onClick={() => setShowUnrecordedModal(true)}
