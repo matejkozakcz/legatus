@@ -41,7 +41,7 @@ export function GroupCallPartyCreateModal({ onClose, onCreated }: { onClose: () 
   const [manualSelected, setManualSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
-  // Load workspace peers (using existing RLS — Members can view workspace peers)
+  // Load workspace peers + my org_unit_id
   const { data: peers = [] } = useQuery({
     queryKey: ["workspace_peers_for_party", profile?.id],
     enabled: !!profile,
@@ -52,6 +52,15 @@ export function GroupCallPartyCreateModal({ onClose, onCreated }: { onClose: () 
         .neq("id", profile!.id);
       if (error) throw error;
       return data as Profile[];
+    },
+  });
+
+  const { data: myOrgUnit = null } = useQuery({
+    queryKey: ["my_org_unit", profile?.id],
+    enabled: !!profile,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("org_unit_id").eq("id", profile!.id).maybeSingle();
+      return (data?.org_unit_id ?? null) as string | null;
     },
   });
 
