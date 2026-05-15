@@ -276,89 +276,269 @@ export function UzaverkaModal({ open, onClose, year, month }: UzaverkaModalProps
               V tomto období žádné poradenství / analýzy / servisy.
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-6 px-6">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-muted-foreground border-b border-border">
-                    <th className="text-left py-2 pr-2">Klient</th>
-                    <th className="text-left py-2 px-2">Typ</th>
-                    <th className="text-left py-2 px-2">Datum</th>
-                    <th className="text-left py-2 px-2">Status</th>
-                    <th className="text-right py-2 px-2">BJ</th>
-                    <th className="text-left py-2 pl-2">Uznáno k</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => {
-                    const inPeriod =
-                      r.bj_recognized_date >= periodStartStr &&
-                      r.bj_recognized_date <= periodEndStr;
-                    return (
-                      <tr key={r.id} className="border-b border-border/60">
-                        <td
-                          className="py-2 pr-2 font-medium"
-                          style={{ color: "var(--text-primary)", maxWidth: 150 }}
-                        >
-                          <div className="truncate" title={r.case_name || "—"}>
-                            {r.case_name || "—"}
-                          </div>
-                        </td>
-                        <td className="py-2 px-2 text-xs">
-                          {meetingTypeLabel(r.meeting_type as MeetingType)}
-                        </td>
-                        <td className="py-2 px-2 text-xs whitespace-nowrap">
-                          {format(parseISO(r.date), "d. M.", { locale: cs })}
-                        </td>
-                        <td className="py-2 px-2">
-                          {r.cancelled ? (
-                            <span className="text-xs text-muted-foreground">Zrušeno</span>
-                          ) : (
-                            <select
-                              value={r.poradenstvi_status ?? ""}
-                              onChange={(e) =>
-                                updateRow(r.id, {
-                                  poradenstvi_status:
-                                    (e.target.value as RowState["poradenstvi_status"]) || null,
-                                })
+            (() => {
+              // Group rows by case_id (or "no-case" sentinel per row)
+              type Group = {
+                key: string;
+                caseId: string | null;
+                caseName: string;
+                rows: RowState[];
+              };
+              const groupMap = new Map<string, Group>();
+              for (const r of rows) {
+                const key = r.case_id || `__nc_${r.id}`;
+                if (!groupMap.has(key)) {
+                  groupMap.set(key, {
+                    key,
+                    caseId: r.case_id,
+                    caseName: r.case_name || "Bez případu",
+                    rows: [],
+                  });
+                }
+                groupMap.get(key)!.rows.push(r);
+              }
+              const groups = Array.from(groupMap.values()).map((g) => {
+                const pending = g.rows.some(
+                  (r) => !r.cancelled && r.poradenstvi_status == null
+                );
+                const totalBj = g.rows
+                  .filter((r) => !r.cancelled && r.poradenstvi_status === "probehle")
+                  .reduce((s, r) => s + (parseFloat(r.podepsane_bj) || 0), 0);
+                return { ...g, pending, totalBj };
+              });
+              const visible =
+                filter === "pending" ? groups.filter((g) => g.pending) : groups;
+
+              const approveAll = (g: typeof groups[number]) => {
+                setRows((rs) =>
+                  rs.map((r) =>
+                    g.rows.find((gr) => gr.id === r.id) &&
+                    !r.cancelled &&
+                    r.poradenstvi_status == null
+                      ? { ...r, poradenstvi_status: "probehle" }
+                      : r
+                  )
+                );
+              };
+
+              return (
+                <div>
+                  {/* Filter */}
+                  <div className="flex items-center gap-1 mb-3 text-xs">
+                    {(["pending", "all"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className="px-3 py-1 rounded-full font-semibold transition-colors"
+                        style={{
+                          background: filter === f ? "#00abbd" : "transparent",
+                          color: filter === f ? "white" : "var(--text-primary)",
+                          border: filter === f ? "none" : "1px solid hsl(var(--border))",
+                        }}
+                      >
+                        {f === "pending"
+                          ? `Jen čekající (${groups.filter((g) => g.pending).length})`
+                          : `Vše (${groups.length})`}
+                      </button>
+                    ))}
+                  </div>
+
+                  {visible.length === 0 ? (
+                    <div className="text-center py-10 text-sm text-muted-foreground">
+                      {filter === "pending"
+                        ? "Žádné čekající případy. Vše je vyřízeno 🎉"
+                        : "Žádné případy v tomto období."}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {visible.map((g) => {
+                        const isOpen =
+                          expanded[g.key] !== undefined ? expanded[g.key] : g.pending;
+                        const pendingCount = g.rows.filter(
+                          (r) => !r.cancelled && r.poradenstvi_status == null
+                        ).length;
+                        return (
+                          <div
+                            key={g.key}
+                            className="rounded-xl border border-border overflow-hidden"
+                          >
+                            {/* Header */}
+                            <button
+                              onClick={() =>
+                                setExpanded((e) => ({ ...e, [g.key]: !isOpen }))
                               }
-                              className="text-xs rounded border border-input bg-background px-1.5 py-1"
+                              className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-muted/40 text-left"
                             >
-                              <option value="">Čeká</option>
-                              <option value="probehle">Schváleno</option>
-                              <option value="zrusene">Zamítnuto</option>
-                            </select>
-                          )}
-                        </td>
-                        <td className="py-2 px-2 text-right">
-                          <input
-                            type="number"
-                            step="0.5"
-                            min={0}
-                            value={r.podepsane_bj}
-                            onChange={(e) => updateRow(r.id, { podepsane_bj: e.target.value })}
-                            className="w-16 text-xs text-right rounded border border-input bg-background px-2 py-1"
-                            disabled={r.cancelled || r.poradenstvi_status === "zrusene"}
-                          />
-                        </td>
-                        <td className="py-2 pl-2">
-                          <input
-                            type="date"
-                            value={r.bj_recognized_date}
-                            onChange={(e) => updateRow(r.id, { bj_recognized_date: e.target.value })}
-                            className="text-xs rounded border border-input bg-background px-1.5 py-1"
-                            style={{
-                              color: inPeriod ? "var(--text-primary)" : "#fc7c71",
-                              fontWeight: inPeriod ? 400 : 600,
-                            }}
-                            disabled={r.cancelled || r.poradenstvi_status === "zrusene"}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                              {isOpen ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <span
+                                className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex-shrink-0"
+                                style={{
+                                  background: g.pending
+                                    ? "rgba(245,158,11,0.15)"
+                                    : "rgba(34,197,94,0.15)",
+                                  color: g.pending ? "#b45309" : "#15803d",
+                                }}
+                              >
+                                {g.pending ? "Čekající" : "Uzavřen"}
+                              </span>
+                              <span
+                                className="font-semibold text-sm truncate flex-1"
+                                style={{ color: "var(--text-primary)" }}
+                                title={g.caseName}
+                              >
+                                {g.caseName}
+                              </span>
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                {g.rows.length} schůz.
+                              </span>
+                              <span
+                                className="text-xs font-bold flex-shrink-0"
+                                style={{ color: "#00abbd" }}
+                              >
+                                {g.totalBj} BJ
+                              </span>
+                            </button>
+
+                            {isOpen && (
+                              <div className="border-t border-border bg-muted/20">
+                                {pendingCount > 1 && (
+                                  <div className="px-3 py-2 border-b border-border flex justify-end">
+                                    <button
+                                      onClick={() => approveAll(g)}
+                                      className="text-xs font-semibold px-2.5 py-1 rounded-md"
+                                      style={{
+                                        background: "rgba(34,197,94,0.12)",
+                                        color: "#15803d",
+                                      }}
+                                    >
+                                      ✓ Schválit všechny ({pendingCount})
+                                    </button>
+                                  </div>
+                                )}
+                                <div className="divide-y divide-border">
+                                  {g.rows.map((r) => {
+                                    const inPeriod =
+                                      r.bj_recognized_date >= periodStartStr &&
+                                      r.bj_recognized_date <= periodEndStr;
+                                    return (
+                                      <div
+                                        key={r.id}
+                                        className="px-3 py-2 flex flex-wrap items-center gap-2 text-xs"
+                                      >
+                                        <span className="font-mono text-muted-foreground w-12 flex-shrink-0">
+                                          {format(parseISO(r.date), "d. M.", { locale: cs })}
+                                        </span>
+                                        <span
+                                          className="px-1.5 py-0.5 rounded font-semibold flex-shrink-0"
+                                          style={{ background: "hsl(var(--muted))" }}
+                                        >
+                                          {meetingTypeLabel(r.meeting_type as MeetingType)}
+                                        </span>
+                                        {r.cancelled ? (
+                                          <span className="text-muted-foreground italic">
+                                            Zrušeno
+                                          </span>
+                                        ) : (
+                                          <>
+                                            <select
+                                              value={r.poradenstvi_status ?? ""}
+                                              onChange={(e) =>
+                                                updateRow(r.id, {
+                                                  poradenstvi_status:
+                                                    (e.target.value as RowState["poradenstvi_status"]) ||
+                                                    null,
+                                                })
+                                              }
+                                              className="rounded border border-input bg-background px-1.5 py-1"
+                                            >
+                                              <option value="">Čeká</option>
+                                              <option value="probehle">Schváleno</option>
+                                              <option value="zrusene">Zamítnuto</option>
+                                            </select>
+                                            <div className="flex items-center gap-1 ml-auto">
+                                              <input
+                                                type="number"
+                                                step="0.5"
+                                                min={0}
+                                                value={r.podepsane_bj}
+                                                onChange={(e) =>
+                                                  updateRow(r.id, {
+                                                    podepsane_bj: e.target.value,
+                                                  })
+                                                }
+                                                className="w-14 text-right rounded border border-input bg-background px-1.5 py-1"
+                                                disabled={r.poradenstvi_status === "zrusene"}
+                                              />
+                                              <span className="text-muted-foreground">BJ</span>
+                                              <button
+                                                onClick={() =>
+                                                  updateRow(r.id, {
+                                                    showDateShift: !r.showDateShift,
+                                                  })
+                                                }
+                                                title="Posunout do jiného období"
+                                                className="ml-1 p-1 rounded hover:bg-muted"
+                                                style={{
+                                                  color: inPeriod
+                                                    ? "var(--muted-foreground)"
+                                                    : "#fc7c71",
+                                                }}
+                                              >
+                                                <CalendarClock className="h-3.5 w-3.5" />
+                                              </button>
+                                            </div>
+                                            {(r.showDateShift || !inPeriod) && (
+                                              <div className="w-full flex items-center gap-2 pt-1 pl-12">
+                                                <span className="text-muted-foreground">
+                                                  Uznáno k:
+                                                </span>
+                                                <input
+                                                  type="date"
+                                                  value={r.bj_recognized_date}
+                                                  onChange={(e) =>
+                                                    updateRow(r.id, {
+                                                      bj_recognized_date: e.target.value,
+                                                    })
+                                                  }
+                                                  className="rounded border border-input bg-background px-1.5 py-1"
+                                                  style={{
+                                                    color: inPeriod
+                                                      ? "var(--text-primary)"
+                                                      : "#fc7c71",
+                                                    fontWeight: inPeriod ? 400 : 600,
+                                                  }}
+                                                  disabled={r.poradenstvi_status === "zrusene"}
+                                                />
+                                                {!inPeriod && (
+                                                  <span
+                                                    className="text-[10px] font-semibold"
+                                                    style={{ color: "#fc7c71" }}
+                                                  >
+                                                    mimo období
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           )}
 
           {/* Poznámka */}
