@@ -1716,10 +1716,11 @@ function SessionDetailModal({ session, onClose }: { session: SessionRow; onClose
 }
 
 // ─── Step indicator (compact) ────────────────────────────────────────────────
-function StepIndicator({ step }: { step: 1 | 2 }) {
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
   const steps = [
-    { n: 1, label: "Záznam hovorů" },
-    { n: 2, label: "Naplánovat schůzky" },
+    { n: 1, label: "Nastavení" },
+    { n: 2, label: "Záznam hovorů" },
+    { n: 3, label: "Naplánovat schůzky" },
   ];
   return (
     <div className="flex items-start justify-center" style={{ gap: 0 }}>
