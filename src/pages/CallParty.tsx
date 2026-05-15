@@ -222,6 +222,11 @@ export default function CallParty() {
 
       {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
       {tab === "history" && <HistoryList onOpen={setOpenSession} />}
+      {tab === "group" && (
+        directPartyId
+          ? <GroupCallPartyRoom partyId={directPartyId} onClose={() => { setSearchParams({}); setTab("group"); }} />
+          : <GroupCallPartyTab />
+      )}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
