@@ -504,13 +504,6 @@ export type Database = {
             referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "individual_meetings_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       info_attendees: {
