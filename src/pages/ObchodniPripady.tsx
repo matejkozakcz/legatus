@@ -4,9 +4,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  format, parseISO, addDays, subDays, isSameDay,
-  startOfWeek, endOfWeek, addWeeks, subWeeks,
-  startOfMonth, endOfMonth, addMonths, subMonths,
+  format,
+  parseISO,
+  addDays,
+  subDays,
+  isSameDay,
+  startOfWeek,
+  endOfWeek,
+  addWeeks,
+  subWeeks,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
   isWithinInterval,
 } from "date-fns";
 import { cs } from "date-fns/locale";
@@ -373,7 +383,9 @@ function CaseAccordion({
                       <span style={{ color: "#fc7c71", fontWeight: 600 }}>Zrušená</span>
                     ) : m.outcome_recorded ? (
                       <span style={{ color: "#22c55e", fontWeight: 600 }}>Proběhlá</span>
-                    ) : format(parseISO(m.date), "d. M. yyyy", { locale: cs })}
+                    ) : (
+                      format(parseISO(m.date), "d. M. yyyy", { locale: cs })
+                    )}
                   </span>
                   <span
                     className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
@@ -455,7 +467,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const [detailMeeting, setDetailMeeting] = useState<Meeting | null>(null);
   const [preCaseId, setPreCaseId] = useState<string>("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [followUp, setFollowUp] = useState<{ caseId: string; caseName: string; meetingType: MeetingType; parentMeetingId: string | null } | null>(null);
+  const [followUp, setFollowUp] = useState<{
+    caseId: string;
+    caseName: string;
+    meetingType: MeetingType;
+    parentMeetingId: string | null;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<"schuzky" | "pripady" | "nabor">(mobileEmbedded ? "pripady" : "schuzky");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
@@ -472,7 +489,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const { unrecordedMeetings, unrecordedCount } = useUnrecordedMeetings();
   const { data: closureStatus } = useProductionClosure();
   const showClosureBanner = !!closureStatus?.shouldOffer && !uzaverkaDismissed && !viewingAsUser;
-
 
   const periodRange = useMemo(
     () => getProductionPeriodForMonth(selectedYear, selectedMonth),
@@ -552,7 +568,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       const { data: entries, error: eErr } = await supabase
         .from("call_party_entries")
         .select("id, client_name, outcome, meeting_type, created_case_id, session_id")
-        .in("session_id", sessions.map((s) => s.id))
+        .in(
+          "session_id",
+          sessions.map((s) => s.id),
+        )
         .not("created_case_id", "is", null);
       if (eErr) throw eErr;
       return (entries || []).map((e) => {
@@ -603,9 +622,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
   const meetingsForDay = useMemo(() => {
     const startStr = format(dateRange.start, "yyyy-MM-dd");
     const endStr = format(dateRange.end, "yyyy-MM-dd");
-    return meetings
-      .filter((m) => m.date >= startStr && m.date <= endStr)
-      .sort((a, b) => a.date.localeCompare(b.date));
+    return meetings.filter((m) => m.date >= startStr && m.date <= endStr).sort((a, b) => a.date.localeCompare(b.date));
   }, [meetings, dateRange]);
 
   // Desktop: aplikuj filtry typu schůzky a viditelnost zrušených
@@ -652,8 +669,18 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       };
     }
     const monthNamesFull = [
-      "Leden","Únor","Březen","Duben","Květen","Červen",
-      "Červenec","Srpen","Září","Říjen","Listopad","Prosinec",
+      "Leden",
+      "Únor",
+      "Březen",
+      "Duben",
+      "Květen",
+      "Červen",
+      "Červenec",
+      "Srpen",
+      "Září",
+      "Říjen",
+      "Listopad",
+      "Prosinec",
     ];
     const curPeriod = getProductionPeriodMonth(selectedDate);
     const todayPeriod = getProductionPeriodMonth(new Date());
@@ -686,7 +713,6 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       pickerMode: "month" as const,
     };
   }, [viewMode, selectedDate]);
-
 
   // ── Case mutations ──
   const saveCaseMutation = useMutation({
@@ -743,7 +769,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
             ? parseFloat(form.podepsane_bj) || 0
             : 0,
         // Doporučení podle typu
-        doporuceni_fsa: !form.cancelled && (form.meeting_type === "FSA" || form.meeting_type === "NAB") ? parseInt(form.doporuceni_fsa) || 0 : 0,
+        doporuceni_fsa:
+          !form.cancelled && (form.meeting_type === "FSA" || form.meeting_type === "NAB")
+            ? parseInt(form.doporuceni_fsa) || 0
+            : 0,
         doporuceni_poradenstvi:
           !form.cancelled && (form.meeting_type === "POR" || form.meeting_type === "SER")
             ? parseInt(form.doporuceni_poradenstvi) || 0
@@ -758,8 +787,16 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         has_pohovor: false,
         poznamka: form.poznamka.trim() || null,
         // INFO/POST výsledek
-        info_zucastnil_se: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") ? form.info_zucastnil_se : null,
-        info_pocet_lidi: !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST") && form.info_pocet_lidi !== "" ? parseInt(form.info_pocet_lidi) || 0 : null,
+        info_zucastnil_se:
+          !form.cancelled && (form.meeting_type === "INFO" || form.meeting_type === "POST")
+            ? form.info_zucastnil_se
+            : null,
+        info_pocet_lidi:
+          !form.cancelled &&
+          (form.meeting_type === "INFO" || form.meeting_type === "POST") &&
+          form.info_pocet_lidi !== ""
+            ? parseInt(form.info_pocet_lidi) || 0
+            : null,
         parent_meeting_id: form.parent_meeting_id ?? null,
       };
       let insertedId: string | undefined;
@@ -772,7 +809,11 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         if (error) throw error;
         syncMeetingToCalendar(id, "UPDATE");
       } else {
-        const { data, error } = await supabase.from("client_meetings").insert(payload as any).select("id").single();
+        const { data, error } = await supabase
+          .from("client_meetings")
+          .insert(payload as any)
+          .select("id")
+          .single();
         if (error) throw error;
         insertedId = (data as any)?.id;
         if (insertedId) syncMeetingToCalendar(insertedId, "INSERT");
@@ -790,7 +831,12 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
       setEditMeeting(null);
       // Show follow-up if not cancelled and not already from follow-up
       if (!variables.skipFollowUp && !savedForm.cancelled && savedCaseId && savedCase) {
-        setFollowUp({ caseId: savedCaseId, caseName: savedCase.nazev_pripadu, meetingType: savedForm.meeting_type, parentMeetingId: result?.insertedId ?? null });
+        setFollowUp({
+          caseId: savedCaseId,
+          caseName: savedCase.nazev_pripadu,
+          meetingType: savedForm.meeting_type,
+          parentMeetingId: result?.insertedId ?? null,
+        });
       }
     },
     onError: (err: any) => toast.error(err.message || "Chyba při ukládání"),
@@ -881,7 +927,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         location_type: editMeeting.location_type || "",
         location_detail: editMeeting.location_detail || "",
         info_zucastnil_se: (editMeeting as any).info_zucastnil_se ?? null,
-        info_pocet_lidi: (editMeeting as any).info_pocet_lidi != null ? String((editMeeting as any).info_pocet_lidi) : "",
+        info_pocet_lidi:
+          (editMeeting as any).info_pocet_lidi != null ? String((editMeeting as any).info_pocet_lidi) : "",
       }
     : defaultForm(preCaseId);
 
@@ -947,298 +994,423 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
 
           {/* Tab bar — hide when embedded in MobileObchod */}
           {!mobileEmbedded && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-            <div style={{
-              display: "flex",
-              background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
-              borderRadius: 14,
-              padding: 4,
-              gap: 4,
-              width: "100%",
-            }}>
-              {([
-                { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={14} /> },
-                { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
-                ...(showRecruitmentFunnel ? [{ key: "nabor" as const, label: "Nábor", icon: <UserPlus size={14} /> }] : []),
-              ]).map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+                  borderRadius: 14,
+                  padding: 4,
+                  gap: 4,
+                  width: "100%",
+                }}
+              >
+                {[
+                  { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={14} /> },
+                  { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={14} /> },
+                  ...(showRecruitmentFunnel
+                    ? [{ key: "nabor" as const, label: "Zapracování", icon: <UserPlus size={14} /> }]
+                    : []),
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: activeTab === tab.key ? 700 : 500,
+                      fontFamily: "Poppins, sans-serif",
+                      background: activeTab === tab.key ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff") : "transparent",
+                      color: activeTab === tab.key ? (isDark ? "#4dd8e8" : "#00555f") : isDark ? "#7aadb3" : "#6b8a8f",
+                      boxShadow: activeTab === tab.key ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)") : "none",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <span style={{ position: "relative" }}>
+                      {tab.icon}
+                      {tab.key === "schuzky" && unrecordedCount > 0 && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: -2,
+                            right: -6,
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#fc7c71",
+                          }}
+                        />
+                      )}
+                    </span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "schuzky" && (
+            <>
+              {/* Production closure banner — mobile */}
+              {showClosureBanner && (
+                <div
                   style={{
-                    flex: 1,
+                    margin: "0 0 12px",
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    background: isDark ? "rgba(0,171,189,0.12)" : "rgba(0,171,189,0.08)",
+                    border: `1px solid ${isDark ? "rgba(0,171,189,0.3)" : "rgba(0,171,189,0.25)"}`,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    padding: "8px 12px",
-                    borderRadius: 10,
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: activeTab === tab.key ? 700 : 500,
-                    fontFamily: "Poppins, sans-serif",
-                    background: activeTab === tab.key
-                      ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
-                      : "transparent",
-                    color: activeTab === tab.key
-                      ? (isDark ? "#4dd8e8" : "#00555f")
-                      : (isDark ? "#7aadb3" : "#6b8a8f"),
-                    boxShadow: activeTab === tab.key
-                      ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
-                      : "none",
-                    transition: "all 0.15s ease",
+                    gap: 10,
                   }}
                 >
-                  <span style={{ position: "relative" }}>
-                    {tab.icon}
-                    {tab.key === "schuzky" && unrecordedCount > 0 && (
-                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
-                    )}
-                  </span>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          )}
-
-          {activeTab === "schuzky" && (<>
-          {/* Production closure banner — mobile */}
-          {showClosureBanner && (
-            <div
-              style={{
-                margin: "0 0 12px",
-                padding: "10px 14px",
-                borderRadius: 14,
-                background: isDark ? "rgba(0,171,189,0.12)" : "rgba(0,171,189,0.08)",
-                border: `1px solid ${isDark ? "rgba(0,171,189,0.3)" : "rgba(0,171,189,0.25)"}`,
-                display: "flex", alignItems: "center", gap: 10,
-              }}
-            >
-              <ClipboardCheck size={16} color="#00abbd" style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#4dd8e8" : "#00555f" }}>
-                Uzavři produkci za uplynulé období
-              </span>
-              <button
-                onClick={() => setUzaverkaOpen(true)}
-                style={{ fontSize: 11, fontWeight: 700, fontFamily: "Poppins, sans-serif", color: "#00abbd", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", whiteSpace: "nowrap" }}
-              >
-                Otevřít
-              </button>
-              <button
-                onClick={() => setUzaverkaDismissed(true)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
-              >
-                <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
-              </button>
-            </div>
-          )}
-          {/* Unrecorded meetings banner — mobile */}
-          {unrecordedCount > 0 && showUnrecordedBanner && (
-            <div
-              style={{
-                margin: "0 0 12px",
-                padding: "10px 14px",
-                borderRadius: 14,
-                background: isDark ? "rgba(252,124,113,0.12)" : "rgba(252,124,113,0.08)",
-                border: `1px solid ${isDark ? "rgba(252,124,113,0.25)" : "rgba(252,124,113,0.2)"}`,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <AlertCircle size={16} color="#fc7c71" style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
-                {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
-              </span>
-              <button
-                onClick={() => setShowUnrecordedModal(true)}
-                style={{
-                  fontSize: 11, fontWeight: 700, fontFamily: "Poppins, sans-serif",
-                  color: "#fc7c71", background: "none", border: "none", cursor: "pointer",
-                  textDecoration: "underline", whiteSpace: "nowrap",
-                }}
-              >
-                Zobrazit
-              </button>
-              <button
-                onClick={() => setShowUnrecordedBanner(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
-              >
-                <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
-              </button>
-            </div>
-          )}
-          {/* Fixed: day picker + add meeting button */}
-          <div
-            style={{
-              position: "fixed",
-              bottom: 120,
-              left: 16,
-              right: 16,
-              zIndex: 40,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", gap: 8 }}>
-              {!viewingAsUser && (
-                <button
-                  onClick={() => {
-                    setEditMeeting(null);
-                    setPreCaseId("");
-                    setMeetingModalOpen(true);
-                  }}
-                  className="btn btn-primary btn-md flex items-center justify-center gap-2"
-                  style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
-                >
-                  <Plus size={18} />
-                  Přidat schůzku
-                </button>
-              )}
-              <button
-                onClick={() => !isSameDay(selectedDate, new Date()) && setSelectedDate(new Date())}
-                disabled={isSameDay(selectedDate, new Date())}
-                style={{
-                  height: 40, padding: "0 16px", borderRadius: 12, border: "none",
-                  background: isSameDay(selectedDate, new Date()) ? (isDark ? "rgba(255,255,255,0.08)" : "#dde8ea") : "#00abbd",
-                  color: isSameDay(selectedDate, new Date()) ? (isDark ? "rgba(255,255,255,0.3)" : "#a0b4b8") : "#fff",
-                  fontWeight: 600, fontSize: 13, cursor: isSameDay(selectedDate, new Date()) ? "default" : "pointer",
-                  fontFamily: "Poppins, sans-serif",
-                  boxShadow: isSameDay(selectedDate, new Date()) ? "none" : "0 -2px 16px rgba(0,0,0,0.06)",
-                  transition: "all 0.2s",
-                  flexShrink: 0,
-                }}
-              >
-                Dnes
-              </button>
-            </div>
-            <div
-              ref={mobilePickerRef}
-              style={{
-                background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
-                backdropFilter: "blur(20px) saturate(1.8)",
-                WebkitBackdropFilter: "blur(20px) saturate(1.8)",
-                borderRadius: 16,
-                padding: "10px 16px",
-                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(225,233,235,0.8)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                position: "relative",
-              }}
-            >
-              <button
-                onClick={() => setSelectedDate((d) => subDays(d, 1))}
-                style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >
-                <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
-              </button>
-              <button
-                onClick={() => setMobilePickerOpen((o) => !o)}
-                style={{
-                  textAlign: "center", background: "none", border: "none",
-                  cursor: "pointer", padding: "4px 8px", borderRadius: 10,
-                }}
-              >
-                <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
-                  {isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
-                </div>
-                <div style={{ fontFamily: "Poppins, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
-                  {format(selectedDate, "d. MMMM yyyy", { locale: cs })}
-                </div>
-              </button>
-              <button
-                onClick={() => setSelectedDate((d) => addDays(d, 1))}
-                style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
-                  border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >
-                <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
-              </button>
-
-              {/* Calendar popup */}
-              {mobilePickerOpen && (
-                <div style={{
-                  position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
-                  background: isDark ? "#0a1f23" : "#fff", borderRadius: 14,
-                  border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
-                  boxShadow: "0 -8px 24px rgba(0,0,0,0.08)", overflow: "hidden",
-                }}>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    month={selectedDate}
-                    onMonthChange={() => {}}
-                    onSelect={(date) => {
-                      if (date) {
-                        setSelectedDate(date);
-                        setMobilePickerOpen(false);
-                      }
+                  <ClipboardCheck size={16} color="#00abbd" style={{ flexShrink: 0 }} />
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      fontFamily: "Poppins, sans-serif",
+                      color: isDark ? "#4dd8e8" : "#00555f",
                     }}
-                    locale={cs}
-                    weekStartsOn={1}
-                    className="p-3 pointer-events-auto"
-                  />
+                  >
+                    Uzavři produkci za uplynulé období
+                  </span>
+                  <button
+                    onClick={() => setUzaverkaOpen(true)}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "Poppins, sans-serif",
+                      color: "#00abbd",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Otevřít
+                  </button>
+                  <button
+                    onClick={() => setUzaverkaDismissed(true)}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                  >
+                    <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
+                  </button>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Mobile meetings list for selected day */}
-          {meetingsForDay.length === 0 ? (
-            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-              Žádné schůzky pro tento den.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {meetingsForDay.map((m) => {
-                const caseObj = cases.find((c) => c.id === m.case_id);
-                return (
-                  <div
-                    key={m.id}
-                    className="legatus-card cursor-pointer"
-                    style={{ padding: "12px 16px", opacity: m.cancelled ? 0.5 : 1 }}
-                    onClick={() => setDetailMeeting(m)}
+              {/* Unrecorded meetings banner — mobile */}
+              {unrecordedCount > 0 && showUnrecordedBanner && (
+                <div
+                  style={{
+                    margin: "0 0 12px",
+                    padding: "10px 14px",
+                    borderRadius: 14,
+                    background: isDark ? "rgba(252,124,113,0.12)" : "rgba(252,124,113,0.08)",
+                    border: `1px solid ${isDark ? "rgba(252,124,113,0.25)" : "rgba(252,124,113,0.2)"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <AlertCircle size={16} color="#fc7c71" style={{ flexShrink: 0 }} />
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      fontFamily: "Poppins, sans-serif",
+                      color: isDark ? "#fc7c71" : "#c0392b",
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-                        style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
-                      >
-                        {meetingTypeLabel(m.meeting_type)}
-                      </span>
-                      <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
-                        {m.case_name || caseObj?.nazev_pripadu || "—"}
-                      </span>
-                      {m.cancelled && (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: "#ef4444", background: "rgba(239,68,68,0.12)", borderRadius: 8, padding: "2px 8px" }}>Zrušená</span>
-                      )}
-                      {!m.cancelled && m.outcome_recorded && (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", background: "rgba(34,197,94,0.12)", borderRadius: 8, padding: "2px 8px" }}>Proběhlá</span>
-                      )}
-                      {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
-                      )}
+                    {unrecordedCount}{" "}
+                    {unrecordedCount === 1
+                      ? "schůzka bez výsledku"
+                      : unrecordedCount < 5
+                        ? "schůzky bez výsledku"
+                        : "schůzek bez výsledku"}
+                  </span>
+                  <button
+                    onClick={() => setShowUnrecordedModal(true)}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "Poppins, sans-serif",
+                      color: "#fc7c71",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Zobrazit
+                  </button>
+                  <button
+                    onClick={() => setShowUnrecordedBanner(false)}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                  >
+                    <X size={14} color={isDark ? "#7aadb3" : "#8aadb3"} />
+                  </button>
+                </div>
+              )}
+              {/* Fixed: day picker + add meeting button */}
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: 120,
+                  left: 16,
+                  right: 16,
+                  zIndex: 40,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: "flex", gap: 8 }}>
+                  {!viewingAsUser && (
+                    <button
+                      onClick={() => {
+                        setEditMeeting(null);
+                        setPreCaseId("");
+                        setMeetingModalOpen(true);
+                      }}
+                      className="btn btn-primary btn-md flex items-center justify-center gap-2"
+                      style={{ flex: 1, boxShadow: "0 -2px 16px rgba(0,0,0,0.06)" }}
+                    >
+                      <Plus size={18} />
+                      Přidat schůzku
+                    </button>
+                  )}
+                  <button
+                    onClick={() => !isSameDay(selectedDate, new Date()) && setSelectedDate(new Date())}
+                    disabled={isSameDay(selectedDate, new Date())}
+                    style={{
+                      height: 40,
+                      padding: "0 16px",
+                      borderRadius: 12,
+                      border: "none",
+                      background: isSameDay(selectedDate, new Date())
+                        ? isDark
+                          ? "rgba(255,255,255,0.08)"
+                          : "#dde8ea"
+                        : "#00abbd",
+                      color: isSameDay(selectedDate, new Date())
+                        ? isDark
+                          ? "rgba(255,255,255,0.3)"
+                          : "#a0b4b8"
+                        : "#fff",
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: isSameDay(selectedDate, new Date()) ? "default" : "pointer",
+                      fontFamily: "Poppins, sans-serif",
+                      boxShadow: isSameDay(selectedDate, new Date()) ? "none" : "0 -2px 16px rgba(0,0,0,0.06)",
+                      transition: "all 0.2s",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Dnes
+                  </button>
+                </div>
+                <div
+                  ref={mobilePickerRef}
+                  style={{
+                    background: isDark ? "rgba(9,29,33,0.85)" : "rgba(255,255,255,0.92)",
+                    backdropFilter: "blur(20px) saturate(1.8)",
+                    WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+                    borderRadius: 16,
+                    padding: "10px 16px",
+                    border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(225,233,235,0.8)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    position: "relative",
+                  }}
+                >
+                  <button
+                    onClick={() => setSelectedDate((d) => subDays(d, 1))}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <ChevronLeft size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+                  </button>
+                  <button
+                    onClick={() => setMobilePickerOpen((o) => !o)}
+                    style={{
+                      textAlign: "center",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      borderRadius: 10,
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: "#00abbd", fontWeight: 600 }}>
+                      {isSameDay(selectedDate, new Date()) ? "Dnes" : format(selectedDate, "EEEE", { locale: cs })}
                     </div>
-                    {m.case_name && (
-                      <div style={{ fontSize: 12, color: "var(--text-secondary, #6b8a8e)", marginTop: 4, marginLeft: 2 }}>
-                        {m.case_name}
+                    <div
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 15,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {format(selectedDate, "d. MMMM yyyy", { locale: cs })}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setSelectedDate((d) => addDays(d, 1))}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      background: isDark ? "rgba(255,255,255,0.1)" : "#dde8ea",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <ChevronRight size={15} color={isDark ? "#4dd8e8" : "#00555f"} />
+                  </button>
+
+                  {/* Calendar popup */}
+                  {mobilePickerOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "calc(100% + 6px)",
+                        left: 0,
+                        right: 0,
+                        zIndex: 50,
+                        background: isDark ? "#0a1f23" : "#fff",
+                        borderRadius: 14,
+                        border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e1e9eb",
+                        boxShadow: "0 -8px 24px rgba(0,0,0,0.08)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        month={selectedDate}
+                        onMonthChange={() => {}}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSelectedDate(date);
+                            setMobilePickerOpen(false);
+                          }
+                        }}
+                        locale={cs}
+                        weekStartsOn={1}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile meetings list for selected day */}
+              {meetingsForDay.length === 0 ? (
+                <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+                  Žádné schůzky pro tento den.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {meetingsForDay.map((m) => {
+                    const caseObj = cases.find((c) => c.id === m.case_id);
+                    return (
+                      <div
+                        key={m.id}
+                        className="legatus-card cursor-pointer"
+                        style={{ padding: "12px 16px", opacity: m.cancelled ? 0.5 : 1 }}
+                        onClick={() => setDetailMeeting(m)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                            style={meetingTypeBadgeStyle(m.meeting_type, m.cancelled)}
+                          >
+                            {meetingTypeLabel(m.meeting_type)}
+                          </span>
+                          <span
+                            className="font-heading font-semibold text-sm flex-1 truncate"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            {m.case_name || caseObj?.nazev_pripadu || "—"}
+                          </span>
+                          {m.cancelled && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: "#ef4444",
+                                background: "rgba(239,68,68,0.12)",
+                                borderRadius: 8,
+                                padding: "2px 8px",
+                              }}
+                            >
+                              Zrušená
+                            </span>
+                          )}
+                          {!m.cancelled && m.outcome_recorded && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: "#22c55e",
+                                background: "rgba(34,197,94,0.12)",
+                                borderRadius: 8,
+                                padding: "2px 8px",
+                              }}
+                            >
+                              Proběhlá
+                            </span>
+                          )}
+                          {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
+                          )}
+                        </div>
+                        {m.case_name && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-secondary, #6b8a8e)",
+                              marginTop: 4,
+                              marginLeft: 2,
+                            }}
+                          >
+                            {m.case_name}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
-          </>)}
           {activeTab === "nabor" && <RecruitmentTab />}
         </>
       ) : (
@@ -1255,20 +1427,24 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
 
           {/* Tab bar — matching mobile style */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-            <div style={{
-              display: "flex",
-              background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
-              borderRadius: 14,
-              padding: 4,
-              gap: 4,
-              width: "100%",
-              maxWidth: 520,
-            }}>
-              {([
+            <div
+              style={{
+                display: "flex",
+                background: isDark ? "rgba(255,255,255,0.06)" : "#eef3f4",
+                borderRadius: 14,
+                padding: 4,
+                gap: 4,
+                width: "100%",
+                maxWidth: 520,
+              }}
+            >
+              {[
                 { key: "schuzky" as const, label: "Schůzky", icon: <CalendarIcon size={15} /> },
                 { key: "pripady" as const, label: "Byznys případy", icon: <Briefcase size={15} /> },
-                ...(showRecruitmentFunnel ? [{ key: "nabor" as const, label: "Nábor", icon: <UserPlus size={15} /> }] : []),
-              ]).map((tab) => (
+                ...(showRecruitmentFunnel
+                  ? [{ key: "nabor" as const, label: "Zapracování", icon: <UserPlus size={15} /> }]
+                  : []),
+              ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
@@ -1285,22 +1461,26 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                     fontSize: 13,
                     fontWeight: activeTab === tab.key ? 700 : 500,
                     fontFamily: "Poppins, sans-serif",
-                    background: activeTab === tab.key
-                      ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff")
-                      : "transparent",
-                    color: activeTab === tab.key
-                      ? (isDark ? "#4dd8e8" : "#00555f")
-                      : (isDark ? "#7aadb3" : "#6b8a8f"),
-                    boxShadow: activeTab === tab.key
-                      ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)")
-                      : "none",
+                    background: activeTab === tab.key ? (isDark ? "rgba(0,171,189,0.2)" : "#ffffff") : "transparent",
+                    color: activeTab === tab.key ? (isDark ? "#4dd8e8" : "#00555f") : isDark ? "#7aadb3" : "#6b8a8f",
+                    boxShadow: activeTab === tab.key ? (isDark ? "none" : "0 1px 4px rgba(0,0,0,0.08)") : "none",
                     transition: "all 0.15s ease",
                   }}
                 >
                   <span style={{ position: "relative" }}>
                     {tab.icon}
                     {tab.key === "schuzky" && unrecordedCount > 0 && (
-                      <span style={{ position: "absolute", top: -2, right: -6, width: 7, height: 7, borderRadius: "50%", background: "#fc7c71" }} />
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: -2,
+                          right: -6,
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: "#fc7c71",
+                        }}
+                      />
                     )}
                   </span>
                   {tab.label}
@@ -1316,15 +1496,29 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 <button
                   onClick={() => setUzaverkaOpen(true)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 8, width: "100%",
-                    padding: "10px 16px", marginBottom: 12, borderRadius: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "10px 16px",
+                    marginBottom: 12,
+                    borderRadius: 14,
                     background: isDark ? "rgba(0,171,189,0.10)" : "rgba(0,171,189,0.06)",
                     border: `1px solid ${isDark ? "rgba(0,171,189,0.25)" : "rgba(0,171,189,0.2)"}`,
-                    cursor: "pointer", textAlign: "left",
+                    cursor: "pointer",
+                    textAlign: "left",
                   }}
                 >
                   <ClipboardCheck size={16} color="#00abbd" style={{ flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#4dd8e8" : "#00555f" }}>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: "Poppins, sans-serif",
+                      color: isDark ? "#4dd8e8" : "#00555f",
+                    }}
+                  >
                     Uzavři produkci za uplynulé období
                   </span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#00abbd" }}>Otevřít →</span>
@@ -1348,8 +1542,22 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                   }}
                 >
                   <AlertCircle size={16} color="#fc7c71" />
-                  <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 600, fontFamily: "Poppins, sans-serif", color: isDark ? "#fc7c71" : "#c0392b" }}>
-                    {unrecordedCount} {unrecordedCount === 1 ? "schůzka bez výsledku" : unrecordedCount < 5 ? "schůzky bez výsledku" : "schůzek bez výsledku"}
+                  <span
+                    style={{
+                      flex: 1,
+                      textAlign: "left",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: "Poppins, sans-serif",
+                      color: isDark ? "#fc7c71" : "#c0392b",
+                    }}
+                  >
+                    {unrecordedCount}{" "}
+                    {unrecordedCount === 1
+                      ? "schůzka bez výsledku"
+                      : unrecordedCount < 5
+                        ? "schůzky bez výsledku"
+                        : "schůzek bez výsledku"}
                   </span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#fc7c71", fontFamily: "Poppins, sans-serif" }}>
                     Zobrazit vše →
@@ -1407,7 +1615,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                         {(["day", "week", "month"] as const).map((m) => (
                           <button
                             key={m}
-                            onClick={() => { setViewMode(m); setViewModeMenuOpen(false); }}
+                            onClick={() => {
+                              setViewMode(m);
+                              setViewModeMenuOpen(false);
+                            }}
                             style={{
                               display: "block",
                               width: "100%",
@@ -1493,7 +1704,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                         onClick={() => {
                           setTypeFilter((prev) => {
                             const next = new Set(prev);
-                            if (next.has(t)) next.delete(t); else next.add(t);
+                            if (next.has(t)) next.delete(t);
+                            else next.add(t);
                             return next;
                           });
                         }}
@@ -1505,13 +1717,11 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                           borderRadius: 999,
                           border: checked
                             ? `1px solid ${typeColor}`
-                            : (isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid #d8e2e4"),
-                          background: checked
-                            ? `${typeColor}1f`
-                            : "transparent",
-                          color: checked
-                            ? typeColor
-                            : (isDark ? "#a8c8cc" : "#6b8a8f"),
+                            : isDark
+                              ? "1px solid rgba(255,255,255,0.15)"
+                              : "1px solid #d8e2e4",
+                          background: checked ? `${typeColor}1f` : "transparent",
+                          color: checked ? typeColor : isDark ? "#a8c8cc" : "#6b8a8f",
                           fontFamily: "Poppins, sans-serif",
                           fontWeight: checked ? 700 : 500,
                           fontSize: 12.5,
@@ -1570,7 +1780,7 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       borderRadius: 999,
                       border: "none",
                       cursor: "pointer",
-                      background: showCancelled ? "#00abbd" : (isDark ? "rgba(255,255,255,0.15)" : "#d8e2e4"),
+                      background: showCancelled ? "#00abbd" : isDark ? "rgba(255,255,255,0.15)" : "#d8e2e4",
                       position: "relative",
                       transition: "background 0.2s",
                       padding: 0,
@@ -1603,12 +1813,20 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                 title={`${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
                 subtitle={`${format(periodRange.start, "d. M.", { locale: cs })} – ${format(periodRange.end, "d. M. yyyy", { locale: cs })}`}
                 onPrev={() => {
-                  if (selectedMonth === 0) { setSelectedYear((y) => y - 1); setSelectedMonth(11); }
-                  else { setSelectedMonth((m) => m - 1); }
+                  if (selectedMonth === 0) {
+                    setSelectedYear((y) => y - 1);
+                    setSelectedMonth(11);
+                  } else {
+                    setSelectedMonth((m) => m - 1);
+                  }
                 }}
                 onNext={() => {
-                  if (selectedMonth === 11) { setSelectedYear((y) => y + 1); setSelectedMonth(0); }
-                  else { setSelectedMonth((m) => m + 1); }
+                  if (selectedMonth === 11) {
+                    setSelectedYear((y) => y + 1);
+                    setSelectedMonth(0);
+                  } else {
+                    setSelectedMonth((m) => m + 1);
+                  }
                 }}
                 selectedDate={new Date(selectedYear, selectedMonth, 1)}
                 calendarMonth={new Date(selectedYear, selectedMonth, 1)}
@@ -1633,7 +1851,11 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
           ) : meetingsForDayDesktop.length === 0 ? (
             <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
               {meetingsForDay.length === 0
-                ? (viewMode === "day" ? "Žádné schůzky pro tento den." : viewMode === "week" ? "Žádné schůzky pro tento týden." : "Žádné schůzky pro tento měsíc.")
+                ? viewMode === "day"
+                  ? "Žádné schůzky pro tento den."
+                  : viewMode === "week"
+                    ? "Žádné schůzky pro tento týden."
+                    : "Žádné schůzky pro tento měsíc."
                 : "Žádné schůzky neodpovídají filtrům."}
             </div>
           ) : (
@@ -1666,14 +1888,20 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                           {format(parseISO(m.date), "d.M.", { locale: cs })}
                         </span>
                       )}
-                      <span className="font-heading font-semibold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
+                      <span
+                        className="font-heading font-semibold text-sm flex-1"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {m.case_name || caseObj?.nazev_pripadu || "—"}
                       </span>
                       {!m.outcome_recorded && !m.cancelled && m.date <= format(new Date(), "yyyy-MM-dd") && (
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#f97316" }} />
                       )}
                       <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeleteId(m.id);
+                        }}
                         className="p-1 rounded-lg hover:bg-muted transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" style={{ color: "#fc7c71" }} />
@@ -1683,16 +1911,23 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                       <div className="flex items-center gap-2 mt-2 ml-0.5">
                         {m.location_type && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MapPin size={11} /> {m.location_type === "online" ? "Online" : m.location_detail || m.location_type}
+                            <MapPin size={11} />{" "}
+                            {m.location_type === "online" ? "Online" : m.location_detail || m.location_type}
                           </span>
                         )}
                         {totalRefs(m) > 0 && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}>
+                          <span
+                            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ background: "rgba(0,171,189,0.12)", color: "#00abbd" }}
+                          >
                             {totalRefs(m)} dop.
                           </span>
                         )}
                         {m.podepsane_bj > 0 && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}>
+                          <span
+                            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ background: "rgba(0,85,95,0.10)", color: "#00555f" }}
+                          >
                             {m.podepsane_bj} BJ
                           </span>
                         )}
@@ -1706,40 +1941,41 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         </div>
       )}
 
-      {activeTab === "pripady" && (<div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
-      {/* BJ funnel header (feature flag) */}
-      {showBjFunnel && !isLoading && cases.length > 0 && (
-        <div className="legatus-card mb-3" style={{ padding: isMobile ? "12px 14px" : "16px 20px" }}>
-          <BjFunnelCard funnel={obchodFunnel} compact />
+      {activeTab === "pripady" && (
+        <div style={{ maxWidth: isMobile ? undefined : 800, margin: isMobile ? undefined : "0 auto" }}>
+          {/* BJ funnel header (feature flag) */}
+          {showBjFunnel && !isLoading && cases.length > 0 && (
+            <div className="legatus-card mb-3" style={{ padding: isMobile ? "12px 14px" : "16px 20px" }}>
+              <BjFunnelCard funnel={obchodFunnel} compact />
+            </div>
+          )}
+          {/* Cases accordion list */}
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : cases.length === 0 ? (
+            <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
+              Zatím žádné Můj byznys. Nový případ se vytvoří automaticky při založení schůzky.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {cases.map((c) => (
+                <CaseAccordion
+                  key={c.id}
+                  c={c}
+                  meetings={meetingsByCase[c.id] || []}
+                  calls={callsByCase[c.id] || []}
+                  onAddActivity={() => openAddMeeting(c.id)}
+                  onEditCase={() => openEditCase(c)}
+                  onClickMeeting={(m) => setDetailMeeting(m)}
+                  onDeleteMeeting={(id) => setConfirmDeleteId(id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
-      {/* Cases accordion list */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : cases.length === 0 ? (
-        <div className="legatus-card p-8 text-center text-muted-foreground font-body text-sm">
-          Zatím žádné Můj byznys. Nový případ se vytvoří automaticky při založení schůzky.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {cases.map((c) => (
-            <CaseAccordion
-              key={c.id}
-              c={c}
-              meetings={meetingsByCase[c.id] || []}
-              calls={callsByCase[c.id] || []}
-              onAddActivity={() => openAddMeeting(c.id)}
-              onEditCase={() => openEditCase(c)}
-              onClickMeeting={(m) => setDetailMeeting(m)}
-              onDeleteMeeting={(id) => setConfirmDeleteId(id)}
-            />
-          ))}
-        </div>
-      )}
-
-      </div>)}
 
       {/* Delete confirmation */}
       {confirmDeleteId && (
@@ -1893,25 +2129,41 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
 
       {/* Unrecorded meetings modal */}
       {showUnrecordedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowUnrecordedModal(false)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={() => setShowUnrecordedModal(false)}
+        >
           <div className="absolute inset-0 bg-black/40" />
           <div
             className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl mx-4 animate-in fade-in zoom-in-95 duration-150"
             style={{ maxHeight: "80vh", display: "flex", flexDirection: "column" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: "20px 20px 12px", borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4", display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                padding: "20px 20px 12px",
+                borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #eef3f4",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
               <AlertCircle size={18} color="#fc7c71" />
               <h2 className="font-heading font-bold flex-1" style={{ fontSize: 17, color: "var(--text-primary)" }}>
                 Schůzky bez výsledku
               </h2>
-              <button onClick={() => setShowUnrecordedModal(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+              <button
+                onClick={() => setShowUnrecordedModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}
+              >
                 <X size={18} color={isDark ? "#7aadb3" : "#8aadb3"} />
               </button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px 20px" }}>
               {unrecordedMeetings.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Všechny schůzky mají vyplněný výsledek 🎉</p>
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Všechny schůzky mají vyplněný výsledek 🎉
+                </p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {unrecordedMeetings.map((m) => (
@@ -1956,7 +2208,10 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
                         >
                           {meetingTypeLabel(m.meeting_type as MeetingType)}
                         </span>
-                        <span className="font-heading font-semibold text-sm flex-1 truncate" style={{ color: "var(--text-primary)" }}>
+                        <span
+                          className="font-heading font-semibold text-sm flex-1 truncate"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {m.case_name || "—"}
                         </span>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
