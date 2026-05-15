@@ -129,7 +129,7 @@ function computeCurrent(type: GoalType, entries: { client_name: string; outcome:
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CallParty() {
   const { profile } = useAuth();
-  const [tab, setTab] = useState<"new" | "history" | "group">("new");
+  const [tab, setTab] = useState<"new" | "history" | "leaderboard">("new");
   const [searchParams, setSearchParams] = useSearchParams();
   const directPartyId = searchParams.get("party");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
@@ -159,18 +159,18 @@ export default function CallParty() {
 
   const tabs = [
     { key: "new" as const, label: "Nová Call party", icon: <PhoneCall size={14} /> },
-    { key: "group" as const, label: "Skupinová", icon: <Users size={14} /> },
+    { key: "leaderboard" as const, label: "Žebříček", icon: <Trophy size={14} /> },
     { key: "history" as const, label: "Historie", icon: <History size={14} /> },
   ];
 
-  // Auto-open Group tab when ?party=… is present
+  // Auto-open Nová with party context when ?party=… is present
   useEffect(() => {
-    if (directPartyId) setTab("group");
+    if (directPartyId) setTab("new");
   }, [directPartyId]);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }} className="px-4 md:px-8 py-6 md:py-10">
-      {/* Header — title left, segmented pill right (sjednoceno s Dashboard / Můj byznys) */}
+      {/* Header — title left, segmented pill right */}
       <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: 22 }}>
         <div className="flex items-center gap-3">
           <PhoneCall className="h-6 w-6" style={{ color: "var(--text-primary)" }} />
@@ -221,16 +221,150 @@ export default function CallParty() {
         </div>
       </div>
 
-      {tab === "new" && <NewCallPartyForm onSaved={() => setTab("history")} />}
-      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
-      {tab === "group" && (
-        directPartyId
-          ? <GroupCallPartyRoom partyId={directPartyId} onClose={() => { setSearchParams({}); setTab("group"); }} />
-          : <GroupCallPartyTab />
+      {tab === "new" && (
+        <NewCallPartyEntry
+          directPartyId={directPartyId}
+          onClearDirect={() => setSearchParams({})}
+          onSaved={() => setTab("history")}
+        />
       )}
+      {tab === "leaderboard" && (
+        <GroupCallPartyLeaderboardTab
+          onOpenParty={(id) => { setSearchParams({ party: id }); setTab("new"); }}
+        />
+      )}
+      {tab === "history" && <HistoryList onOpen={setOpenSession} />}
 
       {openSession && <SessionDetailModal session={openSession} onClose={() => setOpenSession(null)} />}
     </div>
+  );
+}
+
+// ─── Entry: chooser → private wizard | group wizard ──────────────────────────
+function NewCallPartyEntry({
+  directPartyId,
+  onClearDirect,
+  onSaved,
+}: {
+  directPartyId: string | null;
+  onClearDirect: () => void;
+  onSaved: () => void;
+}) {
+  const { profile } = useAuth();
+  const [mode, setMode] = useState<"chooser" | "private" | "group">(
+    directPartyId ? "group" : "chooser",
+  );
+  const [groupPartyId, setGroupPartyId] = useState<string | null>(directPartyId);
+
+  // Sync if directPartyId changes externally
+  useEffect(() => {
+    if (directPartyId) {
+      setGroupPartyId(directPartyId);
+      setMode("group");
+    }
+  }, [directPartyId]);
+
+  const { data: parties = [] } = useMyGroupParties(profile?.id ?? null);
+  const ongoing = parties.filter((p) => p.status === "live" || p.status === "scheduled");
+
+  const goChooser = () => {
+    setMode("chooser");
+    setGroupPartyId(null);
+    if (directPartyId) onClearDirect();
+  };
+
+  if (mode === "private") {
+    return <NewCallPartyForm onSaved={onSaved} onBack={() => setMode("chooser")} />;
+  }
+  if (mode === "group") {
+    return <GroupCallPartyWizard initialPartyId={groupPartyId} onClose={goChooser} />;
+  }
+
+  // Chooser
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ChooserCard
+          icon={<UserRound className="h-10 w-10" strokeWidth={1.5} />}
+          title="Soukromá"
+          description="Budu volat sám."
+          onClick={() => setMode("private")}
+        />
+        <ChooserCard
+          icon={<Users className="h-10 w-10" strokeWidth={1.5} />}
+          title="Skupinová"
+          description="Apes together strong."
+          onClick={() => { setGroupPartyId(null); setMode("group"); }}
+          accent
+        />
+      </div>
+
+      {ongoing.length > 0 && (
+        <div>
+          <h3 className="font-heading font-semibold text-xs uppercase tracking-wide mb-2" style={{ color: "#5a7479" }}>
+            Pokračovat
+          </h3>
+          <div className="space-y-2">
+            {ongoing.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setGroupPartyId(p.id); setMode("group"); }}
+                className="w-full text-left rounded-xl border border-border bg-card p-3 hover:shadow-md transition-shadow flex items-center gap-3"
+              >
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: p.status === "live" ? "#22c55e" : "#f59e0b", color: "#fff" }}
+                >
+                  {p.status === "live" ? "LIVE" : "Naplánováno"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-heading font-semibold text-sm truncate" style={{ color: "var(--text-primary, #00555f)" }}>{p.name}</div>
+                  {p.scheduled_at && (
+                    <div className="text-xs text-muted-foreground">
+                      {format(parseISO(p.scheduled_at), "EEEE d. M. · HH:mm", { locale: cs })}
+                    </div>
+                  )}
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChooserCard({
+  icon, title, description, onClick, accent,
+}: {
+  icon: React.ReactNode; title: string; description: string; onClick: () => void; accent?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative rounded-2xl border border-border bg-card p-6 text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+      style={{
+        background: accent ? "linear-gradient(135deg, rgba(0,171,189,0.08), rgba(0,85,95,0.04))" : undefined,
+      }}
+    >
+      <div
+        className="inline-flex items-center justify-center rounded-2xl mb-4"
+        style={{
+          width: 64, height: 64,
+          background: accent ? "rgba(0,171,189,0.12)" : "rgba(0,85,95,0.06)",
+          color: accent ? "#00abbd" : "#00555f",
+        }}
+      >
+        {icon}
+      </div>
+      <h3 className="font-heading font-bold text-lg mb-1" style={{ color: "var(--text-primary, #00555f)" }}>{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+      <ArrowRight
+        className="absolute top-6 right-6 h-5 w-5 transition-transform group-hover:translate-x-1"
+        style={{ color: accent ? "#00abbd" : "#5a7479" }}
+      />
+    </button>
   );
 }
 
