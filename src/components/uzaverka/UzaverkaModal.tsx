@@ -89,6 +89,8 @@ export function UzaverkaModal({ open, onClose, year, month }: UzaverkaModalProps
 
   const [rows, setRows] = useState<RowState[]>([]);
   const [notes, setNotes] = useState("");
+  const [filter, setFilter] = useState<"all" | "pending">("pending");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!open) return;
