@@ -128,7 +128,9 @@ function computeCurrent(type: GoalType, entries: { client_name: string; outcome:
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CallParty() {
   const { profile } = useAuth();
-  const [tab, setTab] = useState<"new" | "history">("new");
+  const [tab, setTab] = useState<"new" | "history" | "group">("new");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const directPartyId = searchParams.get("party");
   const [openSession, setOpenSession] = useState<SessionRow | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
