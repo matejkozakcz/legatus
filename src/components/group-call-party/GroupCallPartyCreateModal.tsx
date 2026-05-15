@@ -93,7 +93,7 @@ export function GroupCallPartyCreateModal({ onClose, onCreated }: { onClose: () 
     } else if (preset === "garant") {
       peers.filter((p) => p.garant_id === profile.id).forEach((p) => ids.add(p.id));
     } else if (preset === "workspace") {
-      peers.filter((p) => p.org_unit_id && p.org_unit_id === profile.org_unit_id).forEach((p) => ids.add(p.id));
+      peers.filter((p) => p.org_unit_id && p.org_unit_id === myOrgUnit).forEach((p) => ids.add(p.id));
     }
     return ids;
   }, [preset, peers, profile]);
@@ -124,7 +124,7 @@ export function GroupCallPartyCreateModal({ onClose, onCreated }: { onClose: () 
         .insert({
           name: name.trim(),
           host_id: profile.id,
-          org_unit_id: profile.org_unit_id ?? null,
+          org_unit_id: myOrgUnit ?? null,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           planned_duration_min: duration ? Number(duration) : null,
           goals,
