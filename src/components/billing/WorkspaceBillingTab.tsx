@@ -5,13 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -38,11 +32,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
   const { data: billingData } = useQuery({
     queryKey: ["workspace_billing", orgUnitId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("workspace_billing")
-        .select("*")
-        .eq("org_unit_id", orgUnitId)
-        .maybeSingle();
+      const { data } = await supabase.from("workspace_billing").select("*").eq("org_unit_id", orgUnitId).maybeSingle();
       return (data ?? null) as BillingRow | null;
     },
   });
@@ -80,7 +70,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
     } else {
       setPlan("pioneers");
       setPriceBase(299);
-      setPricePerUser(99);
+      setPricePerUser(69);
       setUsersIncluded(1);
       setBillingStart("");
       setGrandfatheredUntil("");
@@ -99,8 +89,9 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
   };
 
   const livePrice = useMemo(
-    () => calcPrice({ price_base: priceBase, price_per_user: pricePerUser, users_included: usersIncluded }, memberCount),
-    [priceBase, pricePerUser, usersIncluded, memberCount]
+    () =>
+      calcPrice({ price_base: priceBase, price_per_user: pricePerUser, users_included: usersIncluded }, memberCount),
+    [priceBase, pricePerUser, usersIncluded, memberCount],
   );
 
   const status: "active" | "trial" | "unpaid" = useMemo(() => {
@@ -125,9 +116,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
         grandfathered_until: grandfatheredUntil || null,
         notes: notes || null,
       };
-      const { error } = await supabase
-        .from("workspace_billing")
-        .upsert(payload, { onConflict: "org_unit_id" });
+      const { error } = await supabase.from("workspace_billing").upsert(payload, { onConflict: "org_unit_id" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -160,11 +149,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
         amount_czk: m.id === ownerId ? priceBase : pricePerUser,
       }));
       const computedAmount =
-        pStatus === "info"
-          ? null
-          : pAmount
-            ? Number(pAmount)
-            : snapshot.reduce((s, m) => s + m.amount_czk, 0);
+        pStatus === "info" ? null : pAmount ? Number(pAmount) : snapshot.reduce((s, m) => s + m.amount_czk, 0);
       const { error } = await supabase.from("workspace_payments").insert({
         org_unit_id: orgUnitId,
         paid_at: pDate,
@@ -231,11 +216,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
             <div>
               <Label className="text-xs">Cena workspace (Kč)</Label>
-              <Input
-                type="number"
-                value={priceBase}
-                onChange={(e) => setPriceBase(Number(e.target.value) || 0)}
-              />
+              <Input type="number" value={priceBase} onChange={(e) => setPriceBase(Number(e.target.value) || 0)} />
             </div>
             <div>
               <Label className="text-xs">Cena za dalšího uživatele (Kč)</Label>
@@ -258,10 +239,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
       </section>
 
       {/* Live price */}
-      <div
-        className="rounded-xl p-4 flex items-center justify-between"
-        style={{ background: "hsl(var(--muted))" }}
-      >
+      <div className="rounded-xl p-4 flex items-center justify-between" style={{ background: "hsl(var(--muted))" }}>
         <div>
           <div className="text-2xl font-heading font-bold text-foreground">
             {livePrice.toLocaleString("cs-CZ")} Kč/měsíc
@@ -280,19 +258,11 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">Datum začátku billingu</Label>
-            <Input
-              type="date"
-              value={billingStart}
-              onChange={(e) => setBillingStart(e.target.value)}
-            />
+            <Input type="date" value={billingStart} onChange={(e) => setBillingStart(e.target.value)} />
           </div>
           <div>
             <Label className="text-xs">Grandfathered do</Label>
-            <Input
-              type="date"
-              value={grandfatheredUntil}
-              onChange={(e) => setGrandfatheredUntil(e.target.value)}
-            />
+            <Input type="date" value={grandfatheredUntil} onChange={(e) => setGrandfatheredUntil(e.target.value)} />
           </div>
         </div>
         <div>
@@ -314,11 +284,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-heading font-semibold text-foreground">Platby</h3>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAddForm((v) => !v)}
-          >
+          <Button size="sm" variant="outline" onClick={() => setShowAddForm((v) => !v)}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Přidat platbu
           </Button>
@@ -337,12 +303,7 @@ export function WorkspaceBillingTab({ orgUnitId, ownerId, memberCount }: Props) 
               </div>
               <div>
                 <Label className="text-xs">Částka (Kč)</Label>
-                <Input
-                  type="number"
-                  value={pAmount}
-                  onChange={(e) => setPAmount(e.target.value)}
-                  placeholder="auto"
-                />
+                <Input type="number" value={pAmount} onChange={(e) => setPAmount(e.target.value)} placeholder="auto" />
               </div>
             </div>
             <div className="flex items-end justify-between gap-3">
