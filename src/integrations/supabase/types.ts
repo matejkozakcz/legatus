@@ -284,6 +284,8 @@ export type Database = {
       client_meetings: {
         Row: {
           bj: number
+          bj_recognized_date: string | null
+          bj_week_start: string | null
           cancelled: boolean
           case_id: string | null
           case_name: string | null
@@ -320,6 +322,8 @@ export type Database = {
         }
         Insert: {
           bj?: number
+          bj_recognized_date?: string | null
+          bj_week_start?: string | null
           cancelled?: boolean
           case_id?: string | null
           case_name?: string | null
@@ -356,6 +360,8 @@ export type Database = {
         }
         Update: {
           bj?: number
+          bj_recognized_date?: string | null
+          bj_week_start?: string | null
           cancelled?: boolean
           case_id?: string | null
           case_name?: string | null
@@ -967,6 +973,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      production_closures: {
+        Row: {
+          closed_at: string
+          closed_by: string
+          created_at: string
+          id: string
+          notes: string | null
+          period_month: number
+          period_year: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string
+          closed_by: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_month: number
+          period_year: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_month?: number
+          period_year?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
