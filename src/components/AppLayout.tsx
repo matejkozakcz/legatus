@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PushOptInBanner } from "@/components/PushOptInBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { WorkspaceViewBanner } from "@/components/WorkspaceViewBanner";
+import { AppBackground } from "@/components/AppBackground";
 import { usePresenceTracker } from "@/hooks/usePresenceTracker";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
