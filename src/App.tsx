@@ -16,6 +16,7 @@ import MemberActivity from "./pages/MemberActivity";
 import Ukoly from "./pages/Ukoly";
 import ObchodniPripady from "./pages/ObchodniPripady";
 import CallParty from "./pages/CallParty";
+import JoinGroupCallParty from "./pages/JoinGroupCallParty";
 
 import MobileObchod from "./pages/MobileObchod";
 import Hledani from "./pages/Hledani";
