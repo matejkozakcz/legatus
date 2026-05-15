@@ -1824,6 +1824,8 @@ export default function ObchodniPripady({ mobileEmbedded = false }: { mobileEmbe
         }}
       />
 
+      <UzaverkaModal open={uzaverkaOpen} onClose={() => setUzaverkaOpen(false)} />
+
       {/* Meeting form modal */}
       <MeetingFormModal
         open={meetingModalOpen}
