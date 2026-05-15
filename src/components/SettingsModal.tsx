@@ -485,6 +485,30 @@ export function SettingsModal({ open, onClose, initialTab = 0 }: SettingsModalPr
         </button>
       </div>
 
+      {/* Vivid background */}
+      <div className="border-t border-border" />
+      <div className="flex items-center justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">Živé pozadí</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Barevný gradient na pozadí, který se mění podle světlého/tmavého režimu.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={vivid}
+          onClick={() => setVivid(!vivid)}
+          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+          style={{ background: vivid ? "hsl(var(--accent))" : "hsl(var(--muted))" }}
+        >
+          <span
+            className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+            style={{ transform: vivid ? "translateX(1.375rem)" : "translateX(0.25rem)" }}
+          />
+        </button>
+      </div>
+
       {/* Calendar sync */}
       <div className="border-t border-border" />
       <div>
