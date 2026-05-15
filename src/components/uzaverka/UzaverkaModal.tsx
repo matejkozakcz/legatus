@@ -11,7 +11,7 @@ import {
   getProductionPeriodMonth,
 } from "@/lib/productionPeriod";
 import { meetingTypeLabel, type MeetingType } from "@/components/MeetingFormFields";
-import { X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { X, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 
 const MONTH_NAMES = [
@@ -23,6 +23,7 @@ type RowState = {
   id: string;
   date: string;
   meeting_type: string;
+  case_id: string | null;
   case_name: string | null;
   podepsane_bj: string;
   poradenstvi_status: "probehle" | "zrusene" | null;
@@ -33,6 +34,7 @@ type RowState = {
     bj_recognized_date: string;
   };
   cancelled: boolean;
+  showDateShift: boolean;
 };
 
 export interface UzaverkaModalProps {
@@ -95,6 +97,7 @@ export function UzaverkaModal({ open, onClose, year, month }: UzaverkaModalProps
         id: m.id,
         date: m.date,
         meeting_type: m.meeting_type,
+        case_id: m.case_id ?? null,
         case_name: m.case_name,
         podepsane_bj: String(m.podepsane_bj ?? 0),
         poradenstvi_status: (m.poradenstvi_status as any) ?? null,
@@ -105,6 +108,7 @@ export function UzaverkaModal({ open, onClose, year, month }: UzaverkaModalProps
           bj_recognized_date: m.bj_recognized_date || m.date,
         },
         cancelled: m.cancelled,
+        showDateShift: false,
       }))
     );
     setNotes("");
