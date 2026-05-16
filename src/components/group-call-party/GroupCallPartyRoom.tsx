@@ -114,28 +114,67 @@ export function GroupCallPartyRoom({ partyId, onClose }: Props) {
     if (action === "rotate_token") toast.success("Nový odkaz vygenerován");
   };
 
+  const resetForm = () => {
+    setClientName("");
+    setOutcome("nezvedl");
+    setMeetingType(null);
+    setMeetingDate("");
+    setMeetingTime("");
+    setEditingId(null);
+  };
+
   const addEntry = useMutation({
     mutationFn: async () => {
       if (!mySessionId) throw new Error("Chybí session");
       if (!clientName.trim()) throw new Error("Zadej jméno");
-      const { error } = await supabase.from("call_party_entries").insert({
-        session_id: mySessionId,
+      const payload = {
         client_name: clientName.trim(),
         outcome,
         meeting_type: outcome === "domluveno" ? meetingType : null,
-        sort_order: entries.filter((e) => e.user_id === profile?.id).length,
-      });
-      if (error) throw error;
+        meeting_date: outcome === "domluveno" && meetingDate ? meetingDate : null,
+        meeting_time: outcome === "domluveno" && meetingTime ? meetingTime : null,
+      };
+      if (editingId) {
+        const { error } = await supabase.from("call_party_entries").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("call_party_entries").insert({
+          session_id: mySessionId,
+          ...payload,
+          sort_order: entries.filter((e) => e.user_id === profile?.id).length,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      setClientName("");
-      setOutcome("nezvedl");
-      setMeetingType(null);
+      resetForm();
       qc.invalidateQueries({ queryKey: ["group_party_entries", partyId] });
       refetchAll();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const deleteEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("call_party_entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (editingId) resetForm();
+      qc.invalidateQueries({ queryKey: ["group_party_entries", partyId] });
+      refetchAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const startEdit = (e: PartyEntry) => {
+    setEditingId(e.id);
+    setClientName(e.client_name);
+    setOutcome(e.outcome);
+    setMeetingType((e.meeting_type as CPMeetingType) ?? null);
+    setMeetingDate(e.meeting_date ?? "");
+    setMeetingTime(e.meeting_time ? e.meeting_time.slice(0, 5) : "");
+  };
 
   // ─── Timer / countdown ──────────────────────────────────────────────────
   const elapsed = party?.started_at ? Math.floor((now - new Date(party.started_at).getTime()) / 1000) : 0;
