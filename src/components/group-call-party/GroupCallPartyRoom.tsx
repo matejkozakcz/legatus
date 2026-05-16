@@ -297,43 +297,89 @@ export function GroupCallPartyRoom({ partyId, onClose }: Props) {
                 </div>
               </div>
               {outcome === "domluveno" && (
-                <div>
-                  <Label className="text-xs">Typ schůzky</Label>
-                  <div className="flex gap-1.5 mt-1">
-                    {MEETING_TYPES.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setMeetingType(t)}
-                        className="flex-1 py-2 rounded-md text-xs font-bold transition-colors"
-                        style={{
-                          background: meetingType === t ? "#00abbd" : "var(--surface-2, rgba(0,0,0,0.04))",
-                          color: meetingType === t ? "#fff" : "#00555f",
-                        }}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                <>
+                  <div>
+                    <Label className="text-xs">Typ schůzky</Label>
+                    <div className="flex gap-1.5 mt-1">
+                      {MEETING_TYPES.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setMeetingType(t)}
+                          className="flex-1 py-2 rounded-md text-xs font-bold transition-colors"
+                          style={{
+                            background: meetingType === t ? "#00abbd" : "var(--surface-2, rgba(0,0,0,0.04))",
+                            color: meetingType === t ? "#fff" : "#00555f",
+                          }}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="md" className="text-xs">Datum schůzky</Label>
+                      <Input id="md" type="date" value={meetingDate} onChange={(e) => setMeetingDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="mt" className="text-xs">Čas</Label>
+                      <Input id="mt" type="time" value={meetingTime} onChange={(e) => setMeetingTime(e.target.value)} />
+                    </div>
+                  </div>
+                </>
               )}
-              <Button
-                onClick={() => addEntry.mutate()}
-                disabled={addEntry.isPending || !clientName.trim() || (outcome === "domluveno" && !meetingType)}
-                className="w-full"
-                style={{ background: "#fc7c71", color: "#fff" }}
-              >
-                {addEntry.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Přidat hovor"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => addEntry.mutate()}
+                  disabled={addEntry.isPending || !clientName.trim() || (outcome === "domluveno" && !meetingType)}
+                  className="flex-1"
+                  style={{ background: "#fc7c71", color: "#fff" }}
+                >
+                  {addEntry.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? "Uložit změny" : "Přidat hovor"}
+                </Button>
+                {editingId && (
+                  <Button variant="outline" onClick={resetForm} disabled={addEntry.isPending}>
+                    Zrušit
+                  </Button>
+                )}
+              </div>
 
               {/* My recent entries */}
               <div className="pt-2 border-t border-border">
                 <p className="text-[11px] text-muted-foreground mb-1.5">Moje poslední</p>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {entries.filter((e) => e.user_id === profile?.id).slice(0, 8).map((e) => (
-                    <div key={e.id} className="flex items-center gap-2 text-xs">
-                      <span className="flex-1 truncate">{e.client_name}</span>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {entries.filter((e) => e.user_id === profile?.id).slice(0, 12).map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center gap-2 text-xs p-1 rounded"
+                      style={{ background: editingId === e.id ? "rgba(252,124,113,0.08)" : "transparent" }}
+                    >
+                      <span className="flex-1 truncate">
+                        {e.client_name}
+                        {e.meeting_date && (
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            · {e.meeting_date}{e.meeting_time ? ` ${e.meeting_time.slice(0, 5)}` : ""}
+                          </span>
+                        )}
+                      </span>
                       <OutcomePill outcome={e.outcome} type={e.meeting_type} />
+                      <button
+                        onClick={() => startEdit(e)}
+                        className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
+                        title="Upravit"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("Smazat tento záznam?")) deleteEntry.mutate(e.id);
+                        }}
+                        className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-destructive"
+                        title="Smazat"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   ))}
                   {entries.filter((e) => e.user_id === profile?.id).length === 0 && (
