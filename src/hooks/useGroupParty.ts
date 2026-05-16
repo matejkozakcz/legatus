@@ -36,6 +36,8 @@ export interface PartyEntry {
   client_name: string;
   outcome: "nezvedl" | "nedomluveno" | "domluveno";
   meeting_type: string | null;
+  meeting_date: string | null;
+  meeting_time: string | null;
   created_at: string;
   user_id: string;
   user_name?: string;
