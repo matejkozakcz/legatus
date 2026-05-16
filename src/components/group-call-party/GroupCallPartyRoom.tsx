@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  Phone, Trophy, Users, Copy, Check, Loader2, X, Play, Square, Activity, ArrowLeft, RotateCw, ExternalLink,
+  Phone, Trophy, Users, Copy, Check, Loader2, X, Play, Square, Activity, ArrowLeft, RotateCw, ExternalLink, Pencil, Trash2,
 } from "lucide-react";
 import { fireConfetti } from "@/lib/confetti";
 import { format, parseISO } from "date-fns";
