@@ -49,6 +49,7 @@ export function GroupCallPartyCreateModal({ onClose, onCreated }: { onClose: () 
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, vedouci_id, garant_id, org_unit_id")
+        .eq("is_active", true)
         .neq("id", profile!.id);
       if (error) throw error;
       return data as Profile[];

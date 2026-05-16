@@ -174,6 +174,8 @@ export type Database = {
           created_case_id: string | null
           created_meeting_id: string | null
           id: string
+          meeting_date: string | null
+          meeting_time: string | null
           meeting_type: string | null
           outcome: string
           session_id: string
@@ -186,6 +188,8 @@ export type Database = {
           created_case_id?: string | null
           created_meeting_id?: string | null
           id?: string
+          meeting_date?: string | null
+          meeting_time?: string | null
           meeting_type?: string | null
           outcome?: string
           session_id: string
@@ -198,6 +202,8 @@ export type Database = {
           created_case_id?: string | null
           created_meeting_id?: string | null
           id?: string
+          meeting_date?: string | null
+          meeting_time?: string | null
           meeting_type?: string | null
           outcome?: string
           session_id?: string

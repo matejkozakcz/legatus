@@ -36,6 +36,8 @@ export interface PartyEntry {
   client_name: string;
   outcome: "nezvedl" | "nedomluveno" | "domluveno";
   meeting_type: string | null;
+  meeting_date: string | null;
+  meeting_time: string | null;
   created_at: string;
   user_id: string;
   user_name?: string;
@@ -110,7 +112,7 @@ export function useGroupParty(partyId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("call_party_entries")
-        .select("id, session_id, client_name, outcome, meeting_type, created_at")
+        .select("id, session_id, client_name, outcome, meeting_type, meeting_date, meeting_time, created_at")
         .in("session_id", sessionIds)
         .order("created_at", { ascending: false });
       if (error) throw error;
