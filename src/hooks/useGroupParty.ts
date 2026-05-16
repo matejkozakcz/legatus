@@ -125,8 +125,10 @@ export function useGroupParty(partyId: string | null) {
   // Realtime subscriptions
   useEffect(() => {
     if (!partyId) return;
+    // Unique channel name per effect run avoids re-using an already-subscribed
+    // channel (which throws "cannot add postgres_changes callbacks after subscribe()").
     const ch = supabase
-      .channel(`group_party_${partyId}`)
+      .channel(`group_party_${partyId}_${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "group_call_parties", filter: `id=eq.${partyId}` },
