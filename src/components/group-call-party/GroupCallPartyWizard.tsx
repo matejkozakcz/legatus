@@ -212,7 +212,8 @@ function GroupLobby({ partyId, onClose }: { partyId: string; onClose: () => void
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, vedouci_id, garant_id, org_unit_id")
+        .select("id, full_name, vedouci_id, garant_id, org_unit_id, is_active")
+        .eq("is_active", true)
         .neq("id", profile!.id);
       if (error) throw error;
       return data as ProfilePeer[];
