@@ -39,6 +39,9 @@ export function GroupCallPartyRoom({ partyId, onClose }: Props) {
   const [clientName, setClientName] = useState("");
   const [outcome, setOutcome] = useState<Outcome>("nezvedl");
   const [meetingType, setMeetingType] = useState<CPMeetingType | null>(null);
+  const [meetingDate, setMeetingDate] = useState<string>("");
+  const [meetingTime, setMeetingTime] = useState<string>("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
